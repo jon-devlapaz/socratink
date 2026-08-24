@@ -136,6 +136,10 @@ the concept needs independent authority and lifecycle.
 `EVT` is the only new type in this skill. It does **not** replace `SRC` or `EVD`.
 Do not add further types for “pattern”, “lesson”, “insight”, or “memory”.
 
+`EVT` is also not the product's learner-runtime evidence envelope (`EVD-0003`,
+`CAP-0002`). Those preserve what a learner did in the app. `EVT` preserves what
+happened in company archaeology (chats, trajectories, logs).
+
 ## Learning Event (`EVT`)
 
 Purpose: capture a meaningful experience **before** it becomes evidence or a claim.
