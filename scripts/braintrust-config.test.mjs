@@ -6,10 +6,7 @@ import { join } from 'node:path';
 delete process.env.BRAINTRUST_API_KEY;
 delete process.env.BRAINTRUST_PROJECT_NAME;
 
-const originalWorkingDirectory = process.cwd();
-process.chdir(tmpdir());
 const { configureBraintrust, resolveBraintrustApiKey } = await import('../src/braintrust.ts');
-process.chdir(originalWorkingDirectory);
 
 function createFakes() {
 	const loggerCalls = [];

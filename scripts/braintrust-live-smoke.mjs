@@ -3,14 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { flush } from 'braintrust';
 import { createFlueClient } from '@flue/sdk';
+import { resolveBraintrustApiKey } from '../src/braintrust.ts';
 
-if (!process.env.BRAINTRUST_API_KEY) {
+const apiKey = resolveBraintrustApiKey(process.env);
+if (!apiKey) {
 	throw new Error('BRAINTRUST_API_KEY is required for the live Braintrust smoke test.');
 }
+process.env.BRAINTRUST_API_KEY = apiKey;
 
-const projectName = process.env.BRAINTRUST_PROJECT_NAME;
-if (projectName !== 'socratink-synthetic') {
-	throw new Error('BRAINTRUST_PROJECT_NAME must be exactly socratink-synthetic.');
+const projectName = process.env.BRAINTRUST_PROJECT_NAME ?? 'socratink';
+if (projectName !== 'socratink') {
+	throw new Error('BRAINTRUST_PROJECT_NAME must be exactly socratink.');
 }
 
 const runId = `socratink-synthetic-${randomUUID()}`;
