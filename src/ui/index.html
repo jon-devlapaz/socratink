@@ -19,7 +19,7 @@
 			</span>
 		</a>
 
-		<main class="chat-surface">
+		<main id="chat-surface" class="chat-surface">
       <div class="alive-core"></div>
 
 			<section class="thought-card" aria-label="Socratink chat">
@@ -38,6 +38,19 @@
 						<button aria-label="Send message" type="submit">↑</button>
 					</div>
 				</form>
+			</section>
+		</main>
+
+		<main id="r1-surface" class="r1-surface" hidden>
+			<div class="r1-core" aria-hidden="true"></div>
+			<section class="thought-card r1-card" aria-labelledby="r1-title">
+				<header class="r1-header">
+					<p class="eyebrow">Local R1 encounter</p>
+					<h1 id="r1-title">Tool request review</h1>
+					<p>This bounded exercise records your exact response for a separate human review. Socratink will not draft, polish, suggest, or evaluate your answer here.</p>
+				</header>
+				<div id="r1-app"></div>
+				<p id="r1-status" class="r1-status" role="status" aria-live="polite"></p>
 			</section>
 		</main>
 
