@@ -1,11 +1,3 @@
-/**
- * Optional Braintrust observability for Chat/Flue runs.
- *
- * Purpose: attach a development logger when a key is present.
- * Inputs: process environment and optional test adapters.
- * Outputs: Flue instrumentation, or a no-op when no key exists.
- * Constraints: do not configure on import; the chat app calls configureBraintrust.
- */
 import { instrument } from '@flue/runtime';
 import { braintrustFlueInstrumentation, initLogger } from 'braintrust';
 import { readFileSync } from 'node:fs';
@@ -32,6 +24,15 @@ const productionDependencies: BraintrustDependencies<
 	instrument,
 };
 
+function isMissingFileError(error: unknown): boolean {
+	return (
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		error.code === 'ENOENT'
+	);
+}
+
 export function resolveBraintrustApiKey(
 	environment: BraintrustEnvironment,
 	startDirectory = process.cwd(),
@@ -46,14 +47,7 @@ export function resolveBraintrustApiKey(
 				.BRAINTRUST_API_KEY?.trim();
 			return fileKey || undefined;
 		} catch (error) {
-			if (
-				typeof error !== 'object' ||
-				error === null ||
-				!('code' in error) ||
-				error.code !== 'ENOENT'
-			) {
-				return undefined;
-			}
+			if (!isMissingFileError(error)) throw error;
 		}
 
 		const parent = dirname(directory);

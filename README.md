@@ -58,7 +58,7 @@ learner data.
 
 `pnpm test:braintrust` verifies the opt-in configuration locally without making
 a network call. `pnpm smoke:braintrust-live` verifies live delivery and requires
-an explicit API key and the `socratink-synthetic` project.
+an explicit API key. Traces go to the same `socratink` project as Chat.
 
 ## Foundation and attribution
 

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { appConfig } from '../src/config/app.config.ts';
 
 delete process.env.BRAINTRUST_API_KEY;
 delete process.env.BRAINTRUST_PROJECT_NAME;
@@ -45,12 +47,12 @@ function createFakes() {
 {
 	const fakes = createFakes();
 	configureBraintrust(
-		{ BRAINTRUST_API_KEY: 'synthetic-test-key', BRAINTRUST_PROJECT_NAME: 'socratink-synthetic' },
+		{ BRAINTRUST_API_KEY: 'synthetic-test-key', BRAINTRUST_PROJECT_NAME: 'synthetic-override-project' },
 		fakes.dependencies,
 	);
 
 	assert.deepEqual(fakes.loggerCalls, [
-		{ apiKey: 'synthetic-test-key', projectName: 'socratink-synthetic' },
+		{ apiKey: 'synthetic-test-key', projectName: 'synthetic-override-project' },
 	]);
 	assert.equal(fakes.createdInstrumentations.length, 1);
 	assert.equal(fakes.instrumentCalls.length, 1);
@@ -61,7 +63,9 @@ function createFakes() {
 	const fakes = createFakes();
 	configureBraintrust({ BRAINTRUST_API_KEY: 'synthetic-test-key' }, fakes.dependencies);
 
-	assert.deepEqual(fakes.loggerCalls, [{ apiKey: 'synthetic-test-key', projectName: 'socratink' }]);
+	assert.deepEqual(fakes.loggerCalls, [
+		{ apiKey: 'synthetic-test-key', projectName: appConfig.braintrustProjectName },
+	]);
 	assert.equal(fakes.createdInstrumentations.length, 1);
 	assert.equal(fakes.instrumentCalls.length, 1);
 	assert.strictEqual(fakes.instrumentCalls[0], fakes.createdInstrumentations[0]);
@@ -84,13 +88,48 @@ function createFakes() {
 		configureBraintrust({}, fakes.dependencies, nestedDirectory);
 
 		assert.deepEqual(fakes.loggerCalls, [
-			{ apiKey: 'synthetic-file-key', projectName: 'socratink' },
+			{ apiKey: 'synthetic-file-key', projectName: appConfig.braintrustProjectName },
 		]);
 		assert.equal(fakes.createdInstrumentations.length, 1);
 		assert.equal(fakes.instrumentCalls.length, 1);
 	} finally {
 		await rm(fixtureRoot, { recursive: true, force: true });
 	}
+}
+
+{
+	const fixtureRoot = await mkdtemp(join(tmpdir(), 'socratink-braintrust-isdir-'));
+
+	try {
+		await mkdir(join(fixtureRoot, '.env.braintrust'));
+		assert.throws(
+			() => resolveBraintrustApiKey({}, fixtureRoot),
+			(error) =>
+				typeof error === 'object' &&
+				error !== null &&
+				'code' in error &&
+				error.code === 'EISDIR',
+		);
+	} finally {
+		await rm(fixtureRoot, { recursive: true, force: true });
+	}
+}
+
+{
+	const result = spawnSync(process.execPath, ['scripts/braintrust-live-smoke.mjs'], {
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			BRAINTRUST_API_KEY: 'synthetic-pin-key',
+			BRAINTRUST_PROJECT_NAME: 'not-socratink',
+		},
+	});
+
+	assert.notEqual(result.status, 0);
+	assert.match(
+		`${result.stdout}${result.stderr}`,
+		new RegExp(`BRAINTRUST_PROJECT_NAME must be exactly ${appConfig.braintrustProjectName}`),
+	);
 }
 
 console.log('Braintrust configuration contract passed.');

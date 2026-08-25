@@ -9,5 +9,5 @@ The mounted conversation-instruction Flue agent.
 _Avoid_: Learner Agent, tutor
 
 **Observability**:
-Optional Braintrust instrumentation of Chat/Flue runs. A Braintrust span is a development log.
-_Avoid_: learning proof
+Optional Braintrust instrumentation of Chat/Flue runs. A Braintrust span is a development log. Chat traces and the live smoke share one Observability project.
+_Avoid_: learning proof; a second synthetic project
