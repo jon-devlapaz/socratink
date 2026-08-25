@@ -13,6 +13,34 @@ packages as its agent harness.
 Do not turn product work into a framework rewrite. Make the smallest complete
 change that produces observable Socratink behavior.
 
+## Scope control
+
+Start every change by writing the smallest observable outcome in one sentence.
+Stop when that outcome is proven. If the request is to trace normal Socratink
+runs, success is one normal synthetic run visible in Braintrust; it is not a new
+learner workflow.
+
+Words such as "dogfood," "vet," "scientific," "grounded," or "production
+quality" strengthen the required validation. They do not authorize additional
+product scope.
+
+Do not add a new user-facing mode, route family, persistence model, schema,
+reviewer workflow, evaluation system, or experiment framework unless the user
+explicitly asks for that product capability. When the requested capability can
+be attached to the existing product, attach it there and preserve the existing
+user flow.
+
+Treat any such addition as a scope tripwire: stop before implementation,
+compare it to the one-sentence outcome, and remove it from the plan unless it is
+strictly required. A large diff is also a tripwire when a narrow integration is
+available; lockfiles and generated output do not justify expanding behavior.
+
+Failure precedent: a request to trace existing Socratink runs was incorrectly
+expanded into a separate R1 learner-evidence product with new UI, routes,
+storage, schemas, and review machinery. The expansion was reverted. Never use
+that approach as precedent; the correct solution was startup instrumentation
+plus one live trace verification.
+
 ## Harness terminology
 
 An agent is a capitalized exported function in a module beginning with
