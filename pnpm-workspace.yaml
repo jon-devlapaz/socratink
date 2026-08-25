@@ -1,5 +1,6 @@
 allowBuilds:
   '@google/genai': false
+  braintrust: false
   core-js-pure: false
   esbuild: true
   protobufjs: false

@@ -1,3 +1,4 @@
+import './braintrust.ts';
 import { createAgentRouter } from '@flue/runtime/routing';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';

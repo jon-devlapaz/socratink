@@ -26,6 +26,7 @@ pnpm-debug.log*
 
 # local config
 .idea/
+.bt/
 .vscode/settings.json
 *.code-workspace
 

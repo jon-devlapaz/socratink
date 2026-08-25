@@ -5,22 +5,25 @@
 	"license": "Apache-2.0",
 	"packageManager": "pnpm@11.1.1",
 	"engines": {
-		"node": ">=22",
+		"node": ">=22.18.0",
 		"pnpm": ">=11 <12"
 	},
 	"scripts": {
 		"dev": "vite build --config vite.config.ui.ts && vite dev",
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
-		"check": "pnpm check:types && pnpm build",
+		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
+		"check": "pnpm check:types && pnpm test:braintrust && pnpm build",
 		"check:types": "tsc --noEmit",
-		"smoke": "node scripts/smoke.mjs"
+		"smoke": "node scripts/smoke.mjs",
+		"test:braintrust": "node scripts/braintrust-config.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/pi-ai": "^0.83.0",
 		"@flue/runtime": "2.0.3",
 		"@flue/sdk": "2.0.3",
 		"@hono/node-server": "^2.0.3",
+		"braintrust": "^3.28.0",
 		"hono": "4.12.34",
 		"three": "0.132.2"
 	},

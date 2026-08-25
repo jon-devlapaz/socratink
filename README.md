@@ -9,7 +9,7 @@ the foundation works reliably.
 
 ## Run the current app
 
-Requirements: Node.js 22+, pnpm 11, and an OpenAI-compatible model endpoint.
+Requirements: Node.js 22.18+, pnpm 11, and an OpenAI-compatible model endpoint.
 
 ```sh
 pnpm install
@@ -27,6 +27,7 @@ The app reads these local environment settings without committing their values:
 ```sh
 pnpm install --frozen-lockfile
 pnpm check:types
+pnpm test:braintrust
 pnpm build
 pnpm smoke
 pnpm audit --prod
@@ -36,6 +37,27 @@ The product source lives in `src/`. The default Vite build generates the
 Node application in `dist/`, and the UI build writes its static assets to
 `dist/client/`. The smoke test starts only local processes and uses a fake
 OpenAI-compatible provider; it never requires external credentials.
+
+## Braintrust observability
+
+Braintrust tracing is opt-in. `BRAINTRUST_API_KEY` enables initialization; when
+it is absent, Socratink does not initialize Braintrust or register its Flue
+instrumentation. `BRAINTRUST_PROJECT_NAME` selects the destination project and
+defaults to `socratink`.
+
+For now, enable tracing only for synthetic or development fixtures. Do not send
+real learner traffic until Braintrust retention and access controls, plus an
+application-specific masking policy, have been reviewed and tested. Traces can
+observe run hierarchy, content, errors, tokens, cost, and correlation metadata.
+They cannot establish an Evidence Contract, learner-authored provenance,
+learner-state validity, durable learning, or causal learning lift.
+
+`pnpm test:braintrust` deterministically proves the local configuration
+contract: tracing remains off without a key, a configured key and project are
+forwarded exactly once, and the project fallback is `socratink`. It uses fakes
+and makes no Braintrust network call, so it does not prove live delivery,
+masking, privacy, trace shape, or evaluation quality. No evaluation suite is
+implemented yet.
 
 ## Foundation and attribution
 
