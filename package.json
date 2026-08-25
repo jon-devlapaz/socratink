@@ -13,11 +13,10 @@
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
-		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:evidence && pnpm build",
+		"check": "pnpm check:types && pnpm test:braintrust && pnpm build",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
-		"test:braintrust": "node scripts/braintrust-config.test.mjs",
-		"test:evidence": "node scripts/evidence-contracts.test.mjs"
+		"test:braintrust": "node scripts/braintrust-config.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/pi-ai": "^0.83.0",

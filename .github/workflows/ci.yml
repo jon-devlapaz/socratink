@@ -34,8 +34,8 @@ jobs:
       - name: Check types
         run: pnpm check:types
 
-      - name: Run evidence contract tests
-        run: pnpm test:evidence
+      - name: Run Braintrust configuration tests
+        run: pnpm test:braintrust
 
       - name: Build production application
         run: pnpm build

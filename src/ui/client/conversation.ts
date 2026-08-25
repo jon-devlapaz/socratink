@@ -3,7 +3,7 @@
  *
  * Purpose: isolate SDK wiring from DOM rendering.
  * Inputs: none. Outputs: a Flue client bound to a persisted conversation id.
- * Constraints: this is the current chat agent only; it does not capture evidence.
+ * Constraints: this is the current chat agent only.
  */
 import { createFlueClient } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
