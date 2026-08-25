@@ -56,7 +56,8 @@ Resolve `WIKI_ROOT` in this order:
 3. current directory if it is a vault root (`Home.md` + `Docs/` +
    `Project Context/AGENTS.md`);
 4. a nearby checkout named `flue-obsidian-wiki`, discovered from cwd, this
-   skill, or the Socratink git toplevel (including `product/flue-obsidian-wiki`).
+   skill, or the Socratink git toplevel (including `product/flue-obsidian-wiki`
+   and the standard local `doc-vault/flue-obsidian-wiki` layout).
 
 If the vault cannot be located, report that and stop inventing Flue APIs.
 

@@ -18,6 +18,7 @@ from typing import Iterable
 
 VAULT_MARKERS = ("Home.md", "Docs", "Project Context")
 VAULT_DIR_NAMES = ("flue-obsidian-wiki",)
+VAULT_PARENT_DIR_NAMES = ("product", "doc-vault")
 SEARCH_DIRS = ("Docs", "Project Context", "My Notes", "_meta")
 SKIP_PARTS = {".git", ".obsidian", "src", "tests", "scripts", "node_modules"}
 FRONTMATTER_TITLE = re.compile(r'(?m)^title:\s*"?([^"\n]+)"?\s*$')
@@ -85,11 +86,13 @@ def add_discovery_roots(candidates: list[Path], start: Path) -> None:
     candidates.append(start)
     for name in VAULT_DIR_NAMES:
         candidates.append(start / name)
-        candidates.append(start / "product" / name)
+        for parent_dir in VAULT_PARENT_DIR_NAMES:
+            candidates.append(start / parent_dir / name)
     for parent in [start, *start.parents]:
         for name in VAULT_DIR_NAMES:
             candidates.append(parent / name)
-            candidates.append(parent / "product" / name)
+            for parent_dir in VAULT_PARENT_DIR_NAMES:
+                candidates.append(parent / parent_dir / name)
 
 
 def locate_wiki(explicit: str | None = None) -> Path:
@@ -121,7 +124,8 @@ def locate_wiki(explicit: str | None = None) -> Path:
 
     raise SystemExit(
         "Could not locate flue-obsidian-wiki. Clone it as a sibling named "
-        "flue-obsidian-wiki (or product/flue-obsidian-wiki), set "
+        "flue-obsidian-wiki (or product/flue-obsidian-wiki or "
+        "doc-vault/flue-obsidian-wiki), set "
         "FLUE_WIKI_PATH locally, or pass --wiki."
     )
 
