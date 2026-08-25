@@ -9,3 +9,8 @@ export function openChatConversation() {
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 	});
 }
+
+export function startNewChatConversation() {
+	localStorage.removeItem(appConfig.chatConversationStorageKey);
+	location.reload();
+}

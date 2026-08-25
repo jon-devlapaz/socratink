@@ -19,27 +19,95 @@
 			</span>
 		</a>
 
-		<main class="chat-surface">
+		<button
+			class="earlier-trigger"
+			id="history-tab"
+			type="button"
+			aria-expanded="false"
+			aria-haspopup="dialog"
+			aria-controls="earlier-dialog"
+			hidden
+		>
+			<span>Earlier</span>
+			<span class="earlier-count" id="history-tab-label" hidden></span>
+			<span class="earlier-caret" aria-hidden="true">
+				<span class="earlier-caret-icon is-closed">
+					<svg viewBox="0 0 16 16" fill="none">
+						<path
+							d="M3.5 6.25 8 10.75l4.5-4.5"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</span>
+				<span class="earlier-caret-icon is-open">
+					<svg viewBox="0 0 16 16" fill="none">
+						<path
+							d="M3.5 9.75 8 5.25l4.5 4.5"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</span>
+			</span>
+		</button>
+
+		<div class="earlier-layer" id="earlier-layer" aria-hidden="true">
+			<button
+				class="earlier-backdrop"
+				id="earlier-backdrop"
+				type="button"
+				tabindex="-1"
+				aria-label="Close earlier steps"
+			></button>
+			<div
+				class="earlier-panel"
+				id="earlier-dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="earlier-title"
+			>
+				<div class="earlier-panel-header">
+					<h2 id="earlier-title">Earlier</h2>
+					<button id="earlier-close" type="button">Close</button>
+				</div>
+				<ol id="messages"></ol>
+			</div>
+		</div>
+
+		<main class="stage">
 			<div class="alive-core"></div>
 
-			<section class="thought-card" aria-label="Socratink chat">
-				<ol id="messages" aria-live="polite"></ol>
-				<form id="chat">
-					<label class="sr-only" for="message">Message Socratink</label>
-					<textarea
-						id="message"
-						name="message"
-						placeholder="Message Socratink…"
-						rows="3"
-						required
-					></textarea>
-					<div class="composer-footer">
-						<span>⌘ / Ctrl + Enter</span>
-						<button aria-label="Send message" type="submit">↑</button>
-					</div>
-				</form>
+			<section class="active-node" aria-label="Current step">
+				<div class="chat-actions">
+					<button id="start-over" type="button">Start over</button>
+				</div>
+				<div id="active-turn"></div>
 			</section>
 		</main>
+
+		<footer class="dock">
+			<form id="chat">
+				<label class="sr-only" for="message">Message Socratink</label>
+				<textarea
+					id="message"
+					name="message"
+					placeholder="Message Socratink…"
+					rows="2"
+					required
+				></textarea>
+				<div class="composer-footer">
+					<span>⌘ / Ctrl + Enter</span>
+					<button aria-label="Send message" type="submit">
+						<span aria-hidden="true">↑</span>
+					</button>
+				</div>
+			</form>
+		</footer>
 
 		<script type="module" src="/main.ts"></script>
 	</body>
