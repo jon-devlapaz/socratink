@@ -3,6 +3,7 @@ import { braintrustFlueInstrumentation, initLogger } from 'braintrust';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
+import { braintrustProjectName } from './config/environment.ts';
 
 type BraintrustEnvironment = {
 	readonly BRAINTRUST_API_KEY?: string;
@@ -54,7 +55,7 @@ export function configureBraintrust<TInstrumentation>(
 	if (!apiKey) return;
 
 	dependencies.initLogger({
-		projectName: environment.BRAINTRUST_PROJECT_NAME ?? 'socratink',
+		projectName: braintrustProjectName(environment),
 		apiKey,
 	});
 

@@ -1,3 +1,10 @@
+/**
+ * Organic sphere visualization for the chat surface.
+ *
+ * Purpose: isolate the Three.js effect from conversation logic.
+ * Inputs: a mount element. Outputs: a running renderer and a dispose function.
+ * Constraints: decorative only; not learner evidence or a progress display.
+ */
 import * as THREE from 'three';
 import { fragmentShader, vertexShader } from './organic-sphere-shaders.ts';
 

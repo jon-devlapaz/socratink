@@ -1,6 +1,7 @@
 import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { setProvider } from '@flue/runtime';
+import { localModelApiKey, localModelBaseUrl } from '../config/environment.ts';
 
 setProvider(
 	createProvider({
@@ -8,7 +9,7 @@ setProvider(
 		auth: {
 			apiKey: {
 				name: 'Jon local model API key',
-				resolve: async () => ({ auth: { apiKey: process.env.JON_LOCAL_API_KEY } }),
+				resolve: async () => ({ auth: { apiKey: localModelApiKey(process.env) } }),
 			},
 		},
 		models: [
@@ -17,7 +18,7 @@ setProvider(
 				name: 'Auto',
 				api: 'openai-completions',
 				provider: 'jon-local',
-				baseUrl: process.env.JON_LOCAL_BASE_URL ?? 'http://127.0.0.1:3001/v1',
+				baseUrl: localModelBaseUrl(process.env),
 				reasoning: false,
 				input: ['text'],
 				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
