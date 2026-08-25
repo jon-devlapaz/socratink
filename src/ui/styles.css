@@ -38,11 +38,8 @@ textarea {
 	display: inline-flex;
 	align-items: center;
 	color: #1d1f1e;
-	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: clamp(1.35rem, 2.4vw, 1.75rem);
-	font-weight: 300;
 	line-height: 0.96;
-	letter-spacing: -0.035em;
 	text-decoration: none;
 }
 
@@ -61,6 +58,21 @@ textarea {
 	box-shadow:
 		inset 0 -0.035em 0.07em rgba(255, 255, 255, 0.045),
 		0 0.015em 0.04em rgba(20, 19, 17, 0.18);
+	transform-origin: center;
+}
+
+.brand-lockup.is-working .brand-mark {
+	animation: brand-breathe 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes brand-breathe {
+	from,
+	to {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.18);
+	}
 }
 
 .brand-name-viewport {
@@ -70,6 +82,8 @@ textarea {
 
 .brand-name {
 	display: block;
+	height: 0.78em;
+	width: auto;
 	transform-origin: left center;
 	transition:
 		transform 240ms cubic-bezier(0.25, 1, 0.5, 1),
@@ -102,6 +116,10 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
 	.brand-name {
 		transition: none;
+	}
+
+	.brand-lockup.is-working .brand-mark {
+		animation: none;
 	}
 }
 

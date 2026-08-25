@@ -15,11 +15,12 @@ type ChatSurfaceElements = {
 	button: HTMLButtonElement;
 	core: HTMLElement;
 	card: HTMLElement;
+	lockup: HTMLElement;
 };
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
 	const conversation = openChatConversation();
-	const { form, input, messages, button, core, card } = elements;
+	const { form, input, messages, button, core, card, lockup } = elements;
 
 	function addMessage(role: string, text: string) {
 		const item = document.createElement('li');
@@ -37,6 +38,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	function setWorking(working: boolean) {
 		button.disabled = working;
 		core.classList.toggle('is-working', working);
+		lockup.classList.toggle('is-working', working);
 		if (working) document.body.classList.add('encounter-active');
 	}
 
@@ -76,8 +78,9 @@ function queryChatSurface(): ChatSurfaceElements {
 	const button = form?.querySelector<HTMLButtonElement>('button');
 	const core = document.querySelector<HTMLElement>('.alive-core');
 	const card = document.querySelector<HTMLElement>('.thought-card');
-	if (!form || !input || !messages || !button || !core || !card) {
+	const lockup = document.querySelector<HTMLElement>('.brand-lockup');
+	if (!form || !input || !messages || !button || !core || !card || !lockup) {
 		throw new Error('Socratink chat markup is missing required nodes.');
 	}
-	return { form, input, messages, button, core, card };
+	return { form, input, messages, button, core, card, lockup };
 }
