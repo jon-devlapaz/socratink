@@ -3,17 +3,24 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { flush } from 'braintrust';
 import { createFlueClient } from '@flue/sdk';
+import { resolveBraintrustApiKey } from '../src/braintrust.ts';
+import { appConfig } from '../src/config/app.config.ts';
 
-if (!process.env.BRAINTRUST_API_KEY) {
+const apiKey = resolveBraintrustApiKey(process.env);
+if (!apiKey) {
 	throw new Error('BRAINTRUST_API_KEY is required for the live Braintrust smoke test.');
 }
+process.env.BRAINTRUST_API_KEY = apiKey;
 
-const projectName = process.env.BRAINTRUST_PROJECT_NAME;
-if (projectName !== 'socratink-synthetic') {
-	throw new Error('BRAINTRUST_PROJECT_NAME must be exactly socratink-synthetic.');
+const projectName = appConfig.braintrustProjectName;
+if (
+	process.env.BRAINTRUST_PROJECT_NAME !== undefined &&
+	process.env.BRAINTRUST_PROJECT_NAME !== projectName
+) {
+	throw new Error(`BRAINTRUST_PROJECT_NAME must be exactly ${projectName}.`);
 }
 
-const runId = `socratink-synthetic-${randomUUID()}`;
+const runId = randomUUID();
 const prompt = `Synthetic observability preflight ${runId}. Return the fixed synthetic response.`;
 const expectedReply = `Synthetic Braintrust response for ${runId}.`;
 const sockets = new Set();

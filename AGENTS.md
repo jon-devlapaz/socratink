@@ -82,13 +82,20 @@ product's Flue agent runtime, which remains a published-package dependency.
 - `src/server/` — runtime provider configuration
 - `src/ui/` — learner-facing web UI
 - `src/app.ts` — HTTP routes and static UI delivery
+- `src/config/` — app constants and environment accessors
+- `src/braintrust.ts` — optional Observability for Chat/Flue runs
+- `scripts/` — smoke and contract tests
 
 ## Verification
 
+CI is `pnpm check` then `pnpm smoke`. That is types, Braintrust config tests, production build, and the deterministic Chat smoke.
+
 ```sh
-pnpm check:types
-pnpm build
+pnpm check
+pnpm smoke
 ```
+
+`pnpm smoke:braintrust-live` proves live Observability delivery to the same project Chat uses. It requires `pnpm build` and a Braintrust API key. It is not part of CI.
 
 ## Maintainability
 

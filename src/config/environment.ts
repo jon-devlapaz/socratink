@@ -1,11 +1,3 @@
-/**
- * Typed accessors for process environment.
- *
- * Purpose: keep environment reads out of agent and UI modules.
- * Inputs: an environment map, usually `process.env`.
- * Outputs: resolved local-model settings.
- * Constraints: never commit secret values; missing keys stay undefined.
- */
 import { appConfig } from './app.config.ts';
 
 export type AppEnvironment = {

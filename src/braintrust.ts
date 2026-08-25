@@ -16,6 +16,23 @@ type BraintrustDependencies<TInstrumentation> = {
 	instrument(instrumentation: TInstrumentation): unknown;
 };
 
+const productionDependencies: BraintrustDependencies<
+	ReturnType<typeof braintrustFlueInstrumentation>
+> = {
+	initLogger,
+	createFlueInstrumentation: braintrustFlueInstrumentation,
+	instrument,
+};
+
+function isMissingFileError(error: unknown): boolean {
+	return (
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		error.code === 'ENOENT'
+	);
+}
+
 export function resolveBraintrustApiKey(
 	environment: BraintrustEnvironment,
 	startDirectory = process.cwd(),
@@ -30,14 +47,7 @@ export function resolveBraintrustApiKey(
 				.BRAINTRUST_API_KEY?.trim();
 			return fileKey || undefined;
 		} catch (error) {
-			if (
-				typeof error !== 'object' ||
-				error === null ||
-				!('code' in error) ||
-				error.code !== 'ENOENT'
-			) {
-				return undefined;
-			}
+			if (!isMissingFileError(error)) throw error;
 		}
 
 		const parent = dirname(directory);
@@ -48,7 +58,7 @@ export function resolveBraintrustApiKey(
 
 export function configureBraintrust<TInstrumentation>(
 	environment: BraintrustEnvironment,
-	dependencies: BraintrustDependencies<TInstrumentation>,
+	dependencies: BraintrustDependencies<TInstrumentation> = productionDependencies as BraintrustDependencies<TInstrumentation>,
 	startDirectory = process.cwd(),
 ): void {
 	const apiKey = resolveBraintrustApiKey(environment, startDirectory);
@@ -61,9 +71,3 @@ export function configureBraintrust<TInstrumentation>(
 
 	dependencies.instrument(dependencies.createFlueInstrumentation());
 }
-
-configureBraintrust(process.env, {
-	initLogger,
-	createFlueInstrumentation: braintrustFlueInstrumentation,
-	instrument,
-});
