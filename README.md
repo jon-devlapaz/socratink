@@ -40,24 +40,26 @@ OpenAI-compatible provider; it never requires external credentials.
 
 ## Braintrust observability
 
-Braintrust tracing is opt-in. `BRAINTRUST_API_KEY` enables initialization; when
-it is absent, Socratink does not initialize Braintrust or register its Flue
-instrumentation. `BRAINTRUST_PROJECT_NAME` selects the destination project and
-defaults to `socratink`.
+Braintrust tracing is optional. To trace normal development runs:
 
-For now, enable tracing only for synthetic or development fixtures. Do not send
-real learner traffic until Braintrust retention and access controls, plus an
-application-specific masking policy, have been reviewed and tested. Traces can
-observe run hierarchy, content, errors, tokens, cost, and correlation metadata.
-They cannot establish an Evidence Contract, learner-authored provenance,
-learner-state validity, durable learning, or causal learning lift.
+```sh
+export BRAINTRUST_API_KEY="your-api-key"
+export BRAINTRUST_PROJECT_NAME="socratink"
+pnpm dev
+```
 
-`pnpm test:braintrust` deterministically proves the local configuration
-contract: tracing remains off without a key, a configured key and project are
-forwarded exactly once, and the project fallback is `socratink`. It uses fakes
-and makes no Braintrust network call, so it does not prove live delivery,
-masking, privacy, trace shape, or evaluation quality. No evaluation suite is
-implemented yet.
+Use the normal Socratink chat, then open the `socratink` project in Braintrust
+to inspect the request, nested model calls, output, timing, token usage, and
+errors. Without `BRAINTRUST_API_KEY`, Socratink runs normally and sends no
+traces.
+
+Treat traces as development logs: they may contain prompts and responses. Use
+synthetic inputs until access, retention, and masking are configured for real
+learner data.
+
+`pnpm test:braintrust` verifies the opt-in configuration locally without making
+a network call. `pnpm smoke:braintrust-live` verifies live delivery and requires
+an explicit API key and the `socratink-synthetic` project.
 
 ## Foundation and attribution
 
