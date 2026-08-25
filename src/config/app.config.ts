@@ -1,9 +1,3 @@
-/**
- * Application constants shared by the server and the chat UI.
- *
- * Purpose: keep hardcoded product values in one place.
- * Inputs: none. Outputs: frozen configuration.
- */
 export const appConfig = {
 	chatAgentPath: '/api/agents/chat',
 	conversationStorageKey: 'vanilla-flue-chat-conversation-id',

@@ -1,11 +1,3 @@
-/**
- * Existing Socratink chat surface.
- *
- * Purpose: render messages, accept input, and show working/ready state.
- * Inputs: the current page's chat DOM nodes and a Flue conversation client.
- * Outputs: the same conversation behavior as the previous inline main.ts.
- * Constraints: render the existing chat surface only.
- */
 import { openChatConversation } from './client/conversation.ts';
 
 type ChatSurfaceElements = {
