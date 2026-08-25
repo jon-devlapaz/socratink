@@ -1,5 +1,8 @@
 import { instrument } from '@flue/runtime';
 import { braintrustFlueInstrumentation, initLogger } from 'braintrust';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 
 type BraintrustEnvironment = {
 	readonly BRAINTRUST_API_KEY?: string;
@@ -12,11 +15,42 @@ type BraintrustDependencies<TInstrumentation> = {
 	instrument(instrumentation: TInstrumentation): unknown;
 };
 
+export function resolveBraintrustApiKey(
+	environment: BraintrustEnvironment,
+	startDirectory = process.cwd(),
+): string | undefined {
+	const environmentKey = environment.BRAINTRUST_API_KEY?.trim();
+	if (environmentKey) return environmentKey;
+
+	let directory = resolve(startDirectory);
+	while (true) {
+		try {
+			const fileKey = parseEnv(readFileSync(join(directory, '.env.braintrust'), 'utf8'))
+				.BRAINTRUST_API_KEY?.trim();
+			return fileKey || undefined;
+		} catch (error) {
+			if (
+				typeof error !== 'object' ||
+				error === null ||
+				!('code' in error) ||
+				error.code !== 'ENOENT'
+			) {
+				return undefined;
+			}
+		}
+
+		const parent = dirname(directory);
+		if (parent === directory) return undefined;
+		directory = parent;
+	}
+}
+
 export function configureBraintrust<TInstrumentation>(
 	environment: BraintrustEnvironment,
 	dependencies: BraintrustDependencies<TInstrumentation>,
+	startDirectory = process.cwd(),
 ): void {
-	const apiKey = environment.BRAINTRUST_API_KEY;
+	const apiKey = resolveBraintrustApiKey(environment, startDirectory);
 	if (!apiKey) return;
 
 	dependencies.initLogger({

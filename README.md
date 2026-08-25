@@ -40,18 +40,17 @@ OpenAI-compatible provider; it never requires external credentials.
 
 ## Braintrust observability
 
-Braintrust tracing is optional. To trace normal development runs:
+Braintrust tracing is optional. Save the key once in the Git-ignored
+`.env.braintrust` file:
 
-```sh
-export BRAINTRUST_API_KEY="your-api-key"
-export BRAINTRUST_PROJECT_NAME="socratink"
-pnpm dev
+```dotenv
+BRAINTRUST_API_KEY=your-api-key
 ```
 
-Use the normal Socratink chat, then open the `socratink` project in Braintrust
-to inspect the request, nested model calls, output, timing, token usage, and
-errors. Without `BRAINTRUST_API_KEY`, Socratink runs normally and sends no
-traces.
+After that, `pnpm dev` automatically traces normal Socratink chat runs to the
+`socratink` project. Open that project in Braintrust to inspect the request,
+nested model calls, output, timing, token usage, and errors. Without an exported
+key or a `.env.braintrust` file, Socratink runs normally and sends no traces.
 
 Treat traces as development logs: they may contain prompts and responses. Use
 synthetic inputs until access, retention, and masking are configured for real

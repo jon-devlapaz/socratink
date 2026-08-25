@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 delete process.env.BRAINTRUST_API_KEY;
 delete process.env.BRAINTRUST_PROJECT_NAME;
 
-const { configureBraintrust } = await import('../src/braintrust.ts');
+const originalWorkingDirectory = process.cwd();
+process.chdir(tmpdir());
+const { configureBraintrust, resolveBraintrustApiKey } = await import('../src/braintrust.ts');
+process.chdir(originalWorkingDirectory);
 
 function createFakes() {
 	const loggerCalls = [];
@@ -32,7 +38,7 @@ function createFakes() {
 
 {
 	const fakes = createFakes();
-	configureBraintrust({}, fakes.dependencies);
+	configureBraintrust({}, fakes.dependencies, tmpdir());
 
 	assert.equal(fakes.loggerCalls.length, 0);
 	assert.equal(fakes.createdInstrumentations.length, 0);
@@ -62,6 +68,32 @@ function createFakes() {
 	assert.equal(fakes.createdInstrumentations.length, 1);
 	assert.equal(fakes.instrumentCalls.length, 1);
 	assert.strictEqual(fakes.instrumentCalls[0], fakes.createdInstrumentations[0]);
+}
+
+{
+	const fixtureRoot = await mkdtemp(join(tmpdir(), 'socratink-braintrust-'));
+	const nestedDirectory = join(fixtureRoot, 'nested', 'app');
+
+	try {
+		await mkdir(nestedDirectory, { recursive: true });
+		await writeFile(
+			join(fixtureRoot, '.env.braintrust'),
+			'BRAINTRUST_API_KEY="synthetic-file-key"\n',
+		);
+
+		assert.equal(resolveBraintrustApiKey({}, nestedDirectory), 'synthetic-file-key');
+
+		const fakes = createFakes();
+		configureBraintrust({}, fakes.dependencies, nestedDirectory);
+
+		assert.deepEqual(fakes.loggerCalls, [
+			{ apiKey: 'synthetic-file-key', projectName: 'socratink' },
+		]);
+		assert.equal(fakes.createdInstrumentations.length, 1);
+		assert.equal(fakes.instrumentCalls.length, 1);
+	} finally {
+		await rm(fixtureRoot, { recursive: true, force: true });
+	}
 }
 
 console.log('Braintrust configuration contract passed.');
