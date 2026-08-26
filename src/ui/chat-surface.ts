@@ -1,6 +1,7 @@
 import { FlueApiError } from '@flue/sdk';
 import { openChatConversation, startNewChatConversation } from './client/conversation.ts';
 import { r1OpeningMessage, r1StartingPaths } from '../config/r1-learning.ts';
+import { initAppearance, toggleAppearance } from './theme.ts';
 
 type ChatMessageRole = 'Socratink' | 'You' | 'Assistant' | 'Error';
 
@@ -20,18 +21,26 @@ type ChatSurfaceElements = {
 	messages: HTMLOListElement;
 	button: HTMLButtonElement;
 	core: HTMLElement;
-	lockup: HTMLElement;
+	lockup: HTMLButtonElement;
+	canvas: HTMLElement;
 	startOver: HTMLButtonElement;
 	activeTurn: HTMLElement;
 	activeNode: HTMLElement;
-	earlierTab: HTMLButtonElement;
-	earlierLabel: HTMLElement;
-	earlierLayer: HTMLElement;
-	earlierClose: HTMLButtonElement;
-	earlierBackdrop: HTMLButtonElement;
+	peekHandle: HTMLButtonElement;
+	menuLayer: HTMLElement;
+	menuPanel: HTMLElement;
+	menuHandle: HTMLElement;
+	menuBackdrop: HTMLButtonElement;
+	menuFirst: HTMLElement;
+	trailToggle: HTMLButtonElement;
+	trailLabel: HTMLElement;
+	appearance: HTMLButtonElement;
 };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const drawerCloseRatio = 0.25;
+const drawerFlickVelocity = 0.4;
+const peekOpenDistance = 48;
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
 	const conversation = openChatConversation();
@@ -42,17 +51,23 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		button,
 		core,
 		lockup,
+		canvas,
 		startOver,
 		activeTurn,
 		activeNode,
-		earlierTab,
-		earlierLabel,
-		earlierLayer,
-		earlierClose,
-		earlierBackdrop,
+		peekHandle,
+		menuLayer,
+		menuPanel,
+		menuHandle,
+		menuBackdrop,
+		menuFirst,
+		trailToggle,
+		trailLabel,
+		appearance,
 	} = elements;
 	let working = false;
-	let earlierOpen = false;
+	let menuOpen = false;
+	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
 
@@ -130,24 +145,99 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		return visible;
 	}
 
-	function syncEarlierTrigger() {
-		const count = messages.childElementCount;
-		earlierTab.hidden = count === 0;
-		earlierLabel.hidden = count === 0;
-		earlierLabel.textContent = count === 0 ? '' : String(count);
-		if (count === 0) setEarlierOpen(false);
+	function setTrailOpen(open: boolean) {
+		trailOpen = open && messages.childElementCount > 0;
+		trailToggle.setAttribute('aria-expanded', String(trailOpen));
+		messages.hidden = !trailOpen;
 	}
 
-	function setEarlierOpen(open: boolean) {
-		if (open && earlierTab.hidden) return;
-		if (earlierOpen === open) return;
-		earlierOpen = open;
-		earlierLayer.classList.toggle('is-open', open);
-		earlierLayer.setAttribute('aria-hidden', String(!open));
-		earlierTab.setAttribute('aria-expanded', String(open));
-		earlierLayer.inert = !open;
-		if (open) earlierClose.focus();
-		else if (!earlierTab.hidden) earlierTab.focus();
+	function syncTrail() {
+		const count = messages.childElementCount;
+		trailToggle.hidden = count === 0;
+		trailLabel.textContent = count === 1 ? '1 earlier step' : `${count} earlier steps`;
+		if (count === 0) {
+			setTrailOpen(false);
+			return;
+		}
+		messages.hidden = !trailOpen;
+	}
+
+	function setMenuOpen(open: boolean) {
+		if (menuOpen === open) return;
+		menuOpen = open;
+		menuPanel.classList.remove('is-dragging');
+		menuLayer.classList.toggle('is-open', open);
+		menuLayer.setAttribute('aria-hidden', String(!open));
+		lockup.setAttribute('aria-expanded', String(open));
+		peekHandle.setAttribute('aria-expanded', String(open));
+		canvas.inert = open;
+		peekHandle.inert = open;
+		menuLayer.inert = !open;
+		if (open) {
+			menuPanel.style.transform = '';
+			menuFirst.focus();
+			return;
+		}
+		requestAnimationFrame(() => {
+			menuPanel.style.transform = '';
+		});
+		peekHandle.focus();
+	}
+
+	function bindSheetHandle(handle: HTMLElement, { openOnDown = false } = {}) {
+		if (reduceMotion) return;
+		let dragging = false;
+		let startY = 0;
+		let lastY = 0;
+		let lastT = 0;
+		let velocity = 0;
+
+		handle.addEventListener('pointerdown', (event) => {
+			if (event.button !== 0) return;
+			if (!openOnDown && !menuOpen) return;
+			if (openOnDown && menuOpen) return;
+			dragging = true;
+			startY = event.clientY;
+			lastY = event.clientY;
+			lastT = performance.now();
+			velocity = 0;
+			if (menuOpen) menuPanel.classList.add('is-dragging');
+			handle.setPointerCapture(event.pointerId);
+		});
+
+		handle.addEventListener('pointermove', (event) => {
+			if (!dragging) return;
+			const now = performance.now();
+			const dy = event.clientY - startY;
+			if (menuOpen) {
+				const offset = dy < 0 ? dy : dy * 0.15;
+				menuPanel.style.transform = `translate3d(0, ${offset}px, 0)`;
+			}
+			velocity = (event.clientY - lastY) / Math.max(now - lastT, 1);
+			lastY = event.clientY;
+			lastT = now;
+		});
+
+		function finishDrag() {
+			if (!dragging) return;
+			dragging = false;
+			menuPanel.classList.remove('is-dragging');
+			const dy = lastY - startY;
+			if (openOnDown) {
+				if (dy > peekOpenDistance || velocity > drawerFlickVelocity) setMenuOpen(true);
+				return;
+			}
+			const height = menuPanel.getBoundingClientRect().height;
+			const shouldClose = dy < -height * drawerCloseRatio || velocity < -drawerFlickVelocity;
+			if (shouldClose) {
+				setMenuOpen(false);
+				return;
+			}
+			menuPanel.style.transform = '';
+		}
+
+		handle.addEventListener('pointerup', finishDrag);
+		handle.addEventListener('pointercancel', finishDrag);
 	}
 
 	function addStartingChoices(opening: HTMLElement) {
@@ -169,7 +259,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	async function paint({ live = false, exit = false }: PaintOptions = {}) {
 		const { earlier, current } = splitCurrent(turns);
 		messages.replaceChildren(...earlier.map((item) => createHistoryItem(item.role, item.text)));
-		syncEarlierTrigger();
+		syncTrail();
 
 		if (exit && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
 			activeTurn.classList.add('is-exiting');
@@ -206,17 +296,42 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		lockup.classList.toggle('is-working', next);
 	}
 
+	initAppearance(appearance);
 	startOver.addEventListener('click', startNewChatConversation);
-	earlierTab.addEventListener('click', () => setEarlierOpen(!earlierOpen));
-	earlierClose.addEventListener('click', () => setEarlierOpen(false));
-	earlierBackdrop.addEventListener('click', () => setEarlierOpen(false));
+	appearance.addEventListener('click', () => toggleAppearance(appearance));
+	lockup.addEventListener('click', () => setMenuOpen(!menuOpen));
+	peekHandle.addEventListener('click', () => {
+		if (!menuOpen) setMenuOpen(true);
+	});
+	menuBackdrop.addEventListener('click', () => setMenuOpen(false));
+	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 	document.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape' && earlierOpen) {
+		if (!menuOpen) return;
+		if (event.key === 'Escape') {
 			event.preventDefault();
-			setEarlierOpen(false);
+			setMenuOpen(false);
+			return;
+		}
+		if (event.key !== 'Tab') return;
+		const items = [...menuLayer.querySelectorAll<HTMLElement>('.menu-orbs a, .menu-orbs button')].filter(
+			(item) => item instanceof HTMLButtonElement ? !item.disabled : true,
+		);
+		const first = items[0];
+		const last = items.at(-1);
+		if (!first || !last) return;
+		if (event.shiftKey && document.activeElement === first) {
+			event.preventDefault();
+			last.focus();
+			return;
+		}
+		if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first.focus();
 		}
 	});
-	earlierLayer.inert = true;
+	menuLayer.inert = true;
+	bindSheetHandle(menuHandle);
+	bindSheetHandle(peekHandle, { openOnDown: true });
 
 	input.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -295,15 +410,20 @@ function queryChatSurface(): ChatSurfaceElements {
 	const messages = document.querySelector<HTMLOListElement>('#messages');
 	const button = form?.querySelector<HTMLButtonElement>('button');
 	const core = document.querySelector<HTMLElement>('.alive-core');
-	const lockup = document.querySelector<HTMLElement>('.brand-lockup');
+	const lockup = document.querySelector<HTMLButtonElement>('#menu-trigger');
 	const startOver = document.querySelector<HTMLButtonElement>('#start-over');
 	const activeTurn = document.querySelector<HTMLElement>('#active-turn');
 	const activeNode = document.querySelector<HTMLElement>('.active-node');
-	const earlierTab = document.querySelector<HTMLButtonElement>('#history-tab');
-	const earlierLabel = document.querySelector<HTMLElement>('#history-tab-label');
-	const earlierLayer = document.querySelector<HTMLElement>('#earlier-layer');
-	const earlierClose = document.querySelector<HTMLButtonElement>('#earlier-close');
-	const earlierBackdrop = document.querySelector<HTMLButtonElement>('#earlier-backdrop');
+	const peekHandle = document.querySelector<HTMLButtonElement>('#peek-handle');
+	const menuLayer = document.querySelector<HTMLElement>('#menu-layer');
+	const menuPanel = document.querySelector<HTMLElement>('#menu-dialog');
+	const menuHandle = document.querySelector<HTMLElement>('#menu-handle');
+	const menuBackdrop = document.querySelector<HTMLButtonElement>('#menu-backdrop');
+	const menuFirst = document.querySelector<HTMLElement>('.menu-orbs a, .menu-orbs button');
+	const trailToggle = document.querySelector<HTMLButtonElement>('#trail-toggle');
+	const trailLabel = document.querySelector<HTMLElement>('#trail-toggle-label');
+	const appearance = document.querySelector<HTMLButtonElement>('#appearance-toggle');
+	const canvas = lockup?.closest<HTMLElement>('.app-canvas');
 	if (
 		!form ||
 		!input ||
@@ -311,14 +431,19 @@ function queryChatSurface(): ChatSurfaceElements {
 		!button ||
 		!core ||
 		!lockup ||
+		!canvas ||
 		!startOver ||
 		!activeTurn ||
 		!activeNode ||
-		!earlierTab ||
-		!earlierLabel ||
-		!earlierLayer ||
-		!earlierClose ||
-		!earlierBackdrop
+		!peekHandle ||
+		!menuLayer ||
+		!menuPanel ||
+		!menuHandle ||
+		!menuBackdrop ||
+		!menuFirst ||
+		!trailToggle ||
+		!trailLabel ||
+		!appearance
 	) {
 		throw new Error('Socratink chat markup is missing required nodes.');
 	}
@@ -329,13 +454,18 @@ function queryChatSurface(): ChatSurfaceElements {
 		button,
 		core,
 		lockup,
+		canvas,
 		startOver,
 		activeTurn,
 		activeNode,
-		earlierTab,
-		earlierLabel,
-		earlierLayer,
-		earlierClose,
-		earlierBackdrop,
+		peekHandle,
+		menuLayer,
+		menuPanel,
+		menuHandle,
+		menuBackdrop,
+		menuFirst,
+		trailToggle,
+		trailLabel,
+		appearance,
 	};
 }
