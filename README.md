@@ -22,12 +22,16 @@ The app reads these local environment settings without committing their values:
   `http://127.0.0.1:3001/v1`
 - `JON_LOCAL_API_KEY` — the endpoint's API key when required
 
+On Vercel (`VERCEL=1`), Chat always uses AI Gateway. Local `JON_LOCAL_*`
+settings do not override that.
+
 ## Verify the app
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm check:types
 pnpm test:braintrust
+pnpm test:chat-model
 pnpm build
 pnpm smoke
 pnpm audit --prod

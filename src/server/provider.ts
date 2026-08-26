@@ -1,27 +1,25 @@
 import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { setProvider } from '@flue/runtime';
-import { localModelApiKey, localModelBaseUrl, localModelId } from '../config/environment.ts';
-
-const modelId = localModelId(process.env);
+import { chatModel, resolveChatModel } from '../config/chat-model.ts';
 
 setProvider(
 	createProvider({
-		id: 'jon-local',
+		id: chatModel.providerId,
 		auth: {
 			apiKey: {
-				name: 'Jon local model API key',
-				resolve: async () => ({ auth: { apiKey: localModelApiKey(process.env) } }),
+				name: 'Chat model API key',
+				resolve: async () => ({ auth: { apiKey: resolveChatModel(process.env).apiKey } }),
 			},
 		},
 		models: [
 			{
-				id: modelId,
-				name: modelId,
+				id: chatModel.modelId,
+				name: chatModel.modelId,
 				api: 'openai-completions',
-				provider: 'jon-local',
-				baseUrl: localModelBaseUrl(process.env),
-				reasoning: false,
+				provider: chatModel.providerId,
+				baseUrl: chatModel.baseUrl,
+				reasoning: chatModel.reasoning,
 				input: ['text'],
 				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 				contextWindow: 1_048_576,

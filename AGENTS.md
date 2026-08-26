@@ -88,7 +88,7 @@ product's Flue agent runtime, which remains a published-package dependency.
 
 ## Verification
 
-CI is `pnpm check` then `pnpm smoke`. That is types, Braintrust config tests, production build, and the deterministic Chat smoke.
+CI is `pnpm check` then `pnpm smoke`. That is types, Braintrust config tests, Chat model routing tests, production build, and the deterministic Chat smoke.
 
 ```sh
 pnpm check

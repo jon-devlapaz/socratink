@@ -37,6 +37,9 @@ jobs:
       - name: Run Braintrust configuration tests
         run: pnpm test:braintrust
 
+      - name: Run Chat model routing tests
+        run: pnpm test:chat-model
+
       - name: Build production application
         run: pnpm build
 
