@@ -116,6 +116,20 @@ function createFakes() {
 }
 
 {
+	const fakes = createFakes();
+	const alreadyInstalled = new Error('already installed');
+	alreadyInstalled.name = 'InstrumentationAlreadyInstalledError';
+	fakes.dependencies.instrument = () => {
+		throw alreadyInstalled;
+	};
+
+	configureBraintrust({ BRAINTRUST_API_KEY: 'synthetic-test-key' }, fakes.dependencies);
+
+	assert.equal(fakes.loggerCalls.length, 1);
+	assert.equal(fakes.createdInstrumentations.length, 1);
+}
+
+{
 	const result = spawnSync(process.execPath, ['scripts/braintrust-live-smoke.mjs'], {
 		encoding: 'utf8',
 		env: {

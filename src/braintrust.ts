@@ -69,5 +69,13 @@ export function configureBraintrust<TInstrumentation>(
 		apiKey,
 	});
 
-	dependencies.instrument(dependencies.createFlueInstrumentation());
+	try {
+		dependencies.instrument(dependencies.createFlueInstrumentation());
+	} catch (error) {
+		if (!isInstrumentationAlreadyInstalled(error)) throw error;
+	}
+}
+
+function isInstrumentationAlreadyInstalled(error: unknown): boolean {
+	return error instanceof Error && error.name === 'InstrumentationAlreadyInstalledError';
 }
