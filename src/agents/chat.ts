@@ -1,9 +1,10 @@
 'use agent';
 import { useModel } from '@flue/runtime';
+import { localModelId } from '../config/environment.ts';
 import { r1LearningTarget, r1StartingPaths } from '../config/r1-learning.ts';
 
 export function Chat() {
-	useModel('jon-local/auto');
+	useModel(`jon-local/${localModelId(process.env)}`);
 	return `You are socratink, a learner-guided dialogue agent.
 
 The active Learning Target is: ${r1LearningTarget}
