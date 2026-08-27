@@ -6,6 +6,7 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromParts,
 	questionnaireFromReplyData,
+	questionnaireUserMessage,
 } from '../src/ui/questionnaire.ts';
 
 const validDefinition = {
@@ -119,6 +120,32 @@ test('preserves a selected choice and its freeform explanation in the same answe
 		]),
 		'Questionnaire answers:\n- Should the agent continue, stop, or pause now?: Pause and ask the user, The known file path returned File not found.',
 	);
+});
+
+test('opening submit is the selected path; assistant submit is formatted answers', () => {
+	const questionnaire = parseQuestionnaireDefinition(validDefinition);
+	assert.ok(questionnaire);
+	const answers = [
+		{ name: 'path', values: ['I want to explore a worked example of one synapse.'] },
+		{ name: 'why', values: [], skipped: true },
+	];
+	assert.equal(
+		questionnaireUserMessage('opening', questionnaire, answers),
+		'I want to explore a worked example of one synapse.',
+	);
+	assert.equal(
+		questionnaireUserMessage('assistant', questionnaire, answers),
+		formatQuestionnaireAnswers(questionnaire, answers),
+	);
+	assert.equal(questionnaireUserMessage('opening', questionnaire, []), undefined);
+});
+
+test('the card mounts questionnaires from turn data, not a post-paint inject', async () => {
+	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	const widgetSource = await readFile(new URL('../src/ui/questionnaire.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(surfaceSource, /addStartingChoices/);
+	assert.match(surfaceSource, /startingPathQuestionnaire/);
+	assert.doesNotMatch(widgetSource, /onSubmit\(formatQuestionnaireAnswers/);
 });
 
 test('the agent mounts the Flue-native questionnaire writer and presentation tool', async () => {

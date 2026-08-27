@@ -42,6 +42,23 @@ export function formatQuestionnaireAnswers(
 	return `Questionnaire answers:\n${lines.join('\n')}`;
 }
 
+export function questionnaireUserMessage(
+	source: 'opening' | 'assistant',
+	definition: QuestionnaireDefinition,
+	answers: QuestionnaireAnswer[],
+): string | undefined {
+	switch (source) {
+		case 'opening':
+			return answers[0]?.values[0];
+		case 'assistant':
+			return formatQuestionnaireAnswers(definition, answers);
+		default: {
+			const exhaustive: never = source;
+			return exhaustive;
+		}
+	}
+}
+
 function createButton(label: string, className: string): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
@@ -70,7 +87,7 @@ function hasAnswer(answer: QuestionnaireAnswer): boolean {
 
 export function createQuestionnaire(
 	definition: QuestionnaireDefinition,
-	onSubmit: (message: string, answers: QuestionnaireAnswer[]) => void,
+	onSubmit: (answers: QuestionnaireAnswer[]) => void,
 ): HTMLFormElement {
 	const form = document.createElement('form');
 	form.className = 'questionnaire';
@@ -227,8 +244,7 @@ export function createQuestionnaire(
 	form.addEventListener('submit', (event) => {
 		event.preventDefault();
 		if (!validateCurrent()) return;
-		const answers = definition.items.map((item) => collectAnswer(form, item));
-		onSubmit(formatQuestionnaireAnswers(definition, answers), answers);
+		onSubmit(definition.items.map((item) => collectAnswer(form, item)));
 	});
 	form.addEventListener('keydown', (event) => {
 		if (event.target instanceof HTMLInputElement && event.target.type === 'text') return;

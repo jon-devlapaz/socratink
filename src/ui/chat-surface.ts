@@ -14,6 +14,7 @@ import {
 	createQuestionnaireSummary,
 	questionnaireFromParts,
 	questionnaireFromReplyData,
+	questionnaireUserMessage,
 } from './questionnaire.ts';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 
@@ -104,18 +105,14 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		}
 	}
 
-	function createLabeledBody(
-		role: ChatMessageRole,
-		text: string,
-		questionnaire?: QuestionnaireDefinition,
-	) {
+	function createLabeledBody(role: ChatMessageRole, text: string) {
 		const label = document.createElement('span');
 		label.className = 'turn-label';
 		label.textContent = displayLabel(role);
 		const body = document.createElement('p');
 		body.textContent = text;
 		if (!text) body.hidden = true;
-		return { label, body, questionnaire };
+		return { label, body };
 	}
 
 	function createHistoryItem(
@@ -125,28 +122,33 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	) {
 		const item = document.createElement('li');
 		item.className = role.toLowerCase();
-		const labeled = createLabeledBody(role, text, questionnaire);
-		const { label, body } = labeled;
+		const { label, body } = createLabeledBody(role, text);
 		item.append(label, body);
-		if (labeled.questionnaire) item.append(createQuestionnaireSummary(labeled.questionnaire));
+		if (questionnaire) item.append(createQuestionnaireSummary(questionnaire));
 		return item;
 	}
 
 	function createActiveTurn(
 		role: ChatMessageRole,
 		text: string,
-		questionnaire?: QuestionnaireDefinition,
-		{ announce = false, stagger = false } = {},
+		questionnaire: QuestionnaireDefinition | undefined,
+		{ announce = false, stagger = false, interactive = false } = {},
 	) {
 		const wrap = document.createElement('div');
 		wrap.className = `turn ${role.toLowerCase()}`;
 		if (announce) wrap.setAttribute('aria-live', 'polite');
 		if (stagger) wrap.classList.add('stagger-item');
-		const labeled = createLabeledBody(role, text, questionnaire);
-		const { label, body } = labeled;
+		const { label, body } = createLabeledBody(role, text);
 		wrap.append(label, body);
-		if (labeled.questionnaire && role === 'Assistant') {
-			wrap.append(createQuestionnaire(labeled.questionnaire, (answer) => void sendMessage(answer)));
+		if (questionnaire && interactive) {
+			wrap.append(
+				createQuestionnaire(questionnaire, (answers) => {
+					const source = questionnaireSource(role);
+					if (!source) return;
+					const message = questionnaireUserMessage(source, questionnaire, answers);
+					if (message) void sendMessage(message);
+				}),
+			);
 		}
 		return wrap;
 	}
@@ -189,6 +191,22 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		return (
 			items.length === 1 && opening?.role === 'Socratink' && opening.text === r1OpeningMessage
 		);
+	}
+
+	function questionnaireSource(role: ChatMessageRole): 'opening' | 'assistant' | undefined {
+		switch (role) {
+			case 'Socratink':
+				return 'opening';
+			case 'Assistant':
+				return 'assistant';
+			case 'You':
+			case 'Error':
+				return undefined;
+			default: {
+				const exhaustive: never = role;
+				return exhaustive;
+			}
+		}
 	}
 
 	function closesBeat(role: ChatMessageRole): boolean {
@@ -327,8 +345,8 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		handle.addEventListener('pointercancel', finishDrag);
 	}
 
-	function addStartingChoices(opening: HTMLElement) {
-		const questionnaire = {
+	function startingPathQuestionnaire(): QuestionnaireDefinition {
+		return {
 			kind: 'question',
 			submitLabel: 'Start',
 			items: [
@@ -344,13 +362,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					})),
 				},
 			],
-		} satisfies QuestionnaireDefinition;
-		opening.append(
-			createQuestionnaire(questionnaire, (_message, answers) => {
-				const selectedPath = answers[0]?.values[0];
-				if (selectedPath) void sendMessage(selectedPath);
-			}),
-		);
+		};
 	}
 
 	async function paint(kind: PaintKind) {
@@ -373,6 +385,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					return createActiveTurn(item.role, item.text, item.questionnaire, {
 						announce: kind === 'hold' && isLast,
 						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast,
+						interactive: isLast && Boolean(item.questionnaire),
 					});
 				}),
 			);
@@ -381,11 +394,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
-
-			if (isFreshOpening(turns)) {
-				const opening = activeTurn.querySelector<HTMLElement>(':scope > .turn');
-				if (opening) addStartingChoices(opening);
-			}
 		};
 
 		switch (kind) {
@@ -524,7 +532,14 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					return;
 				}
 			}
-			turns = [{ role: 'Socratink', text: r1OpeningMessage }, ...visible];
+			turns = [
+				{
+					role: 'Socratink',
+					text: r1OpeningMessage,
+					...(visible.length === 0 ? { questionnaire: startingPathQuestionnaire() } : {}),
+				},
+				...visible,
+			];
 			await paint(isFreshOpening(turns) ? 'opening' : 'restore');
 		} finally {
 			setWorking(false);
