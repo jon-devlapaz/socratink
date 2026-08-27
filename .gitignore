@@ -50,3 +50,4 @@ skills-lock.json
 # Python bytecode from Brain helper smoke tests
 __pycache__/
 .variate/
+.cursor/
