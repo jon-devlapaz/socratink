@@ -149,19 +149,6 @@ export function createQuestionnaire(
 			if (item.input.placeholder) input.placeholder = item.input.placeholder;
 			inputLabel.append(labelText, input);
 			choices.append(inputLabel);
-			if (!item.multiple) {
-				input.addEventListener('input', () => {
-					if (!input.value.trim()) return;
-					for (const choice of fieldset.querySelectorAll<HTMLInputElement>('input[data-choice-for]')) {
-						choice.checked = false;
-					}
-				});
-				fieldset.addEventListener('change', (event) => {
-					if (event.target instanceof HTMLInputElement && event.target.dataset.choiceFor) {
-						input.value = '';
-					}
-				});
-			}
 		}
 		fieldset.append(choices);
 

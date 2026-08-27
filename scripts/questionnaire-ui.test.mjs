@@ -93,6 +93,34 @@ test('formats selected, freeform, and skipped answers as explicit learner text',
 	);
 });
 
+test('preserves a selected choice and its freeform explanation in the same answer', () => {
+	const questionnaire = parseQuestionnaireDefinition({
+		kind: 'quiz',
+		submitLabel: 'Submit decision',
+		items: [
+			{
+				name: 'next_step',
+				prompt: 'Should the agent continue, stop, or pause now?',
+				required: true,
+				multiple: false,
+				choices: [{ value: 'pause', label: 'Pause and ask the user' }],
+				input: { label: 'Observable reason' },
+			},
+		],
+	});
+	assert.ok(questionnaire);
+	assert.equal(
+		formatQuestionnaireAnswers(questionnaire, [
+			{
+				name: 'next_step',
+				values: ['pause'],
+				freeform: 'The known file path returned File not found.',
+			},
+		]),
+		'Questionnaire answers:\n- Should the agent continue, stop, or pause now?: Pause and ask the user, The known file path returned File not found.',
+	);
+});
+
 test('the agent mounts the Flue-native questionnaire writer and presentation tool', async () => {
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
