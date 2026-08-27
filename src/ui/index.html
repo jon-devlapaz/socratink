@@ -59,22 +59,37 @@
 				<div class="alive-core"></div>
 
 				<section class="active-node" aria-label="Current step">
-					<button class="trail-toggle" id="trail-toggle" type="button" hidden aria-expanded="false">
-						<span id="trail-toggle-label">Earlier steps</span>
-						<span class="trail-caret" aria-hidden="true">
-							<svg viewBox="0 0 16 16" fill="none">
-								<path
-									d="M3.5 6.25 8 10.75l4.5-4.5"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</span>
+					<div class="active-scroll">
+						<button class="trail-toggle" id="trail-toggle" type="button" hidden aria-expanded="false">
+							<span id="trail-toggle-label">Earlier steps</span>
+							<span class="trail-caret" aria-hidden="true">
+								<svg viewBox="0 0 16 16" fill="none">
+									<path
+										d="M3.5 6.25 8 10.75l4.5-4.5"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</span>
+						</button>
+						<ol id="messages" hidden></ol>
+						<div id="active-turn"></div>
+						<div class="turn-spacer" id="turn-spacer" aria-hidden="true"></div>
+					</div>
+					<button class="jump-latest" id="jump-latest" type="button" hidden aria-label="Jump to latest">
+						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path
+								d="M3.5 6.25 8 10.75l4.5-4.5"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						Latest
 					</button>
-					<ol id="messages" hidden></ol>
-					<div id="active-turn"></div>
 				</section>
 			</main>
 
