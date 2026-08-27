@@ -1,19 +1,31 @@
 import { FlueApiError } from '@flue/sdk';
-import { openChatConversation, startNewChatConversation } from './client/conversation.ts';
+import {
+	chatTurnErrorMessage,
+	openChatConversation,
+	sendChatTurn,
+	startNewChatConversation,
+} from './client/conversation.ts';
 import { r1OpeningMessage, r1StartingPaths } from '../config/r1-learning.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
+import { pendingWordAt, pendingWords } from './pending-words.ts';
+import { attachTranscriptScroll } from './transcript-scroll.ts';
+import {
+	createQuestionnaire,
+	createQuestionnaireSummary,
+	questionnaireFromParts,
+	questionnaireFromReplyData,
+} from './questionnaire.ts';
+import type { QuestionnaireDefinition } from '../questionnaire.ts';
 
 type ChatMessageRole = 'Socratink' | 'You' | 'Assistant' | 'Error';
 
 type DisplayedTurn = {
 	role: ChatMessageRole;
 	text: string;
+	questionnaire?: QuestionnaireDefinition;
 };
 
-type PaintOptions = {
-	live?: boolean;
-	exit?: boolean;
-};
+type PaintKind = 'opening' | 'restore' | 'new-turn' | 'hold';
 
 type ChatSurfaceElements = {
 	form: HTMLFormElement;
@@ -24,8 +36,8 @@ type ChatSurfaceElements = {
 	lockup: HTMLButtonElement;
 	canvas: HTMLElement;
 	startOver: HTMLButtonElement;
+	card: HTMLElement;
 	activeTurn: HTMLElement;
-	activeNode: HTMLElement;
 	peekHandle: HTMLButtonElement;
 	menuLayer: HTMLElement;
 	menuPanel: HTMLElement;
@@ -41,6 +53,7 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 const drawerCloseRatio = 0.25;
 const drawerFlickVelocity = 0.4;
 const peekOpenDistance = 48;
+const pendingWordIntervalMs = 4000;
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
 	const conversation = openChatConversation();
@@ -53,8 +66,8 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		lockup,
 		canvas,
 		startOver,
+		card,
 		activeTurn,
-		activeNode,
 		peekHandle,
 		menuLayer,
 		menuPanel,
@@ -70,38 +83,104 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
+	const transcript = attachTranscriptScroll(card);
 
 	function wait(ms: number) {
 		return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 	}
 
-	function createLabeledBody(role: ChatMessageRole, text: string) {
-		const label = document.createElement('span');
-		label.textContent = role;
-		const body = document.createElement('p');
-		body.textContent = text;
-		return { label, body };
+	function displayLabel(role: ChatMessageRole): string {
+		switch (role) {
+			case 'Assistant':
+				return 'Socratink';
+			case 'Socratink':
+			case 'You':
+			case 'Error':
+				return role;
+			default: {
+				const exhaustive: never = role;
+				return exhaustive;
+			}
+		}
 	}
 
-	function createHistoryItem(role: ChatMessageRole, text: string) {
+	function createLabeledBody(
+		role: ChatMessageRole,
+		text: string,
+		questionnaire?: QuestionnaireDefinition,
+	) {
+		const label = document.createElement('span');
+		label.className = 'turn-label';
+		label.textContent = displayLabel(role);
+		const body = document.createElement('p');
+		body.textContent = text;
+		if (!text) body.hidden = true;
+		return { label, body, questionnaire };
+	}
+
+	function createHistoryItem(
+		role: ChatMessageRole,
+		text: string,
+		questionnaire?: QuestionnaireDefinition,
+	) {
 		const item = document.createElement('li');
 		item.className = role.toLowerCase();
-		const { label, body } = createLabeledBody(role, text);
+		const labeled = createLabeledBody(role, text, questionnaire);
+		const { label, body } = labeled;
 		item.append(label, body);
+		if (labeled.questionnaire) item.append(createQuestionnaireSummary(labeled.questionnaire));
 		return item;
 	}
 
 	function createActiveTurn(
 		role: ChatMessageRole,
 		text: string,
+		questionnaire?: QuestionnaireDefinition,
 		{ announce = false, stagger = false } = {},
 	) {
 		const wrap = document.createElement('div');
 		wrap.className = `turn ${role.toLowerCase()}`;
 		if (announce) wrap.setAttribute('aria-live', 'polite');
 		if (stagger) wrap.classList.add('stagger-item');
-		const { label, body } = createLabeledBody(role, text);
+		const labeled = createLabeledBody(role, text, questionnaire);
+		const { label, body } = labeled;
 		wrap.append(label, body);
+		if (labeled.questionnaire && role === 'Assistant') {
+			wrap.append(createQuestionnaire(labeled.questionnaire, (answer) => void sendMessage(answer)));
+		}
+		return wrap;
+	}
+
+	function createPendingTurn() {
+		let index = Math.floor(Math.random() * pendingWords.length);
+		const wrap = document.createElement('div');
+		wrap.className = 'turn pending';
+		wrap.setAttribute('aria-live', 'polite');
+		wrap.setAttribute('aria-label', 'Waiting for a reply');
+		const body = document.createElement('p');
+		const dot = document.createElement('span');
+		dot.className = 'pending-dot';
+		dot.setAttribute('aria-hidden', 'true');
+		const label = document.createElement('span');
+		label.className = 'pending-word is-shimmering';
+		label.setAttribute('aria-hidden', 'true');
+		label.textContent = pendingWordAt(index);
+		body.append(dot, label);
+		wrap.append(body);
+		const timer = window.setInterval(() => {
+			index = (index + 1) % pendingWords.length;
+			label.textContent = pendingWordAt(index);
+			label.classList.remove('is-shimmering');
+			requestAnimationFrame(() => {
+				if (wrap.isConnected) label.classList.add('is-shimmering');
+			});
+		}, pendingWordIntervalMs);
+		const observer = new MutationObserver(() => {
+			if (wrap.isConnected) return;
+			window.clearInterval(timer);
+			observer.disconnect();
+		});
+		observer.observe(activeTurn, { childList: true });
 		return wrap;
 	}
 
@@ -112,19 +191,16 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		);
 	}
 
+	function closesBeat(role: ChatMessageRole): boolean {
+		return role === 'Assistant' || role === 'Error';
+	}
+
 	function splitCurrent(items: DisplayedTurn[]): { earlier: DisplayedTurn[]; current: DisplayedTurn[] } {
-		if (items.length === 0) return { earlier: [], current: [] };
-		const last = items.at(-1);
-		const previous = items.at(-2);
-		if (
-			last &&
-			previous &&
-			(last.role === 'Assistant' || last.role === 'Error') &&
-			previous.role === 'You'
-		) {
-			return { earlier: items.slice(0, -2), current: items.slice(-2) };
-		}
-		return { earlier: items.slice(0, -1), current: items.slice(-1) };
+		const lastReply = items.findLastIndex((item) => closesBeat(item.role));
+		if (lastReply < 0) return { earlier: [], current: items };
+		const start =
+			lastReply > 0 && items[lastReply - 1]?.role === 'You' ? lastReply - 1 : lastReply;
+		return { earlier: items.slice(0, start), current: items.slice(start) };
 	}
 
 	function visibleTurnsFromHistory(
@@ -139,16 +215,25 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				.filter((part) => part.type === 'text')
 				.map((part) => part.text)
 				.join('\n\n');
-			if (!text) continue;
-			visible.push({ role: message.role === 'user' ? 'You' : 'Assistant', text });
+			const questionnaire =
+				message.role === 'assistant' ? questionnaireFromParts(message.parts) : undefined;
+			if (!text && !questionnaire) continue;
+			visible.push({
+				role: message.role === 'user' ? 'You' : 'Assistant',
+				text,
+				...(questionnaire ? { questionnaire } : {}),
+			});
 		}
 		return visible;
 	}
 
 	function setTrailOpen(open: boolean) {
-		trailOpen = open && messages.childElementCount > 0;
-		trailToggle.setAttribute('aria-expanded', String(trailOpen));
-		messages.hidden = !trailOpen;
+		if (open) transcript.stopFollowing();
+		void transcript.preserveAround(() => {
+			trailOpen = open && messages.childElementCount > 0;
+			trailToggle.setAttribute('aria-expanded', String(trailOpen));
+			messages.hidden = !trailOpen;
+		});
 	}
 
 	function syncTrail() {
@@ -156,7 +241,9 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		trailToggle.hidden = count === 0;
 		trailLabel.textContent = count === 1 ? '1 earlier step' : `${count} earlier steps`;
 		if (count === 0) {
-			setTrailOpen(false);
+			trailOpen = false;
+			trailToggle.setAttribute('aria-expanded', 'false');
+			messages.hidden = true;
 			return;
 		}
 		messages.hidden = !trailOpen;
@@ -241,50 +328,87 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	}
 
 	function addStartingChoices(opening: HTMLElement) {
-		const choices = document.createElement('div');
-		choices.className = 'learning-paths';
-		for (const path of r1StartingPaths) {
-			const choice = document.createElement('button');
-			choice.type = 'button';
-			choice.textContent = path.label;
-			choice.addEventListener('click', () => {
-				choices.remove();
-				void sendMessage(path.message);
-			});
-			choices.append(choice);
-		}
-		opening.append(choices);
-	}
-
-	async function paint({ live = false, exit = false }: PaintOptions = {}) {
-		const { earlier, current } = splitCurrent(turns);
-		messages.replaceChildren(...earlier.map((item) => createHistoryItem(item.role, item.text)));
-		syncTrail();
-
-		if (exit && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
-			activeTurn.classList.add('is-exiting');
-			await wait(150);
-			activeTurn.classList.remove('is-exiting');
-		}
-
-		const motion = live && hasEntered && !reduceMotion;
-		activeTurn.replaceChildren(
-			...current.map((item, index) => {
-				const isLast = index === current.length - 1;
-				return createActiveTurn(item.role, item.text, {
-					announce: live && (exit || isLast),
-					stagger: motion && (exit || isLast),
-				});
+		const questionnaire = {
+			kind: 'question',
+			submitLabel: 'Start',
+			items: [
+				{
+					name: 'starting-path',
+					prompt: 'How would you like to start?',
+					required: true,
+					multiple: false,
+					choices: r1StartingPaths.map((path, index) => ({
+						value: path.message,
+						label: path.label,
+						shortcut: String(index + 1),
+					})),
+				},
+			],
+		} satisfies QuestionnaireDefinition;
+		opening.append(
+			createQuestionnaire(questionnaire, (_message, answers) => {
+				const selectedPath = answers[0]?.values[0];
+				if (selectedPath) void sendMessage(selectedPath);
 			}),
 		);
-		if (live) hasEntered = true;
-		document.body.classList.toggle('encounter-active', turns.length > 1);
+	}
 
-		if (isFreshOpening(turns)) {
-			const opening = activeTurn.querySelector<HTMLElement>(':scope > .turn');
-			if (opening) addStartingChoices(opening);
+	async function paint(kind: PaintKind) {
+		const render = async () => {
+			const { earlier, current } = splitCurrent(turns);
+			messages.replaceChildren(
+				...earlier.map((item) => createHistoryItem(item.role, item.text, item.questionnaire)),
+			);
+			syncTrail();
+
+			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
+				activeTurn.classList.add('is-exiting');
+				await wait(150);
+				activeTurn.classList.remove('is-exiting');
+			}
+
+			activeTurn.replaceChildren(
+				...current.map((item, index) => {
+					const isLast = index === current.length - 1;
+					return createActiveTurn(item.role, item.text, item.questionnaire, {
+						announce: kind === 'hold' && isLast,
+						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast,
+					});
+				}),
+			);
+			if (kind === 'new-turn' && current.at(-1)?.role === 'You') {
+				activeTurn.append(createPendingTurn());
+			}
+			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
+			document.body.classList.toggle('encounter-active', turns.length > 1);
+
+			if (isFreshOpening(turns)) {
+				const opening = activeTurn.querySelector<HTMLElement>(':scope > .turn');
+				if (opening) addStartingChoices(opening);
+			}
+		};
+
+		switch (kind) {
+			case 'hold':
+				await transcript.hold(render);
+				return;
+			case 'new-turn':
+				await render();
+				transcript.followLiveEdge();
+				return;
+			case 'restore':
+				await render();
+				transcript.pinCurrentStart();
+				return;
+			case 'opening':
+				await render();
+				transcript.refresh();
+				return;
+			default: {
+				const exhaustive: never = kind;
+				return exhaustive;
+			}
 		}
-		activeNode.scrollTop = activeNode.scrollHeight;
 	}
 
 	function setWorking(next: boolean) {
@@ -345,22 +469,29 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		setWorking(true);
 		turns = [...turns, { role: 'You', text }];
 		input.value = '';
-		await paint({ live: true, exit: true });
+		await paint('new-turn');
 
 		try {
-			const admission = await conversation.send({ message: { kind: 'user', body: text } });
-			const reply = await conversation.read(admission);
-			turns = [...turns, { role: 'Assistant', text: reply.text }];
-			await paint({ live: true });
+			const reply = await sendChatTurn(conversation, text);
+			const questionnaire = questionnaireFromReplyData(reply.data);
+			turns = [
+				...turns,
+				{
+					role: 'Assistant',
+					text: reply.text,
+					...(questionnaire ? { questionnaire } : {}),
+				},
+			];
+			await paint('hold');
 		} catch (error) {
 			turns = [
 				...turns,
 				{
 					role: 'Error',
-					text: error instanceof Error ? error.message : 'Unable to get a reply.',
+					text: chatTurnErrorMessage(error),
 				},
 			];
-			await paint({ live: true });
+			await paint('hold');
 		} finally {
 			setWorking(false);
 			input.focus();
@@ -389,12 +520,12 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 							text: error instanceof Error ? error.message : 'Unable to restore this conversation.',
 						},
 					];
-					await paint();
+					await paint('restore');
 					return;
 				}
 			}
 			turns = [{ role: 'Socratink', text: r1OpeningMessage }, ...visible];
-			await paint();
+			await paint(isFreshOpening(turns) ? 'opening' : 'restore');
 		} finally {
 			setWorking(false);
 			input.focus();
@@ -404,68 +535,36 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	void restoreConversation();
 }
 
+function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {
+	const node = root.querySelector<T>(selector);
+	if (!node) throw new Error('Socratink chat markup is missing required nodes.');
+	return node;
+}
+
 function queryChatSurface(): ChatSurfaceElements {
-	const form = document.querySelector<HTMLFormElement>('#chat');
-	const input = document.querySelector<HTMLTextAreaElement>('#message');
-	const messages = document.querySelector<HTMLOListElement>('#messages');
-	const button = form?.querySelector<HTMLButtonElement>('button');
-	const core = document.querySelector<HTMLElement>('.alive-core');
-	const lockup = document.querySelector<HTMLButtonElement>('#menu-trigger');
-	const startOver = document.querySelector<HTMLButtonElement>('#start-over');
-	const activeTurn = document.querySelector<HTMLElement>('#active-turn');
-	const activeNode = document.querySelector<HTMLElement>('.active-node');
-	const peekHandle = document.querySelector<HTMLButtonElement>('#peek-handle');
-	const menuLayer = document.querySelector<HTMLElement>('#menu-layer');
-	const menuPanel = document.querySelector<HTMLElement>('#menu-dialog');
-	const menuHandle = document.querySelector<HTMLElement>('#menu-handle');
-	const menuBackdrop = document.querySelector<HTMLButtonElement>('#menu-backdrop');
-	const menuFirst = document.querySelector<HTMLElement>('.menu-orbs a, .menu-orbs button');
-	const trailToggle = document.querySelector<HTMLButtonElement>('#trail-toggle');
-	const trailLabel = document.querySelector<HTMLElement>('#trail-toggle-label');
-	const appearance = document.querySelector<HTMLButtonElement>('#appearance-toggle');
-	const canvas = lockup?.closest<HTMLElement>('.app-canvas');
-	if (
-		!form ||
-		!input ||
-		!messages ||
-		!button ||
-		!core ||
-		!lockup ||
-		!canvas ||
-		!startOver ||
-		!activeTurn ||
-		!activeNode ||
-		!peekHandle ||
-		!menuLayer ||
-		!menuPanel ||
-		!menuHandle ||
-		!menuBackdrop ||
-		!menuFirst ||
-		!trailToggle ||
-		!trailLabel ||
-		!appearance
-	) {
-		throw new Error('Socratink chat markup is missing required nodes.');
-	}
+	const form = requireElement<HTMLFormElement>('#chat');
+	const lockup = requireElement<HTMLButtonElement>('#menu-trigger');
+	const canvas = lockup.closest<HTMLElement>('.app-canvas');
+	if (!canvas) throw new Error('Socratink chat markup is missing required nodes.');
 	return {
 		form,
-		input,
-		messages,
-		button,
-		core,
+		input: requireElement<HTMLTextAreaElement>('#message'),
+		messages: requireElement<HTMLOListElement>('#messages'),
+		button: requireElement<HTMLButtonElement>('button', form),
+		core: requireElement<HTMLElement>('.alive-core'),
 		lockup,
 		canvas,
-		startOver,
-		activeTurn,
-		activeNode,
-		peekHandle,
-		menuLayer,
-		menuPanel,
-		menuHandle,
-		menuBackdrop,
-		menuFirst,
-		trailToggle,
-		trailLabel,
-		appearance,
+		startOver: requireElement<HTMLButtonElement>('#start-over'),
+		card: requireElement<HTMLElement>('.active-node'),
+		activeTurn: requireElement<HTMLElement>('#active-turn'),
+		peekHandle: requireElement<HTMLButtonElement>('#peek-handle'),
+		menuLayer: requireElement<HTMLElement>('#menu-layer'),
+		menuPanel: requireElement<HTMLElement>('#menu-dialog'),
+		menuHandle: requireElement<HTMLElement>('#menu-handle'),
+		menuBackdrop: requireElement<HTMLButtonElement>('#menu-backdrop'),
+		menuFirst: requireElement<HTMLElement>('.menu-orbs a, .menu-orbs button'),
+		trailToggle: requireElement<HTMLButtonElement>('#trail-toggle'),
+		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
+		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
 	};
 }

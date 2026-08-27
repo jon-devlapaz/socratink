@@ -16,4 +16,4 @@ export const r1StartingPaths = [
 	},
 ] as const;
 
-export const r1OpeningMessage = `Your target:\n${r1LearningTarget}\n\nHow would you like to start?`;
+export const r1OpeningMessage = `Your target:\n${r1LearningTarget}`;

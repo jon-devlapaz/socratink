@@ -32,6 +32,9 @@ importers:
       three:
         specifier: 0.132.2
         version: 0.132.2
+      valibot:
+        specifier: ^1.4.2
+        version: 1.4.2(typescript@7.0.2)
     devDependencies:
       '@flue/cli':
         specifier: 2.0.3
