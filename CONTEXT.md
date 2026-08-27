@@ -15,3 +15,6 @@ _Avoid_: treating the gateway as a local model; a second provider
 **Observability**:
 Optional Braintrust instrumentation of Chat/Flue runs. A Braintrust span is a development log. Chat traces and the live smoke share one Observability project.
 _Avoid_: learning proof; a second synthetic project
+
+**R1 freeze**:
+The first fixture is inspectable in sibling Brain `50 Active/R1 Freeze Pack.md`. Chat may state that target. That is not an Evidence Contract loop and does not license an evidence engine.
