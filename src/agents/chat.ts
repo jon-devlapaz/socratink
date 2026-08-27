@@ -1,5 +1,6 @@
 'use agent';
 import { useDataWriter, useModel, useTool } from '@flue/runtime';
+import { currentSpan } from 'braintrust';
 import { chatModel } from '../config/chat-model.ts';
 import { r1LearningTarget, r1StartingPaths } from '../config/r1-learning.ts';
 import { QuestionnaireSchema } from '../questionnaire.ts';
@@ -15,6 +16,14 @@ export function Chat() {
 			'Present exactly one in-card question form when the response requires learner input. Do not call this for final feedback or a direct answer that asks the learner nothing.',
 		input: QuestionnaireSchema,
 		async run({ data }) {
+			currentSpan().log({
+				metadata: {
+					'socratink.interaction': 'questionnaire',
+					'socratink.questionnaire_kind': data.kind,
+					'socratink.questionnaire_item_count': data.items.length,
+				},
+				tags: ['questionnaire'],
+			});
 			writeQuestionnaireData(data);
 			return { output: 'Question presented on the learner card.', terminate: true };
 		},
