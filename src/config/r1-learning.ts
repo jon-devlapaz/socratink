@@ -1,18 +1,18 @@
 export const r1LearningTarget =
-	'Given an agent execution trace, I can reconstruct its loop stages and justify whether it should continue, stop, or pause using observable conditions.';
+	'Given a simple synapse description, I can name the presynaptic side, the postsynaptic side, and the transmitter, and say whether the next neuron is more or less likely to fire.';
 
 export const r1StartingPaths = [
 	{
-		label: 'Explore an example agent trace',
-		message: 'I want to explore an example agent trace.',
+		label: 'Explore a worked example',
+		message: 'I want to explore a worked example of one synapse.',
 	},
 	{
-		label: 'Try a small interactive puzzle',
-		message: 'I want to try a small interactive puzzle.',
+		label: 'Try a small puzzle',
+		message: 'I want to try a small synapse puzzle.',
 	},
 	{
-		label: 'Build a tiny agent loop',
-		message: 'I want to build a tiny agent loop.',
+		label: 'Apply it',
+		message: 'I want to judge a new synapse on my own.',
 	},
 ] as const;
 

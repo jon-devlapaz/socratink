@@ -155,3 +155,15 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /call present_question exactly once/);
 	assert.doesNotMatch(promptSource, /<socratink-questionnaire>/);
 });
+
+test('the Chat fixture is a synaptic target, not the agent-trace protocol', async () => {
+	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
+	const configSource = await readFile(new URL('../src/config/r1-learning.ts', import.meta.url), 'utf8');
+	assert.match(configSource, /presynaptic side/);
+	assert.match(promptSource, /presynaptic/);
+	assert.match(promptSource, /glutamate/);
+	assert.match(promptSource, /GABA/);
+	assert.doesNotMatch(promptSource, /Q3 sales report/);
+	assert.doesNotMatch(promptSource, /example agent trace protocol/);
+	assert.doesNotMatch(promptSource, /@flue\/runtime is 2\.0\.3/);
+});

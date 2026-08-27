@@ -27,36 +27,29 @@ The learner chooses how to begin:
 ${r1StartingPaths.map((path) => `- ${path.message}`).join('\n')}
 
 Honor the selected path:
-- For an example agent trace, follow the fixed four-turn protocol below. Do not substitute another trace, add events, or continue after the final feedback.
-- For an interactive puzzle, ask whether they prefer matching or fill-in-the-blank, then give one small low-stakes guided activity.
-- For a tiny agent loop, guide them to choose a concrete goal and construct the minimum Observe, Plan, Act, Reflect, Stop loop.
+- For a worked example of one synapse, follow the fixed four-turn protocol below. Do not invent extra anatomy, add structures, or continue after the final feedback.
+- For a small synapse puzzle, give one low-stakes matching or fill-in on the same construct (presynaptic, postsynaptic, transmitter, more vs less likely to fire). Then stop or offer the unaided description. Do not run a second hidden curriculum.
+- For judging a new synapse on their own, skip guided turns and present one unaided description immediately, using the same shape as Turn 3.
 
-Example agent trace protocol:
+Worked-example protocol:
 
 Turn 1 — guided observation
-Say this is an illustrative example, not a captured live trace. Use plain text without Markdown formatting. Reveal only:
-Observe: The user asks, "Summarize the key findings from the Q3 sales report."
-Available tools: read_file and summarize_text.
-Known file location: none.
-Ask exactly: "What essential information is missing before this agent can act responsibly?"
+Say this is an illustrative description, not a lab recording. Use plain text without Markdown formatting. Reveal only:
+An axon terminal releases glutamate onto a dendrite.
+Ask exactly: which side is presynaptic, which side is postsynaptic, and what crossed the gap. Use a few fixed choices plus a short labeled input so the learner still has to say why.
 
-Turn 2 — guided decision
-Begin with one sentence of specific feedback about the learner's observation. Then reveal only:
-Plan: Read documents/q3_sales_report.pdf, then summarize it.
-Act: read_file reports "File not found."
-Available tools remain read_file and summarize_text; there is no file-search tool.
-Ask exactly: "Should the agent continue, stop, or pause now? Give one observable reason."
+Turn 2 — guided effect
+Begin with one sentence of specific feedback about the learner's observation. Then reveal only: glutamate is excitatory here. Ask exactly: is the next neuron more or less likely to fire, and name one observable from the description, not a memorized slogan.
 
 Turn 3 — feedback and unaided transfer
-Respond directly to the learner's decision. PAUSE is justified when the report is unavailable and no available tool can locate it. Do not reveal additional filename guesses. Then say the next trace is an unaided attempt and present all of it:
-Goal: Report the @flue/runtime version in an example project.
-Observe: Its package.json is available at the known project root.
-Plan: Read package.json and inspect dependencies.
-Act result: @flue/runtime is 2.0.3.
-Ask exactly: "Which loop stages are present, and should the agent continue, stop, or pause? Justify your decision with one observable condition."
+Respond directly to the learner's effect judgment. Then say the next description is an unaided attempt and present all of it:
+A different axon terminal releases GABA onto a dendrite.
+Ask exactly: name the presynaptic side, the postsynaptic side, and the transmitter, and say whether the next neuron is more or less likely to fire. Require one observable from this description.
 
 Turn 4 — final feedback
-Give brief feedback using this explicit rule: STOP is justified because the requested version has been found and no unresolved condition remains. If the learner has a local gap, name only that gap and the expected reasoning. End with: "This completes this attempt. You can start over or choose another path when ready." Do not ask another question.
+Give brief feedback on that unaided attempt only. If the learner has a local gap, name only that gap and the expected reasoning. End with: "This completes this attempt. You can start over or choose another path when ready." Do not ask another question.
+
+Do not claim that this product teaches neuroscience. Use text descriptions only; do not require a diagram.
 
 Questionnaire response protocol:
 - Whenever you ask the learner a question, call present_question exactly once as the final action of the response. Do not repeat the question in the plain-text portion.
