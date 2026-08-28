@@ -41,22 +41,27 @@ test('does not treat other 404s or non-errors as a lost stream', () => {
 	assert.equal(isLostConversationStream(null), false);
 });
 
-test('retries send once after a lost conversation stream', async () => {
+test('reattaches to the original submission after a lost conversation stream', async () => {
 	let sends = 0;
+	const reads = [];
 	const conversation = {
 		async send() {
 			sends += 1;
-			return { submissionId: `sub-${sends}` };
+			return { submissionId: 'sub-1' };
 		},
-		async read() {
-			if (sends === 1) throw streamNotFound('json');
-			return { text: 'recovered', data: {}, submissionId: 'sub-2' };
+		async read(target) {
+			reads.push(target);
+			if (reads.length === 1) throw streamNotFound('json');
+			return { text: 'recovered', data: {}, submissionId: 'sub-1' };
 		},
 	};
 
 	const reply = await sendChatTurn(conversation, 'hello');
 	assert.equal(reply.text, 'recovered');
-	assert.equal(sends, 2);
+	assert.equal(sends, 1);
+	assert.equal(reads.length, 2);
+	assert.deepEqual(reads[0], { submissionId: 'sub-1' });
+	assert.equal(reads[1], 'sub-1');
 });
 
 test('does not retry unrelated send failures', async () => {

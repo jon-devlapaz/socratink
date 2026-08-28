@@ -8,6 +8,8 @@ const localDefaults = {
 	modelId: appConfig.defaultLocalModelId,
 	apiKey: undefined,
 	reasoning: false,
+	contextWindow: 1_048_576,
+	maxTokens: 1_048_576,
 };
 
 {
@@ -27,6 +29,8 @@ const localDefaults = {
 			modelId: 'local-id',
 			apiKey: 'local-key',
 			reasoning: false,
+			contextWindow: 1_048_576,
+			maxTokens: 1_048_576,
 		},
 	);
 }
@@ -44,6 +48,8 @@ const localDefaults = {
 			modelId: appConfig.defaultLocalModelId,
 			apiKey: 'local-key',
 			reasoning: false,
+			contextWindow: 1_048_576,
+			maxTokens: 1_048_576,
 		},
 	);
 }
@@ -64,6 +70,8 @@ const localDefaults = {
 			modelId: appConfig.vercelAiGatewayModelId,
 			apiKey: 'gateway-key',
 			reasoning: true,
+			contextWindow: 204_800,
+			maxTokens: 131_100,
 		},
 	);
 }
@@ -75,7 +83,30 @@ const localDefaults = {
 		modelId: appConfig.vercelAiGatewayModelId,
 		apiKey: 'oidc-token',
 		reasoning: true,
+		contextWindow: 204_800,
+		maxTokens: 131_100,
 	});
+}
+
+{
+	assert.deepEqual(resolveChatModel({ NF_PROJECT_ID: 'socratink', AI_GATEWAY_API_KEY: 'gateway-key' }), {
+		providerId: chatProviderId,
+		baseUrl: appConfig.vercelAiGatewayBaseUrl,
+		modelId: appConfig.vercelAiGatewayModelId,
+		apiKey: 'gateway-key',
+		reasoning: true,
+		contextWindow: 204_800,
+		maxTokens: 131_100,
+	});
+}
+
+{
+	for (const environment of [{ VERCEL: '1' }, { NF_PROJECT_ID: 'socratink' }]) {
+		assert.throws(
+			() => resolveChatModel(environment),
+			/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
+		);
+	}
 }
 
 {

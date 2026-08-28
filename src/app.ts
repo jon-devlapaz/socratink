@@ -9,6 +9,7 @@ configureBraintrust(process.env);
 
 const app = new Hono();
 
+app.get('/healthz', (context) => context.json({ status: 'ok' }));
 app.route('/api/agents/chat', createAgentRouter(Chat));
 app.use('*', serveStatic({ root: './dist/client' }));
 app.get('*', serveStatic({ path: './dist/client/index.html' }));

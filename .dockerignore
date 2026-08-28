@@ -1,0 +1,17 @@
+.git
+.agents
+.bt
+.cache
+.claude
+.codex
+.cursor
+.env*
+.omx
+.npmrc
+.pnpm-store
+.vercel
+artifacts
+dist
+logs
+node_modules
+*.log

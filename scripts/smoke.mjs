@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { cp, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { createFlueClient } from '@flue/sdk';
 
 const expectedReply = 'Socratink smoke response.';
@@ -68,27 +71,49 @@ fakeProvider.on('connection', (socket) => {
 
 let appProcess;
 let stderr = '';
-try {
-	const providerPort = await listen(fakeProvider);
-	const portProbe = createServer();
-	const appPort = await listen(portProbe);
-	await close(portProbe);
+let appDirectory;
 
-	appProcess = spawn(process.execPath, ['dist/server.mjs'], {
+function startApp(appPort, providerPort) {
+	const child = spawn(process.execPath, ['dist/server.mjs'], {
+		cwd: appDirectory,
 		env: {
 			...process.env,
+			NODE_ENV: 'development',
 			PORT: String(appPort),
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
 		},
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
-	appProcess.stderr.on('data', (chunk) => {
+	child.stderr.on('data', (chunk) => {
 		stderr += chunk;
 	});
+	return child;
+}
+
+async function stopApp(child) {
+	if (child?.exitCode !== null) return;
+	child.kill('SIGTERM');
+	await new Promise((resolve) => child.once('exit', resolve));
+}
+
+try {
+	const providerPort = await listen(fakeProvider);
+	const portProbe = createServer();
+	const appPort = await listen(portProbe);
+	await close(portProbe);
+
+	appDirectory = await mkdtemp(join(tmpdir(), 'socratink-smoke-'));
+	await cp('dist', join(appDirectory, 'dist'), { recursive: true });
+	await symlink(resolve('node_modules'), join(appDirectory, 'node_modules'), 'dir');
+	appProcess = startApp(appPort, providerPort);
 
 	const origin = `http://127.0.0.1:${appPort}`;
-	const root = await waitForServer(`${origin}/`, appProcess);
+	const health = await waitForServer(`${origin}/healthz`, appProcess);
+	assert.deepEqual(await health.json(), { status: 'ok' });
+
+	const root = await fetch(`${origin}/`);
+	assert.equal(root.status, 200);
 	const html = await root.text();
 	assert.match(html, /<title>Socratink<\/title>/);
 
@@ -105,14 +130,25 @@ try {
 	const reply = await client.read(admission);
 	assert.equal(reply.text, expectedReply);
 
-	console.log(`smoke passed: root, ${assetPaths.length} assets, agent route, completed response`);
+	await stopApp(appProcess);
+	appProcess = startApp(appPort, providerPort);
+	await waitForServer(`${origin}/healthz`, appProcess);
+	const restored = await client.history();
+	assert.ok(
+		restored.messages.some((message) =>
+			message.parts.some((part) => part.type === 'text' && part.text === expectedReply),
+		),
+		'completed response should survive a process restart',
+	);
+
+	console.log(
+		`smoke passed: health, root, ${assetPaths.length} assets, agent route, completed response, restart persistence`,
+	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
 	throw error;
 } finally {
-	if (appProcess?.exitCode === null) {
-		appProcess.kill('SIGTERM');
-		await new Promise((resolve) => appProcess.once('exit', resolve));
-	}
+	await stopApp(appProcess);
 	if (fakeProvider.listening) await close(fakeProvider);
+	if (appDirectory) await rm(appDirectory, { recursive: true, force: true });
 }
