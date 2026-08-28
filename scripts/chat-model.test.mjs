@@ -101,12 +101,22 @@ const localDefaults = {
 }
 
 {
-	for (const environment of [{ VERCEL: '1' }, { NF_PROJECT_ID: 'socratink' }]) {
-		assert.throws(
-			() => resolveChatModel(environment),
-			/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
-		);
-	}
+	assert.deepEqual(resolveChatModel({ VERCEL: '1' }), {
+		providerId: chatProviderId,
+		baseUrl: appConfig.vercelAiGatewayBaseUrl,
+		modelId: appConfig.vercelAiGatewayModelId,
+		apiKey: undefined,
+		reasoning: true,
+		contextWindow: 204_800,
+		maxTokens: 131_100,
+	});
+}
+
+{
+	assert.throws(
+		() => resolveChatModel({ NF_PROJECT_ID: 'socratink' }),
+		/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
+	);
 }
 
 {

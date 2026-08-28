@@ -25,7 +25,7 @@ export type ChatModel = {
 export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
 	if (environment.VERCEL === '1' || environment.NF_PROJECT_ID) {
 		const apiKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
-		if (!apiKey) {
+		if (!apiKey && environment.NF_PROJECT_ID) {
 			throw new Error('AI_GATEWAY_API_KEY is required for hosted Socratink conversations.');
 		}
 		return {
