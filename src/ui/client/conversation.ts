@@ -18,11 +18,12 @@ export function startNewChatConversation() {
 }
 
 export async function sendChatTurn(conversation: ChatTurnClient, text: string) {
+	const admission = await conversation.send({ message: { kind: 'user', body: text } });
 	try {
-		return await deliverTurn(conversation, text);
+		return await conversation.read(admission);
 	} catch (error) {
 		if (!isLostConversationStream(error)) throw error;
-		return await deliverTurn(conversation, text);
+		return await conversation.read(admission.submissionId);
 	}
 }
 
@@ -36,11 +37,6 @@ export function chatTurnErrorMessage(error: unknown): string {
 export function isLostConversationStream(error: unknown): boolean {
 	if (!hasStatus(error, 404)) return false;
 	return envelopeType(error) === 'stream_not_found';
-}
-
-async function deliverTurn(conversation: ChatTurnClient, text: string) {
-	const admission = await conversation.send({ message: { kind: 'user', body: text } });
-	return conversation.read(admission);
 }
 
 function hasStatus(error: unknown, status: number): boolean {

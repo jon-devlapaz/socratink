@@ -1,15 +1,17 @@
 # Socratink
 
-Socratink is a minimal, model-backed conversation surface built with
-[Flue](https://github.com/withastro/flue).
+Socratink is a focused, model-backed learning conversation built with
+[Flue](https://github.com/withastro/flue). The current interaction lets a
+learner choose a starting path and complete a short guided exchange through
+validated in-card questionnaires.
 
-This baseline intentionally does one thing: it connects the Socratink web
-interface to one model-backed chat agent. Learning behavior comes later, after
-the foundation works reliably.
+This remains a narrow development product. It does not yet provide production
+authentication, durable multi-instance hosting, or evidence for broad claims
+about learning effectiveness.
 
 ## Run the current app
 
-Requirements: Node.js 22.18+, pnpm 11, and an OpenAI-compatible model endpoint.
+Requirements: Node.js 22.19+, pnpm 11, and an OpenAI-compatible model endpoint.
 
 ```sh
 pnpm install
@@ -25,14 +27,16 @@ The app reads these local environment settings without committing their values:
 On Vercel (`VERCEL=1`), Chat always uses AI Gateway. Local `JON_LOCAL_*`
 settings do not override that.
 
+On Northflank (`NF_PROJECT_ID` is injected automatically), Chat also uses AI
+Gateway and requires `AI_GATEWAY_API_KEY`. Hosted Node deployments require
+`DATABASE_URL`; the process refuses to start without durable conversation
+storage. Local development uses file-backed SQLite at `.cache/flue/local.db`.
+
 ## Verify the app
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm check:types
-pnpm test:braintrust
-pnpm test:chat-model
-pnpm build
+pnpm check
 pnpm smoke
 pnpm audit --prod
 ```
@@ -41,6 +45,27 @@ The product source lives in `src/`. The default Vite build generates the
 Node application in `dist/`, and the UI build writes its static assets to
 `dist/client/`. The smoke test starts only local processes and uses a fake
 OpenAI-compatible provider; it never requires external credentials.
+
+## Northflank staging
+
+The root `Dockerfile` packages the built Flue Node server as a non-root
+container listening on port `3000`. Configure one service replica with:
+
+- private HTTP port `3000`, reached for staging verification through a
+  Northflank CLI port-forward;
+- readiness check `GET /healthz`;
+- a private PostgreSQL addon;
+- `DATABASE_URL` mapped from the addon's `POSTGRES_URI` secret;
+- `AI_GATEWAY_API_KEY` stored as a Northflank runtime secret.
+
+Use Northflank's `recreate` rollout strategy. Do not use rolling or canary
+rollouts, autoscaling, or more than one replica: Flue currently requires one
+live owner for a conversation, including during replacement.
+
+Keep the PostgreSQL addon private. The current Northflank deployment is a
+private staging target. Do not expose its port or attach the production domain
+until authentication, conversation authorization, and rate limiting are
+implemented and verified.
 
 ## Braintrust observability
 

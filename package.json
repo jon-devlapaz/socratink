@@ -5,7 +5,7 @@
 	"license": "Apache-2.0",
 	"packageManager": "pnpm@11.1.1",
 	"engines": {
-		"node": ">=22.18.0",
+		"node": ">=22.19.0",
 		"pnpm": ">=11 <12"
 	},
 	"scripts": {
@@ -13,21 +13,25 @@
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
-		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:questionnaire && pnpm test:conversation && pnpm build",
+		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:database-config && pnpm test:questionnaire && pnpm test:conversation && pnpm test:chat-turns && pnpm build",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
 		"test:braintrust": "node scripts/braintrust-config.test.mjs",
 		"test:chat-model": "node scripts/chat-model.test.mjs",
+		"test:database-config": "node --test scripts/database-config.test.mjs",
 		"test:questionnaire": "node --test scripts/questionnaire-ui.test.mjs",
-		"test:conversation": "node --test scripts/conversation-client.test.mjs"
+		"test:conversation": "node --test scripts/conversation-client.test.mjs",
+		"test:chat-turns": "node --test scripts/chat-turns.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/pi-ai": "^0.83.0",
+		"@flue/postgres": "2.0.3",
 		"@flue/runtime": "2.0.3",
 		"@flue/sdk": "2.0.3",
 		"@hono/node-server": "^2.0.3",
 		"braintrust": "^3.28.0",
 		"hono": "4.12.34",
+		"pg": "^8.23.0",
 		"three": "0.132.2",
 		"valibot": "^1.4.2"
 	},
@@ -35,6 +39,7 @@
 		"@flue/cli": "2.0.3",
 		"@flue/vite": "2.0.3",
 		"@types/node": "^26.1.1",
+		"@types/pg": "^8.23.1",
 		"@types/three": "0.132.2",
 		"typescript": "^7.0.2",
 		"vite": "^8.1.2"
