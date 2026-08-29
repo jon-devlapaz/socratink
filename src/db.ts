@@ -1,6 +1,6 @@
 import { postgres } from '@flue/postgres';
 import { sqlite } from '@flue/runtime/node';
-import { attachDatabasePool } from '@vercel/functions';
+import { attachDatabasePool } from '@vercel/functions/db-connections';
 import { Pool } from 'pg';
 import { resolveDatabaseTarget } from './config/database.ts';
 
