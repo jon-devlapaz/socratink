@@ -1,6 +1,22 @@
 import * as THREE from 'three';
 import { fragmentShader, vertexShader } from './organic-sphere-shaders.ts';
 
+export const sphereCamera = { fov: 55, z: 3.25, radius: 1 } as const;
+
+export function sphereVisualRadiusFraction() {
+	return (
+		sphereCamera.radius /
+		(2 * sphereCamera.z * Math.tan((sphereCamera.fov / 2) * Math.PI / 180))
+	);
+}
+
+function applySphereProjection(mount: HTMLElement) {
+	const host = mount.closest<HTMLElement>('.alive-anchor') ?? mount;
+	const frac = sphereVisualRadiusFraction();
+	host.style.setProperty('--orb-visual-radius', `${(frac * 100).toFixed(2)}%`);
+	host.style.setProperty('--orb-below', (0.5 - frac).toFixed(4));
+}
+
 const D2 = {
 	blackCore: 0.7,
 	hotRim: 0.12,
@@ -12,15 +28,15 @@ const D2 = {
 
 export function mountOrganicSphere(mount: HTMLElement) {
 	const scene = new THREE.Scene();
-	const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 80);
-	camera.position.z = 3.25;
+	const camera = new THREE.PerspectiveCamera(sphereCamera.fov, 1, 0.1, 80);
+	camera.position.z = sphereCamera.z;
 
 	const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 	renderer.setClearColor(0x000000, 0);
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-	renderer.domElement.setAttribute('aria-label', 'Animated Organic Sphere');
-	renderer.domElement.setAttribute('role', 'img');
+	renderer.domElement.setAttribute('aria-hidden', 'true');
 	mount.replaceChildren(renderer.domElement);
+	applySphereProjection(mount);
 
 	const geometry = new THREE.SphereGeometry(1, 192, 192);
 	geometry.computeTangents();
@@ -72,17 +88,29 @@ export function mountOrganicSphere(mount: HTMLElement) {
 
 	let frame = 0;
 	let previous = performance.now();
+	const displacement = material.uniforms.uDisplacementStrength!;
+	const distortion = material.uniforms.uDistortionStrength!;
+	const restDisplacement = D2.displacementStrength;
+	const restDistortion = 0.65;
 	const render = (now: number) => {
-		const elapsed = Math.min(now - previous, 60) * 0.0003;
+		const dt = Math.min(now - previous, 60) / 1000;
 		previous = now;
-		timeUniform.value += elapsed;
-		offsetUniform.value.add(
-			new THREE.Vector3(
-				Math.sin(timeUniform.value * 0.13),
-				Math.cos(timeUniform.value * 0.09),
-				Math.sin(timeUniform.value * 0.07),
-			).multiplyScalar(elapsed * 0.6),
-		);
+		const still = mount.classList.contains('is-still');
+		const ease = 1 - Math.exp(-dt * 10);
+		const targetDisp = still ? 0 : restDisplacement;
+		const targetDist = still ? 0 : restDistortion;
+		displacement.value += (targetDisp - displacement.value) * ease;
+		distortion.value += (targetDist - distortion.value) * ease;
+		if (!still) {
+			timeUniform.value += dt * 0.3;
+			offsetUniform.value.add(
+				new THREE.Vector3(
+					Math.sin(timeUniform.value * 0.13),
+					Math.cos(timeUniform.value * 0.09),
+					Math.sin(timeUniform.value * 0.07),
+				).multiplyScalar(dt * 0.18),
+			);
+		}
 		renderer.render(scene, camera);
 		frame = requestAnimationFrame(render);
 	};

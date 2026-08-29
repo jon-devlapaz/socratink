@@ -1,0 +1,171 @@
+.smooth-cursor {
+	--cursor-x: 0px;
+	--cursor-y: 0px;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	width: 16px;
+	height: 18px;
+	pointer-events: none;
+	translate: calc(var(--cursor-x) - 50%) calc(var(--cursor-y) - 50%);
+	scale: 1;
+	opacity: 0;
+	transition-property: scale, opacity, width, height;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.smooth-cursor.is-visible {
+	opacity: 1;
+}
+
+.smooth-cursor.is-moving {
+	scale: 0.95;
+}
+
+.smooth-cursor.is-text.is-moving,
+.smooth-cursor.is-grab.is-moving,
+.smooth-cursor.is-fused-bar.is-moving,
+.smooth-cursor.is-fused-mark.is-moving,
+.smooth-cursor.is-fused-core.is-moving {
+	scale: 1;
+}
+
+.smooth-cursor.is-grabbing {
+	scale: 0.96;
+}
+
+.smooth-cursor.is-fused-bar {
+	width: var(--grab-bar-width);
+	height: var(--grab-bar-height);
+}
+
+.smooth-cursor.is-fused-mark {
+	width: var(--fuse-w, 0.46em);
+	height: var(--fuse-h, 0.46em);
+}
+
+.smooth-cursor-orb,
+.smooth-cursor-caret,
+.smooth-cursor-pill {
+	position: absolute;
+	transition-property: opacity, filter, scale, width, height, top, left;
+	transition-duration: 150ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.smooth-cursor-orb {
+	top: 4px;
+	left: 3px;
+	display: block;
+	width: 10px;
+	height: 10px;
+	border-radius: 48% 52% 49% 51% / 52% 48% 52% 48%;
+	background: var(--mark-fill);
+	box-shadow:
+		inset 0 -1px 2px rgba(255, 255, 255, 0.045),
+		0 0.5px 1.25px rgba(20, 19, 17, 0.18);
+	transform-origin: center;
+}
+
+.smooth-cursor-caret {
+	top: 0;
+	left: 7.25px;
+	width: 1.5px;
+	height: 18px;
+	border-radius: 1px;
+	background: var(--ink);
+	opacity: 0;
+	filter: blur(4px);
+	scale: 0.25;
+	transform-origin: center;
+}
+
+.smooth-cursor-pill {
+	top: 6.5px;
+	left: 0;
+	width: 16px;
+	height: 5px;
+	border-radius: 1rem;
+	background: var(--ink);
+	opacity: 0;
+	filter: blur(4px);
+	scale: 0.25;
+	transform-origin: center;
+}
+
+.smooth-cursor.is-text .smooth-cursor-orb,
+.smooth-cursor.is-grab .smooth-cursor-orb,
+.smooth-cursor.is-fused-bar .smooth-cursor-orb,
+.smooth-cursor.is-fused-core .smooth-cursor-orb {
+	opacity: 0;
+	filter: blur(4px);
+	scale: 0.25;
+	animation: none;
+}
+
+.smooth-cursor.is-fused-mark .smooth-cursor-orb {
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.smooth-cursor.is-text .smooth-cursor-caret {
+	opacity: 1;
+	filter: blur(0);
+	scale: 1;
+}
+
+.smooth-cursor.is-grab .smooth-cursor-pill,
+.smooth-cursor.is-fused-bar .smooth-cursor-pill {
+	opacity: 1;
+	filter: blur(0);
+	scale: 1;
+}
+
+.smooth-cursor.is-fused-bar .smooth-cursor-pill {
+	top: 0;
+	left: 0;
+	width: var(--grab-bar-width);
+	height: var(--grab-bar-height);
+}
+
+html:has(.alive-core.is-working) .smooth-cursor:not(.is-text):not(.is-grab):not(.is-fused-bar):not(.is-fused-core) .smooth-cursor-orb {
+	animation: brand-breathe 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+html:has(.smooth-cursor.is-fused-bar) .peek-handle::after,
+html:has(.smooth-cursor.is-fused-bar) .peek-handle:hover::after,
+html:has(.smooth-cursor.is-fused-bar) .peek-handle:focus-visible::after,
+html:has(.smooth-cursor.is-fused-bar) .peek-handle:active::after,
+html:has(.smooth-cursor.is-fused-bar) .menu-handle::after,
+html:has(.smooth-cursor.is-fused-bar) .menu-handle:hover::after,
+html:has(.smooth-cursor.is-fused-bar) .menu-handle:focus-visible::after,
+html:has(.smooth-cursor.is-fused-bar) .menu-handle:active::after {
+	opacity: 0;
+}
+
+html:has(.smooth-cursor.is-fused-mark) .brand-mark {
+	opacity: 0;
+	animation: none;
+}
+
+html.has-smooth-cursor,
+html.has-smooth-cursor * {
+	cursor: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.smooth-cursor,
+	.smooth-cursor-orb,
+	.smooth-cursor-caret,
+	.smooth-cursor-pill {
+		transition: none;
+	}
+
+	html:has(.alive-core.is-working) .smooth-cursor:not(.is-text):not(.is-grab):not(.is-fused-bar):not(.is-fused-core) .smooth-cursor-orb {
+		animation: none;
+	}
+}
