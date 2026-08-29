@@ -29,6 +29,7 @@
 		"@flue/runtime": "2.0.3",
 		"@flue/sdk": "2.0.3",
 		"@hono/node-server": "^2.0.3",
+		"@vercel/functions": "3.9.5",
 		"braintrust": "^3.28.0",
 		"hono": "4.12.34",
 		"pg": "^8.23.0",
