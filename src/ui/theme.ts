@@ -4,6 +4,7 @@ export type Appearance = 'light' | 'dark';
 
 const paperLight = '#fffcf0';
 const paperDark = '#100f0f';
+const revealMs = 400;
 
 function storedAppearance(): Appearance | null {
 	const value = localStorage.getItem(appConfig.themeStorageKey);
@@ -47,6 +48,32 @@ function paintAppearance(button: HTMLButtonElement, appearance: Appearance) {
 	setThemeColor(appearance);
 }
 
+function applyAppearance(button: HTMLButtonElement, appearance: Appearance) {
+	document.documentElement.dataset.theme = appearance;
+	localStorage.setItem(appConfig.themeStorageKey, appearance);
+	paintAppearance(button, appearance);
+}
+
+function revealFrom(button: HTMLButtonElement) {
+	const { top, left, width, height } = button.getBoundingClientRect();
+	const x = left + width / 2;
+	const y = top + height / 2;
+	const maxRadius = Math.hypot(
+		Math.max(x, window.innerWidth - x),
+		Math.max(y, window.innerHeight - y),
+	);
+	document.documentElement.animate(
+		{
+			clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`],
+		},
+		{
+			duration: revealMs,
+			easing: 'ease-in-out',
+			pseudoElement: '::view-transition-new(root)',
+		},
+	);
+}
+
 export function initAppearance(button: HTMLButtonElement) {
 	paintAppearance(button, resolvedAppearance());
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -55,11 +82,19 @@ export function initAppearance(button: HTMLButtonElement) {
 	});
 }
 
-export function toggleAppearance(button: HTMLButtonElement) {
+export async function toggleAppearance(button: HTMLButtonElement) {
 	const next: Appearance = resolvedAppearance() === 'dark' ? 'light' : 'dark';
-	withoutColorTransitions(() => {
-		document.documentElement.dataset.theme = next;
-		localStorage.setItem(appConfig.themeStorageKey, next);
-		paintAppearance(button, next);
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const startViewTransition = document.startViewTransition?.bind(document);
+
+	if (reduceMotion || !startViewTransition) {
+		withoutColorTransitions(() => applyAppearance(button, next));
+		return;
+	}
+
+	const transition = startViewTransition(() => {
+		withoutColorTransitions(() => applyAppearance(button, next));
 	});
+	await transition.ready;
+	revealFrom(button);
 }
