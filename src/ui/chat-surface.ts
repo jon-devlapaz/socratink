@@ -5,7 +5,7 @@ import {
 	sendChatTurn,
 	startNewChatConversation,
 } from './client/conversation.ts';
-import { r1OpeningMessage, r1StartingPaths } from '../config/r1-learning.ts';
+import { r1OpeningKickoff, r1OpeningMessage } from '../config/r1-learning.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { pendingWordAt, pendingWords } from './pending-words.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
@@ -169,13 +169,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		return wrap;
 	}
 
-	function isFreshOpening(items: DisplayedTurn[]): boolean {
-		const opening = items[0];
-		return (
-			items.length === 1 && opening?.role === 'Socratink' && opening.text === r1OpeningMessage
-		);
-	}
-
 	function questionnaireSource(role: ChatMessageRole): 'opening' | 'assistant' | undefined {
 		switch (role) {
 			case 'Socratink':
@@ -292,26 +285,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		handle.addEventListener('pointercancel', finishDrag);
 	}
 
-	function startingPathQuestionnaire(): QuestionnaireDefinition {
-		return {
-			kind: 'question',
-			submitLabel: 'Start',
-			items: [
-				{
-					name: 'starting-path',
-					prompt: 'How would you like to start?',
-					required: true,
-					multiple: false,
-					choices: r1StartingPaths.map((path, index) => ({
-						value: path.message,
-						label: path.label,
-						shortcut: String(index + 1),
-					})),
-				},
-			],
-		};
-	}
-
 	async function paint(kind: PaintKind) {
 		const render = async () => {
 			const { earlier, current } = splitCurrentTurns(turns);
@@ -425,19 +398,8 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		turns = [...turns, { role: 'You', text }];
 		input.value = '';
 		await paint('new-turn');
-
 		try {
-			const reply = await sendChatTurn(conversation, text);
-			const questionnaire = questionnaireFromReplyData(reply.data);
-			turns = [
-				...turns,
-				{
-					role: 'Assistant',
-					text: reply.text,
-					...(questionnaire ? { questionnaire } : {}),
-				},
-			];
-			await paint('hold');
+			await appendAssistantReply(text);
 		} catch (error) {
 			turns = [
 				...turns,
@@ -450,6 +412,35 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		} finally {
 			setWorking(false);
 			input.focus();
+		}
+	}
+
+	async function appendAssistantReply(text: string) {
+		const reply = await sendChatTurn(conversation, text);
+		const questionnaire = questionnaireFromReplyData(reply.data);
+		turns = [
+			...turns,
+			{
+				role: 'Assistant',
+				text: reply.text,
+				...(questionnaire ? { questionnaire } : {}),
+			},
+		];
+		await paint('hold');
+	}
+
+	async function openFirstTurn() {
+		try {
+			await appendAssistantReply(r1OpeningKickoff);
+		} catch (error) {
+			turns = [
+				...turns,
+				{
+					role: 'Error',
+					text: chatTurnErrorMessage(error),
+				},
+			];
+			await paint('hold');
 		}
 	}
 
@@ -466,7 +457,9 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		try {
 			let visible: DisplayedTurn[] = [];
 			try {
-				visible = visibleTurnsFromHistory(await conversation.history());
+				visible = visibleTurnsFromHistory(await conversation.history()).filter(
+					(turn) => turn.role !== 'You' || turn.text !== r1OpeningKickoff,
+				);
 			} catch (error) {
 				if (!(error instanceof FlueApiError && error.status === 404)) {
 					turns = [
@@ -479,15 +472,19 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					return;
 				}
 			}
+			const fresh = visible.length === 0;
 			turns = [
 				{
 					role: 'Socratink',
 					text: r1OpeningMessage,
-					...(visible.length === 0 ? { questionnaire: startingPathQuestionnaire() } : {}),
 				},
 				...visible,
 			];
-			await paint(isFreshOpening(turns) ? 'opening' : 'restore');
+			await paint(fresh ? 'opening' : 'restore');
+			if (fresh) {
+				activeTurn.append(createPendingTurn());
+				await openFirstTurn();
+			}
 		} finally {
 			setWorking(false);
 			input.focus();

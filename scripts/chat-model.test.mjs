@@ -9,7 +9,7 @@ const localDefaults = {
 	apiKey: undefined,
 	reasoning: false,
 	contextWindow: 1_048_576,
-	maxTokens: 1_048_576,
+	maxTokens: 131_100,
 };
 
 {
@@ -30,7 +30,7 @@ const localDefaults = {
 			apiKey: 'local-key',
 			reasoning: false,
 			contextWindow: 1_048_576,
-			maxTokens: 1_048_576,
+			maxTokens: 131_100,
 		},
 	);
 }
@@ -49,7 +49,7 @@ const localDefaults = {
 			apiKey: 'local-key',
 			reasoning: false,
 			contextWindow: 1_048_576,
-			maxTokens: 1_048_576,
+			maxTokens: 131_100,
 		},
 	);
 }

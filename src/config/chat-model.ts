@@ -46,7 +46,7 @@ export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
 		apiKey: environment.JON_LOCAL_API_KEY,
 		reasoning: false,
 		contextWindow: 1_048_576,
-		maxTokens: 1_048_576,
+		maxTokens: 131_100,
 	};
 }
 

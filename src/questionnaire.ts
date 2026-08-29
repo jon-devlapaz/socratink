@@ -39,7 +39,7 @@ export const QuestionnaireSchema = v.pipe(
 	v.strictObject({
 		kind: v.picklist(['question', 'quiz']),
 		submitLabel: boundedString(80),
-		items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(5)),
+		items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(1)),
 	}),
 	v.check(
 		(questionnaire) =>

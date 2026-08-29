@@ -1,19 +1,13 @@
 export const r1LearningTarget =
-	'Given a simple synapse description, I can name the presynaptic side, the postsynaptic side, and the transmitter, and say whether the next neuron is more or less likely to fire.';
+	'Given an agent execution trace, I can reconstruct its loop stages and justify whether it should continue, stop, or pause using observable conditions.';
 
-export const r1StartingPaths = [
-	{
-		label: 'Explore a worked example',
-		message: 'I want to explore a worked example of one synapse.',
-	},
-	{
-		label: 'Try a small puzzle',
-		message: 'I want to try a small synapse puzzle.',
-	},
-	{
-		label: 'Apply it',
-		message: 'I want to judge a new synapse on my own.',
-	},
-] as const;
+export const r1FirstExampleTrace = `goal: summarize notes.md for the user
+tool: read
+path: notes.md
+result: File not found
+listed tools: read, write
+next: summarize notes.md`;
+
+export const r1OpeningKickoff = 'Begin.';
 
 export const r1OpeningMessage = `Your target:\n${r1LearningTarget}`;
