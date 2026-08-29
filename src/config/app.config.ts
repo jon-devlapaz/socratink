@@ -2,6 +2,7 @@ export const appConfig = {
 	chatAgentPath: '/api/agents/chat',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	themeStorageKey: 'socratink-theme', // keep in sync with the boot script in src/ui/index.html
+	typeSizeStorageKey: 'socratink-type-size', // keep in sync with the boot script in src/ui/index.html
 	braintrustProjectName: 'socratink',
 	defaultLocalBaseUrl: 'http://127.0.0.1:3001/v1',
 	defaultLocalModelId: 'auto',

@@ -1,6 +1,9 @@
 import { mountChatSurface } from './chat-surface.ts';
 import { mountOrganicSphere } from './effects/organic-sphere.ts';
+import { mountSmoothCursor } from './effects/smooth-cursor.ts';
 import './styles.css';
+import './cursor.css';
+import './dock.css';
 import './transcript.css';
 import './questionnaire.css';
 
@@ -12,4 +15,5 @@ try {
 } catch {
 	core.replaceChildren();
 }
+mountSmoothCursor();
 mountChatSurface();

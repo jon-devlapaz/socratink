@@ -1,5 +1,6 @@
 .active-node {
 	--jump-reserve: 0px;
+	--type-scale: 1;
 	position: relative;
 	display: flex;
 	flex: 1 1 auto;
@@ -19,6 +20,18 @@
 
 .active-node:has(#jump-latest:not([hidden])) {
 	--jump-reserve: calc(0.65rem + 0.8rem + 0.864rem + 12px);
+}
+
+html[data-type-size='big'] .active-node {
+	--type-scale: 1.22;
+}
+
+html[data-type-size='medium'] .active-node {
+	--type-scale: 1;
+}
+
+html[data-type-size='small'] .active-node {
+	--type-scale: 0.86;
 }
 
 .active-scroll {
@@ -207,9 +220,22 @@
 .turn p {
 	margin: 0;
 	overflow-wrap: anywhere;
-	font-size: 0.98rem;
+	font-size: calc(0.98rem * var(--type-scale));
 	line-height: 1.55;
 	white-space: pre-wrap;
+}
+
+.stream-word {
+	opacity: 0;
+	filter: blur(1px);
+	transition-property: opacity, filter;
+	transition-duration: 350ms;
+	transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stream-word.is-in {
+	opacity: 1;
+	filter: blur(0);
 }
 
 .turn.you {
@@ -222,7 +248,7 @@
 	align-items: center;
 	gap: 0.45rem;
 	color: var(--quiet);
-	font-size: 0.8rem;
+	font-size: calc(0.8rem * var(--type-scale));
 	font-weight: 400;
 }
 
@@ -302,6 +328,12 @@
 	.turn.pending .pending-word {
 		background: none;
 		color: var(--quiet);
+	}
+
+	.stream-word {
+		transition: none !important;
+		filter: none !important;
+		opacity: 1 !important;
 	}
 
 	.jump-latest:active {

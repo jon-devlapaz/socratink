@@ -23,6 +23,10 @@
 				}
 				var meta = document.getElementById('theme-color');
 				if (meta) meta.setAttribute('content', dark ? '#100f0f' : '#fffcf0');
+				var typeSize = localStorage.getItem('socratink-type-size');
+				if (typeSize === 'big' || typeSize === 'medium' || typeSize === 'small') {
+					document.documentElement.dataset.typeSize = typeSize;
+				}
 			})();
 		</script>
 	</head>
@@ -56,7 +60,67 @@
 			</button>
 
 			<main class="stage">
-				<div class="alive-core"></div>
+				<div class="alive-cluster">
+					<div class="alive-anchor">
+						<button
+							class="alive-core"
+							id="dock-trigger"
+							type="button"
+							aria-expanded="false"
+							aria-controls="app-dock"
+							aria-label="Open learning tools"
+						></button>
+						<nav class="app-dock" id="app-dock" aria-label="Learning tools" aria-hidden="true" inert>
+						<button type="button" class="app-dock-item" aria-label="Goal. Not available yet.">
+							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+								<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2" />
+								<circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="2" />
+							</svg>
+							<span class="app-dock-tip">Goal</span>
+						</button>
+						<button type="button" class="app-dock-item" aria-label="Practice. Not available yet.">
+							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+								<path
+									d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+								<path d="m15 5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+							</svg>
+							<span class="app-dock-tip">Practice</span>
+						</button>
+						<span class="app-dock-rule" role="separator"></span>
+						<button type="button" class="app-dock-item" aria-label="Explain. Not available yet.">
+							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+								<path
+									d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							<span class="app-dock-tip">Explain</span>
+						</button>
+						<button type="button" class="app-dock-item" aria-label="Check. Not available yet.">
+							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+								<path
+									d="M12 6v6l4 2"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							<span class="app-dock-tip">Check</span>
+						</button>
+					</nav>
+					</div>
+				</div>
 
 				<section class="active-node" aria-label="Current step">
 					<div class="active-scroll">
@@ -129,24 +193,19 @@
 				aria-label="Menu"
 			>
 				<nav class="menu-orbs">
-					<a href="/">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-							<path
-								d="M4.75 11.25 12 4.75l7.25 6.5"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-							<path
-								d="M6.75 10.75V19h10.5v-8.25"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linejoin="round"
-							/>
-						</svg>
-						<span>Home</span>
-					</a>
+					<button
+						id="type-size-toggle"
+						type="button"
+						data-size="medium"
+						aria-label="Text size medium. Switch to small."
+					>
+						<span class="orb-glyph" aria-hidden="true">
+							<span class="type-icon is-small">s</span>
+							<span class="type-icon is-medium">s</span>
+							<span class="type-icon is-big">S</span>
+						</span>
+						<span id="type-size-label">Medium</span>
+					</button>
 					<button
 						id="appearance-toggle"
 						type="button"

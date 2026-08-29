@@ -7,6 +7,8 @@ import {
 } from './client/conversation.ts';
 import { r1OpeningKickoff, r1OpeningMessage } from '../config/r1-learning.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
+import { cycleTypeSize, initTypeSize } from './type-size.ts';
+import { mountAppDock } from './app-dock.ts';
 import { pendingWordAt, pendingWords } from './pending-words.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
@@ -31,7 +33,7 @@ type ChatSurfaceElements = {
 	input: HTMLTextAreaElement;
 	messages: HTMLOListElement;
 	button: HTMLButtonElement;
-	core: HTMLElement;
+	core: HTMLButtonElement;
 	lockup: HTMLButtonElement;
 	canvas: HTMLElement;
 	startOver: HTMLButtonElement;
@@ -46,13 +48,16 @@ type ChatSurfaceElements = {
 	trailToggle: HTMLButtonElement;
 	trailLabel: HTMLElement;
 	appearance: HTMLButtonElement;
+	typeSize: HTMLButtonElement;
 };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const drawerCloseRatio = 0.25;
 const drawerFlickVelocity = 0.4;
 const peekOpenDistance = 48;
+const handleClickSlop = 8;
 const pendingWordIntervalMs = 4000;
+const streamGapMs = 60;
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
 	const conversation = openChatConversation();
@@ -76,25 +81,61 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		trailToggle,
 		trailLabel,
 		appearance,
+		typeSize,
 	} = elements;
+	const learningDock = mountAppDock(core);
 	let working = false;
 	let menuOpen = false;
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
 	const transcript = attachTranscriptScroll(card);
+	const streamTimers: number[] = [];
 
 	function wait(ms: number) {
 		return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 	}
 
-	function createLabeledBody(role: ChatMessageRole, text: string) {
+	function clearStream() {
+		for (const id of streamTimers) window.clearTimeout(id);
+		streamTimers.length = 0;
+	}
+
+	function fillTurnBody(body: HTMLParagraphElement, text: string, stream: boolean) {
+		body.replaceChildren();
+		if (!text) {
+			body.hidden = true;
+			return;
+		}
+		body.hidden = false;
+		if (!stream) {
+			body.textContent = text;
+			return;
+		}
+		const spans: HTMLSpanElement[] = [];
+		for (const token of text.split(/(\s+)/)) {
+			if (token === '') continue;
+			if (/^\s+$/.test(token)) {
+				body.append(token);
+				continue;
+			}
+			const word = document.createElement('span');
+			word.className = 'stream-word';
+			word.textContent = token;
+			body.append(word);
+			spans.push(word);
+		}
+		spans.forEach((word, index) => {
+			streamTimers.push(window.setTimeout(() => word.classList.add('is-in'), index * streamGapMs));
+		});
+	}
+
+	function createLabeledBody(role: ChatMessageRole, text: string, stream = false) {
 		const label = document.createElement('span');
 		label.className = 'turn-label';
 		label.textContent = displayLabel(role);
 		const body = document.createElement('p');
-		body.textContent = text;
-		if (!text) body.hidden = true;
+		fillTurnBody(body, text, stream);
 		return { label, body };
 	}
 
@@ -115,13 +156,13 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		role: ChatMessageRole,
 		text: string,
 		questionnaire: QuestionnaireDefinition | undefined,
-		{ announce = false, stagger = false, interactive = false } = {},
+		{ announce = false, stagger = false, interactive = false, stream = false } = {},
 	) {
 		const wrap = document.createElement('div');
 		wrap.className = `turn ${role.toLowerCase()}`;
 		if (announce) wrap.setAttribute('aria-live', 'polite');
 		if (stagger) wrap.classList.add('stagger-item');
-		const { label, body } = createLabeledBody(role, text);
+		const { label, body } = createLabeledBody(role, text, stream);
 		wrap.append(label, body);
 		if (questionnaire && interactive) {
 			wrap.append(
@@ -209,6 +250,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	function setMenuOpen(open: boolean) {
 		if (menuOpen === open) return;
+		if (open) learningDock.close();
 		menuOpen = open;
 		menuPanel.classList.remove('is-dragging');
 		menuLayer.classList.toggle('is-open', open);
@@ -229,24 +271,43 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		peekHandle.focus();
 	}
 
+	function suppressNextClick(handle: HTMLElement) {
+		let done = false;
+		const suppress = (event: Event) => {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			finish();
+		};
+		const finish = () => {
+			if (done) return;
+			done = true;
+			handle.removeEventListener('click', suppress, true);
+		};
+		handle.addEventListener('click', suppress, true);
+		window.setTimeout(finish, 500);
+	}
+
 	function bindSheetHandle(handle: HTMLElement, { openOnDown = false } = {}) {
 		if (reduceMotion) return;
 		let dragging = false;
+		let moved = false;
 		let startY = 0;
 		let lastY = 0;
 		let lastT = 0;
 		let velocity = 0;
+		let panelHeight = 0;
 
 		handle.addEventListener('pointerdown', (event) => {
 			if (event.button !== 0) return;
 			if (!openOnDown && !menuOpen) return;
 			if (openOnDown && menuOpen) return;
 			dragging = true;
+			moved = false;
 			startY = event.clientY;
 			lastY = event.clientY;
 			lastT = performance.now();
 			velocity = 0;
-			if (menuOpen) menuPanel.classList.add('is-dragging');
+			panelHeight = menuPanel.offsetHeight;
 			handle.setPointerCapture(event.pointerId);
 		});
 
@@ -254,26 +315,43 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 			if (!dragging) return;
 			const now = performance.now();
 			const dy = event.clientY - startY;
-			if (menuOpen) {
-				const offset = dy < 0 ? dy : dy * 0.15;
-				menuPanel.style.transform = `translate3d(0, ${offset}px, 0)`;
-			}
 			velocity = (event.clientY - lastY) / Math.max(now - lastT, 1);
 			lastY = event.clientY;
 			lastT = now;
+			if (!moved && Math.abs(dy) < handleClickSlop) return;
+			if (!moved) {
+				moved = true;
+				menuPanel.classList.add('is-dragging');
+				if (openOnDown) menuLayer.classList.add('is-pulling');
+			}
+			if (menuOpen) {
+				const offset = dy < 0 ? dy : dy * 0.15;
+				menuPanel.style.transform = `translate3d(0, ${offset}px, 0)`;
+				return;
+			}
+			const closedY = -panelHeight * 1.1;
+			let nextY = closedY + Math.max(0, dy);
+			if (nextY > 0) nextY *= 0.15;
+			menuPanel.style.transform = `translate3d(0, ${nextY}px, 0)`;
 		});
 
 		function finishDrag() {
 			if (!dragging) return;
 			dragging = false;
 			menuPanel.classList.remove('is-dragging');
+			menuLayer.classList.remove('is-pulling');
+			if (!moved) return;
+			suppressNextClick(handle);
 			const dy = lastY - startY;
 			if (openOnDown) {
-				if (dy > peekOpenDistance || velocity > drawerFlickVelocity) setMenuOpen(true);
+				if (dy > peekOpenDistance || velocity > drawerFlickVelocity) {
+					setMenuOpen(true);
+					return;
+				}
+				menuPanel.style.transform = '';
 				return;
 			}
-			const height = menuPanel.getBoundingClientRect().height;
-			const shouldClose = dy < -height * drawerCloseRatio || velocity < -drawerFlickVelocity;
+			const shouldClose = dy < -panelHeight * drawerCloseRatio || velocity < -drawerFlickVelocity;
 			if (shouldClose) {
 				setMenuOpen(false);
 				return;
@@ -287,6 +365,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	async function paint(kind: PaintKind) {
 		const render = async () => {
+			clearStream();
 			const { earlier, current } = splitCurrentTurns(turns);
 			messages.replaceChildren(
 				...earlier.map((item) => createHistoryItem(item.role, item.text, item.questionnaire)),
@@ -302,10 +381,12 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 			activeTurn.replaceChildren(
 				...current.map((item, index) => {
 					const isLast = index === current.length - 1;
+					const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
 					return createActiveTurn(item.role, item.text, item.questionnaire, {
 						announce: kind === 'hold' && isLast,
-						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast,
+						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
 						interactive: isLast && Boolean(item.questionnaire),
+						stream,
 					});
 				}),
 			);
@@ -349,11 +430,16 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	}
 
 	initAppearance(appearance);
+	initTypeSize(typeSize);
 	startOver.addEventListener('click', startNewChatConversation);
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
+	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
 	lockup.addEventListener('click', () => setMenuOpen(!menuOpen));
 	peekHandle.addEventListener('click', () => {
 		if (!menuOpen) setMenuOpen(true);
+	});
+	menuHandle.addEventListener('click', () => {
+		if (menuOpen) setMenuOpen(false);
 	});
 	menuBackdrop.addEventListener('click', () => setMenuOpen(false));
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
@@ -510,7 +596,7 @@ function queryChatSurface(): ChatSurfaceElements {
 		input: requireElement<HTMLTextAreaElement>('#message'),
 		messages: requireElement<HTMLOListElement>('#messages'),
 		button: requireElement<HTMLButtonElement>('button', form),
-		core: requireElement<HTMLElement>('.alive-core'),
+		core: requireElement<HTMLButtonElement>('.alive-core'),
 		lockup,
 		canvas,
 		startOver: requireElement<HTMLButtonElement>('#start-over'),
@@ -525,5 +611,6 @@ function queryChatSurface(): ChatSurfaceElements {
 		trailToggle: requireElement<HTMLButtonElement>('#trail-toggle'),
 		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
 		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
+		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
 	};
 }
