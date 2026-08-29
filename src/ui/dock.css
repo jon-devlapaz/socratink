@@ -1,0 +1,217 @@
+.alive-cluster {
+	--orb-size: clamp(145px, 18vw, 220px);
+	--orb-visual-radius: 29.55%;
+	--orb-below: 0.2045;
+	--dock-bar-height: 3.5rem;
+	--dock-under-orb: 6px;
+	position: relative;
+	z-index: 3;
+	display: flex;
+	flex: none;
+	flex-direction: column;
+	align-items: center;
+	overflow: visible;
+	padding-bottom: 0;
+	transition-property: padding-bottom;
+	transition-duration: 240ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.alive-cluster.is-dock-open {
+	padding-bottom: calc(var(--dock-bar-height) + var(--dock-under-orb) + 2px - var(--orb-below) * var(--orb-size));
+	transition-duration: 400ms;
+}
+
+.alive-anchor {
+	position: relative;
+	width: var(--orb-size);
+	flex: none;
+	overflow: visible;
+}
+
+.alive-core.is-dock-pulse:not(.is-working) {
+	transform: scale(1.045);
+}
+
+.app-dock {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 2;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	height: var(--dock-bar-height);
+	width: max-content;
+	gap: 0.5rem;
+	padding: 0.5rem;
+	border: 1px solid var(--dock-stroke);
+	border-radius: 999px;
+	background: var(--dock-glass);
+	backdrop-filter: blur(12px);
+	overflow: visible;
+	transform-origin: 50% 50%;
+	translate: -50% -50%;
+	scale: 0.2;
+	filter: blur(4px);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition-property: opacity, translate, scale, filter, border-radius, top;
+	transition-duration: 240ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.app-dock.is-open {
+	visibility: visible;
+}
+
+.app-dock.is-emerged {
+	top: calc(50% + var(--orb-visual-radius) + var(--dock-under-orb));
+	border-radius: 1rem;
+	translate: -50% 0;
+	scale: 1;
+	filter: blur(0);
+	opacity: 1;
+	pointer-events: auto;
+	transition-duration: 400ms;
+}
+
+.app-dock-item {
+	position: relative;
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: var(--dock-icon-size, 40px);
+	height: var(--dock-icon-size, 40px);
+	padding: 8px;
+	border: 0;
+	border-radius: 999px;
+	color: var(--ink);
+	background: transparent;
+	cursor: pointer;
+	font: inherit;
+	transition-property: background-color, scale;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.app-dock-glyph {
+	display: block;
+	flex: none;
+	width: 1rem;
+	height: 1rem;
+}
+
+.app-dock-item:hover,
+.app-dock-item:focus-visible {
+	background: color-mix(in srgb, var(--ink) 10%, transparent);
+	outline: none;
+}
+
+.app-dock-item:focus-visible {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.app-dock-item:active {
+	scale: 0.96;
+}
+
+.app-dock-tip {
+	position: absolute;
+	bottom: calc(100% + 0.5rem);
+	left: 50%;
+	z-index: 50;
+	padding: 0.375rem 0.75rem;
+	border-radius: 0.375rem;
+	background: var(--ink);
+	color: var(--paper);
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.25;
+	letter-spacing: 0;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	scale: 0.95;
+	translate: -50% 4px;
+	transition-property: opacity, scale, translate;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.app-dock-tip::after {
+	content: "";
+	position: absolute;
+	top: calc(100% - 5px);
+	left: 50%;
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--ink);
+	translate: -50% 0;
+	rotate: 45deg;
+}
+
+.app-dock:not(.is-emerged) .app-dock-tip {
+	opacity: 0;
+	transition: none;
+}
+
+.app-dock-item:hover .app-dock-tip,
+.app-dock-item:focus-visible .app-dock-tip {
+	opacity: 1;
+	scale: 1;
+	translate: -50% 0;
+}
+
+.app-dock-rule {
+	flex: none;
+	align-self: stretch;
+	width: 1px;
+	margin-block: 0.15rem;
+	background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+html:has(.menu-layer.is-open) .app-dock {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+@media (max-width: 560px) {
+	.alive-cluster {
+		--orb-size: 135px;
+	}
+}
+
+@media (max-height: 720px) {
+	.alive-cluster {
+		--orb-size: 118px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.app-dock,
+	.app-dock-item,
+	.app-dock-tip,
+	.alive-cluster {
+		transition: none;
+	}
+
+	.alive-core.is-dock-pulse:not(.is-working) {
+		transform: none;
+	}
+
+	.app-dock {
+		top: calc(50% + var(--orb-visual-radius) + var(--dock-under-orb));
+		translate: -50% 0;
+		scale: none;
+		filter: none;
+		border-radius: 1rem;
+	}
+
+	.app-dock-item:active {
+		scale: none;
+	}
+}
