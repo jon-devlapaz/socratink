@@ -38,7 +38,7 @@ learner UI, or a live synthetic Chat run in Braintrust when that was the ask.
 
 Praxist runs, task init, baselines, DIG, operator skills, chat-history
 exports, prototypes, archive, Flue framework rewrites, new eval products,
-and the reverted R1 learner-evidence expansion. Those may explain a failure;
+and the reverted parallel learner-evidence expansion. Those may explain a failure;
 they are not success.
 
 ## Done when

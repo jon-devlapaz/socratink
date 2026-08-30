@@ -2,7 +2,7 @@ import type { FlueConversationSnapshot } from '@flue/sdk';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { questionnaireFromParts } from './questionnaire.ts';
 
-export type ChatMessageRole = 'Socratink' | 'You' | 'Assistant' | 'Error';
+export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
 
 export type DisplayedTurn = {
 	role: ChatMessageRole;
@@ -14,7 +14,6 @@ export function displayLabel(role: ChatMessageRole): string {
 	switch (role) {
 		case 'Assistant':
 			return 'Socratink';
-		case 'Socratink':
 		case 'You':
 		case 'Error':
 			return role;

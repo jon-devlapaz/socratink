@@ -15,15 +15,11 @@ NEEDLE_PATHS = [
     "src/server",
     "src/braintrust.ts",
     "src/questionnaire.ts",
-    "src/config/r1-learning.ts",
 ]
 
 PRESENCE = {
-    "src/r1": "r1_dir",
     "src/questionnaire.ts": "questionnaire_module",
     "src/ui/questionnaire.ts": "questionnaire_ui",
-    "src/config/r1-learning.ts": "r1_learning_config",
-    "scripts/r1-review.mjs": "r1_reviewer_cli",
 }
 
 BATCH_RE = re.compile(r"^B(\d{3})\b")
@@ -70,11 +66,7 @@ def next_id(root: Path, prefix: str, width: int) -> str:
 
 
 def presence(app: Path) -> dict[str, bool]:
-    flags = {label: (app / rel).exists() for rel, label in PRESENCE.items()}
-    app_ts = app / "src" / "app.ts"
-    text = app_ts.read_text(encoding="utf-8") if app_ts.is_file() else ""
-    flags["api_r1_in_app"] = "/api/r1" in text or "r1/routes" in text
-    return flags
+    return {label: (app / rel).exists() for rel, label in PRESENCE.items()}
 
 
 def mentions(brain: Path, pin: str | None) -> list[str]:

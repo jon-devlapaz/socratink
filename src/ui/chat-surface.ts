@@ -10,7 +10,6 @@ import {
 	startNewChatConversation,
 	unsettledSubmissionFromHistory,
 } from './client/conversation.ts';
-import { r1OpeningKickoff, r1OpeningMessage } from '../config/r1-learning.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { mountAppDock } from './app-dock.ts';
@@ -25,12 +24,12 @@ import {
 import {
 	createQuestionnaire,
 	createQuestionnaireSummary,
+	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
-	questionnaireUserMessage,
 } from './questionnaire.ts';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 
-type PaintKind = 'opening' | 'restore' | 'new-turn' | 'hold';
+type PaintKind = 'restore' | 'new-turn' | 'hold';
 
 type ChatSurfaceElements = {
 	form: HTMLFormElement;
@@ -244,10 +243,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		if (questionnaire && interactive) {
 			wrap.append(
 				createQuestionnaire(questionnaire, (answers) => {
-					const source = questionnaireSource(role);
-					if (!source) return;
-					const message = questionnaireUserMessage(source, questionnaire, answers);
-					if (message) void sendMessage(message);
+					void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
 				}),
 			);
 		}
@@ -305,22 +301,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		return buildRequestStateTurn(state, () => requests.recheck(), (result) => {
 			void runRequestCommand(result);
 		});
-	}
-
-	function questionnaireSource(role: ChatMessageRole): 'opening' | 'assistant' | undefined {
-		switch (role) {
-			case 'Socratink':
-				return 'opening';
-			case 'Assistant':
-				return 'assistant';
-			case 'You':
-			case 'Error':
-				return undefined;
-			default: {
-				const exhaustive: never = role;
-				return exhaustive;
-			}
-		}
 	}
 
 	function setTrailOpen(open: boolean) {
@@ -509,10 +489,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				await render();
 				transcript.pinCurrentStart();
 				return;
-			case 'opening':
-				await render();
-				transcript.refresh();
-				return;
 			default: {
 				const exhaustive: never = kind;
 				return exhaustive;
@@ -648,7 +624,6 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	async function restoreConversation() {
 		if (working) return;
-		let fresh = false;
 		let unsettled: ReturnType<typeof unsettledSubmissionFromHistory>;
 		setWorking(true);
 		try {
@@ -665,9 +640,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 						),
 					}
 					: history;
-				visible = visibleTurnsFromHistory(restoredHistory).filter(
-					(turn) => turn.role !== 'You' || turn.text !== r1OpeningKickoff,
-				);
+				visible = visibleTurnsFromHistory(restoredHistory);
 				if (unsettled) {
 					requestState = requests.hydrate(unsettled.text, unsettled.submissionId);
 				}
@@ -683,21 +656,13 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					return;
 				}
 			}
-			fresh = visible.length === 0 && !unsettled;
-			turns = [
-				{
-					role: 'Socratink',
-					text: r1OpeningMessage,
-				},
-				...visible,
-			];
-			await paint(fresh ? 'opening' : 'restore');
+			turns = visible;
+			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
 			focusAfterRequestPaint(requestState);
 		}
 		if (unsettled) await runRequestCommand(requests.recheck());
-		if (fresh) await startRequest(r1OpeningKickoff);
 	}
 
 	void restoreConversation();

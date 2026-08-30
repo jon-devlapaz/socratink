@@ -36,7 +36,7 @@ unblocked that path:
 
 - Praxist, DIG, baselines, operator launch, `praxist_task/`
 - New evaluation products, reviewer workflows, extra route families
-- The reverted R1 learner-evidence product (that is a **failure**, not a win)
+- The reverted parallel learner-evidence product (that is a **failure**, not a win)
 - Prototypes, archive, chat-history tooling, skill authoring, Flue rewrites
 - Words like dogfood / scientific / production quality that grew scope
 
@@ -51,7 +51,7 @@ the hash.
    `src/agents`, `src/app.ts`, `src/server`, `src/braintrust.ts` that match a
    one-sentence learner-visible outcome; `pnpm check` and `pnpm smoke`;
    `pnpm smoke:braintrust-live` only when that was the asked proof.
-2. **Canonical failure:** reverts, the R1 expansion, abandoned product
+2. **Canonical failure:** reverts, the parallel learner-evidence expansion, abandoned product
    branches, huge diffs for a narrow Chat ask, verify-never-ran, usage
    burned on operator/Praxist instead of the product.
 3. **Chat as explanation only.** “Done” in chat without a product land is
@@ -120,8 +120,8 @@ id only if chat explains it.
 
 ### 3. Failures
 
-3–7 bullets. Split **my** mode vs **agent** mode. Include the R1 expansion
-if evidence supports it.
+3–7 bullets. Split **my** mode vs **agent** mode. Include the parallel
+learner-evidence expansion if evidence supports it.
 
 ### 4. Replicate with
 

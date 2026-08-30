@@ -6,7 +6,6 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromParts,
 	questionnaireFromReplyData,
-	questionnaireUserMessage,
 } from '../src/ui/questionnaire.ts';
 
 const validDefinition = {
@@ -118,21 +117,11 @@ test('preserves a selected choice and its freeform explanation in the same answe
 	);
 });
 
-test('opening submit is the selected path; assistant submit is formatted answers', () => {
-	const questionnaire = parseQuestionnaireDefinition(validDefinition);
-	assert.ok(questionnaire);
-	const answers = [
-		{ name: 'path', values: ['I want to explore a worked example of one synapse.'] },
-	];
-	assert.equal(
-		questionnaireUserMessage('opening', questionnaire, answers),
-		'I want to explore a worked example of one synapse.',
-	);
-	assert.equal(
-		questionnaireUserMessage('assistant', questionnaire, answers),
-		formatQuestionnaireAnswers(questionnaire, answers),
-	);
-	assert.equal(questionnaireUserMessage('opening', questionnaire, []), undefined);
+test('questionnaire submit sends formatted answers; questionnaireUserMessage is gone', async () => {
+	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	const widgetSource = await readFile(new URL('../src/ui/questionnaire.ts', import.meta.url), 'utf8');
+	assert.match(surfaceSource, /sendMessage\(formatQuestionnaireAnswers/);
+	assert.doesNotMatch(widgetSource, /questionnaireUserMessage/);
 });
 
 test('the card mounts questionnaires from turn data, not a post-paint inject', async () => {
@@ -141,7 +130,6 @@ test('the card mounts questionnaires from turn data, not a post-paint inject', a
 	assert.doesNotMatch(surfaceSource, /addStartingChoices/);
 	assert.doesNotMatch(surfaceSource, /startingPathQuestionnaire/);
 	assert.doesNotMatch(surfaceSource, /How would you like to start/);
-	assert.match(surfaceSource, /r1OpeningKickoff/);
 	assert.doesNotMatch(widgetSource, /onSubmit\(formatQuestionnaireAnswers/);
 });
 
@@ -149,22 +137,18 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
 	assert.match(promptSource, /name: 'present_question'/);
-	assert.match(promptSource, /exactly one item/);
+	assert.match(promptSource, /exactly one question/);
+	assert.match(promptSource, /Evaluate this app's flow/);
+	assert.match(promptSource, /Questionnaire answers:/);
+	assert.match(promptSource, /Find gaps with one question/);
+	assert.doesNotMatch(promptSource, /useSkill/);
+	assert.doesNotMatch(promptSource, /sal-khan-perspective/);
+	assert.doesNotMatch(promptSource, /read_skill_resource/);
+	assert.doesNotMatch(promptSource, /Activate sal-khan/);
 	assert.doesNotMatch(promptSource, /<socratink-questionnaire>/);
 	assert.doesNotMatch(promptSource, /Whenever you ask the learner a question/);
 	assert.doesNotMatch(promptSource, /glutamate/);
-});
-
-test('the Learning Target lives on the agent, not a four-turn script', async () => {
-	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
-	const configSource = await readFile(new URL('../src/config/r1-learning.ts', import.meta.url), 'utf8');
-	assert.match(configSource, /agent execution trace/);
-	assert.match(configSource, /r1FirstExampleTrace/);
-	assert.match(promptSource, /r1LearningTarget/);
-	assert.match(promptSource, /r1FirstExampleTrace/);
-	assert.match(promptSource, /Do not ask how to start/);
-	assert.doesNotMatch(promptSource, /the question is already on the card/);
+	assert.doesNotMatch(promptSource, /You are socratink, a learner-guided dialogue agent/);
 	assert.doesNotMatch(promptSource, /Worked-example protocol/);
-	assert.doesNotMatch(promptSource, /Q3 sales report/);
-	assert.doesNotMatch(promptSource, /example agent trace protocol/);
+	assert.doesNotMatch(promptSource, /the question is already on the card/);
 });

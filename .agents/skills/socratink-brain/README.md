@@ -57,7 +57,7 @@ From the Socratink application repository:
 ```bash
 python .agents/skills/socratink-brain/scripts/brain.py locate
 python .agents/skills/socratink-brain/scripts/brain.py orient
-python .agents/skills/socratink-brain/scripts/brain.py context "R1 evidence contract"
+python .agents/skills/socratink-brain/scripts/brain.py context "learner evidence contract"
 python .agents/skills/socratink-brain/scripts/brain.py show EVD-0004
 python .agents/skills/socratink-brain/scripts/brain.py validate
 ```

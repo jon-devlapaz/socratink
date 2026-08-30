@@ -156,7 +156,7 @@ test('preserves a non-adjacent failed same-text attempt across another exchange'
 
 test('splits the latest learner and closing reply into the current beat', () => {
 	const turns = [
-		{ role: 'Socratink', text: 'Opening' },
+		{ role: 'Assistant', text: 'Earlier opening reply' },
 		{ role: 'You', text: 'Earlier learner turn' },
 		{ role: 'Assistant', text: 'Earlier reply' },
 		{ role: 'You', text: 'Current learner turn' },

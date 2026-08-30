@@ -42,23 +42,6 @@ export function formatQuestionnaireAnswers(
 	return `Questionnaire answers:\n${lines.join('\n')}`;
 }
 
-export function questionnaireUserMessage(
-	source: 'opening' | 'assistant',
-	definition: QuestionnaireDefinition,
-	answers: QuestionnaireAnswer[],
-): string | undefined {
-	switch (source) {
-		case 'opening':
-			return answers[0]?.values[0];
-		case 'assistant':
-			return formatQuestionnaireAnswers(definition, answers);
-		default: {
-			const exhaustive: never = source;
-			return exhaustive;
-		}
-	}
-}
-
 function createButton(label: string, className: string): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';

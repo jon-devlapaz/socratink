@@ -36,7 +36,7 @@ strictly required. A large diff is also a tripwire when a narrow integration is
 available; lockfiles and generated output do not justify expanding behavior.
 
 Failure precedent: a request to trace existing Socratink runs was incorrectly
-expanded into a separate R1 learner-evidence product with new UI, routes,
+expanded into a separate learner-evidence product with new UI, routes,
 storage, schemas, and review machinery. The expansion was reverted. Never use
 that approach as precedent; the correct solution was startup instrumentation
 plus one live trace verification.

@@ -5,7 +5,7 @@ description: >
   orient ontology to the live codebase, retrieve task-scoped canon, trace
   provenance, mine conversation/experiment histories into Learning Events,
   reconcile new evidence, and validate the vault. Use when implementing
-  product/learning behavior, learner evidence, Teaching Skills, experiments, R1,
+  product/learning behavior, learner evidence, Teaching Skills, experiments,
   archaeology of transcripts, or any task that depends on Socratink doctrine
   rather than software-maintenance docs alone.
 version: 1.1.0
@@ -667,7 +667,7 @@ Preserve the transcript as `SRC-*`, extract `EVT-*` events, name repeating patte
 without a new type, emit candidate `EVD-*` / `CLM-*`, and reconcile. Stop at
 `candidate` unless the task grants Canon-change authority.
 
-### “Implement R1”
+### “Change the live Chat agent”
 
 Read:
 
@@ -675,8 +675,6 @@ Read:
 - `NORTH-STAR.md`
 - `CURRENT STATE.md`
 - `40 Views/Agent/Learner Agent Contract.md`
-- `20 Canon/Evaluation/Experiments/EXP-0001 R1 evidence-bearing learning loop.md`
-- linked Evidence/Policy/Intervention objects
 - relevant agent/change procedures
 
-Implement only the smallest complete slice needed to satisfy the frozen proof.
+Implement only the smallest complete slice on the existing Chat surface. Do not add a parallel learner-evidence product.

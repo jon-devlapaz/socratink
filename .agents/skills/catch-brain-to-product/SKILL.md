@@ -51,7 +51,7 @@ Inspect the product at that commit (`src/ui`, `src/agents`, `src/app.ts`,
    Keep Strategic direction, Validated Brain substrate, Active proof question,
    and Explicit non-claims unless a listed non-claim is now false (then say so
    and keep the rest).
-3. `50 Active/Current Milestone.md` — live-app pin only. Do not mark R1 run.
+3. `50 Active/Current Milestone.md` — live-app pin only. Do not mark a retired experiment as run.
 4. Views that still name the old pin as live (today: Evidence Engine
    Architecture **Implementation** paragraph). Point them at the new SRC.
 5. `60 Ledger/Ingestion Batches/B0xx Catch CURRENT STATE to <short hash>.md`
@@ -66,17 +66,17 @@ Do not commit unless the user asks.
 - Product repository files
 - Praxist, prototypes, chat-histories, operator skills as live product
 
-Questionnaires, a frozen Chat target, Braintrust spans, or a sitting are **not**
-R1 mounted and are **not** EXP-0001 run.
+Questionnaires, a Chat target, Braintrust spans, or a sitting are **not**
+an evidence-loop experiment mounted and are **not** a passed product proof.
 
 ## SRC snapshot
 
 Copy SRC-0013's sections: Provenance, What is present, What is not present, URLs.
 
 Provenance lists material needle commits since the previous pin (inventory
-`since_pin`). What is not present must still say: no `/api/r1`, no reviewer CLI,
-no evidence-contract library, R1 not run — unless the inspected tree actually
-has them.
+`since_pin`). What is not present must still say: no parallel learner-mode API
+family, no reviewer CLI, no evidence-contract library, and no evidence-loop
+experiment run — unless the inspected tree actually has them.
 
 ## Validate
 
@@ -98,7 +98,7 @@ Previous pin:
 SRC:
 Batch:
 Canon changed: no
-R1 run: no
+Evidence-loop experiment run: no
 Validation:
 ```
 
