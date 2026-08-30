@@ -32,7 +32,7 @@ For product or learning work in the Socratink application repository:
 
 1. Run `python .agents/skills/socratink-brain/scripts/brain.py orient`.
 2. Read every existing `read_now` path from `brain_root`.
-3. If `tandem` is `mismatch`, say so; do not assume `CURRENT STATE.md` describes this checkout.
+3. If `tandem` is `mismatch`, say so; do not assume `CURRENT STATE.md` describes this checkout. To catch Brain live-state to product HEAD, use `.agents/skills/catch-brain-to-product`.
 4. Run `context "<task>"`, then `show` only the linked IDs required to decide.
 5. Fill a Brain Contract before writing code.
 6. Do not ingest the whole vault. Do not reconstruct doctrine from this repo's software docs.
@@ -411,6 +411,9 @@ Direct updates to `CURRENT STATE.md` or `50 Active/` are allowed only when:
 - the update does not silently change North Star or Canon.
 
 State what evidence changed the current-state view.
+
+To pin CURRENT STATE to sibling `product/socratink` HEAD, follow
+`.agents/skills/catch-brain-to-product` (inventory first; Brain writes only).
 
 ### F. Change Canon
 
