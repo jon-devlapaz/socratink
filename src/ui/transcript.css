@@ -262,24 +262,65 @@ html[data-type-size='small'] .active-node {
 }
 
 .turn.pending .pending-word {
-	background-image: linear-gradient(
-		to right,
-		var(--quiet) 30%,
-		var(--muted) 50%,
-		var(--quiet) 70%
-	);
-	background-size: 200% auto;
-	background-clip: text;
-	-webkit-background-clip: text;
-	color: transparent;
+	color: var(--quiet);
 	font-size: inherit;
 	font-weight: inherit;
 	letter-spacing: normal;
 	text-transform: none;
 }
 
-.turn.pending .pending-word.is-shimmering {
-	animation: text-shimmer 4s linear infinite;
+.turn.pending .pending-latency {
+	margin-top: 0.2rem;
+	color: var(--muted);
+	font-size: calc(0.75rem * var(--type-scale));
+}
+
+.turn.pending .pending-latency[hidden] {
+	display: none;
+}
+
+.request-action {
+	width: max-content;
+	margin-top: 0.45rem;
+	padding: 0.35rem 0.65rem;
+	border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+	border-radius: 999px;
+	color: var(--ink);
+	background: var(--chip);
+	cursor: pointer;
+	font: inherit;
+	font-size: calc(0.72rem * var(--type-scale));
+}
+
+.request-action:hover,
+.request-action:focus-visible {
+	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+	outline: none;
+}
+
+.request-action:focus-visible {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.request-action:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.request-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+}
+
+.turn.request-state.aborted p,
+.turn.request-state.not-admitted p,
+.turn.request-state.recovery p {
+	color: var(--muted);
+}
+
+.turn.request-state.failed p {
+	color: var(--error);
 }
 
 @keyframes pulse-dot {
@@ -291,15 +332,6 @@ html[data-type-size='small'] .active-node {
 	50% {
 		transform: scale(1.5);
 		opacity: 1;
-	}
-}
-
-@keyframes text-shimmer {
-	from {
-		background-position: 200% 50%;
-	}
-	to {
-		background-position: -200% 50%;
 	}
 }
 
@@ -315,19 +347,13 @@ html[data-type-size='small'] .active-node {
 		transition: none;
 	}
 
-	.pending-dot,
-	.turn.pending .pending-word.is-shimmering {
+	.pending-dot {
 		animation: none;
 	}
 
 	.pending-dot {
 		transform: none;
 		opacity: 0.8;
-	}
-
-	.turn.pending .pending-word {
-		background: none;
-		color: var(--quiet);
 	}
 
 	.stream-word {

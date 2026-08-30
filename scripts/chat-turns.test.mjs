@@ -22,6 +22,7 @@ const questionnaire = {
 
 test('projects only visible learner and assistant turns from conversation history', () => {
 	const turns = visibleTurnsFromHistory({
+		settlements: [],
 		messages: [
 			{
 				display: 'hidden',
@@ -55,6 +56,101 @@ test('projects only visible learner and assistant turns from conversation histor
 	assert.deepEqual(turns, [
 		{ role: 'You', text: 'First\n\nSecond' },
 		{ role: 'Assistant', text: '', questionnaire },
+	]);
+});
+
+test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {
+	const user = (id, text) => ({
+		id,
+		submissionId: id,
+		display: 'visible',
+		role: 'user',
+		parts: [{ type: 'text', text }],
+	});
+	const turns = visibleTurnsFromHistory({
+		settlements: [
+			{ submissionId: 'aborted', outcome: 'aborted' },
+		],
+		messages: [
+			user('aborted', 'same learner work'),
+			user('retry', 'same learner work'),
+		],
+	});
+
+	assert.deepEqual(turns, [{ role: 'You', text: 'same learner work' }]);
+});
+
+test('dedupes a contiguous aborted submission group with a partial assistant before its retry', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [{ submissionId: 'aborted', outcome: 'aborted' }],
+		messages: [
+			{
+				id: 'aborted-user',
+				submissionId: 'aborted',
+				display: 'visible',
+				role: 'user',
+				parts: [{ type: 'text', text: 'same learner work' }],
+			},
+			{
+				id: 'aborted-partial',
+				submissionId: 'aborted',
+				display: 'visible',
+				role: 'assistant',
+				parts: [{ type: 'text', text: 'partial reply' }],
+			},
+			{
+				id: 'retry-user',
+				submissionId: 'retry',
+				display: 'visible',
+				role: 'user',
+				parts: [{ type: 'text', text: 'same learner work' }],
+			},
+			{
+				id: 'retry-assistant',
+				submissionId: 'retry',
+				display: 'visible',
+				role: 'assistant',
+				parts: [{ type: 'text', text: 'complete reply' }],
+			},
+		],
+	});
+
+	assert.deepEqual(turns, [
+		{ role: 'You', text: 'same learner work' },
+		{ role: 'Assistant', text: 'complete reply' },
+	]);
+});
+
+test('preserves a non-adjacent failed same-text attempt across another exchange', () => {
+	const user = (id, text) => ({
+		id,
+		submissionId: id,
+		display: 'visible',
+		role: 'user',
+		parts: [{ type: 'text', text }],
+	});
+	const assistant = {
+		id: 'assistant',
+		submissionId: 'unrelated',
+		display: 'visible',
+		role: 'assistant',
+		parts: [{ type: 'text', text: 'unrelated reply' }],
+	};
+	const turns = visibleTurnsFromHistory({
+		settlements: [{ submissionId: 'failed-old', outcome: 'failed' }],
+		messages: [
+			user('failed-old', 'same learner work'),
+			user('unrelated', 'different learner work'),
+			assistant,
+			user('later-repeat', 'same learner work'),
+		],
+	});
+
+	assert.deepEqual(turns, [
+		{ role: 'You', text: 'same learner work' },
+		{ role: 'You', text: 'different learner work' },
+		{ role: 'Assistant', text: 'unrelated reply' },
+		{ role: 'You', text: 'same learner work' },
 	]);
 });
 

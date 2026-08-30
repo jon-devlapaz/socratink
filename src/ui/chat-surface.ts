@@ -1,15 +1,19 @@
-import { FlueApiError } from '@flue/sdk';
 import {
-	chatTurnErrorMessage,
+	FlueApiError,
+	type AgentReadResult,
+} from '@flue/sdk';
+import {
+	ChatRequestCoordinator,
+	chatRequestControls,
+	type ChatRequestState,
 	openChatConversation,
-	sendChatTurn,
 	startNewChatConversation,
+	unsettledSubmissionFromHistory,
 } from './client/conversation.ts';
 import { r1OpeningKickoff, r1OpeningMessage } from '../config/r1-learning.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { mountAppDock } from './app-dock.ts';
-import { pendingWordAt, pendingWords } from './pending-words.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
 	displayLabel,
@@ -56,8 +60,79 @@ const drawerCloseRatio = 0.25;
 const drawerFlickVelocity = 0.4;
 const peekOpenDistance = 48;
 const handleClickSlop = 8;
-const pendingWordIntervalMs = 4000;
+const exceptionalLatencyMs = 10_000;
 const streamGapMs = 60;
+
+type RequestControlElements = Pick<
+	ChatSurfaceElements,
+	'input' | 'button' | 'startOver' | 'core' | 'lockup' | 'activeTurn'
+>;
+
+export function applyRequestControlState(
+	state: ChatRequestState,
+	elements: RequestControlElements,
+): boolean {
+	const controls = chatRequestControls(state);
+	elements.input.disabled = controls.composerLocked;
+	elements.button.disabled = controls.composerLocked;
+	elements.startOver.disabled = controls.startOverDisabled;
+	elements.core.classList.toggle('is-working', controls.busy);
+	elements.lockup.classList.toggle('is-working', controls.busy);
+	return controls.busy;
+}
+
+export function focusAfterRequestStatePaint(
+	state: ChatRequestState,
+	elements: Pick<RequestControlElements, 'input' | 'activeTurn'>,
+): void {
+	if (chatRequestControls(state).composerLocked) {
+		const action = elements.activeTurn.querySelector<HTMLButtonElement>(
+			'.request-actions .request-action',
+		);
+		if (action) {
+			action.focus();
+			return;
+		}
+	}
+	elements.input.focus();
+}
+
+export function buildRequestStateTurn(
+	state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
+	action: () => Promise<ChatRequestState>,
+	runRequestCommand: (result: Promise<ChatRequestState>) => void,
+): HTMLElement {
+	const wrap = document.createElement('div');
+	wrap.className = `turn request-state ${state.kind === 'terminal' ? state.outcome : 'recovery'}`;
+	wrap.setAttribute('role', 'status');
+	wrap.setAttribute('aria-live', 'polite');
+	const label = document.createElement('span');
+	label.className = 'turn-label';
+	label.textContent = state.kind === 'recovery'
+		? 'Outcome unknown'
+		: state.outcome === 'aborted'
+			? 'Canceled'
+			: state.outcome === 'not-admitted'
+				? 'Not sent'
+				: 'Reply failed';
+	const body = document.createElement('p');
+	body.textContent = state.detail;
+	const actions = document.createElement('div');
+	actions.className = 'request-actions';
+	const button = document.createElement('button');
+	button.className = 'request-action';
+	button.type = 'button';
+	button.textContent = state.kind === 'terminal' ? 'Retry' : 'Recheck';
+	button.addEventListener('click', () => {
+		for (const actionButton of button.parentElement?.querySelectorAll('button') ?? []) {
+			actionButton.disabled = true;
+		}
+		runRequestCommand(action());
+	});
+	actions.append(button);
+	wrap.append(label, body, actions);
+	return wrap;
+}
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
 	const conversation = openChatConversation();
@@ -83,12 +158,14 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		appearance,
 		typeSize,
 	} = elements;
+	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
 	let working = false;
 	let menuOpen = false;
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
+	let requestState: ChatRequestState = requests.state;
 	const transcript = attachTranscriptScroll(card);
 	const streamTimers: number[] = [];
 
@@ -178,36 +255,56 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	}
 
 	function createPendingTurn() {
-		let index = Math.floor(Math.random() * pendingWords.length);
 		const wrap = document.createElement('div');
 		wrap.className = 'turn pending';
+		wrap.setAttribute('role', 'status');
 		wrap.setAttribute('aria-live', 'polite');
-		wrap.setAttribute('aria-label', 'Waiting for a reply');
 		const body = document.createElement('p');
 		const dot = document.createElement('span');
 		dot.className = 'pending-dot';
 		dot.setAttribute('aria-hidden', 'true');
 		const label = document.createElement('span');
-		label.className = 'pending-word is-shimmering';
-		label.setAttribute('aria-hidden', 'true');
-		label.textContent = pendingWordAt(index);
+		label.className = 'pending-word';
+		label.textContent = 'Waiting for Socratink';
 		body.append(dot, label);
-		wrap.append(body);
-		const timer = window.setInterval(() => {
-			index = (index + 1) % pendingWords.length;
-			label.textContent = pendingWordAt(index);
-			label.classList.remove('is-shimmering');
-			requestAnimationFrame(() => {
-				if (wrap.isConnected) label.classList.add('is-shimmering');
-			});
-		}, pendingWordIntervalMs);
+		const cancel = document.createElement('button');
+		cancel.className = 'request-action';
+		cancel.type = 'button';
+		cancel.disabled = requestState.kind === 'canceling';
+		cancel.textContent = cancel.disabled ? 'Canceling…' : 'Cancel';
+		cancel.addEventListener('click', () => {
+			cancel.disabled = true;
+			cancel.textContent = 'Canceling…';
+			void runRequestCommand(requests.cancel());
+		});
+		const latency = document.createElement('p');
+		latency.className = 'pending-latency';
+		latency.textContent = 'Taking longer than usual.';
+		latency.hidden = true;
+		wrap.append(body, cancel, latency);
+		const timer = window.setTimeout(() => {
+			if (wrap.isConnected) latency.hidden = false;
+		}, exceptionalLatencyMs);
 		const observer = new MutationObserver(() => {
 			if (wrap.isConnected) return;
-			window.clearInterval(timer);
+			window.clearTimeout(timer);
 			observer.disconnect();
 		});
 		observer.observe(activeTurn, { childList: true });
 		return wrap;
+	}
+
+	function createRequestStateTurn(
+		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
+	) {
+		if (state.kind === 'terminal') {
+			return buildRequestStateTurn(state, () => requests.retry(), (result) => {
+				void runRequestCommand(result);
+			});
+		}
+		return buildRequestStateTurn(state, () => requests.recheck(), (result) => {
+			void runRequestCommand(result);
+		});
 	}
 
 	function questionnaireSource(role: ChatMessageRole): 'opening' | 'assistant' | undefined {
@@ -390,8 +487,11 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					});
 				}),
 			);
-			if (kind === 'new-turn' && current.at(-1)?.role === 'You') {
+			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
 				activeTurn.append(createPendingTurn());
+			}
+			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
+				activeTurn.append(createRequestStateTurn(requestState));
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
@@ -427,6 +527,14 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		startOver.disabled = next;
 		core.classList.toggle('is-working', next);
 		lockup.classList.toggle('is-working', next);
+	}
+
+	function applyRequestControls(state: ChatRequestState) {
+		working = applyRequestControlState(state, elements);
+	}
+
+	function focusAfterRequestPaint(state: ChatRequestState) {
+		focusAfterRequestStatePaint(state, elements);
 	}
 
 	initAppearance(appearance);
@@ -479,30 +587,21 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	});
 
 	async function sendMessage(text: string) {
-		if (working) return;
-		setWorking(true);
+		if (working || requests.state.kind !== 'idle') return;
 		turns = [...turns, { role: 'You', text }];
 		input.value = '';
-		await paint('new-turn');
-		try {
-			await appendAssistantReply(text);
-		} catch (error) {
-			turns = [
-				...turns,
-				{
-					role: 'Error',
-					text: chatTurnErrorMessage(error),
-				},
-			];
-			await paint('hold');
-		} finally {
-			setWorking(false);
-			input.focus();
-		}
+		await startRequest(text);
 	}
 
-	async function appendAssistantReply(text: string) {
-		const reply = await sendChatTurn(conversation, text);
+	async function startRequest(text: string) {
+		const result = requests.start(text);
+		requestState = requests.state;
+		applyRequestControls(requestState);
+		await paint('new-turn');
+		await applyRequestState(await result);
+	}
+
+	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
 		turns = [
 			...turns,
@@ -515,19 +614,29 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		await paint('hold');
 	}
 
-	async function openFirstTurn() {
-		try {
-			await appendAssistantReply(r1OpeningKickoff);
-		} catch (error) {
-			turns = [
-				...turns,
-				{
-					role: 'Error',
-					text: chatTurnErrorMessage(error),
-				},
-			];
-			await paint('hold');
+	async function runRequestCommand(result: Promise<ChatRequestState>) {
+		requestState = requests.state;
+		applyRequestControls(requestState);
+		if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
+			await paint(requestState.kind === 'waiting' ? 'new-turn' : 'hold');
 		}
+		await applyRequestState(await result);
+	}
+
+	async function applyRequestState(state: ChatRequestState) {
+		if (requests.state !== state) return;
+		requestState = state;
+		if (state.kind === 'completed') {
+			requests.acknowledgeCompleted();
+			requestState = requests.state;
+			applyRequestControls(requestState);
+			await appendAssistantReply(state.reply);
+			input.focus();
+			return;
+		}
+		applyRequestControls(state);
+		await paint('hold');
+		focusAfterRequestPaint(state);
 	}
 
 	form.addEventListener('submit', async (event) => {
@@ -539,13 +648,29 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	async function restoreConversation() {
 		if (working) return;
+		let fresh = false;
+		let unsettled: ReturnType<typeof unsettledSubmissionFromHistory>;
 		setWorking(true);
 		try {
 			let visible: DisplayedTurn[] = [];
 			try {
-				visible = visibleTurnsFromHistory(await conversation.history()).filter(
+				const history = await conversation.history();
+				unsettled = unsettledSubmissionFromHistory(history);
+				const unsettledSubmissionId = unsettled?.submissionId;
+				const restoredHistory = unsettled
+					? {
+						...history,
+						messages: history.messages.filter(
+							(message) => message.submissionId !== unsettledSubmissionId || message.role === 'user',
+						),
+					}
+					: history;
+				visible = visibleTurnsFromHistory(restoredHistory).filter(
 					(turn) => turn.role !== 'You' || turn.text !== r1OpeningKickoff,
 				);
+				if (unsettled) {
+					requestState = requests.hydrate(unsettled.text, unsettled.submissionId);
+				}
 			} catch (error) {
 				if (!(error instanceof FlueApiError && error.status === 404)) {
 					turns = [
@@ -558,7 +683,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					return;
 				}
 			}
-			const fresh = visible.length === 0;
+			fresh = visible.length === 0 && !unsettled;
 			turns = [
 				{
 					role: 'Socratink',
@@ -567,14 +692,12 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				...visible,
 			];
 			await paint(fresh ? 'opening' : 'restore');
-			if (fresh) {
-				activeTurn.append(createPendingTurn());
-				await openFirstTurn();
-			}
 		} finally {
-			setWorking(false);
-			input.focus();
+			applyRequestControls(requestState);
+			focusAfterRequestPaint(requestState);
 		}
+		if (unsettled) await runRequestCommand(requests.recheck());
+		if (fresh) await startRequest(r1OpeningKickoff);
 	}
 
 	void restoreConversation();

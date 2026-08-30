@@ -26,13 +26,15 @@ export function displayLabel(role: ChatMessageRole): string {
 }
 
 export function visibleTurnsFromHistory(
-	history: Pick<FlueConversationSnapshot, 'messages'>,
+	history: Pick<FlueConversationSnapshot, 'messages' | 'settlements'>,
 ): DisplayedTurn[] {
 	const visible: DisplayedTurn[] = [];
+	const supersededSubmissionIds = supersededFailedSubmissionIds(history);
 	for (const message of history.messages) {
 		if (message.display !== 'visible' || (message.role !== 'user' && message.role !== 'assistant')) {
 			continue;
 		}
+		if (message.submissionId && supersededSubmissionIds.has(message.submissionId)) continue;
 		const text = message.parts
 			.filter((part) => part.type === 'text')
 			.map((part) => part.text)
@@ -47,6 +49,51 @@ export function visibleTurnsFromHistory(
 		});
 	}
 	return visible;
+}
+
+function supersededFailedSubmissionIds(
+	history: Pick<FlueConversationSnapshot, 'messages' | 'settlements'>,
+): Set<string> {
+	const failed = new Set(
+		history.settlements
+			.filter((settlement) => settlement.outcome === 'aborted' || settlement.outcome === 'failed')
+			.map((settlement) => settlement.submissionId),
+	);
+	const superseded = new Set<string>();
+	const visibleChat = history.messages.filter(
+		(message) =>
+			message.display === 'visible' && (message.role === 'user' || message.role === 'assistant'),
+	);
+	const groups: Array<{ submissionId?: string; messages: typeof visibleChat }> = [];
+	for (const message of visibleChat) {
+		const previous = groups.at(-1);
+		if (message.submissionId && previous?.submissionId === message.submissionId) {
+			previous.messages.push(message);
+			continue;
+		}
+		groups.push({
+			...(message.submissionId ? { submissionId: message.submissionId } : {}),
+			messages: [message],
+		});
+	}
+	for (let index = 0; index < groups.length - 1; index += 1) {
+		const group = groups[index];
+		const nextGroup = groups[index + 1];
+		if (!group?.submissionId || !failed.has(group.submissionId) || !nextGroup) continue;
+		const learner = group.messages.find((message) => message.role === 'user');
+		const retry = nextGroup.messages[0];
+		if (learner && retry?.role === 'user' && visibleText(learner) === visibleText(retry)) {
+			superseded.add(group.submissionId);
+		}
+	}
+	return superseded;
+}
+
+function visibleText(message: FlueConversationSnapshot['messages'][number]): string {
+	return message.parts
+		.filter((part) => part.type === 'text')
+		.map((part) => part.text)
+		.join('\n\n');
 }
 
 export function splitCurrentTurns(items: readonly DisplayedTurn[]): {
