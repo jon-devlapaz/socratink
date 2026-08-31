@@ -7,6 +7,8 @@ scope.
 
 Before planning or changing files, read [ZEN.md](ZEN.md). Treat its working
 agreements as requirements and its software-design heuristics as defaults.
+Before Praxist runs, multi-agent research campaigns, or repeating a failed
+operator loop, read matching files in [.agents/learnings/](.agents/learnings/).
 
 ## Commands
 
@@ -87,6 +89,7 @@ names intact. A product change must not become a framework rewrite.
 - `Dockerfile` and `vercel.json` — deployment configuration
 - `README.md` — supported setup, hosting, and observability behavior
 - `ZEN.md` — required maintainability agreements and design heuristics
+- `.agents/learnings/` — dated postmortems; read matching files before repeating a campaign or operator failure
 
 Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
 `.vercel/`, logs, artifacts, and environment files are not source.
@@ -103,6 +106,8 @@ Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
 5. Run targeted checks while iterating, then the full applicable handoff gate.
 6. Review the diff, remove incidental artifacts, and stop when the stated
    outcome is proven.
+7. After a costly negative campaign or operator path, add a dated postmortem
+   under `.agents/learnings/` so the next agent can find the stop rule.
 
 A passing typecheck, build, or smoke proves only its covered behavior. Use live
 or browser validation when the request depends on real interaction, recovery,
@@ -215,6 +220,8 @@ mastery.
 
 - Read `ZEN.md`, state the outcome, inspect the real owner, and preserve product
   attribution and learner-authored evidence.
+- Read matching files in `.agents/learnings/` before Praxist, multi-agent
+  research, or repeating a failed operator loop.
 - Keep secrets out of source and logs; use synthetic data for observability and
   external-service checks.
 - Add proof at the same boundary as the behavior and report any unverified
