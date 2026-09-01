@@ -280,8 +280,16 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	flex-direction: column;
 	align-items: center;
 	overflow: hidden;
-	gap: clamp(1.1rem, 3vh, 1.8rem);
-	padding: clamp(5rem, 8vw, 7rem) 1.5rem calc(var(--dock-closed) + 1.25rem);
+	gap: clamp(0.75rem, 2vh, 1.6rem);
+	padding: clamp(3.75rem, 6vh, 6rem) 1.5rem calc(var(--dock-closed) + 1.25rem);
+	transition-property: padding-bottom, gap, padding-top;
+	transition-duration: 320ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.encounter-active .stage {
+	padding-top: clamp(2.75rem, 5vh, 4.5rem);
+	gap: clamp(0.5rem, 1.5vh, 1rem);
 }
 
 .alive-core {
@@ -687,6 +695,21 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	align-items: center;
 	padding: 0 1.5rem 1rem;
 	background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--paper) 78%, transparent) 28%);
+	transition-property: transform, opacity;
+	transition-duration: 320ms, 240ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1), var(--ease-out);
+}
+
+html:has(.active-node .questionnaire) .dock,
+body.questionnaire-active .dock {
+	transform: translateY(calc(100% + 1rem));
+	opacity: 0;
+	pointer-events: none;
+}
+
+html:has(.active-node .questionnaire) .stage,
+body.questionnaire-active .stage {
+	padding-bottom: 1.5rem;
 }
 
 #chat {
@@ -790,7 +813,12 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 		font-size: 1.35rem;
 	}
 
-	.stage,
+	.stage {
+		gap: 0.65rem;
+		padding-top: 3.25rem;
+		padding-inline: 1rem;
+	}
+
 	.dock {
 		padding-inline: 1rem;
 	}
@@ -798,12 +826,24 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	.composer-footer span {
 		display: none;
 	}
+
+	html:has(.active-node .questionnaire) .stage,
+	body.questionnaire-active .stage {
+		padding-top: 2.75rem;
+		padding-bottom: 1rem;
+	}
 }
 
 @media (max-height: 720px) {
 	.stage {
-		gap: 1rem;
-		padding-block: 4.5rem calc(var(--dock-closed) + 0.75rem);
+		gap: 0.65rem;
+		padding-block: 3.25rem calc(var(--dock-closed) + 0.75rem);
+	}
+
+	html:has(.active-node .questionnaire) .stage,
+	body.questionnaire-active .stage {
+		padding-top: 2.75rem;
+		padding-bottom: 1rem;
 	}
 }
 

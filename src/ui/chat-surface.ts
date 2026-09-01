@@ -250,6 +250,23 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		return wrap;
 	}
 
+	function createStarterTurn(): HTMLElement | null {
+		const template = document.querySelector<HTMLTemplateElement>('#starter-template');
+		if (!template) return null;
+		const wrap = template.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+		if (!wrap) return null;
+		for (const chip of wrap.querySelectorAll<HTMLButtonElement | HTMLElement>('.starter-chip, .starter-spark-pill')) {
+			chip.addEventListener('click', () => {
+				const val = chip.getAttribute('data-prompt') || chip.textContent?.trim() || '';
+				if (val) {
+					input.value = val;
+					input.focus();
+				}
+			});
+		}
+		return wrap;
+	}
+
 	function createPendingTurn() {
 		const wrap = document.createElement('div');
 		wrap.className = 'turn pending';
@@ -455,18 +472,27 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				activeTurn.classList.remove('is-exiting');
 			}
 
-			activeTurn.replaceChildren(
-				...current.map((item, index) => {
-					const isLast = index === current.length - 1;
-					const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
-					return createActiveTurn(item.role, item.text, item.questionnaire, {
-						announce: kind === 'hold' && isLast,
-						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
-						interactive: isLast && Boolean(item.questionnaire),
-						stream,
-					});
-				}),
-			);
+			if (current.length === 0 && requestState.kind === 'idle') {
+				const starter = createStarterTurn();
+				if (starter) {
+					activeTurn.replaceChildren(starter);
+				} else {
+					activeTurn.replaceChildren();
+				}
+			} else {
+				activeTurn.replaceChildren(
+					...current.map((item, index) => {
+						const isLast = index === current.length - 1;
+						const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
+						return createActiveTurn(item.role, item.text, item.questionnaire, {
+							announce: kind === 'hold' && isLast,
+							stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
+							interactive: isLast && Boolean(item.questionnaire),
+							stream,
+						});
+					}),
+				);
+			}
 			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
 				activeTurn.append(createPendingTurn());
 			}
@@ -475,6 +501,10 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
+			document.body.classList.toggle(
+				'questionnaire-active',
+				Boolean(current.at(-1)?.questionnaire && requestState.kind === 'idle'),
+			);
 		};
 
 		switch (kind) {

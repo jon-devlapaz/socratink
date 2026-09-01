@@ -138,9 +138,20 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
 	assert.match(promptSource, /name: 'present_question'/);
 	assert.match(promptSource, /exactly one question/);
-	assert.match(promptSource, /Evaluate this app's flow/);
+	assert.match(promptSource, /one fixed AI-operations incident/);
+	assert.match(promptSource, /p95 latency rose from 2\.1 seconds to 8\.7 seconds/);
+	assert.match(promptSource, /mean attempts per request rose from 1\.0 to 2\.4/);
+	assert.match(promptSource, /Follow exactly these stages/);
+	assert.match(promptSource, /baseline next diagnostic action and observable reason/);
+	assert.match(promptSource, /do not reveal the preferred action/);
+	assert.match(promptSource, /Explicitly say this information was supplied by Socratink/);
+	assert.match(promptSource, /4\. After the third questionnaire answer, do not call present_question\./);
+	assert.match(
+		promptSource,
+		/End exactly with: "This is evidence from this session, not proof of mastery or durable learning\."/,
+	);
+	assert.match(promptSource, /This is evidence from this session, not proof of mastery or durable learning/);
 	assert.match(promptSource, /Questionnaire answers:/);
-	assert.match(promptSource, /Find gaps with one question/);
 	assert.doesNotMatch(promptSource, /useSkill/);
 	assert.doesNotMatch(promptSource, /sal-khan-perspective/);
 	assert.doesNotMatch(promptSource, /read_skill_resource/);
@@ -152,3 +163,22 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.doesNotMatch(promptSource, /Worked-example protocol/);
 	assert.doesNotMatch(promptSource, /the question is already on the card/);
 });
+
+test('the card mounts the Socratic inquiry starter template on initial empty turns', async () => {
+	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
+	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	const cssSource = await readFile(new URL('../src/ui/transcript.css', import.meta.url), 'utf8');
+
+	assert.match(indexSource, /<template id="starter-template">/);
+	assert.match(indexSource, /Begin your inquiry/);
+	assert.match(indexSource, /Untangle intuition/);
+	assert.match(indexSource, /Stress-test reasoning/);
+	assert.match(indexSource, /Diagnostic practice/);
+
+	assert.match(surfaceSource, /createStarterTurn\(\)/);
+	assert.match(surfaceSource, /document\.querySelector<HTMLTemplateElement>\('#starter-template'\)/);
+
+	assert.match(cssSource, /\.starter-state/);
+	assert.match(cssSource, /\.starter-spark-pill/);
+});
+

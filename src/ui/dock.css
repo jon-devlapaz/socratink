@@ -1,5 +1,5 @@
 .alive-cluster {
-	--orb-size: clamp(145px, 18vw, 220px);
+	--orb-size: clamp(130px, 16vw, 210px);
 	--orb-visual-radius: 29.55%;
 	--orb-below: 0.2045;
 	--dock-bar-height: 3.5rem;
@@ -12,9 +12,19 @@
 	align-items: center;
 	overflow: visible;
 	padding-bottom: 0;
-	transition-property: padding-bottom;
-	transition-duration: 240ms;
-	transition-timing-function: var(--ease-out);
+	transition-property: padding-bottom, scale, transform;
+	transition-duration: 300ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.encounter-active .alive-cluster {
+	--orb-size: clamp(96px, 12vw, 150px);
+}
+
+html:has(.active-node .questionnaire) .alive-cluster,
+body.questionnaire-active .alive-cluster {
+	scale: 0.85;
+	transform-origin: top center;
 }
 
 .alive-cluster.is-dock-open {
@@ -181,13 +191,21 @@ html:has(.menu-layer.is-open) .app-dock {
 
 @media (max-width: 560px) {
 	.alive-cluster {
-		--orb-size: 135px;
+		--orb-size: clamp(86px, 12vh, 110px);
+	}
+
+	.encounter-active .alive-cluster {
+		--orb-size: clamp(64px, 9vh, 84px);
 	}
 }
 
 @media (max-height: 720px) {
 	.alive-cluster {
-		--orb-size: 118px;
+		--orb-size: clamp(78px, 11vh, 100px);
+	}
+
+	.encounter-active .alive-cluster {
+		--orb-size: clamp(60px, 8.5vh, 76px);
 	}
 }
 
