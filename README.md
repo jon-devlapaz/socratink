@@ -24,13 +24,15 @@ The app reads these local environment settings without committing their values:
   `http://127.0.0.1:3001/v1`
 - `JON_LOCAL_API_KEY` — the endpoint's API key when required
 
-On Vercel (`VERCEL=1`), Chat always uses AI Gateway. Local `JON_LOCAL_*`
-settings do not override that.
+On Vercel (`VERCEL=1`) and Northflank, Chat uses `JON_LOCAL_BASE_URL` and
+`JON_LOCAL_API_KEY` when both are set to a public `https` OpenAI-compatible
+endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
+routing. Otherwise Chat uses AI Gateway. Northflank still requires
+`AI_GATEWAY_API_KEY` when that fallback is used.
 
-On Northflank (`NF_PROJECT_ID` is injected automatically), Chat also uses AI
-Gateway and requires `AI_GATEWAY_API_KEY`. Hosted Node deployments require
-`DATABASE_URL`; the process refuses to start without durable conversation
-storage. Local development uses file-backed SQLite at `.cache/flue/local.db`.
+Hosted Node deployments require `DATABASE_URL`; the process refuses to start
+without durable conversation storage. Local development uses file-backed
+SQLite at `.cache/flue/local.db`.
 
 ## Verify the app
 

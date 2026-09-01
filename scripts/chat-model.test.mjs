@@ -77,6 +77,47 @@ const localDefaults = {
 }
 
 {
+	assert.deepEqual(
+		resolveChatModel({
+			VERCEL: '1',
+			JON_LOCAL_BASE_URL: 'https://models.example.com/v1',
+			JON_LOCAL_MODEL_ID: 'auto',
+			JON_LOCAL_API_KEY: 'freellmapi-key',
+			AI_GATEWAY_API_KEY: 'gateway-key',
+			VERCEL_OIDC_TOKEN: 'oidc-token',
+		}),
+		{
+			providerId: chatProviderId,
+			baseUrl: 'https://models.example.com/v1',
+			modelId: 'auto',
+			apiKey: 'freellmapi-key',
+			reasoning: false,
+			contextWindow: 1_048_576,
+			maxTokens: 131_100,
+		},
+	);
+}
+
+{
+	assert.deepEqual(
+		resolveChatModel({
+			NF_PROJECT_ID: 'socratink',
+			JON_LOCAL_BASE_URL: 'https://models.example.com/v1',
+			JON_LOCAL_API_KEY: 'freellmapi-key',
+		}),
+		{
+			providerId: chatProviderId,
+			baseUrl: 'https://models.example.com/v1',
+			modelId: appConfig.defaultLocalModelId,
+			apiKey: 'freellmapi-key',
+			reasoning: false,
+			contextWindow: 1_048_576,
+			maxTokens: 131_100,
+		},
+	);
+}
+
+{
 	assert.deepEqual(resolveChatModel({ VERCEL: '1', VERCEL_OIDC_TOKEN: 'oidc-token' }), {
 		providerId: chatProviderId,
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
