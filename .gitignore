@@ -50,7 +50,9 @@ skills-lock.json
 # Python bytecode from Brain helper smoke tests
 __pycache__/
 .variate/
-.cursor/
+.cursor/*
+!.cursor/agents/
+!.cursor/agents/*.md
 praxist_task/.gitignore
 praxist_task/description.md
 praxist_task/prompt_task.jinja2

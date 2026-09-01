@@ -138,20 +138,25 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
 	assert.match(promptSource, /name: 'present_question'/);
 	assert.match(promptSource, /exactly one question/);
-	assert.match(promptSource, /one fixed AI-operations incident/);
-	assert.match(promptSource, /p95 latency rose from 2\.1 seconds to 8\.7 seconds/);
-	assert.match(promptSource, /mean attempts per request rose from 1\.0 to 2\.4/);
-	assert.match(promptSource, /Follow exactly these stages/);
-	assert.match(promptSource, /baseline next diagnostic action and observable reason/);
-	assert.match(promptSource, /do not reveal the preferred action/);
-	assert.match(promptSource, /Explicitly say this information was supplied by Socratink/);
-	assert.match(promptSource, /4\. After the third questionnaire answer, do not call present_question\./);
-	assert.match(
-		promptSource,
-		/End exactly with: "This is evidence from this session, not proof of mastery or durable learning\."/,
-	);
-	assert.match(promptSource, /This is evidence from this session, not proof of mastery or durable learning/);
+	assert.match(promptSource, /learning partner for agentic engineering/);
+	assert.match(promptSource, /model and tool boundaries/);
+	assert.match(promptSource, /Before substantive correction, ask the learner to make an attempt/);
+	assert.match(promptSource, /isolate exactly one stated condition or decision/);
+	assert.match(promptSource, /exactly one defensible best answer/);
+	assert.match(promptSource, /Treat feedback as analysis, never a verdict or numeric evaluation/);
+	assert.match(promptSource, /do not call an answer correct, incorrect, right, or wrong/);
+	assert.match(promptSource, /Socratink-provided:/);
+	assert.match(promptSource, /ask the learner to reconstruct, revise, or apply/);
+	assert.match(promptSource, /do not offer starting modes/);
+	assert.match(promptSource, /do not ask the learner to choose a topic or lane first/);
+	assert.match(promptSource, /Distinguish observations from inferences/);
+	assert.match(promptSource, /not proof of mastery or durable learning/);
 	assert.match(promptSource, /Questionnaire answers:/);
+	assert.doesNotMatch(promptSource, /\b(?:you are|that(?:'s| is))\s+(?:correct|incorrect|right|wrong)\b/i);
+	assert.doesNotMatch(promptSource, /\b(?:your )?(?:score|grade)\s+(?:is|was)\b/i);
+	assert.doesNotMatch(promptSource, /AI-Operations/);
+	assert.doesNotMatch(promptSource, /AI-operations/);
+	assert.doesNotMatch(promptSource, /whatever domain or topic/);
 	assert.doesNotMatch(promptSource, /useSkill/);
 	assert.doesNotMatch(promptSource, /sal-khan-perspective/);
 	assert.doesNotMatch(promptSource, /read_skill_resource/);
@@ -164,16 +169,21 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.doesNotMatch(promptSource, /the question is already on the card/);
 });
 
-test('the card mounts the Socratic inquiry starter template on initial empty turns', async () => {
+test('the card mounts agentic-engineering starters on initial empty turns', async () => {
 	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
 	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	const cssSource = await readFile(new URL('../src/ui/transcript.css', import.meta.url), 'utf8');
 
 	assert.match(indexSource, /<template id="starter-template">/);
-	assert.match(indexSource, /Begin your inquiry/);
-	assert.match(indexSource, /Untangle intuition/);
-	assert.match(indexSource, /Stress-test reasoning/);
+	assert.match(indexSource, /Explore agentic engineering/);
+	assert.match(indexSource, /Understand a mechanism/);
+	assert.match(indexSource, /Stress-test a design/);
 	assert.match(indexSource, /Diagnostic practice/);
+	assert.match(indexSource, /challenge its assumptions about tool boundaries, retries, recovery, observability/);
+	assert.match(indexSource, /describe one concrete request from start to finish/);
+	assert.match(indexSource, /safe recovery when an agent response stream disconnects/);
+	assert.match(indexSource, /Present exactly four recovery actions/);
+	assert.doesNotMatch(indexSource, /formal definition of my topic/);
 
 	assert.match(surfaceSource, /createStarterTurn\(\)/);
 	assert.match(surfaceSource, /document\.querySelector<HTMLTemplateElement>\('#starter-template'\)/);
@@ -181,4 +191,3 @@ test('the card mounts the Socratic inquiry starter template on initial empty tur
 	assert.match(cssSource, /\.starter-state/);
 	assert.match(cssSource, /\.starter-spark-pill/);
 });
-

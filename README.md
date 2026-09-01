@@ -1,9 +1,9 @@
 # Socratink
 
 Socratink is a focused, model-backed learning conversation built with
-[Flue](https://github.com/withastro/flue). The current interaction lets a
-learner choose a starting path and complete a short guided exchange through
-validated in-card questionnaires.
+[Flue](https://github.com/withastro/flue). The current interaction helps a
+learner reason about agentic engineering through open dialogue and validated
+in-card questionnaires.
 
 This remains a narrow development product. It does not yet provide production
 authentication, durable multi-instance hosting, or evidence for broad claims
@@ -45,6 +45,28 @@ The product source lives in `src/`. The default Vite build generates the
 Node application in `dist/`, and the UI build writes its static assets to
 `dist/client/`. The smoke test starts only local processes and uses a fake
 OpenAI-compatible provider; it never requires external credentials.
+
+## Demonstrate the current interaction
+
+Use a fresh conversation and choose one of the three agentic-engineering
+starters, or enter a concrete question about an agent loop, tool boundary,
+state, memory, evaluation, observability, or recovery. Socratink asks the
+learner to explain or attempt the problem before substantive correction, then
+uses a structured card when a question has defined choices.
+
+For an operator walkthrough:
+
+1. Complete at least one conversational turn and one questionnaire turn.
+2. Inspect the earlier-step trail, then reload to verify that the conversation
+   is restored.
+3. With synthetic inputs and Braintrust configured, inspect the request, model
+   spans, `present_question` tool calls, timing, token use, and errors.
+
+This demonstrates a persisted, observable interaction and its software
+reliability boundaries. It does not establish agentic-engineering mastery,
+durable learning, transfer, learning effectiveness, or production readiness.
+The hosted surface still requires authentication, conversation authorization,
+and rate limiting before public exposure.
 
 ## Northflank staging
 

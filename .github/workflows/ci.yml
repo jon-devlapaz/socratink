@@ -31,17 +31,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check types
-        run: pnpm check:types
-
-      - name: Run Braintrust configuration tests
-        run: pnpm test:braintrust
-
-      - name: Run Chat model routing tests
-        run: pnpm test:chat-model
-
-      - name: Build production application
-        run: pnpm build
+      - name: Run full quality gate
+        run: pnpm check
 
       - name: Run deterministic smoke test
         run: pnpm smoke
