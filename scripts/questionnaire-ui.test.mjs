@@ -143,8 +143,9 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /Before substantive correction, ask the learner to make an attempt/);
 	assert.match(promptSource, /isolate exactly one stated condition or decision/);
 	assert.match(promptSource, /exactly one defensible best answer/);
-	assert.match(promptSource, /Treat feedback as analysis, never a verdict or numeric evaluation/);
-	assert.match(promptSource, /do not call an answer correct, incorrect, right, or wrong/);
+	assert.match(promptSource, /Every response that analyzes or repairs learner work MUST begin exactly/);
+	assert.match(promptSource, /Treat feedback as analysis, never a verdict, score, or praise/);
+	assert.match(promptSource, /Do not use correct, correctly, incorrect, right, wrong, good, great/);
 	assert.match(promptSource, /Socratink-provided:/);
 	assert.match(promptSource, /ask the learner to reconstruct, revise, or apply/);
 	assert.match(promptSource, /do not offer starting modes/);
@@ -183,6 +184,7 @@ test('the card mounts agentic-engineering starters on initial empty turns', asyn
 	assert.match(indexSource, /describe one concrete request from start to finish/);
 	assert.match(indexSource, /safe recovery when an agent response stream disconnects/);
 	assert.match(indexSource, /Present exactly four recovery actions/);
+	assert.match(indexSource, /begin your entire feedback response with Socratink-provided/);
 	assert.doesNotMatch(indexSource, /formal definition of my topic/);
 
 	assert.match(surfaceSource, /createStarterTurn\(\)/);
