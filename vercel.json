@@ -5,6 +5,10 @@
   "outputDirectory": "dist/client",
   "rewrites": [
     {
+      "source": "/healthz",
+      "destination": "/api/[...path]"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/[...path]"
     }
