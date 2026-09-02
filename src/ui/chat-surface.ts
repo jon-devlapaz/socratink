@@ -16,6 +16,7 @@ import { mountAppDock } from './app-dock.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
 	displayLabel,
+	groupEarlierSteps,
 	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
@@ -25,7 +26,6 @@ import { modelRouteLabel } from '../config/model-route.ts';
 import { initChatAutoModel } from './chat-auto.ts';
 import {
 	createQuestionnaire,
-	createQuestionnaireSummary,
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
@@ -229,11 +229,27 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		parent.append(body);
 	}
 
-	function createHistoryItem(item: DisplayedTurn) {
+	function createHistoryStep(step: readonly DisplayedTurn[], index: number) {
 		const entry = document.createElement('li');
-		entry.className = item.role.toLowerCase();
-		appendTurnCopy(entry, item);
-		if (item.questionnaire) entry.append(createQuestionnaireSummary(item.questionnaire));
+		entry.className = 'history-step';
+		const mark = document.createElement('span');
+		mark.className = 'history-step-mark';
+		mark.textContent = String(index + 1);
+		mark.setAttribute('aria-hidden', 'true');
+		const body = document.createElement('div');
+		body.className = 'history-step-body';
+		for (const item of step) {
+			const turn = document.createElement('div');
+			turn.className = `history-turn ${item.role.toLowerCase()}`;
+			const role = document.createElement('span');
+			role.className = 'sr-only';
+			role.textContent = displayLabel(item.role);
+			const copy = document.createElement('p');
+			copy.textContent = historyBodyText(item.text);
+			turn.append(role, copy);
+			body.append(turn);
+		}
+		entry.append(mark, body);
 		return entry;
 	}
 
@@ -328,12 +344,15 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	}
 
 	function setTrailOpen(open: boolean) {
-		if (open) transcript.stopFollowing();
-		void transcript.preserveAround(() => {
-			trailOpen = open && messages.childElementCount > 0;
-			trailToggle.setAttribute('aria-expanded', String(trailOpen));
-			messages.hidden = !trailOpen;
-		});
+		trailOpen = open && messages.childElementCount > 0;
+		trailToggle.setAttribute('aria-expanded', String(trailOpen));
+		messages.hidden = !trailOpen;
+		if (trailOpen) {
+			transcript.stopFollowing();
+			transcript.scrollToStart();
+			return;
+		}
+		transcript.pinCurrentStart();
 	}
 
 	function syncTrail() {
@@ -468,7 +487,9 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		const render = async () => {
 			clearStream();
 			const { earlier, current } = splitCurrentTurns(turns);
-			messages.replaceChildren(...earlier.map((item) => createHistoryItem(item)));
+			messages.replaceChildren(
+				...groupEarlierSteps(earlier).map((step, index) => createHistoryStep(step, index)),
+			);
 			syncTrail();
 
 			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
@@ -716,6 +737,11 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 	}
 
 	void restoreConversation();
+}
+
+function historyBodyText(text: string): string {
+	if (!text.startsWith('Questionnaire answers:')) return text;
+	return text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim();
 }
 
 function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {

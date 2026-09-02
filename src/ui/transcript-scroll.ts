@@ -5,6 +5,7 @@ const fadeRevealPx = 96;
 type TranscriptScroll = {
 	followLiveEdge(): void;
 	pinCurrentStart(): void;
+	scrollToStart(): void;
 	refresh(): void;
 	hold(mutate: () => void | Promise<void>): Promise<void>;
 	preserveAround(mutate: () => void | Promise<void>): Promise<void>;
@@ -65,7 +66,7 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 
 	function stickyOffset(): number {
 		if (trailToggle.hidden) return 0;
-		return trailToggle.getBoundingClientRect().height;
+		return Math.max(0, trailToggle.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top);
 	}
 
 	function isLiveContent(turn: HTMLElement): boolean {
@@ -103,6 +104,14 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		syncSpacer();
 		withProgrammaticScroll(() => {
 			scroller.scrollTop = scroller.scrollHeight;
+		});
+	}
+
+	function scrollToStart() {
+		following = false;
+		syncSpacer();
+		withProgrammaticScroll(() => {
+			scroller.scrollTop = 0;
 		});
 	}
 
@@ -178,6 +187,7 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 	return {
 		followLiveEdge,
 		pinCurrentStart,
+		scrollToStart,
 		refresh,
 		async hold(mutate) {
 			if (following) {

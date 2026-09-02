@@ -117,6 +117,19 @@ export function splitCurrentTurns(items: readonly DisplayedTurn[]): {
 	return { earlier: items.slice(0, start), current: items.slice(start) };
 }
 
+export function groupEarlierSteps(items: readonly DisplayedTurn[]): DisplayedTurn[][] {
+	const steps: DisplayedTurn[][] = [];
+	for (const item of items) {
+		const current = steps.at(-1);
+		if (!current || item.role === 'You') {
+			steps.push([item]);
+			continue;
+		}
+		current.push(item);
+	}
+	return steps;
+}
+
 function closesBeat(role: ChatMessageRole): boolean {
 	return role === 'Assistant' || role === 'Error';
 }

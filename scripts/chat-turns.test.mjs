@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
 	displayLabel,
+	groupEarlierSteps,
 	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
@@ -172,6 +173,14 @@ test('splits the latest learner and closing reply into the current beat', () => 
 		earlier: [],
 		current: turns.slice(0, 2),
 	});
+});
+
+test('groups earlier turns into learner-started steps', () => {
+	const opening = { role: 'Assistant', text: 'Welcome' };
+	const asked = { role: 'You', text: 'Earlier learner turn' };
+	const replied = { role: 'Assistant', text: 'Earlier reply' };
+	assert.deepEqual(groupEarlierSteps([opening, asked, replied]), [[opening], [asked, replied]]);
+	assert.deepEqual(groupEarlierSteps([]), []);
 });
 
 test('maps the stored assistant role to the Socratink display label', () => {
