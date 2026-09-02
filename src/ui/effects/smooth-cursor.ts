@@ -165,10 +165,17 @@ export function mountSmoothCursor() {
 		};
 	}
 
-	function overCoreDisc(clientX: number, clientY: number, target: FuseTarget) {
+	function visualCoreRadius(core: HTMLElement, target: FuseTarget) {
+		const host = core.closest('.alive-anchor') ?? core;
+		const frac = parseFloat(getComputedStyle(host).getPropertyValue('--orb-visual-radius')) / 100;
+		const box = Math.min(target.w, target.h);
+		return box * (Number.isFinite(frac) && frac > 0 ? frac : 0.5);
+	}
+
+	function overCoreDisc(clientX: number, clientY: number, target: FuseTarget, core: HTMLElement) {
 		const dx = clientX - target.x;
 		const dy = clientY - target.y;
-		const radius = Math.min(target.w, target.h) / 2;
+		const radius = visualCoreRadius(core, target);
 		return dx * dx + dy * dy <= radius * radius;
 	}
 
@@ -180,7 +187,7 @@ export function mountSmoothCursor() {
 		const core = visibleHandle(clientX, clientY, '.alive-core');
 		if (core) {
 			const target = coreTarget(core);
-			if (target && overCoreDisc(clientX, clientY, target)) return target;
+			if (target && overCoreDisc(clientX, clientY, target, core)) return target;
 		}
 		const lockup = visibleHandle(clientX, clientY, '#menu-trigger');
 		return lockup ? markCenter(lockup) : null;
