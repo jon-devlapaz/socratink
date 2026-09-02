@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { FlueExecutionError } from '@flue/sdk';
+import { FlueApiError, FlueExecutionError } from '@flue/sdk';
+import { appConfig } from '../src/config/app.config.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
 	chatTurnErrorMessage,
 	isLostConversationStream,
+	openChatConversation,
 	settlementReadTimeoutMs,
 	unsettledSubmissionFromHistory,
 } from '../src/ui/client/conversation.ts';
@@ -62,10 +64,65 @@ test('detects only durable-stream 404 stream_not_found envelopes', () => {
 	assert.equal(isLostConversationStream(new Error('network')), false);
 });
 
+test('a lost admission stream falls back to the same submissionId without sending again', async () => {
+	let sends = 0;
+	const reads = [];
+	const conversation = {
+		async send() {
+			sends += 1;
+			return admission;
+		},
+		async read(target) {
+			reads.push(target);
+			if (target === admission) throw streamNotFound('json');
+			return reply;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.deepEqual(state, { kind: 'completed', text: 'hello', reply });
+	assert.equal(sends, 1);
+	assert.deepEqual(reads, [admission, admission.submissionId]);
+});
+
+test('a non-stream 404 does not fall back from the admission handle', async () => {
+	let sends = 0;
+	const reads = [];
+	const other = new Error('missing');
+	other.status = 404;
+	other.json = { error: { type: 'agent_instance_not_found' } };
+	const conversation = {
+		async send() {
+			sends += 1;
+			return admission;
+		},
+		async read(target) {
+			reads.push(target);
+			throw other;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'recovery');
+	assert.equal(state.admission, admission);
+	assert.equal(sends, 1);
+	assert.deepEqual(reads, [admission]);
+});
+
 test('cancel before observed admission stays unknown and never enables resend', async () => {
 	let aborts = 0;
+	let sends = 0;
 	const conversation = {
 		async send({ signal }) {
+			sends += 1;
 			return abortablePendingRead(signal);
 		},
 		async read() {
@@ -88,7 +145,34 @@ test('cancel before observed admission stays unknown and never enables resend', 
 	assert.throws(() => coordinator.retry(), /confirmed terminal/);
 	assert.equal(await running, state);
 	assert.equal((await coordinator.recheck()).kind, 'recovery');
+	assert.equal(sends, 1);
 	assert.equal(aborts, 2);
+});
+
+test('send interruption before observed admission recovers without resend', async () => {
+	let sends = 0;
+	const conversation = {
+		async send() {
+			sends += 1;
+			throw new Error('connection lost');
+		},
+		async read() {
+			throw new Error('should not read');
+		},
+		async abort() {
+			return { aborted: false };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'recovery');
+	assert.equal(state.admission, undefined);
+	assert.match(state.detail, /interrupted before admission was confirmed/i);
+	assert.doesNotMatch(state.detail, /not admitted|was not admitted/i);
+	assert.throws(() => coordinator.retry(), /confirmed terminal/);
+	assert.equal((await coordinator.recheck()).kind, 'recovery');
+	assert.equal(sends, 1);
 });
 
 test('cancel after admission waits for an aborted settlement before saying Canceled', async () => {
@@ -240,6 +324,44 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 	assert.deepEqual(reads, [admission.submissionId]);
 });
 
+test('openChatConversation reuses the stored conversation id', () => {
+	const store = new Map();
+	const originalStorage = globalThis.localStorage;
+	const originalLocation = globalThis.location;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.location = { origin: 'http://localhost' };
+	try {
+		openChatConversation();
+		const stored = store.get(appConfig.chatConversationStorageKey);
+		assert.equal(typeof stored, 'string');
+		assert.ok(stored.length > 0);
+		openChatConversation();
+		assert.equal(store.get(appConfig.chatConversationStorageKey), stored);
+	} finally {
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+		if (originalLocation === undefined) delete globalThis.location;
+		else globalThis.location = originalLocation;
+	}
+});
+
+test('chat-surface restore source calls hydrate then recheck', async () => {
+	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	assert.match(source, /unsettled = unsettledSubmissionFromHistory\(history\)/);
+	assert.match(source, /requests\.hydrate\(unsettled\.text, unsettled\.submissionId\)/);
+	assert.match(source, /if \(unsettled\) await runRequestCommand\(requests\.recheck\(\)\)/);
+});
+
 test('reload does not revive an older unsettled record after a newer submission settled', () => {
 	assert.equal(
 		unsettledSubmissionFromHistory({
@@ -299,6 +421,57 @@ test('Retry resends exactly once only after an aborted settlement is confirmed',
 	assert.equal(retried.kind, 'completed');
 	assert.equal(sends, 2);
 	assert.equal(maxActiveAdmissions, 1);
+});
+
+test('a confirmed failed settlement can retry once', async () => {
+	let sends = 0;
+	const conversation = {
+		async send() {
+			sends += 1;
+			return { ...admission, submissionId: `sub-${sends}` };
+		},
+		async read(target) {
+			const submissionId = typeof target === 'string' ? target : target.submissionId;
+			if (submissionId === 'sub-1') throw executionError('failed');
+			return { ...reply, submissionId };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	const retried = await coordinator.retry();
+	assert.equal(retried.kind, 'completed');
+	assert.equal(sends, 2);
+});
+
+test('a confirmed not-admitted send can retry once', async () => {
+	let sends = 0;
+	const conversation = {
+		async send() {
+			sends += 1;
+			if (sends === 1) {
+				throw new FlueApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
+			}
+			return admission;
+		},
+		async read() {
+			return reply;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'not-admitted');
+	const retried = await coordinator.retry();
+	assert.deepEqual(retried, { kind: 'completed', text: 'hello', reply });
+	assert.equal(sends, 2);
 });
 
 test('rejects every overlapping admission attempt', async () => {

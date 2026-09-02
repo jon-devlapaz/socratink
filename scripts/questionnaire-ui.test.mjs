@@ -72,6 +72,19 @@ test('fails closed on malformed or oversized structured questionnaire data', () 
 		}),
 		undefined,
 	);
+	assert.equal(
+		parseQuestionnaireDefinition({
+			...validDefinition,
+			items: [{
+				...validDefinition.items[0],
+				choices: [
+					{ value: 'trace', label: 'Example trace' },
+					{ value: 'trace', label: 'Puzzle' },
+				],
+			}],
+		}),
+		undefined,
+	);
 });
 
 test('formats selected, freeform, and skipped answers as explicit learner text', () => {
@@ -136,7 +149,9 @@ test('the card mounts questionnaires from turn data, not a post-paint inject', a
 test('the agent mounts the Flue-native questionnaire writer and presentation tool', async () => {
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
+	assert.match(promptSource, /schema: QuestionnaireSchema/);
 	assert.match(promptSource, /name: 'present_question'/);
+	assert.match(promptSource, /input: QuestionnaireSchema/);
 	assert.match(promptSource, /exactly one question/);
 	assert.match(promptSource, /learning partner for agentic engineering/);
 	assert.match(promptSource, /model and tool boundaries/);
