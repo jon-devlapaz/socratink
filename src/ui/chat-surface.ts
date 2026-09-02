@@ -17,7 +17,6 @@ import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
 	displayLabel,
 	groupEarlierSteps,
-	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 	type DisplayedTurn,
@@ -55,7 +54,6 @@ type ChatSurfaceElements = {
 	appearance: HTMLButtonElement;
 	typeSize: HTMLButtonElement;
 	autoModel: HTMLButtonElement;
-	modelRoute: HTMLParagraphElement;
 	dictationToggle: HTMLButtonElement;
 	dictationStatus: HTMLElement;
 };
@@ -166,7 +164,6 @@ export function mountChatSurface(options: Readonly<{
 		appearance,
 		typeSize,
 		autoModel,
-		modelRoute,
 		dictationToggle,
 		dictationStatus,
 	} = elements;
@@ -229,17 +226,20 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	function appendTurnCopy(parent: HTMLElement, item: DisplayedTurn, stream = false) {
+		const head = document.createElement('div');
+		head.className = 'turn-head';
 		const label = document.createElement('span');
 		label.className = 'turn-label';
 		label.textContent = displayLabel(item.role);
-		parent.append(label);
+		head.append(label);
 		if (item.role === 'Assistant' && item.modelRoute) {
 			const routeLabel = document.createElement('span');
 			routeLabel.className = 'turn-model';
 			routeLabel.textContent = item.modelRoute;
 			routeLabel.title = item.modelRoute;
-			parent.append(routeLabel);
+			head.append(routeLabel);
 		}
+		parent.append(head);
 		const body = document.createElement('p');
 		fillTurnBody(body, item.text, stream);
 		parent.append(body);
@@ -542,7 +542,6 @@ export function mountChatSurface(options: Readonly<{
 				activeTurn.append(createRequestStateTurn(requestState));
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
-			paintModelRoute(latestModelRoute(turns));
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			document.body.classList.toggle(
 				'questionnaire-active',
@@ -567,18 +566,6 @@ export function mountChatSurface(options: Readonly<{
 				return exhaustive;
 			}
 		}
-	}
-
-	function paintModelRoute(label: string | undefined) {
-		if (!label) {
-			modelRoute.hidden = true;
-			modelRoute.textContent = '';
-			modelRoute.removeAttribute('title');
-			return;
-		}
-		modelRoute.hidden = false;
-		modelRoute.textContent = label;
-		modelRoute.title = label;
 	}
 
 	function setWorking(next: boolean) {
@@ -799,7 +786,6 @@ function queryChatSurface(): ChatSurfaceElements {
 		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
 		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
 		autoModel: requireElement<HTMLButtonElement>('#auto-model'),
-		modelRoute: requireElement<HTMLParagraphElement>('#model-route'),
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};

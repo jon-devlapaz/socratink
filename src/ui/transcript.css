@@ -160,6 +160,12 @@ html[data-type-size='small'] .active-node {
 	list-style: none;
 }
 
+#messages:not([hidden]) {
+	/* Structure border: past trail ends; live beat begins. */
+	padding-bottom: 0.95rem;
+	border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
 #messages[hidden] {
 	display: none;
 }
@@ -224,7 +230,7 @@ html[data-type-size='small'] .active-node {
 .history-turn p {
 	margin: 0;
 	overflow-wrap: anywhere;
-	color: var(--ink);
+	color: var(--muted);
 	font-size: calc(0.9rem * var(--type-scale, 1));
 	line-height: 1.5;
 	white-space: pre-wrap;
@@ -236,6 +242,10 @@ html[data-type-size='small'] .active-node {
 
 #active-turn {
 	padding: 0.55rem 1.25rem 1.2rem;
+}
+
+.active-scroll:has(#messages:not([hidden])) #active-turn {
+	padding-top: 1.05rem;
 }
 
 .jump-latest {
@@ -304,7 +314,20 @@ html[data-type-size='small'] .active-node {
 	margin-top: 1.15rem;
 }
 
+.turn-head {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.turn.you .turn-head {
+	justify-content: flex-end;
+}
+
 .turn-label {
+	flex: 0 0 auto;
 	color: var(--muted);
 	font-size: 0.67rem;
 	font-weight: 750;
@@ -313,11 +336,22 @@ html[data-type-size='small'] .active-node {
 }
 
 .turn-model {
+	min-width: 0;
+	overflow: hidden;
 	color: var(--quiet);
 	font-size: 0.67rem;
 	font-weight: 500;
 	letter-spacing: 0;
+	line-height: 1.2;
+	text-overflow: ellipsis;
 	text-transform: none;
+	white-space: nowrap;
+}
+
+.turn-model::before {
+	content: '·';
+	margin-right: 0.4rem;
+	opacity: 0.7;
 }
 
 .turn p {
@@ -440,6 +474,24 @@ html[data-type-size='small'] .active-node {
 
 .turn.error p {
 	color: var(--error);
+}
+
+@media (max-width: 560px) {
+	.turn-head {
+		gap: 0.35rem;
+	}
+
+	.turn-model {
+		font-size: 0.6rem;
+	}
+
+	#messages:not([hidden]) {
+		padding-bottom: 0.8rem;
+	}
+
+	.active-scroll:has(#messages:not([hidden])) #active-turn {
+		padding-top: 0.9rem;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

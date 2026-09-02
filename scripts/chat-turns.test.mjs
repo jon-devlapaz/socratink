@@ -3,7 +3,6 @@ import test from 'node:test';
 import {
 	displayLabel,
 	groupEarlierSteps,
-	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
@@ -219,5 +218,4 @@ test('projects the routed model from assistant response metadata', () => {
 			modelRoute: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
 		},
 	]);
-	assert.equal(latestModelRoute(turns), 'Qwen/Qwen3-VL-235B-A22B-Instruct');
 });

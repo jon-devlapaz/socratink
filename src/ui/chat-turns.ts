@@ -12,13 +12,6 @@ export type DisplayedTurn = {
 	modelRoute?: string;
 };
 
-export function latestModelRoute(turns: readonly DisplayedTurn[]): string | undefined {
-	for (let index = turns.length - 1; index >= 0; index -= 1) {
-		const turn = turns[index];
-		if (turn?.role === 'Assistant' && turn.modelRoute) return turn.modelRoute;
-	}
-}
-
 export function displayLabel(role: ChatMessageRole): string {
 	switch (role) {
 		case 'Assistant':
