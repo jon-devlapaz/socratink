@@ -30,6 +30,8 @@
 		0 0 0 1px rgba(16, 15, 15, 0.12),
 		0 1px 2px -1px rgba(16, 15, 15, 0.08),
 		0 2px 4px 0 rgba(16, 15, 15, 0.06);
+	--composer-invite-glow: 0 0 36px 4px color-mix(in srgb, var(--accent) 30%, transparent);
+	--composer-invite-ring: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
 	--ease-out: ease-out;
 	--press: cubic-bezier(0.2, 0, 0, 1);
 	--drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -670,9 +672,34 @@ body.questionnaire-active .stage {
 	padding-bottom: 1.5rem;
 }
 
-#chat {
+.composer-shell {
 	position: relative;
 	width: min(580px, 100%);
+}
+
+.composer-shell::before {
+	content: "";
+	position: absolute;
+	inset: 1px;
+	z-index: 0;
+	border-radius: 17px;
+	pointer-events: none;
+	box-shadow: var(--composer-invite-glow);
+	opacity: 0;
+	transition-property: opacity;
+	transition-duration: 1s;
+	transition-timing-function: var(--ease-out);
+}
+
+body:has(.starter-state) .composer-shell::before {
+	opacity: 1;
+	transition-duration: 300ms;
+}
+
+#chat {
+	position: relative;
+	z-index: 1;
+	width: 100%;
 	overflow: hidden;
 	border-radius: 18px;
 	background: var(--card);
@@ -683,9 +710,21 @@ body.questionnaire-active .stage {
 	transition-timing-function: var(--ease-out);
 }
 
+body:has(.starter-state) #chat {
+	box-shadow: var(--composer-invite-ring), var(--shadow-border), inset 0 1px 0 var(--highlight);
+}
+
 #chat:focus-within {
 	box-shadow:
 		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+		var(--shadow-border-hover),
+		inset 0 1px 0 var(--highlight);
+}
+
+body:has(.starter-state) #chat:focus-within {
+	box-shadow:
+		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+		var(--composer-invite-ring),
 		var(--shadow-border-hover),
 		inset 0 1px 0 var(--highlight);
 }
@@ -833,6 +872,7 @@ body.questionnaire-active .stage {
 	.menu-backdrop,
 	.menu-panel,
 	.app-canvas,
+	.composer-shell::before,
 	#chat,
 	.composer-send button[type='submit'],
 	.menu-orbs a,

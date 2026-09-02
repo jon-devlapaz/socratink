@@ -193,3 +193,17 @@ test('the card mounts agentic-engineering starters on initial empty turns', asyn
 	assert.match(cssSource, /\.starter-state/);
 	assert.match(cssSource, /\.starter-spark-pill/);
 });
+
+test('the composer invite glow is on only while the starter empty state is mounted', async () => {
+	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
+	const stylesSource = await readFile(new URL('../src/ui/styles.css', import.meta.url), 'utf8');
+	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+
+	assert.match(indexSource, /class="composer-shell"/);
+	assert.match(surfaceSource, /current\.length === 0 && requestState\.kind === 'idle'/);
+	assert.match(stylesSource, /--composer-invite-glow:/);
+	assert.match(stylesSource, /body:has\(\.starter-state\) \.composer-shell::before/);
+	assert.match(stylesSource, /body:has\(\.starter-state\) #chat/);
+	assert.match(stylesSource, /\.composer-shell::before \{[\s\S]*transition-duration: 1s;/);
+	assert.match(stylesSource, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.composer-shell::before,/);
+});
