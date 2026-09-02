@@ -1,21 +1,35 @@
 .active-node {
 	--jump-reserve: 0px;
 	--type-scale: 1;
+	--trail-tab-left: 1.15rem;
+	--trail-tab-width: 0.82rem;
+	--node-ring: color-mix(in srgb, var(--ink) 8%, transparent);
 	position: relative;
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
 	width: min(580px, 100%);
 	min-height: 0;
-	overflow: hidden;
+	overflow: visible;
 	padding-bottom: var(--jump-reserve);
 	border-radius: 18px;
 	background: var(--card);
-	box-shadow: var(--shadow-border), inset 0 1px 0 var(--highlight);
-	backdrop-filter: blur(10px);
+	box-shadow: var(--shadow-border);
 	transition-property: box-shadow;
 	transition-duration: 150ms;
 	transition-timing-function: var(--ease-out);
+}
+
+/* Frost sits behind the transcript so the bookmark can join the card edge. */
+.active-node::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	box-shadow: inset 0 1px 0 var(--highlight);
+	backdrop-filter: blur(10px);
 }
 
 .active-node:has(#jump-latest:not([hidden])) {
@@ -42,12 +56,49 @@ html[data-type-size='small'] .active-node {
 	min-height: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
+	border-radius: inherit;
+	position: relative;
+	z-index: 1;
 	overscroll-behavior: contain;
-	scroll-padding-top: 2.75rem;
+	scroll-padding-top: 0.75rem;
 	scrollbar-width: none;
 	-ms-overflow-style: none;
 	--scroll-fade-t: 0px;
 	--scroll-fade-b: 0px;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+.active-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.active-scroll.is-fading-top {
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		transparent 0,
+		#000 var(--scroll-fade-t),
+		#000 100%
+	);
+	mask-image: linear-gradient(to bottom, transparent 0, #000 var(--scroll-fade-t), #000 100%);
+}
+
+.active-scroll.is-fading-bottom {
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		#000 0,
+		#000 calc(100% - var(--scroll-fade-b)),
+		transparent 100%
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		#000 0,
+		#000 calc(100% - var(--scroll-fade-b)),
+		transparent 100%
+	);
+}
+
+.active-scroll.is-fading-top.is-fading-bottom {
 	-webkit-mask-image: linear-gradient(
 		to bottom,
 		transparent 0,
@@ -62,12 +113,6 @@ html[data-type-size='small'] .active-node {
 		#000 calc(100% - var(--scroll-fade-b)),
 		transparent 100%
 	);
-	mask-repeat: no-repeat;
-	-webkit-mask-repeat: no-repeat;
-}
-
-.active-scroll::-webkit-scrollbar {
-	display: none;
 }
 
 .turn-spacer {
@@ -78,78 +123,117 @@ html[data-type-size='small'] .active-node {
 .active-node:focus-within {
 	box-shadow:
 		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
-		var(--shadow-border-hover),
-		inset 0 1px 0 var(--highlight);
+		var(--shadow-border-hover);
+}
+
+.active-node.has-trail {
+	box-shadow:
+		0 1px 2px -1px color-mix(in srgb, var(--ink) 6%, transparent),
+		0 2px 4px 0 color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.active-node.has-trail::before {
+	box-shadow: none;
+}
+
+.active-node.has-trail:focus-within {
+	box-shadow:
+		0 1px 2px -1px color-mix(in srgb, var(--ink) 8%, transparent),
+		0 2px 4px 0 color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.active-node.has-trail::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 4;
+	border: 1px solid var(--node-ring);
+	border-radius: inherit;
+	pointer-events: none;
+	clip-path: polygon(
+		0% 0%,
+		var(--trail-tab-left) 0%,
+		var(--trail-tab-left) 3px,
+		calc(var(--trail-tab-left) + var(--trail-tab-width)) 3px,
+		calc(var(--trail-tab-left) + var(--trail-tab-width)) 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%
+	);
 }
 
 .trail-toggle {
-	position: sticky;
-	top: 0.45rem;
-	z-index: 1;
-	display: inline-flex;
-	align-items: center;
-	align-self: start;
-	gap: 0.3rem;
-	margin: 0.55rem 1rem 0.35rem;
-	padding: 0.35rem 0.65rem 0.35rem 0.75rem;
+	--trail-hit-x: 0.55rem;
+	position: absolute;
+	top: 0;
+	left: calc(var(--trail-tab-left) - var(--trail-hit-x));
+	z-index: 6;
+	display: flex;
+	align-items: flex-start;
+	width: max-content;
+	margin: 0;
+	padding: 0 var(--trail-hit-x) 0.9rem;
 	border: 0;
-	border-radius: 999px;
-	color: var(--quiet);
-	background: var(--chip-strong);
-	box-shadow: var(--shadow-border);
+	color: var(--chip-strong);
+	background: none;
+	line-height: 0;
 	cursor: pointer;
-	font-size: 0.72rem;
-	font-weight: 500;
-	line-height: 1;
-	transition-property: color, background-color, scale, box-shadow;
-	transition-duration: 150ms;
-	transition-timing-function: var(--press);
 }
 
 .trail-toggle:hover,
 .trail-toggle:focus-visible {
-	color: var(--ink);
-	box-shadow: var(--shadow-border-hover);
-	outline: none;
-}
-
-.trail-toggle:focus-visible {
-	box-shadow:
-		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
-		var(--shadow-border-hover);
-}
-
-.trail-toggle:active {
-	scale: 0.96;
+	color: color-mix(in srgb, var(--ink) 10%, var(--chip-strong));
 }
 
 .trail-toggle[aria-expanded='true'] {
-	color: var(--ink);
+	color: color-mix(in srgb, var(--accent) 28%, var(--chip-strong));
+}
+
+/* Hover/open: the tab fill occupies the node's 1px slot so the outline stays one stroke. */
+.trail-toggle:hover::before,
+.trail-toggle:focus-visible::before,
+.trail-toggle[aria-expanded='true']::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: var(--trail-hit-x);
+	z-index: 2;
+	width: var(--trail-tab-width);
+	height: 1px;
+	background: currentColor;
+	pointer-events: none;
+}
+
+.trail-toggle:focus-visible {
+	outline: none;
 }
 
 .trail-toggle[hidden] {
 	display: none;
 }
 
-.trail-caret {
-	display: grid;
-	width: 0.9rem;
-	height: 0.9rem;
-	place-items: center;
-	opacity: 0.7;
-	transition-property: transform;
+.trail-mark {
+	display: block;
+	flex: none;
+	width: var(--trail-tab-width);
+	height: calc(var(--trail-tab-width) * 28 / 16);
+	color: inherit;
+	transform-origin: top center;
+	transition-property: color, scale;
 	transition-duration: 150ms;
 	transition-timing-function: var(--press);
 }
 
-.trail-toggle[aria-expanded='true'] .trail-caret {
-	transform: rotate(180deg);
+.trail-mark path {
+	fill: currentColor;
 }
 
-.trail-caret svg {
-	display: block;
-	width: 0.9rem;
-	height: 0.9rem;
+.trail-mark-body {
+	shape-rendering: crispEdges;
+}
+
+.trail-toggle:active .trail-mark {
+	scale: 0.96;
 }
 
 #messages {
@@ -162,6 +246,7 @@ html[data-type-size='small'] .active-node {
 
 #messages:not([hidden]) {
 	/* Structure border: past trail ends; live beat begins. */
+	padding-top: 1.35rem;
 	padding-bottom: 0.95rem;
 	border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
@@ -494,10 +579,19 @@ html[data-type-size='small'] .active-node {
 	}
 }
 
+@media (pointer: coarse) {
+	.trail-toggle {
+		--trail-hit-x: 0.2rem;
+		padding: 0 0.75rem 1.1rem 0.2rem;
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.active-node,
 	.trail-toggle,
-	.trail-caret,
+	.trail-mark,
 	.jump-latest,
 	#active-turn.is-exiting {
 		transition: none;
@@ -527,12 +621,8 @@ html[data-type-size='small'] .active-node {
 	}
 
 	.jump-latest:active,
-	.trail-toggle:active {
+	.trail-toggle:active .trail-mark {
 		scale: none;
-	}
-
-	.trail-toggle[aria-expanded='true'] .trail-caret {
-		transform: none;
 	}
 }
 

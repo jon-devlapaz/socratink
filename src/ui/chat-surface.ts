@@ -373,6 +373,7 @@ export function mountChatSurface(options: Readonly<{
 
 	function syncTrail() {
 		const count = messages.childElementCount;
+		card.classList.toggle('has-trail', count > 0);
 		trailToggle.hidden = count === 0;
 		trailLabel.textContent = count === 1 ? '1 earlier step' : `${count} earlier steps`;
 		if (count === 0) {

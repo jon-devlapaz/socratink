@@ -157,6 +157,15 @@ html.has-smooth-cursor * {
 	cursor: none !important;
 }
 
+html.has-smooth-cursor:has(.trail-toggle:hover) .smooth-cursor.is-visible {
+	opacity: 0;
+	transition: none;
+}
+
+html.has-smooth-cursor:has(.trail-toggle:hover) .trail-mark {
+	filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--accent) 32%, transparent));
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.smooth-cursor,
 	.smooth-cursor-orb,

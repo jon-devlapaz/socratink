@@ -122,21 +122,21 @@
 				</div>
 
 				<section class="active-node" aria-label="Current step">
+					<button
+						class="trail-toggle"
+						id="trail-toggle"
+						type="button"
+						hidden
+						aria-expanded="false"
+						aria-controls="messages"
+					>
+						<svg class="trail-mark" viewBox="0 0 16 28" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+							<path class="trail-mark-body" d="M0 0h16v19H0z" />
+							<path d="M0 19h16L8 28z" />
+						</svg>
+						<span id="trail-toggle-label" class="sr-only">Earlier steps</span>
+					</button>
 					<div class="active-scroll">
-						<button class="trail-toggle" id="trail-toggle" type="button" hidden aria-expanded="false">
-							<span id="trail-toggle-label">Earlier steps</span>
-							<span class="trail-caret" aria-hidden="true">
-								<svg viewBox="0 0 16 16" fill="none">
-									<path
-										d="M3.5 6.25 8 10.75l4.5-4.5"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/>
-								</svg>
-							</span>
-						</button>
 						<ol id="messages" hidden aria-label="Earlier steps"></ol>
 						<div id="active-turn"></div>
 						<template id="starter-template">

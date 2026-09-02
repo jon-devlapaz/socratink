@@ -15,7 +15,6 @@ type TranscriptScroll = {
 export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 	const scroller = requireChild<HTMLElement>(card, '.active-scroll');
 	const jumpButton = requireChild<HTMLButtonElement>(card, '#jump-latest');
-	const trailToggle = requireChild<HTMLButtonElement>(card, '#trail-toggle');
 	const activeTurn = requireChild<HTMLElement>(card, '#active-turn');
 	const spacer = requireChild<HTMLElement>(card, '#turn-spacer');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -39,12 +38,15 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		if (max <= 1) {
 			scroller.style.setProperty('--scroll-fade-t', '0px');
 			scroller.style.setProperty('--scroll-fade-b', '0px');
+			scroller.classList.remove('is-fading-top', 'is-fading-bottom');
 			return;
 		}
 		const top = Math.min(fadePx, (scroller.scrollTop / fadeRevealPx) * fadePx);
 		const bottom = Math.min(fadePx, ((max - scroller.scrollTop) / fadeRevealPx) * fadePx);
 		scroller.style.setProperty('--scroll-fade-t', `${Math.round(top)}px`);
 		scroller.style.setProperty('--scroll-fade-b', `${Math.round(bottom)}px`);
+		scroller.classList.toggle('is-fading-top', top >= 1);
+		scroller.classList.toggle('is-fading-bottom', bottom >= 1);
 	}
 
 	function syncChrome() {
@@ -64,11 +66,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		});
 	}
 
-	function stickyOffset(): number {
-		if (trailToggle.hidden) return 0;
-		return Math.max(0, trailToggle.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top);
-	}
-
 	function isLiveContent(turn: HTMLElement): boolean {
 		return turn.classList.contains('you') || turn.classList.contains('pending');
 	}
@@ -80,7 +77,7 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 			spacer.style.height = '0px';
 			return;
 		}
-		const used = stickyOffset() + activeTurn.getBoundingClientRect().height;
+		const used = activeTurn.getBoundingClientRect().height;
 		spacer.style.height = `${Math.max(0, scroller.clientHeight - used)}px`;
 	}
 
@@ -95,7 +92,7 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		withProgrammaticScroll(() => {
 			const scrollerBox = scroller.getBoundingClientRect();
 			const anchorBox = anchor.getBoundingClientRect();
-			scroller.scrollTop += anchorBox.top - scrollerBox.top - stickyOffset();
+			scroller.scrollTop += anchorBox.top - scrollerBox.top;
 		});
 	}
 
