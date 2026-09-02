@@ -1,0 +1,14 @@
+{
+  "source": "https://github.com/jon-devlapaz/socratink.git",
+  "revision": "f89e2e83ec5702c04f2f74d278e89cd6116806f8",
+  "sourceRoot": ".agents/skills/personas-skillset",
+  "members": [
+    "andrew-ng-perspective",
+    "kenneth-koedinger-perspective",
+    "martin-fowler-perspective",
+    "sal-khan-perspective",
+    "steve-jobs-perspective"
+  ],
+  "digestVersion": 2,
+  "digest": "38b1d46a111bc5aff97f7e21b389f6f4d698e60163ed728db810660c5f55c8e2"
+}
