@@ -215,6 +215,13 @@ mastery.
   verification. Never bypass checks or rewrite shared history to make a change
   appear clean.
 - Do not remove or weaken a failing test merely to obtain a green result.
+- **Git golden** is an on-demand stop condition, not a session gate and not CI.
+  When the user says "git golden" or "return to golden", run
+  `scripts/git-golden.sh` from the repository root and stop on a non-zero
+  exit. Report every `FAIL` line. Do not delete branches, worktrees, stashes,
+  or dirty files unless the user explicitly asks to restore or delete. The
+  script is the definition: on `main`, clean index, `HEAD == origin/main`,
+  exactly one worktree, and only local branch `main`.
 
 ## Boundaries
 
