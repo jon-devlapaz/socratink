@@ -37,6 +37,7 @@ Prefer the narrowest relevant check while iterating:
 pnpm check:types
 pnpm test:braintrust
 pnpm test:chat-model
+pnpm test:model-route
 pnpm test:database-config
 pnpm test:questionnaire
 pnpm test:conversation

@@ -1,11 +1,21 @@
 'use agent';
-import { useDataWriter, useModel, useTool } from '@flue/runtime';
+import { useDataWriter, useModel, useResponseFinish, useTool } from '@flue/runtime';
 import { currentSpan } from 'braintrust';
 import { chatModel } from '../config/chat-model.ts';
+import { modelRouteMetadata } from '../config/model-route.ts';
 import { QuestionnaireSchema } from '../questionnaire.ts';
+import { capturedRoute } from '../server/model-route.ts';
 
 export function Chat() {
 	useModel(`${chatModel.providerId}/${chatModel.modelId}`);
+	useResponseFinish(() => {
+		const routed = capturedRoute();
+		if (!routed?.routedModel) return;
+		return modelRouteMetadata({
+			routedModel: routed.routedModel,
+			...(routed.fallbackAttempts ? { fallbackAttempts: routed.fallbackAttempts } : {}),
+		});
+	});
 	const writeQuestionnaireData = useDataWriter('questionnaire', {
 		schema: QuestionnaireSchema,
 	});

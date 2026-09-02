@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
 	displayLabel,
+	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
@@ -176,4 +177,38 @@ test('splits the latest learner and closing reply into the current beat', () => 
 test('maps the stored assistant role to the Socratink display label', () => {
 	assert.equal(displayLabel('Assistant'), 'Socratink');
 	assert.equal(displayLabel('You'), 'You');
+});
+
+test('projects the routed model from assistant response metadata', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{
+				display: 'visible',
+				role: 'user',
+				parts: [{ type: 'text', text: 'hello' }],
+			},
+			{
+				display: 'visible',
+				role: 'assistant',
+				parts: [{ type: 'text', text: 'pong' }],
+				metadata: {
+					socratink: {
+						requestedModel: 'auto',
+						routedModel: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
+					},
+				},
+			},
+		],
+	});
+
+	assert.deepEqual(turns, [
+		{ role: 'You', text: 'hello' },
+		{
+			role: 'Assistant',
+			text: 'pong',
+			modelRoute: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
+		},
+	]);
+	assert.equal(latestModelRoute(turns), 'Qwen/Qwen3-VL-235B-A22B-Instruct');
 });

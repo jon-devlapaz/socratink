@@ -16,18 +16,18 @@ import { mountAppDock } from './app-dock.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
 	displayLabel,
+	latestModelRoute,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
-	type ChatMessageRole,
 	type DisplayedTurn,
 } from './chat-turns.ts';
+import { modelRouteLabel } from '../config/model-route.ts';
 import {
 	createQuestionnaire,
 	createQuestionnaireSummary,
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
-import type { QuestionnaireDefinition } from '../questionnaire.ts';
 
 type PaintKind = 'restore' | 'new-turn' | 'hold';
 
@@ -52,6 +52,7 @@ type ChatSurfaceElements = {
 	trailLabel: HTMLElement;
 	appearance: HTMLButtonElement;
 	typeSize: HTMLButtonElement;
+	modelRoute: HTMLParagraphElement;
 };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -156,6 +157,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		trailLabel,
 		appearance,
 		typeSize,
+		modelRoute,
 	} = elements;
 	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
@@ -206,41 +208,42 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		});
 	}
 
-	function createLabeledBody(role: ChatMessageRole, text: string, stream = false) {
+	function appendTurnCopy(parent: HTMLElement, item: DisplayedTurn, stream = false) {
 		const label = document.createElement('span');
 		label.className = 'turn-label';
-		label.textContent = displayLabel(role);
+		label.textContent = displayLabel(item.role);
+		parent.append(label);
+		if (item.role === 'Assistant' && item.modelRoute) {
+			const routeLabel = document.createElement('span');
+			routeLabel.className = 'turn-model';
+			routeLabel.textContent = item.modelRoute;
+			routeLabel.title = item.modelRoute;
+			parent.append(routeLabel);
+		}
 		const body = document.createElement('p');
-		fillTurnBody(body, text, stream);
-		return { label, body };
+		fillTurnBody(body, item.text, stream);
+		parent.append(body);
 	}
 
-	function createHistoryItem(
-		role: ChatMessageRole,
-		text: string,
-		questionnaire?: QuestionnaireDefinition,
-	) {
-		const item = document.createElement('li');
-		item.className = role.toLowerCase();
-		const { label, body } = createLabeledBody(role, text);
-		item.append(label, body);
-		if (questionnaire) item.append(createQuestionnaireSummary(questionnaire));
-		return item;
+	function createHistoryItem(item: DisplayedTurn) {
+		const entry = document.createElement('li');
+		entry.className = item.role.toLowerCase();
+		appendTurnCopy(entry, item);
+		if (item.questionnaire) entry.append(createQuestionnaireSummary(item.questionnaire));
+		return entry;
 	}
 
 	function createActiveTurn(
-		role: ChatMessageRole,
-		text: string,
-		questionnaire: QuestionnaireDefinition | undefined,
+		item: DisplayedTurn,
 		{ announce = false, stagger = false, interactive = false, stream = false } = {},
 	) {
 		const wrap = document.createElement('div');
-		wrap.className = `turn ${role.toLowerCase()}`;
+		wrap.className = `turn ${item.role.toLowerCase()}`;
 		if (announce) wrap.setAttribute('aria-live', 'polite');
 		if (stagger) wrap.classList.add('stagger-item');
-		const { label, body } = createLabeledBody(role, text, stream);
-		wrap.append(label, body);
-		if (questionnaire && interactive) {
+		appendTurnCopy(wrap, item, stream);
+		if (item.questionnaire && interactive) {
+			const questionnaire = item.questionnaire;
 			wrap.append(
 				createQuestionnaire(questionnaire, (answers) => {
 					void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
@@ -461,9 +464,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		const render = async () => {
 			clearStream();
 			const { earlier, current } = splitCurrentTurns(turns);
-			messages.replaceChildren(
-				...earlier.map((item) => createHistoryItem(item.role, item.text, item.questionnaire)),
-			);
+			messages.replaceChildren(...earlier.map((item) => createHistoryItem(item)));
 			syncTrail();
 
 			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
@@ -484,7 +485,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 					...current.map((item, index) => {
 						const isLast = index === current.length - 1;
 						const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
-						return createActiveTurn(item.role, item.text, item.questionnaire, {
+						return createActiveTurn(item, {
 							announce: kind === 'hold' && isLast,
 							stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
 							interactive: isLast && Boolean(item.questionnaire),
@@ -500,6 +501,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				activeTurn.append(createRequestStateTurn(requestState));
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
+			paintModelRoute(latestModelRoute(turns));
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			document.body.classList.toggle(
 				'questionnaire-active',
@@ -524,6 +526,18 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 				return exhaustive;
 			}
 		}
+	}
+
+	function paintModelRoute(label: string | undefined) {
+		if (!label) {
+			modelRoute.hidden = true;
+			modelRoute.textContent = '';
+			modelRoute.removeAttribute('title');
+			return;
+		}
+		modelRoute.hidden = false;
+		modelRoute.textContent = label;
+		modelRoute.title = label;
 	}
 
 	function setWorking(next: boolean) {
@@ -609,12 +623,14 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
+		const route = modelRouteLabel(reply.metadata);
 		turns = [
 			...turns,
 			{
 				role: 'Assistant',
 				text: reply.text,
 				...(questionnaire ? { questionnaire } : {}),
+				...(route ? { modelRoute: route } : {}),
 			},
 		];
 		await paint('hold');
@@ -730,5 +746,6 @@ function queryChatSurface(): ChatSurfaceElements {
 		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
 		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
 		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
+		modelRoute: requireElement<HTMLParagraphElement>('#model-route'),
 	};
 }
