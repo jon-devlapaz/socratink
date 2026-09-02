@@ -2,8 +2,6 @@
 	--orb-size: clamp(130px, 16vw, 210px);
 	--orb-visual-radius: 29.55%;
 	--orb-below: 0.2045;
-	--dock-bar-height: 3.5rem;
-	--dock-under-orb: 6px;
 	position: relative;
 	z-index: 3;
 	display: flex;
@@ -28,7 +26,7 @@ body.questionnaire-active .alive-cluster {
 }
 
 .alive-cluster.is-dock-open {
-	padding-bottom: calc(var(--dock-bar-height) + var(--dock-under-orb) + 2px - var(--orb-below) * var(--orb-size));
+	padding-bottom: 2.75rem;
 	transition-duration: 400ms;
 }
 
@@ -39,6 +37,11 @@ body.questionnaire-active .alive-cluster {
 	overflow: visible;
 }
 
+.alive-core {
+	position: relative;
+	z-index: 50;
+}
+
 .alive-core.is-dock-pulse:not(.is-working) {
 	transform: scale(1.045);
 }
@@ -47,29 +50,16 @@ body.questionnaire-active .alive-cluster {
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	z-index: 2;
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-	height: var(--dock-bar-height);
-	width: max-content;
-	gap: 0.5rem;
-	padding: 0.5rem;
-	border: 1px solid var(--dock-stroke);
-	border-radius: 999px;
-	background: var(--dock-glass);
-	backdrop-filter: blur(12px);
-	overflow: visible;
-	transform-origin: 50% 50%;
-	translate: -50% -50%;
-	scale: 0.2;
-	filter: blur(4px);
-	opacity: 0;
+	width: calc(2 * var(--orb-visual-radius) + 5.75rem);
+	height: calc(2 * var(--orb-visual-radius) + 5.75rem);
+	margin: calc(-0.5 * (2 * var(--orb-visual-radius) + 5.75rem)) 0 0
+		calc(-0.5 * (2 * var(--orb-visual-radius) + 5.75rem));
+	padding: 0;
+	border: 0;
+	background: none;
+	touch-action: none;
 	visibility: hidden;
 	pointer-events: none;
-	transition-property: opacity, translate, scale, filter, border-radius, top;
-	transition-duration: 240ms;
-	transition-timing-function: var(--ease-out);
 }
 
 .app-dock.is-open {
@@ -77,34 +67,38 @@ body.questionnaire-active .alive-cluster {
 }
 
 .app-dock.is-emerged {
-	top: calc(50% + var(--orb-visual-radius) + var(--dock-under-orb));
-	border-radius: 1rem;
-	translate: -50% 0;
-	scale: 1;
-	filter: blur(0);
-	opacity: 1;
 	pointer-events: auto;
-	transition-duration: 400ms;
 }
 
 .app-dock-item {
-	position: relative;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: var(--dock-z, 1);
 	display: flex;
-	flex: none;
 	align-items: center;
 	justify-content: center;
-	width: var(--dock-icon-size, 40px);
-	height: var(--dock-icon-size, 40px);
+	width: 2.5rem;
+	height: 2.5rem;
 	padding: 8px;
-	border: 0;
+	border: 1px solid var(--dock-stroke);
 	border-radius: 999px;
 	color: var(--ink);
-	background: transparent;
+	background: var(--dock-glass);
+	backdrop-filter: blur(12px);
 	cursor: pointer;
 	font: inherit;
-	transition-property: background-color, scale;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
+	opacity: 0;
+	transform: translate(-50%, -50%) scale(0.2);
+	transition-property: background-color, opacity;
+	transition-duration: 150ms, 240ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.app-dock.is-emerged .app-dock-item {
+	opacity: var(--icon-opacity, 1);
+	pointer-events: auto;
+	transition-duration: 150ms, 0ms;
 }
 
 .app-dock-glyph {
@@ -115,17 +109,15 @@ body.questionnaire-active .alive-cluster {
 }
 
 .app-dock-item:hover,
-.app-dock-item:focus-visible {
-	background: color-mix(in srgb, var(--ink) 10%, transparent);
+.app-dock-item:focus-visible,
+.app-dock-item.is-current {
+	background: color-mix(in srgb, var(--dock-glass) 70%, var(--ink) 12%);
 	outline: none;
 }
 
-.app-dock-item:focus-visible {
+.app-dock-item:focus-visible,
+.app-dock-item.is-current {
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.app-dock-item:active {
-	scale: 0.96;
 }
 
 .app-dock-tip {
@@ -152,7 +144,7 @@ body.questionnaire-active .alive-cluster {
 }
 
 .app-dock-tip::after {
-	content: "";
+	content: '';
 	position: absolute;
 	top: calc(100% - 5px);
 	left: 50%;
@@ -170,18 +162,11 @@ body.questionnaire-active .alive-cluster {
 }
 
 .app-dock-item:hover .app-dock-tip,
-.app-dock-item:focus-visible .app-dock-tip {
+.app-dock-item:focus-visible .app-dock-tip,
+.app-dock-item.is-current .app-dock-tip {
 	opacity: 1;
 	scale: 1;
 	translate: -50% 0;
-}
-
-.app-dock-rule {
-	flex: none;
-	align-self: stretch;
-	width: 1px;
-	margin-block: 0.15rem;
-	background: color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 html:has(.menu-layer.is-open) .app-dock {
@@ -210,7 +195,6 @@ html:has(.menu-layer.is-open) .app-dock {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.app-dock,
 	.app-dock-item,
 	.app-dock-tip,
 	.alive-cluster {
@@ -219,17 +203,5 @@ html:has(.menu-layer.is-open) .app-dock {
 
 	.alive-core.is-dock-pulse:not(.is-working) {
 		transform: none;
-	}
-
-	.app-dock {
-		top: calc(50% + var(--orb-visual-radius) + var(--dock-under-orb));
-		translate: -50% 0;
-		scale: none;
-		filter: none;
-		border-radius: 1rem;
-	}
-
-	.app-dock-item:active {
-		scale: none;
 	}
 }

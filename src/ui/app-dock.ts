@@ -1,4 +1,4 @@
-import { mountDockMagnify } from './effects/dock-magnify.ts';
+import { mountIconCloud } from './effects/icon-cloud.ts';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dockExitMs = 240;
@@ -11,7 +11,7 @@ export function mountAppDock(core: HTMLButtonElement) {
 	}
 	const dock = found;
 	const cluster = core.closest('.alive-cluster');
-	const magnify = mountDockMagnify(dock);
+	const cloud = mountIconCloud(dock);
 	let open = false;
 	let hideTimer = 0;
 	let pulseTimer = 0;
@@ -36,23 +36,12 @@ export function mountAppDock(core: HTMLButtonElement) {
 		cluster?.classList.toggle('is-dock-open', next);
 		pulse();
 		if (next) {
-			dock.classList.add('is-open');
-			if (reduceMotion) {
-				dock.classList.add('is-emerged');
-				magnify.sync();
-				return;
-			}
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					if (!open) return;
-					dock.classList.add('is-emerged');
-					magnify.sync();
-				});
-			});
+			dock.classList.add('is-open', 'is-emerged');
+			cloud.sync();
 			return;
 		}
 		dock.classList.remove('is-emerged');
-		magnify.sync();
+		cloud.sync();
 		if (reduceMotion) {
 			dock.classList.remove('is-open');
 			return;
