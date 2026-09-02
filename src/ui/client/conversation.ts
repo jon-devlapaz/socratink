@@ -8,6 +8,7 @@ import {
 	type FlueConversationSnapshot,
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
+import { chatAutoModelHeader, parseFreeLlmAutoModelId } from '../../config/chat-auto.ts';
 
 type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
@@ -65,6 +66,11 @@ export function openChatConversation() {
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
+		headers: (): Record<string, string> => {
+			const model =
+				parseFreeLlmAutoModelId(localStorage.getItem(appConfig.chatAutoModelStorageKey)) ?? 'auto';
+			return { [chatAutoModelHeader]: model };
+		},
 	});
 }
 

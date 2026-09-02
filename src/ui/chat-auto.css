@@ -1,0 +1,234 @@
+/* Backdrop-filter on #chat computes overflow to clip, so drop it while the menu is open. */
+#chat:has(.auto-model-trigger[aria-expanded='true']) {
+	overflow: visible;
+	backdrop-filter: none;
+}
+
+.composer-model {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: 0.55rem;
+}
+
+.auto-model-picker {
+	position: relative;
+	flex: 0 0 auto;
+}
+
+.auto-model-trigger {
+	display: flex;
+	height: 32px;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px 0 10px;
+	border: 0;
+	border-radius: 999px;
+	color: var(--quiet);
+	background: transparent;
+	cursor: pointer;
+	font-size: 12.5px;
+	font-weight: 500;
+	line-height: 1;
+	transition-property: color, background-color, scale;
+	transition-duration: 150ms;
+	transition-timing-function: var(--press);
+}
+
+.auto-model-trigger:hover {
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+:root[data-theme='dark'] .auto-model-trigger:hover {
+	background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.auto-model-trigger:active {
+	scale: 0.96;
+}
+
+.auto-model-trigger:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
+	outline-offset: 2px;
+}
+
+.auto-model-icons {
+	position: relative;
+	width: 14px;
+	height: 14px;
+	flex: 0 0 14px;
+}
+
+.auto-model-icons span,
+.auto-model-option > svg,
+.auto-model-check svg,
+.auto-model-chevron {
+	display: block;
+	width: 14px;
+	height: 14px;
+}
+
+.auto-model-icons span {
+	position: absolute;
+	inset: 0;
+	color: inherit;
+	opacity: 0;
+	filter: blur(4px);
+	scale: 0.25;
+	transition-property: opacity, filter, scale;
+	transition-duration: 300ms;
+	transition-timing-function: var(--press);
+}
+
+.auto-model-icons span.is-active {
+	opacity: 1;
+	filter: blur(0);
+	scale: 1;
+}
+
+.auto-model-name {
+	min-width: 0;
+}
+
+.auto-model-chevron {
+	width: 12px;
+	height: 12px;
+	flex: 0 0 12px;
+	opacity: 0.6;
+	transition-property: transform;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.auto-model-trigger[aria-expanded='true'] .auto-model-chevron {
+	transform: rotate(180deg);
+}
+
+.auto-model-menu {
+	position: absolute;
+	bottom: calc(100% + 0.35rem);
+	left: 0;
+	z-index: 6;
+	min-width: 13.75rem;
+	padding: 0.25rem;
+	border-radius: 12px;
+	background: var(--chip-strong);
+	box-shadow: var(--shadow-border), var(--panel-shadow);
+	opacity: 0;
+	transform: translateY(8px) scale(0.95);
+	transform-origin: bottom left;
+	pointer-events: none;
+	transition-property: opacity, transform;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.auto-model-menu[data-open='true'] {
+	opacity: 1;
+	transform: none;
+	pointer-events: auto;
+}
+
+.auto-model-option {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.45rem 0.5rem;
+	border: 0;
+	border-radius: 8px;
+	color: var(--ink);
+	background: transparent;
+	cursor: pointer;
+	font-size: 0.82rem;
+	font-weight: 500;
+	line-height: 1.2;
+	text-align: start;
+	transition-property: background-color;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.auto-model-option > svg {
+	flex: 0 0 14px;
+	color: var(--quiet);
+}
+
+.auto-model-option-name {
+	flex: 1;
+	min-width: 0;
+}
+
+.auto-model-option-meta {
+	color: var(--quiet);
+	font-size: 0.72rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 500;
+}
+
+.auto-model-check {
+	display: grid;
+	width: 14px;
+	height: 14px;
+	flex: 0 0 14px;
+	place-items: center;
+	color: var(--accent);
+	opacity: 0;
+	filter: blur(4px);
+	scale: 0.25;
+	transition-property: opacity, filter, scale;
+	transition-duration: 200ms;
+	transition-timing-function: var(--press);
+}
+
+.auto-model-option.is-selected .auto-model-check {
+	opacity: 1;
+	filter: blur(0);
+	scale: 1;
+}
+
+.auto-model-option:hover,
+.auto-model-option:focus-visible {
+	background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.auto-model-option:focus-visible {
+	outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.auto-model-trigger,
+	.auto-model-menu,
+	.auto-model-icons span,
+	.auto-model-check,
+	.auto-model-chevron {
+		transition: none;
+	}
+
+	.auto-model-menu,
+	.auto-model-menu[data-open='true'] {
+		opacity: 1;
+		transform: none;
+		filter: none;
+	}
+
+	.auto-model-menu[data-open='false'] {
+		opacity: 0;
+	}
+
+	.auto-model-icons span,
+	.auto-model-check {
+		filter: none;
+		scale: 1;
+	}
+
+	.auto-model-icons span:not(.is-active),
+	.auto-model-option:not(.is-selected) .auto-model-check {
+		opacity: 0;
+	}
+
+	.auto-model-trigger:active {
+		scale: 1;
+	}
+}

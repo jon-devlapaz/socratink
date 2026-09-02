@@ -197,7 +197,41 @@
 						required
 					></textarea>
 					<div class="composer-footer">
-						<p id="model-route" class="model-route" hidden></p>
+						<div class="composer-model">
+							<div class="auto-model-picker">
+								<button
+									id="auto-model"
+									class="auto-model-trigger"
+									type="button"
+									value="auto"
+									aria-haspopup="listbox"
+									aria-expanded="false"
+									aria-controls="auto-model-menu"
+									aria-label="Routing"
+								>
+									<span class="auto-model-icons" aria-hidden="true"></span>
+									<span class="auto-model-name">Default</span>
+									<svg class="auto-model-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+										<path
+											d="M6 9l6 6 6-6"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								</button>
+								<div
+									id="auto-model-menu"
+									class="auto-model-menu"
+									role="listbox"
+									aria-label="Routing"
+									data-open="false"
+									inert
+								></div>
+							</div>
+							<p id="model-route" class="model-route" hidden></p>
+						</div>
 						<div class="composer-send">
 							<span class="composer-hint">⌘ / Ctrl + Enter</span>
 							<button aria-label="Send message" type="submit">

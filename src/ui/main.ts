@@ -6,6 +6,7 @@ import './cursor.css';
 import './dock.css';
 import './transcript.css';
 import './questionnaire.css';
+import './chat-auto.css';
 
 const core = document.querySelector<HTMLElement>('.alive-core');
 if (!core) throw new Error('Socratink chat markup is missing the alive-core node.');

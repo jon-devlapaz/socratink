@@ -38,6 +38,7 @@ pnpm check:types
 pnpm test:braintrust
 pnpm test:chat-model
 pnpm test:model-route
+pnpm test:chat-auto
 pnpm test:database-config
 pnpm test:questionnaire
 pnpm test:conversation

@@ -22,6 +22,7 @@ import {
 	type DisplayedTurn,
 } from './chat-turns.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
+import { initChatAutoModel } from './chat-auto.ts';
 import {
 	createQuestionnaire,
 	createQuestionnaireSummary,
@@ -52,6 +53,7 @@ type ChatSurfaceElements = {
 	trailLabel: HTMLElement;
 	appearance: HTMLButtonElement;
 	typeSize: HTMLButtonElement;
+	autoModel: HTMLButtonElement;
 	modelRoute: HTMLParagraphElement;
 };
 
@@ -135,7 +137,6 @@ export function buildRequestStateTurn(
 }
 
 export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
-	const conversation = openChatConversation();
 	const {
 		form,
 		input,
@@ -157,8 +158,11 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		trailLabel,
 		appearance,
 		typeSize,
+		autoModel,
 		modelRoute,
 	} = elements;
+	initChatAutoModel(autoModel);
+	const conversation = openChatConversation();
 	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
 	let working = false;
@@ -729,7 +733,7 @@ function queryChatSurface(): ChatSurfaceElements {
 		form,
 		input: requireElement<HTMLTextAreaElement>('#message'),
 		messages: requireElement<HTMLOListElement>('#messages'),
-		button: requireElement<HTMLButtonElement>('button', form),
+		button: requireElement<HTMLButtonElement>('.composer-send button', form),
 		core: requireElement<HTMLButtonElement>('.alive-core'),
 		lockup,
 		canvas,
@@ -746,6 +750,7 @@ function queryChatSurface(): ChatSurfaceElements {
 		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
 		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
 		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
+		autoModel: requireElement<HTMLButtonElement>('#auto-model'),
 		modelRoute: requireElement<HTMLParagraphElement>('#model-route'),
 	};
 }
