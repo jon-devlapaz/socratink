@@ -13,7 +13,7 @@
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
-		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:questionnaire && pnpm test:conversation && pnpm test:chat-turns && pnpm build",
+		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:questionnaire && pnpm test:conversation && pnpm test:chat-turns && pnpm test:dictation && pnpm test:voice-reactivity && pnpm build",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
 		"test:braintrust": "node scripts/braintrust-config.test.mjs",
@@ -23,7 +23,9 @@
 		"test:database-config": "node --test scripts/database-config.test.mjs",
 		"test:questionnaire": "node --test scripts/questionnaire-ui.test.mjs",
 		"test:conversation": "node --test scripts/conversation-client.test.mjs",
-		"test:chat-turns": "node --test scripts/chat-turns.test.mjs"
+		"test:chat-turns": "node --test scripts/chat-turns.test.mjs",
+		"test:dictation": "node --test scripts/dictation.test.mjs",
+		"test:voice-reactivity": "node --test scripts/voice-reactivity.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/pi-ai": "^0.83.0",

@@ -3,6 +3,11 @@ import { fragmentShader, vertexShader } from './organic-sphere-shaders.ts';
 
 export const sphereCamera = { fov: 55, z: 3.25, radius: 1 } as const;
 
+export type OrganicSphereController = Readonly<{
+	setVoiceLevel(level: number): void;
+	destroy(): void;
+}>;
+
 export function sphereVisualRadiusFraction() {
 	return (
 		sphereCamera.radius /
@@ -26,7 +31,16 @@ const D2 = {
 	lightB: { color: '#d2c6b2', intensity: 0.4 },
 } as const;
 
-export function mountOrganicSphere(mount: HTMLElement) {
+export function sphereMotionForVoiceLevel(level: number) {
+	const normalized = Math.min(1, Math.max(0, level));
+	return {
+		displacement: D2.displacementStrength + normalized * 0.16,
+		distortion: 0.65 + normalized * 0.35,
+		timeScale: 0.3 + normalized * 0.9,
+	};
+}
+
+export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController {
 	const scene = new THREE.Scene();
 	const camera = new THREE.PerspectiveCamera(sphereCamera.fov, 1, 0.1, 80);
 	camera.position.z = sphereCamera.z;
@@ -90,19 +104,22 @@ export function mountOrganicSphere(mount: HTMLElement) {
 	let previous = performance.now();
 	const displacement = material.uniforms.uDisplacementStrength!;
 	const distortion = material.uniforms.uDistortionStrength!;
-	const restDisplacement = D2.displacementStrength;
-	const restDistortion = 0.65;
+	let voiceLevel = 0;
+	let targetVoiceLevel = 0;
 	const render = (now: number) => {
 		const dt = Math.min(now - previous, 60) / 1000;
 		previous = now;
 		const still = mount.classList.contains('is-still');
+		const voiceEase = 1 - Math.exp(-dt * (targetVoiceLevel > voiceLevel ? 18 : 5));
+		voiceLevel += (targetVoiceLevel - voiceLevel) * voiceEase;
+		const voiceMotion = sphereMotionForVoiceLevel(voiceLevel);
 		const ease = 1 - Math.exp(-dt * 10);
-		const targetDisp = still ? 0 : restDisplacement;
-		const targetDist = still ? 0 : restDistortion;
+		const targetDisp = still ? 0 : voiceMotion.displacement;
+		const targetDist = still ? 0 : voiceMotion.distortion;
 		displacement.value += (targetDisp - displacement.value) * ease;
 		distortion.value += (targetDist - distortion.value) * ease;
 		if (!still) {
-			timeUniform.value += dt * 0.3;
+			timeUniform.value += dt * voiceMotion.timeScale;
 			offsetUniform.value.add(
 				new THREE.Vector3(
 					Math.sin(timeUniform.value * 0.13),
@@ -116,12 +133,17 @@ export function mountOrganicSphere(mount: HTMLElement) {
 	};
 	frame = requestAnimationFrame(render);
 
-	return () => {
-		cancelAnimationFrame(frame);
-		resizeObserver.disconnect();
-		geometry.dispose();
-		material.dispose();
-		renderer.dispose();
-		renderer.domElement.remove();
+	return {
+		setVoiceLevel(level) {
+			targetVoiceLevel = Math.min(1, Math.max(0, level));
+		},
+		destroy() {
+			cancelAnimationFrame(frame);
+			resizeObserver.disconnect();
+			geometry.dispose();
+			material.dispose();
+			renderer.dispose();
+			renderer.domElement.remove();
+		},
 	};
 }

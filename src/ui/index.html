@@ -232,13 +232,48 @@
 							</div>
 							<p id="model-route" class="model-route" hidden></p>
 						</div>
+						<div id="dictation-status" class="dictation-status" role="status" aria-live="polite" data-state="idle">
+							<span class="dictation-voice" aria-hidden="true">
+								<span class="dictation-pulse"></span>
+								<span class="dictation-bars">
+									<span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+									<span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+								</span>
+								<span class="dictation-timer">0:00</span>
+								<span class="dictation-settling">Transcribing</span>
+							</span>
+							<span class="dictation-error" aria-hidden="true" hidden></span>
+							<span class="dictation-announcement sr-only"></span>
+						</div>
 						<div class="composer-send">
 							<span class="composer-hint">⌘ / Ctrl + Enter</span>
+							<button
+								id="dictation-toggle"
+								class="dictation-toggle"
+								type="button"
+								hidden
+								disabled
+								aria-pressed="false"
+								aria-label="Start dictation"
+								aria-describedby="dictation-privacy"
+								title="Dictate — say “Send message” to send"
+							>
+								<span class="dictation-icon is-mic" aria-hidden="true">
+									<svg viewBox="0 0 24 24" fill="none">
+										<rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.5" />
+										<path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+									</svg>
+								</span>
+								<span class="dictation-icon is-stop" aria-hidden="true">
+									<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="8" width="8" height="8" rx="1" /></svg>
+								</span>
+							</button>
 							<button aria-label="Send message" type="submit">
 								<span aria-hidden="true">↑</span>
 							</button>
 						</div>
 					</div>
+					<p id="dictation-privacy" class="sr-only">Speech recognition is provided by your browser and may use an online service. Socratink uses microphone volume on this device to animate the orb; audio is not uploaded or stored by Socratink. Say “Send message” at the end to send the recognized text.</p>
 				</form>
 			</footer>
 		</div>

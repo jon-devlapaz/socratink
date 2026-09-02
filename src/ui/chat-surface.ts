@@ -29,6 +29,7 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
+import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
 
 type PaintKind = 'restore' | 'new-turn' | 'hold';
 
@@ -55,6 +56,8 @@ type ChatSurfaceElements = {
 	typeSize: HTMLButtonElement;
 	autoModel: HTMLButtonElement;
 	modelRoute: HTMLParagraphElement;
+	dictationToggle: HTMLButtonElement;
+	dictationStatus: HTMLElement;
 };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -136,7 +139,11 @@ export function buildRequestStateTurn(
 	return wrap;
 }
 
-export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurface()): void {
+export function mountChatSurface(options: Readonly<{
+	elements?: ChatSurfaceElements;
+	voiceActivity?: DictationVoiceActivity;
+}> = {}): void {
+	const elements = options.elements ?? queryChatSurface();
 	const {
 		form,
 		input,
@@ -160,8 +167,17 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 		typeSize,
 		autoModel,
 		modelRoute,
+		dictationToggle,
+		dictationStatus,
 	} = elements;
 	initChatAutoModel(autoModel);
+	const dictation = mountDictation({
+		input,
+		toggle: dictationToggle,
+		status: dictationStatus,
+		voiceActivity: options.voiceActivity,
+		onSendRequested: () => form.requestSubmit(),
+	});
 	const conversation = openChatConversation();
 	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
@@ -567,6 +583,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	function setWorking(next: boolean) {
 		working = next;
+		dictation.setEnabled(!next);
 		input.disabled = next;
 		button.disabled = next;
 		startOver.disabled = next;
@@ -576,6 +593,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	function applyRequestControls(state: ChatRequestState) {
 		working = applyRequestControlState(state, elements);
+		dictation.setEnabled(!chatRequestControls(state).composerLocked);
 	}
 
 	function focusAfterRequestPaint(state: ChatRequestState) {
@@ -584,7 +602,10 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	initAppearance(appearance);
 	initTypeSize(typeSize);
-	startOver.addEventListener('click', startNewChatConversation);
+	startOver.addEventListener('click', () => {
+		dictation.cancel();
+		startNewChatConversation();
+	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
 	lockup.addEventListener('click', () => setMenuOpen(!menuOpen));
@@ -688,6 +709,7 @@ export function mountChatSurface(elements: ChatSurfaceElements = queryChatSurfac
 
 	form.addEventListener('submit', async (event) => {
 		event.preventDefault();
+		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
 		if (!text || working) return;
 		await sendMessage(text);
@@ -759,7 +781,7 @@ function queryChatSurface(): ChatSurfaceElements {
 		form,
 		input: requireElement<HTMLTextAreaElement>('#message'),
 		messages: requireElement<HTMLOListElement>('#messages'),
-		button: requireElement<HTMLButtonElement>('.composer-send button', form),
+		button: requireElement<HTMLButtonElement>('.composer-send button[type="submit"]', form),
 		core: requireElement<HTMLButtonElement>('.alive-core'),
 		lockup,
 		canvas,
@@ -778,5 +800,7 @@ function queryChatSurface(): ChatSurfaceElements {
 		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
 		autoModel: requireElement<HTMLButtonElement>('#auto-model'),
 		modelRoute: requireElement<HTMLParagraphElement>('#model-route'),
+		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
+		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};
 }

@@ -742,7 +742,7 @@ body.questionnaire-active .stage {
 	font-size: 0.67rem;
 }
 
-.composer-send button {
+.composer-send button[type='submit'] {
 	display: grid;
 	width: 30px;
 	height: 30px;
@@ -759,18 +759,18 @@ body.questionnaire-active .stage {
 	transition-timing-function: var(--ease-out);
 }
 
-.composer-send button span {
+.composer-send button[type='submit'] span {
 	display: block;
 	color: inherit;
 	font-size: 1rem;
 	transform: translateY(1px);
 }
 
-.composer-send button:active:not(:disabled) {
+.composer-send button[type='submit']:active:not(:disabled) {
 	scale: 0.96;
 }
 
-.composer-send button:disabled {
+.composer-send button[type='submit']:disabled {
 	cursor: wait;
 	opacity: 0.42;
 }
@@ -834,7 +834,7 @@ body.questionnaire-active .stage {
 	.menu-panel,
 	.app-canvas,
 	#chat,
-	.composer-send button,
+	.composer-send button[type='submit'],
 	.menu-orbs a,
 	.menu-orbs button,
 	.theme-icon,
@@ -877,7 +877,7 @@ body.questionnaire-active .stage {
 	}
 
 	.learning-paths button:active,
-	.composer-send button:active:not(:disabled),
+	.composer-send button[type='submit']:active:not(:disabled),
 	.menu-orbs a:active,
 	.menu-orbs button:active:not(:disabled),
 	.alive-core:active:not(.is-working) {
