@@ -1,7 +1,9 @@
 import { finePointerQuery, reducedMotionQuery } from './pointer-media.ts';
 import { stepSpring, type Spring } from './spring.ts';
 
-const spring: Spring = { stiffness: 400, damping: 45, mass: 1, restDelta: 0.001 };
+// ~30ms behind the pointer: a hair of lag without the old trailing spring.
+const spring: Spring = { stiffness: 4000, damping: 130, mass: 1, restDelta: 0.05 };
+const springSteps = 4;
 const movingMs = 150;
 
 type Axis = {
@@ -64,12 +66,21 @@ export function mountSmoothCursor() {
 				x.target = live.x;
 				y.target = live.y;
 				applyFuseMetrics(live);
+			} else {
+				setFused(null);
+				x.target = lastX;
+				y.target = lastY;
 			}
 		}
 		const dt = Math.min((now - lastTime) / 1000, 1 / 30);
 		lastTime = now;
-		const xRest = stepSpring(x, spring, dt);
-		const yRest = stepSpring(y, spring, dt);
+		const step = dt / springSteps;
+		let xRest = false;
+		let yRest = false;
+		for (let i = 0; i < springSteps; i++) {
+			xRest = stepSpring(x, spring, step);
+			yRest = stepSpring(y, spring, step);
+		}
 		applyPosition();
 		if (!xRest || !yRest || fuseKind) rafId = requestAnimationFrame(tick);
 	}
@@ -237,11 +248,12 @@ export function mountSmoothCursor() {
 			x.target = target.x;
 			y.target = target.y;
 			applyFuseMetrics(target);
+			setFused(target.kind);
 		} else {
 			x.target = clientX;
 			y.target = clientY;
+			setFused(null);
 		}
-		setFused(target?.kind ?? null);
 		setOverGrab(grabbing && !target);
 		setOverText(text && !target && !grabbing);
 		if (!visible) show();
@@ -251,6 +263,13 @@ export function mountSmoothCursor() {
 
 	function throttledPointerMove(event: PointerEvent) {
 		if (!isTrackablePointer(event.pointerType)) return;
+		lastX = event.clientX;
+		lastY = event.clientY;
+		if (visible && !fuseKind) {
+			x.target = event.clientX;
+			y.target = event.clientY;
+			ensureTick();
+		}
 		pending = {
 			x: event.clientX,
 			y: event.clientY,
