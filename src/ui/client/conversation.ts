@@ -13,7 +13,9 @@ type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
 
 export const abortRequestTimeoutMs = 5_000;
-export const settlementReadTimeoutMs = 8_000;
+// Recheck and reload follow an already-admitted turn. 8s cut a live
+// FreeLLMAPI teaching reply off mid-stream; 90s matches Flue's stale-stream window.
+export const settlementReadTimeoutMs = 90_000;
 
 export type ChatRequestState =
 	| { kind: 'idle' }

@@ -7,6 +7,7 @@ import {
 	chatRequestControls,
 	chatTurnErrorMessage,
 	isLostConversationStream,
+	settlementReadTimeoutMs,
 	unsettledSubmissionFromHistory,
 } from '../src/ui/client/conversation.ts';
 
@@ -46,6 +47,10 @@ function abortablePendingRead(signal) {
 		signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 	});
 }
+
+test('recheck waits longer than a mid-stream FreeLLMAPI teaching reply', () => {
+	assert.ok(settlementReadTimeoutMs >= 90_000);
+});
 
 test('detects only durable-stream 404 stream_not_found envelopes', () => {
 	assert.equal(isLostConversationStream(streamNotFound('json')), true);
