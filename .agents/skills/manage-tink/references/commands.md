@@ -1,14 +1,12 @@
 # Tink commands
 
 Load when choosing or running a mutation (step 2). Use the `tink skill …`
-form for add, list, check, refresh, and remove.
+form for add, list, read, check, refresh, and remove.
 
 | Intent | Command |
 |---|---|
-| Safe init | `tink init --no-zen --no-tink-skills` |
-| Init + ZEN | `tink init --with-zen --no-tink-skills` |
-| Init + tink-skills | `tink init --no-zen --with-tink-skills` |
-| Init + both | `tink init --with-zen --with-tink-skills` |
+| Safe init | `tink init --no-tink-skills` |
+| Init + tink-skills | `tink init --with-tink-skills` |
 | Init without embedded manage-tink | add `--no-manage-tink` |
 | Add one skill | `tink skill add SOURCE` |
 | Add from a GitHub skill tree URL | `tink skill add https://github.com/OWNER/REPO/tree/REF/PATH` |
@@ -19,6 +17,9 @@ form for add, list, check, refresh, and remove.
 | List (this project) | `tink skill list` |
 | List (catalog) | `tink skill list --catalog` |
 | List (library) | `tink library list` (`tink skill list --library` compatibility alias) |
+| Read one standalone skill | `tink skill read NAME` |
+| Read from the library | `tink skill read NAME --library` |
+| Raw description | `tink skill read NAME --raw` |
 | Check | `tink skill check` |
 | Generate project manifest and lockfile | `tink skill lock --source NAME=PATH` for each local skill; every path must resolve inside the project |
 | Verify manifest, lockfile, and installed trees | `tink skill verify` |
@@ -46,7 +47,9 @@ form for add, list, check, refresh, and remove.
   library trees at `skills/<name>/`. List the library with
   `tink library list` (`tink skill list --library` remains a compatibility
   alias); promote into a project with
-  `tink skill add NAME` (bare standalone library skill name). Receipt-backed
+  `tink skill add NAME` (bare standalone library skill name). `tink skill read
+  NAME` prints one standalone skill's description (`--library` for the home
+  copy; `--raw` for the description line). Receipt-backed
   roots and receipt-bearing sources (including dangling receipt links) are excluded
   from standalone operations. `tink skill harvest` copies complete trees
   from CLI-owned supported harness roots into the library create-only (never
@@ -61,7 +64,8 @@ form for add, list, check, refresh, and remove.
   deletes the project skill directory and drops that name from the by-project
   catalog; it does not prune the library. `destroy` removes
   `.agents/skills/`, removes `.agents/` only when it is then empty, and drops
-  this project's catalog entry. It preserves `AGENTS.md`, `ZEN.md`, unrelated
+  this project's catalog entry. It preserves files outside `.agents/`
+  (including `AGENTS.md`), unrelated
   `.agents/` siblings, library trees, and other projects' catalog rows.
   Project skill overwrites are still refused.
 - Project lockfiles use version 2 tree digests with unambiguous entry framing,
