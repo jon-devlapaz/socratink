@@ -2,6 +2,7 @@ import type { FlueConversationSnapshot } from '@flue/sdk';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import { questionnaireFromParts } from './questionnaire.ts';
+import { toolsFromParts, type DisplayedToolCall } from './tool-card.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
 
@@ -10,6 +11,7 @@ export type DisplayedTurn = {
 	text: string;
 	questionnaire?: QuestionnaireDefinition;
 	modelRoute?: string;
+	tools?: DisplayedToolCall[];
 };
 
 export function displayLabel(role: ChatMessageRole): string {
@@ -44,12 +46,14 @@ export function visibleTurnsFromHistory(
 			message.role === 'assistant' ? questionnaireFromParts(message.parts) : undefined;
 		const modelRoute =
 			message.role === 'assistant' ? modelRouteLabel(message.metadata) : undefined;
-		if (!text && !questionnaire) continue;
+		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
+		if (!text && !questionnaire && tools.length === 0) continue;
 		visible.push({
 			role: message.role === 'user' ? 'You' : 'Assistant',
 			text,
 			...(questionnaire ? { questionnaire } : {}),
 			...(modelRoute ? { modelRoute } : {}),
+			...(tools.length ? { tools } : {}),
 		});
 	}
 	return visible;

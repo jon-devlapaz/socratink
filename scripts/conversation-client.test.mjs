@@ -89,6 +89,36 @@ test('a lost admission stream falls back to the same submissionId without sendin
 	assert.deepEqual(reads, [admission, admission.submissionId]);
 });
 
+test('forwards admission-read stream events to the conversation listener', async () => {
+	const seen = [];
+	const chunk = {
+		type: 'tool-input',
+		toolCallId: 'call_1',
+		toolName: 'present_question',
+		input: {},
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read(target, options) {
+			if (target === admission) options?.onEvent?.(chunk);
+			return reply;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		onEvent: (event) => {
+			seen.push(event);
+		},
+	});
+	await coordinator.start('hello');
+	assert.deepEqual(seen, [chunk]);
+});
+
 test('a non-stream 404 does not fall back from the admission handle', async () => {
 	let sends = 0;
 	const reads = [];

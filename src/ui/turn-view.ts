@@ -2,6 +2,7 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import { createQuestionnaire, type QuestionnaireAnswer } from './questionnaire.ts';
+import { createToolList, type DisplayedToolCall } from './tool-card.ts';
 
 const exceptionalLatencyMs = 10_000;
 const streamGapMs = 60;
@@ -22,6 +23,7 @@ export type PendingTurnOptions = {
 	cancelDisabled: boolean;
 	observeRoot: HTMLElement;
 	onCancel: () => void;
+	tools?: readonly DisplayedToolCall[];
 };
 
 export function createHistoryStep(step: readonly DisplayedTurn[], index: number) {
@@ -40,7 +42,7 @@ export function createHistoryStep(step: readonly DisplayedTurn[], index: number)
 		role.className = 'sr-only';
 		role.textContent = displayLabel(item.role);
 		const copy = document.createElement('p');
-		copy.textContent = historyBodyText(item.text);
+		copy.textContent = historyBodyText(item);
 		turn.append(role, copy);
 		body.append(turn);
 	}
@@ -59,6 +61,7 @@ export function createActiveTurn(
 	if (announce) wrap.setAttribute('aria-live', 'polite');
 	if (stagger) wrap.classList.add('stagger-item');
 	appendTurnCopy(wrap, item, stream, sinks);
+	if (item.tools?.length) wrap.append(createToolList(item.tools));
 	if (item.questionnaire && interactive) {
 		const questionnaire = item.questionnaire;
 		wrap.append(
@@ -84,7 +87,12 @@ export function createStarterTurn(onPick: (prompt: string) => void): HTMLElement
 	return wrap;
 }
 
-export function createPendingTurn({ cancelDisabled, observeRoot, onCancel }: PendingTurnOptions) {
+export function createPendingTurn({
+	cancelDisabled,
+	observeRoot,
+	onCancel,
+	tools = [],
+}: PendingTurnOptions) {
 	const wrap = document.createElement('div');
 	wrap.className = 'turn pending';
 	wrap.setAttribute('role', 'status');
@@ -112,6 +120,7 @@ export function createPendingTurn({ cancelDisabled, observeRoot, onCancel }: Pen
 	latency.textContent = 'Taking longer than usual.';
 	latency.hidden = true;
 	wrap.append(body, cancel, latency);
+	if (tools.length) wrap.append(createToolList(tools));
 	const timer = window.setTimeout(() => {
 		if (wrap.isConnected) latency.hidden = false;
 	}, exceptionalLatencyMs);
@@ -190,9 +199,13 @@ function fillTurnBody(
 	});
 }
 
-function historyBodyText(text: string): string {
+function historyBodyText(item: DisplayedTurn): string {
+	const text = item.text;
 	const body = text.startsWith('Questionnaire answers:')
 		? text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim()
 		: text;
-	return compactMarkdownText(body);
+	const compact = compactMarkdownText(body);
+	if (compact) return compact;
+	if (item.tools?.length) return item.tools.map((call) => call.name).join(', ');
+	return '';
 }

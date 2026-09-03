@@ -60,6 +60,45 @@ test('projects only visible learner and assistant turns from conversation histor
 	]);
 });
 
+test('projects assistant tool calls from dynamic-tool parts', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{
+				display: 'visible',
+				role: 'assistant',
+				parts: [
+					{
+						type: 'dynamic-tool',
+						toolName: 'present_question',
+						toolCallId: 'call_q',
+						state: 'output-available',
+						input: {},
+						output: 'Question presented on the card.',
+					},
+					{ type: 'data-questionnaire', data: questionnaire },
+				],
+			},
+		],
+	});
+
+	assert.deepEqual(turns, [
+		{
+			role: 'Assistant',
+			text: '',
+			questionnaire,
+			tools: [
+				{
+					id: 'call_q',
+					name: 'present_question',
+					state: 'done',
+					output: 'Question presented on the card.',
+				},
+			],
+		},
+	]);
+});
+
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {
 	const user = (id, text) => ({
 		id,

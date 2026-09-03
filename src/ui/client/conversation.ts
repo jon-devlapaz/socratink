@@ -4,6 +4,7 @@ import {
 	FlueExecutionError,
 	type AgentReadResult,
 	type AgentSendResult,
+	type ConversationStreamChunk,
 	type FlueClient,
 	type FlueConversationSnapshot,
 } from '@flue/sdk';
@@ -72,6 +73,7 @@ type PendingRequest = {
 type ChatRequestCoordinatorOptions = {
 	abortSignal?: () => AbortSignal;
 	settlementSignal?: () => AbortSignal;
+	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
 export function openChatConversation() {
@@ -125,6 +127,7 @@ export class ChatRequestCoordinator {
 	private readonly conversation: ChatTurnClient;
 	private readonly abortSignal: () => AbortSignal;
 	private readonly settlementSignal: () => AbortSignal;
+	private readonly onEvent?: (event: ConversationStreamChunk) => void;
 
 	constructor(
 		conversation: ChatTurnClient,
@@ -134,6 +137,7 @@ export class ChatRequestCoordinator {
 		this.abortSignal = options.abortSignal ?? (() => AbortSignal.timeout(abortRequestTimeoutMs));
 		this.settlementSignal =
 			options.settlementSignal ?? (() => AbortSignal.timeout(settlementReadTimeoutMs));
+		this.onEvent = options.onEvent;
 	}
 
 	start(text: string): Promise<ChatRequestState> {
@@ -308,8 +312,12 @@ export class ChatRequestCoordinator {
 	}
 
 	private async readWithLostStreamFallback(admission: AgentSendResult, signal: AbortSignal) {
+		const onEvent = this.onEvent;
 		try {
-			return await this.conversation.read(admission, { signal });
+			return await this.conversation.read(admission, {
+				signal,
+				...(onEvent ? { onEvent } : {}),
+			});
 		} catch (error) {
 			if (!isLostConversationStream(error)) throw error;
 			return this.conversation.read(admission.submissionId, { signal });

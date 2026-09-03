@@ -26,6 +26,12 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
+import {
+	applyToolStreamEvent,
+	createToolCard,
+	createToolList,
+	type DisplayedToolCall,
+} from './tool-card.ts';
 import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
 import {
@@ -104,7 +110,13 @@ export function mountChatSurface(options: Readonly<{
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation();
-	const requests = new ChatRequestCoordinator(conversation);
+	const liveTools: DisplayedToolCall[] = [];
+	const requests = new ChatRequestCoordinator(conversation, {
+		onEvent: (event) => {
+			if (!applyToolStreamEvent(liveTools, event)) return;
+			syncLiveTools();
+		},
+	});
 	const learningDock = mountAppDock(core);
 	let trailOpen = false;
 	let hasEntered = false;
@@ -218,6 +230,7 @@ export function mountChatSurface(options: Readonly<{
 				activeTurn.append(createPendingTurn({
 					cancelDisabled: requestState.kind === 'canceling',
 					observeRoot: activeTurn,
+					tools: liveTools,
 					onCancel: () => {
 						void runRequestCommand(requests.cancel());
 					},
@@ -290,7 +303,23 @@ export function mountChatSurface(options: Readonly<{
 		await startRequest(text);
 	}
 
+	function syncLiveTools() {
+		const pending = activeTurn.querySelector('.turn.pending');
+		if (!pending) return;
+		let host = pending.querySelector('.tool-list');
+		if (!liveTools.length) {
+			host?.remove();
+			return;
+		}
+		if (!host) {
+			pending.append(createToolList(liveTools));
+			return;
+		}
+		host.replaceChildren(...liveTools.map(createToolCard));
+	}
+
 	async function startRequest(text: string) {
+		liveTools.length = 0;
 		const result = requests.start(text);
 		requestState = requests.state;
 		applyRequestControls(requestState);
@@ -301,6 +330,8 @@ export function mountChatSurface(options: Readonly<{
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
 		const route = modelRouteLabel(reply.metadata);
+		const tools = liveTools.map((call) => ({ ...call }));
+		liveTools.length = 0;
 		turns = [
 			...turns,
 			{
@@ -308,6 +339,7 @@ export function mountChatSurface(options: Readonly<{
 				text: reply.text,
 				...(questionnaire ? { questionnaire } : {}),
 				...(route ? { modelRoute: route } : {}),
+				...(tools.length ? { tools } : {}),
 			},
 		];
 		await paint('hold');
