@@ -123,9 +123,8 @@ test('the last idle assistant turn mounts a steering bar that sends through the 
 	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
 	const barSource = await readFile(new URL('../src/ui/steering.ts', import.meta.url), 'utf8');
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
-	const roundSource = await readFile(new URL('../src/ui/public/steering-round.css', import.meta.url), 'utf8');
-	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
-	const appSource = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
+	const styleSource = await readFile(new URL('../src/ui/steering.css', import.meta.url), 'utf8');
+	const mainSource = await readFile(new URL('../src/ui/main.ts', import.meta.url), 'utf8');
 	const packageSource = await readFile(new URL('../package.json', import.meta.url), 'utf8');
 
 	assert.match(surfaceSource, /steering: isLast && item\.role === 'Assistant' && requestState\.kind === 'idle'/);
@@ -141,10 +140,8 @@ test('the last idle assistant turn mounts a steering bar that sends through the 
 	assert.match(promptSource, /When a learner message starts with "Steering:"/);
 	assert.match(promptSource, /not as evidence of capability/);
 	assert.match(promptSource, /"try unaided" means withhold the next reveal/);
-	assert.match(roundSource, /\.steering-bar \{/);
-	assert.match(roundSource, /\.steering-tip \{/);
-	assert.match(indexSource, /href="\/steering-round\.css"/);
-	assert.match(appSource, /steering-round\.css/);
-	assert.match(appSource, /Cache-Control': 'no-store'/);
+	assert.match(styleSource, /\.steering-bar \{/);
+	assert.match(styleSource, /\.steering-tip \{/);
+	assert.match(mainSource, /import '\.\/steering\.css'/);
 	assert.doesNotMatch(packageSource, /lucide-react|prompt-kit/);
 });
