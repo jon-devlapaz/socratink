@@ -225,28 +225,6 @@
 	color: var(--muted);
 }
 
-.questionnaire-summary {
-	display: grid;
-	gap: 0.15rem;
-	margin-top: 0.45rem;
-	padding-left: 0.65rem;
-	border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.questionnaire-summary span {
-	color: var(--muted);
-	font-size: 0.72rem;
-	font-weight: 620;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-}
-
-.questionnaire-summary p {
-	margin: 0;
-	color: var(--muted);
-	font-size: calc(0.82rem * var(--type-scale, 1));
-}
-
 @media (max-width: 560px) {
 	.questionnaire {
 		padding: 0.85rem;

@@ -106,7 +106,6 @@ export function mountChatSurface(options: Readonly<{
 	const conversation = openChatConversation();
 	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
-	let working = false;
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
@@ -254,18 +253,8 @@ export function mountChatSurface(options: Readonly<{
 		}
 	}
 
-	function setWorking(next: boolean) {
-		working = next;
-		dictation.setEnabled(!next);
-		input.disabled = next;
-		button.disabled = next;
-		startOver.disabled = next;
-		core.classList.toggle('is-working', next);
-		lockup.classList.toggle('is-working', next);
-	}
-
 	function applyRequestControls(state: ChatRequestState) {
-		working = applyRequestControlState(state, elements);
+		applyRequestControlState(state, elements);
 		dictation.setEnabled(!chatRequestControls(state).composerLocked);
 	}
 
@@ -295,7 +284,7 @@ export function mountChatSurface(options: Readonly<{
 	});
 
 	async function sendMessage(text: string) {
-		if (working || requests.state.kind !== 'idle') return;
+		if (requests.state.kind !== 'idle') return;
 		turns = [...turns, { role: 'You', text }];
 		input.value = '';
 		await startRequest(text);
@@ -353,14 +342,16 @@ export function mountChatSurface(options: Readonly<{
 		event.preventDefault();
 		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
-		if (!text || working) return;
+		if (!text || requests.state.kind !== 'idle') return;
 		await sendMessage(text);
 	});
 
 	async function restoreConversation() {
-		if (working) return;
-		let unsettled: ReturnType<typeof unsettledSubmissionFromHistory>;
-		setWorking(true);
+		if (requests.state.kind !== 'idle') return;
+		let unsettled: ReturnType<typeof unsettledSubmissionFromHistory> | undefined;
+		requests.beginRestore();
+		requestState = requests.state;
+		applyRequestControls(requestState);
 		try {
 			let visible: DisplayedTurn[] = [];
 			try {
@@ -378,8 +369,13 @@ export function mountChatSurface(options: Readonly<{
 				visible = visibleTurnsFromHistory(restoredHistory);
 				if (unsettled) {
 					requestState = requests.hydrate(unsettled.text, unsettled.submissionId);
+				} else {
+					requests.finishRestore();
+					requestState = requests.state;
 				}
 			} catch (error) {
+				requests.finishRestore();
+				requestState = requests.state;
 				if (!(error instanceof FlueApiError && error.status === 404)) {
 					turns = [
 						{

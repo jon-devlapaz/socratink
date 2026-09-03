@@ -315,6 +315,13 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 	assert.deepEqual(restored, { text: 'hello', submissionId: admission.submissionId });
 
 	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	coordinator.beginRestore();
+	assert.deepEqual(chatRequestControls(coordinator.state), {
+		busy: true,
+		composerLocked: true,
+		startOverDisabled: true,
+	});
+	assert.throws(() => coordinator.start('overlap'), /already active/);
 	const hydrated = coordinator.hydrate(restored.text, restored.submissionId);
 	assert.equal(hydrated.kind, 'recovery');
 	assert.equal(chatRequestControls(hydrated).composerLocked, true);
@@ -322,6 +329,28 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 	assert.deepEqual(await coordinator.recheck(), { kind: 'completed', text: 'hello', reply });
 	assert.equal(sends, 0);
 	assert.deepEqual(reads, [admission.submissionId]);
+});
+
+test('restore without an unsettled admission returns to idle without sending', () => {
+	const coordinator = new ChatRequestCoordinator({
+		async send() {
+			throw new Error('empty restore must not send');
+		},
+		async read() {
+			throw new Error('empty restore must not read');
+		},
+		async abort() {
+			throw new Error('empty restore must not abort');
+		},
+	}, coordinatorOptions);
+	coordinator.beginRestore();
+	coordinator.finishRestore();
+	assert.equal(coordinator.state.kind, 'idle');
+	assert.deepEqual(chatRequestControls(coordinator.state), {
+		busy: false,
+		composerLocked: false,
+		startOverDisabled: false,
+	});
 });
 
 test('openChatConversation reuses the stored conversation id', () => {
@@ -355,11 +384,14 @@ test('openChatConversation reuses the stored conversation id', () => {
 	}
 });
 
-test('chat-surface restore source calls hydrate then recheck', async () => {
+test('chat-surface restore begins restore then hydrates and rechecks', async () => {
 	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	assert.match(source, /requests\.beginRestore\(\)/);
 	assert.match(source, /unsettled = unsettledSubmissionFromHistory\(history\)/);
 	assert.match(source, /requests\.hydrate\(unsettled\.text, unsettled\.submissionId\)/);
 	assert.match(source, /if \(unsettled\) await runRequestCommand\(requests\.recheck\(\)\)/);
+	assert.doesNotMatch(source, /\bsetWorking\b/);
+	assert.doesNotMatch(source, /let working = /);
 });
 
 test('reload does not revive an older unsettled record after a newer submission settled', () => {
@@ -508,6 +540,16 @@ test('recovery and terminal states lock only the composer while keeping Start ov
 		startOverDisabled: false,
 	});
 	assert.deepEqual(chatRequestControls({ kind: 'waiting', text: 'hello' }), {
+		busy: true,
+		composerLocked: true,
+		startOverDisabled: true,
+	});
+	assert.deepEqual(chatRequestControls({ kind: 'restoring' }), {
+		busy: true,
+		composerLocked: true,
+		startOverDisabled: true,
+	});
+	assert.deepEqual(chatRequestControls({ kind: 'canceling', text: 'hello' }), {
 		busy: true,
 		composerLocked: true,
 		startOverDisabled: true,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compactMarkdownText, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown.ts';
+import { compactMarkdownText, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
 
 test('parses headings, paragraphs, lists, quotes, rules, fences, and tables', () => {
 	const blocks = parseMarkdownBlocks(

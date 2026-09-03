@@ -1,4 +1,5 @@
-import { compactMarkdownText, createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
+import { compactMarkdownText } from './chat-markdown-parse.ts';
+import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import { createQuestionnaire, type QuestionnaireAnswer } from './questionnaire.ts';
 
@@ -74,7 +75,7 @@ export function createStarterTurn(onPick: (prompt: string) => void): HTMLElement
 	if (!template) return null;
 	const wrap = template.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
 	if (!wrap) return null;
-	for (const chip of wrap.querySelectorAll<HTMLButtonElement | HTMLElement>('.starter-chip, .starter-spark-pill')) {
+	for (const chip of wrap.querySelectorAll<HTMLButtonElement | HTMLElement>('.starter-spark-pill')) {
 		chip.addEventListener('click', () => {
 			const val = chip.getAttribute('data-prompt') || chip.textContent?.trim() || '';
 			if (val) onPick(val);

@@ -725,33 +725,3 @@ html[data-type-size='small'] .active-node {
 	line-height: 1.4;
 }
 
-.starter-prompt-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
-	margin-top: 0.2rem;
-}
-
-.starter-chip {
-	display: inline-flex;
-	align-items: center;
-	padding: 0.35rem 0.65rem;
-	border-radius: 14px;
-	background: var(--chip);
-	border: 1px solid var(--dock-stroke);
-	color: var(--quiet);
-	font-size: 0.78rem;
-	cursor: pointer;
-	transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), transform 150ms var(--press);
-}
-
-.starter-chip:hover {
-	background: var(--chip-strong);
-	color: var(--ink);
-	border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-.starter-chip:active {
-	transform: scale(0.96);
-}
-

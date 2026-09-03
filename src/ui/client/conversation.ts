@@ -20,6 +20,7 @@ export const settlementReadTimeoutMs = 90_000;
 
 export type ChatRequestState =
 	| { kind: 'idle' }
+	| { kind: 'restoring' }
 	| { kind: 'waiting'; text: string }
 	| { kind: 'canceling'; text: string }
 	| {
@@ -41,9 +42,22 @@ export function chatRequestControls(state: ChatRequestState): {
 	composerLocked: boolean;
 	startOverDisabled: boolean;
 } {
-	const busy = state.kind === 'waiting' || state.kind === 'canceling';
-	const composerLocked = busy || state.kind === 'recovery' || state.kind === 'terminal';
-	return { busy, composerLocked, startOverDisabled: busy };
+	switch (state.kind) {
+		case 'idle':
+		case 'completed':
+			return { busy: false, composerLocked: false, startOverDisabled: false };
+		case 'restoring':
+		case 'waiting':
+		case 'canceling':
+			return { busy: true, composerLocked: true, startOverDisabled: true };
+		case 'recovery':
+		case 'terminal':
+			return { busy: false, composerLocked: true, startOverDisabled: false };
+		default: {
+			const exhaustive: never = state;
+			return exhaustive;
+		}
+	}
 }
 
 type PendingRequest = {
@@ -136,8 +150,20 @@ export class ChatRequestCoordinator {
 		return this.sendAndRead(pending);
 	}
 
-	hydrate(text: string, submissionId: string): ChatRequestState {
+	beginRestore(): void {
 		if (this.state.kind !== 'idle') throw new Error('A chat request is already active.');
+		this.state = { kind: 'restoring' };
+	}
+
+	finishRestore(): void {
+		if (this.state.kind !== 'restoring') return;
+		this.state = { kind: 'idle' };
+	}
+
+	hydrate(text: string, submissionId: string): ChatRequestState {
+		if (this.state.kind !== 'idle' && this.state.kind !== 'restoring') {
+			throw new Error('A chat request is already active.');
+		}
 		const admission = { submissionId };
 		const admissionResult = deferred<SubmissionReference | undefined>();
 		admissionResult.resolve(admission);

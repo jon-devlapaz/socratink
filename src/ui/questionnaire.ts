@@ -247,14 +247,3 @@ export function createQuestionnaire(
 	show(0);
 	return form;
 }
-
-export function createQuestionnaireSummary(definition: QuestionnaireDefinition): HTMLElement {
-	const summary = document.createElement('div');
-	summary.className = 'questionnaire-summary';
-	const label = document.createElement('span');
-	label.textContent = definition.kind === 'quiz' ? 'Quiz' : 'Questions';
-	const prompts = document.createElement('p');
-	prompts.textContent = definition.items.map((item) => item.prompt).join(' · ');
-	summary.append(label, prompts);
-	return summary;
-}
