@@ -50,6 +50,8 @@ skills-lock.json
 # Python bytecode from Brain helper smoke tests
 __pycache__/
 .variate/
+# Agent scratch logs; kept on disk, not source
+.audit/
 .cursor/*
 !.cursor/agents/
 !.cursor/agents/*.md
