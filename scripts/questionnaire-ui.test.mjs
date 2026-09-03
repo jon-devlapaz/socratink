@@ -153,8 +153,7 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /name: 'present_question'/);
 	assert.match(promptSource, /input: QuestionnaireSchema/);
 	assert.match(promptSource, /exactly one question/);
-	assert.match(promptSource, /learning partner for agentic engineering/);
-	assert.match(promptSource, /model and tool boundaries/);
+	assert.match(promptSource, /learning partner/);
 	assert.match(promptSource, /ask for the attempt before revealing target content/);
 	assert.match(promptSource, /isolate exactly one stated condition or decision/);
 	assert.match(promptSource, /exactly one defensible best answer/);
@@ -163,12 +162,8 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 		promptSource,
 		/Never output a numbered, lettered, or bullet list of choices in text/,
 	);
-	assert.match(promptSource, /reveals target content/);
-	assert.match(promptSource, /begin the turn exactly with "Socratink-provided:"/);
-	assert.match(promptSource, /Socratink-provided:/);
 	assert.match(promptSource, /reconstruct or apply/);
-	assert.match(promptSource, /do not offer starting modes/);
-	assert.match(promptSource, /do not ask the learner to choose a topic or lane first/);
+	assert.match(promptSource, /Do not offer starting modes, lenses, or lanes/);
 	assert.match(promptSource, /observed in the learner's text from what you are inferring/);
 	assert.match(promptSource, /not proof of mastery or durable learning/);
 	assert.match(promptSource, /this session is not evidence of retention/);
@@ -181,6 +176,8 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.doesNotMatch(promptSource, /\b(?:your )?(?:score|grade)\s+(?:is|was)\b/i);
 	assert.doesNotMatch(promptSource, /AI-Operations/);
 	assert.doesNotMatch(promptSource, /AI-operations/);
+	assert.doesNotMatch(promptSource, /agentic engineering/);
+	assert.doesNotMatch(promptSource, /Socratink-provided:/);
 	assert.doesNotMatch(promptSource, /whatever domain or topic/);
 	assert.doesNotMatch(promptSource, /useSkill/);
 	assert.doesNotMatch(promptSource, /sal-khan-perspective/);
