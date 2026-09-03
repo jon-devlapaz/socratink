@@ -156,6 +156,7 @@ uniform float uFresnelMultiplier;
 uniform float uFresnelPower;
 uniform float uBlackCore;
 uniform float uHotRim;
+uniform vec3 uBaseColor;
 uniform float uTime;
 varying vec3 vColor;
 
@@ -192,7 +193,7 @@ void main()
 
   float lightAIntensity = max(0.0, -dot(computedNormal.xyz, normalize(-uLightAPosition))) * uLightAIntensity;
   float lightBIntensity = max(0.0, -dot(computedNormal.xyz, normalize(-uLightBPosition))) * uLightBIntensity;
-  vec3 color = vec3(0.0);
+  vec3 color = uBaseColor;
   color = mix(color, uLightAColor, lightAIntensity * fresnel);
   color = mix(color, uLightBColor, lightBIntensity * fresnel);
   color = mix(color, vec3(1.0), clamp(pow(max(0.0, fresnel - 0.8), 3.0), 0.0, 1.0) * uHotRim);

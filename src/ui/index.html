@@ -71,51 +71,51 @@
 							aria-label="Open learning tools"
 						></button>
 						<nav class="app-dock" id="app-dock" aria-label="Learning tools" aria-hidden="true" inert>
-						<button type="button" class="app-dock-item" aria-label="Goal. Not available yet.">
+						<button type="button" class="app-dock-item" tabindex="-1" aria-disabled="true" aria-label="Goal. Not available yet.">
 							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-								<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2" />
-								<circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="2" />
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+								<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5" />
+								<circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5" />
 							</svg>
-							<span class="app-dock-tip">Goal</span>
+							<span class="app-dock-tip">Goal<span class="app-dock-tip-note">Not yet</span></span>
 						</button>
-						<button type="button" class="app-dock-item" aria-label="Practice. Not available yet.">
+						<button type="button" class="app-dock-item" tabindex="-1" aria-disabled="true" aria-label="Practice. Not available yet.">
 							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 								<path
 									d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
 									stroke="currentColor"
-									stroke-width="2"
+									stroke-width="1.5"
 									stroke-linecap="round"
 									stroke-linejoin="round"
 								/>
-								<path d="m15 5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+								<path d="m15 5 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
 							</svg>
-							<span class="app-dock-tip">Practice</span>
+							<span class="app-dock-tip">Practice<span class="app-dock-tip-note">Not yet</span></span>
 						</button>
-						<button type="button" class="app-dock-item" aria-label="Explain. Not available yet.">
+						<button type="button" class="app-dock-item" tabindex="-1" aria-disabled="true" aria-label="Explain. Not available yet.">
 							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 								<path
 									d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"
 									stroke="currentColor"
-									stroke-width="2"
+									stroke-width="1.5"
 									stroke-linecap="round"
 									stroke-linejoin="round"
 								/>
 							</svg>
-							<span class="app-dock-tip">Explain</span>
+							<span class="app-dock-tip">Explain<span class="app-dock-tip-note">Not yet</span></span>
 						</button>
-						<button type="button" class="app-dock-item" aria-label="Check. Not available yet.">
+						<button type="button" class="app-dock-item" tabindex="-1" aria-disabled="true" aria-label="Check. Not available yet.">
 							<svg class="app-dock-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
 								<path
 									d="M12 6v6l4 2"
 									stroke="currentColor"
-									stroke-width="2"
+									stroke-width="1.5"
 									stroke-linecap="round"
 									stroke-linejoin="round"
 								/>
 							</svg>
-							<span class="app-dock-tip">Check</span>
+							<span class="app-dock-tip">Check<span class="app-dock-tip-note">Not yet</span></span>
 						</button>
 					</nav>
 					</div>
@@ -139,35 +139,6 @@
 					<div class="active-scroll">
 						<ol id="messages" hidden aria-label="Earlier steps"></ol>
 						<div id="active-turn"></div>
-						<template id="starter-template">
-							<div class="starter-state">
-								<h2 class="starter-heading">Explore agentic engineering</h2>
-								<p class="starter-subtext">Choose a starting lens or ask about an agent system below:</p>
-								<div class="starter-sparks">
-									<button type="button" class="starter-spark-pill" data-prompt="Help me build an intuitive model of an agent loop. Start by asking what part—model, tools, state, memory, or control flow—I find unclear.">
-										<span class="starter-spark-glyph" aria-hidden="true">✦</span>
-										<div>
-											<strong>Understand a mechanism</strong>
-											<div class="starter-spark-text">Trace state, tools, memory, and control flow.</div>
-										</div>
-									</button>
-									<button type="button" class="starter-spark-pill" data-prompt="I want to explain an agent-system design. Start by asking me one open-ended question: describe one concrete request from start to finish and identify who owns its state. Do not offer starting modes or choices. After my explanation, challenge its assumptions about tool boundaries, retries, recovery, observability, latency, cost, and safety.">
-										<span class="starter-spark-glyph" aria-hidden="true">✦</span>
-										<div>
-											<strong>Stress-test a design</strong>
-											<div class="starter-spark-text">Probe failure modes and tradeoffs.</div>
-										</div>
-									</button>
-									<button type="button" class="starter-spark-pill" data-prompt="Give me one multiple-choice diagnostic about safe recovery when an agent response stream disconnects after request admission may have occurred. Present exactly four recovery actions with one freeform reasoning field. Do not ask me to choose a topic first and do not reveal the best answer until I submit. Then begin your entire feedback response with Socratink-provided, avoid all correctness or praise language, and ask me to revise or apply the reasoning.">
-										<span class="starter-spark-glyph" aria-hidden="true">✦</span>
-										<div>
-											<strong>Diagnostic practice</strong>
-											<div class="starter-spark-text">Reason through one bounded system question.</div>
-										</div>
-									</button>
-								</div>
-							</div>
-						</template>
 						<div class="turn-spacer" id="turn-spacer" aria-hidden="true"></div>
 					</div>
 					<button class="jump-latest" id="jump-latest" type="button" hidden aria-label="Jump to latest">
@@ -192,7 +163,6 @@
 					<textarea
 						id="message"
 						name="message"
-						placeholder="Message Socratink…"
 						rows="2"
 						required
 					></textarea>

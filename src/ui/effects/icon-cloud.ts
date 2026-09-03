@@ -17,7 +17,11 @@ const magFalloff = 80;
 const magInner = 18;
 const magSpring: Spring = { stiffness: 180, damping: 16, mass: 0.1, restDelta: 0.012 };
 const magLimit = { min: 1, max: 1 + magPeak };
+const emergeSpring: Spring = { stiffness: 170, damping: 20, mass: 0.12, restDelta: 0.012 };
+const spinSpring: Spring = { stiffness: 140, damping: 18, mass: 0.2, restDelta: 0.002 };
 const maxDt = 1 / 32;
+// Positive Y is toward the camera on the tilted ring, so the first tool sits in front.
+const frontAngle = Math.PI / 2;
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
@@ -26,10 +30,20 @@ function clamp(value: number, min: number, max: number) {
 function ringPoints(count: number) {
 	const points: { x: number; y: number }[] = [];
 	for (let i = 0; i < count; i++) {
-		const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+		const angle = (i / count) * Math.PI * 2 + frontAngle;
 		points.push({ x: Math.cos(angle), y: Math.sin(angle) });
 	}
 	return points;
+}
+
+export function spinToFront(index: number, count: number) {
+	if (!(count > 0) || index === 0) return 0;
+	return -index * ((Math.PI * 2) / count);
+}
+
+function tipSide(x: number, y: number) {
+	if (Math.abs(x) > Math.abs(y)) return x > 0 ? 'right' : 'left';
+	return y > 0 ? 'bottom' : 'top';
 }
 
 export function projectRingPoint(
@@ -83,7 +97,8 @@ export function mountIconCloud(dock: HTMLElement) {
 	const pointerMedia = window.matchMedia(finePointerQuery);
 	const motionMedia = window.matchMedia(reducedMotionQuery);
 	const lastDrag = { x: 0, y: 0 };
-	let spin = 0.35;
+	const spin = { value: 0, velocity: 0, target: 0 };
+	const emerge = { value: 0, velocity: 0, target: 0 };
 	let radius = 80;
 	let dragging = false;
 	let pointerX = Number.POSITIVE_INFINITY;
@@ -111,12 +126,26 @@ export function mountIconCloud(dock: HTMLElement) {
 
 	function paint(dt: number) {
 		measureRadius();
+		emerge.target = dock.classList.contains('is-emerged') ? 1 : 0;
+		let resting = true;
+		if (reduced()) {
+			emerge.value = emerge.target;
+			emerge.velocity = 0;
+			if (!dragging) {
+				spin.value = spin.target;
+				spin.velocity = 0;
+			}
+		} else {
+			if (!stepSpring(emerge, emergeSpring, dt, { min: 0, max: 1 })) resting = false;
+			if (!dragging && !stepSpring(spin, spinSpring, dt)) resting = false;
+		}
+		const shown = emerge.value;
+		const reach = radius * shown;
 		const origin = host.getBoundingClientRect();
 		const ox = origin.left + origin.width / 2;
 		const oy = origin.top + origin.height / 2;
-		let resting = true;
 		for (const node of nodes) {
-			const placed = projectRingPoint(node.x, node.y, spin, ringTilt, radius);
+			const placed = projectRingPoint(node.x, node.y, spin.value, ringTilt, reach);
 			const dist = Math.hypot(pointerX - (ox + placed.x), pointerY - (oy + placed.y));
 			const focused = node.el.matches(':focus-visible');
 			node.mag.target = 1;
@@ -130,8 +159,10 @@ export function mountIconCloud(dock: HTMLElement) {
 				node.mag.value = node.mag.target;
 				node.mag.velocity = 0;
 			}
-			const depth = (placed.z + radius * 2) / (radius * 3);
-			const opacity = clamp((placed.z + radius * 1.5) / (radius * 2), 0.22, 1);
+			const depth = reach > 0 ? (placed.z + reach * 2) / (reach * 3) : 0;
+			const opacity = shown * (reach > 0
+				? clamp((placed.z + reach * 1.5) / (reach * 2), 0.22, 1)
+				: 0);
 			// Keep scale in this transform so grow happens around the icon, not the orb.
 			node.el.style.transform = `translate(-50%, -50%) translate(${placed.x}px, ${placed.y}px) scale(${depth * node.mag.value})`;
 			node.el.style.setProperty('--icon-opacity', String(opacity));
@@ -139,6 +170,7 @@ export function mountIconCloud(dock: HTMLElement) {
 				'--dock-z',
 				String(Math.round(coreStack + placed.z + (node.mag.value - 1) * 80)),
 			);
+			node.el.dataset.tip = tipSide(placed.x, placed.y);
 		}
 		return resting;
 	}
@@ -166,7 +198,14 @@ export function mountIconCloud(dock: HTMLElement) {
 	}
 
 	function turn(dx: number, dy: number) {
-		spin += (dx + dy) * dragGain;
+		spin.value += (dx + dy) * dragGain;
+		spin.target = spin.value;
+		spin.velocity = 0;
+		startTick();
+	}
+
+	function turnTo(index: number) {
+		spin.target = spinToFront(index, nodes.length);
 		startTick();
 	}
 
@@ -240,6 +279,7 @@ export function mountIconCloud(dock: HTMLElement) {
 
 	return {
 		sync,
+		turnTo,
 		stop() {
 			pointerMedia.removeEventListener('change', sync);
 			motionMedia.removeEventListener('change', sync);

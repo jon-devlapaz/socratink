@@ -50,11 +50,10 @@ OpenAI-compatible provider; it never requires external credentials.
 
 ## Demonstrate the current interaction
 
-Use a fresh conversation and choose one of the three agentic-engineering
-starters, or enter a concrete question about an agent loop, tool boundary,
-state, memory, evaluation, observability, or recovery. Socratink asks the
-learner to explain or attempt the problem before substantive correction, then
-uses a structured card when a question has defined choices.
+Open a fresh conversation and type what you are working on into the composer;
+there is no starter menu. Socratink asks the learner to explain or attempt the
+problem before substantive correction, then uses a structured card when a
+question has defined choices.
 
 For an operator walkthrough:
 

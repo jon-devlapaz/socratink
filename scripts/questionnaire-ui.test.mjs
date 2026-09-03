@@ -191,41 +191,63 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.doesNotMatch(promptSource, /the question is already on the card/);
 });
 
-test('the card mounts agentic-engineering starters on initial empty turns', async () => {
+test('an empty conversation begins in the composer, with no starter menu on the card', async () => {
 	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
 	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	const cssSource = await readFile(new URL('../src/ui/transcript.css', import.meta.url), 'utf8');
-
-	assert.match(indexSource, /<template id="starter-template">/);
-	assert.match(indexSource, /Explore agentic engineering/);
-	assert.match(indexSource, /Understand a mechanism/);
-	assert.match(indexSource, /Stress-test a design/);
-	assert.match(indexSource, /Diagnostic practice/);
-	assert.match(indexSource, /challenge its assumptions about tool boundaries, retries, recovery, observability/);
-	assert.match(indexSource, /describe one concrete request from start to finish/);
-	assert.match(indexSource, /safe recovery when an agent response stream disconnects/);
-	assert.match(indexSource, /Present exactly four recovery actions/);
-	assert.match(indexSource, /begin your entire feedback response with Socratink-provided/);
-	assert.doesNotMatch(indexSource, /formal definition of my topic/);
-
-	assert.match(surfaceSource, /createStarterTurn\(/);
 	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
-	assert.match(turnSource, /document\.querySelector<HTMLTemplateElement>\('#starter-template'\)/);
+	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
+	const uiSources = await Promise.all(
+		['transcript.css', 'styles.css', 'dock.css'].map((name) =>
+			readFile(new URL(`../src/ui/${name}`, import.meta.url), 'utf8'),
+		),
+	);
 
-	assert.match(cssSource, /\.starter-state/);
-	assert.match(cssSource, /\.starter-spark-pill/);
+	assert.match(surfaceSource, /input\.placeholder = nothingSaidYet \? 'What are you working on\?' : ''/);
+	assert.doesNotMatch(indexSource, /placeholder=/);
+	assert.doesNotMatch(indexSource, /starter/i);
+	assert.doesNotMatch(indexSource, /<template/);
+	assert.doesNotMatch(indexSource, /data-prompt=/);
+	assert.doesNotMatch(indexSource, /✦/);
+
+	assert.doesNotMatch(surfaceSource, /starter/i);
+	assert.doesNotMatch(turnSource, /starter/i);
+	assert.doesNotMatch(turnSource, /Choose another/);
+	for (const source of uiSources) assert.doesNotMatch(source, /starter/i);
+
+	assert.match(promptSource, /Do not offer starting modes, lenses, or lanes/);
+	assert.doesNotMatch(promptSource, /Starters:/);
 });
 
-test('the composer invite glow is on only while the starter empty state is mounted', async () => {
+test('the learning dock marks its tools unavailable and keeps labels honest', async () => {
+	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
+	const dockSource = await readFile(new URL('../src/ui/app-dock.ts', import.meta.url), 'utf8');
+	const cloudSource = await readFile(new URL('../src/ui/effects/icon-cloud.ts', import.meta.url), 'utf8');
+
+	assert.match(indexSource, /aria-disabled="true"/);
+	assert.match(indexSource, /Not yet/);
+	assert.doesNotMatch(indexSource, /href="\/goal"/);
+	assert.match(dockSource, /aria-disabled/);
+	assert.match(dockSource, /ArrowRight/);
+	assert.match(cloudSource, /spinToFront/);
+});
+
+test('the composer invite glow is on only while nothing has been said', async () => {
 	const indexSource = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
 	const stylesSource = await readFile(new URL('../src/ui/styles.css', import.meta.url), 'utf8');
+	const transcriptSource = await readFile(new URL('../src/ui/transcript.css', import.meta.url), 'utf8');
 	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 
 	assert.match(indexSource, /class="composer-shell"/);
-	assert.match(surfaceSource, /current\.length === 0 && requestState\.kind === 'idle'/);
+	assert.match(
+		surfaceSource,
+		/const nothingSaidYet = current\.length === 0 && requestState\.kind === 'idle';\s*document\.body\.classList\.toggle\('conversation-empty', nothingSaidYet\)/,
+	);
+	assert.match(transcriptSource, /body\.conversation-empty \.active-node \{\s*display: none;/);
+	assert.match(transcriptSource, /@starting-style \{\s*\.active-node \{\s*opacity: 0;/);
+	assert.match(transcriptSource, /@media \(prefers-reduced-motion: reduce\) \{\s*\.active-node,/);
 	assert.match(stylesSource, /--composer-invite-glow:/);
-	assert.match(stylesSource, /body:has\(\.starter-state\) \.composer-shell::before/);
-	assert.match(stylesSource, /body:has\(\.starter-state\) #chat/);
+	assert.match(stylesSource, /body\.conversation-empty \.composer-shell::before/);
+	assert.match(stylesSource, /body\.conversation-empty #chat/);
 	assert.match(stylesSource, /\.composer-shell::before \{[\s\S]*transition-duration: 1s;/);
 	assert.match(stylesSource, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.composer-shell::before,/);
 });

@@ -4,7 +4,11 @@ import {
 	createVoiceLevelMeter,
 	voiceLevelFromSamples,
 } from '../src/ui/voice-level-meter.ts';
-import { sphereMotionForVoiceLevel } from '../src/ui/effects/organic-sphere.ts';
+import {
+	sphereMotionForState,
+	sphereMotionForVoiceLevel,
+	spherePalettes,
+} from '../src/ui/effects/organic-sphere.ts';
 
 test('normalizes silence, speech energy, and clipping to a bounded level', () => {
 	assert.equal(voiceLevelFromSamples(new Float32Array(8)), 0);
@@ -24,6 +28,28 @@ test('increasing voice energy increases every sphere motion channel', () => {
 	assert.ok(loud.displacement > speaking.displacement);
 	assert.deepEqual(sphereMotionForVoiceLevel(2), loud);
 	assert.deepEqual(sphereMotionForVoiceLevel(-1), resting);
+});
+
+test('attention wakes the sphere a little; an open dock calms it; only voice moves distortion', () => {
+	const resting = sphereMotionForState({ voice: 0, attention: 0, open: false });
+	assert.deepEqual(resting, sphereMotionForVoiceLevel(0));
+	const noticed = sphereMotionForState({ voice: 0, attention: 1, open: false });
+	assert.ok(noticed.timeScale > resting.timeScale);
+	assert.ok(noticed.displacement > resting.displacement);
+	assert.ok(noticed.displacement < sphereMotionForVoiceLevel(0.5).displacement);
+	assert.equal(noticed.distortion, resting.distortion);
+	const open = sphereMotionForState({ voice: 0, attention: 1, open: true });
+	assert.ok(open.displacement < resting.displacement);
+	assert.ok(open.timeScale < noticed.timeScale);
+	assert.deepEqual(sphereMotionForState({ voice: 0, attention: 3, open: false }), noticed);
+});
+
+test('the dark palette is a cream body with a bright rim on dark paper', () => {
+	assert.ok(spherePalettes.dark.blackCore < spherePalettes.light.blackCore);
+	assert.ok(spherePalettes.dark.hotRim > spherePalettes.light.hotRim);
+	assert.ok(spherePalettes.dark.lightB.intensity > spherePalettes.light.lightB.intensity);
+	assert.equal(spherePalettes.light.base, '#000000');
+	assert.equal(spherePalettes.dark.base, '#f4eee3');
 });
 
 test('starts local analysis and releases every audio resource on stop', async () => {

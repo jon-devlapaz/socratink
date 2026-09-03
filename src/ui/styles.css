@@ -317,6 +317,12 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	border-radius: 50%;
 }
 
+@media (any-hover: hover) {
+	.alive-core:hover:not(.is-working) {
+		scale: 1.025;
+	}
+}
+
 .alive-core:active:not(.is-working) {
 	scale: 0.96;
 }
@@ -691,7 +697,7 @@ body.questionnaire-active .stage {
 	transition-timing-function: var(--ease-out);
 }
 
-body:has(.starter-state) .composer-shell::before {
+body.conversation-empty .composer-shell::before {
 	opacity: 1;
 	transition-duration: 300ms;
 }
@@ -710,7 +716,7 @@ body:has(.starter-state) .composer-shell::before {
 	transition-timing-function: var(--ease-out);
 }
 
-body:has(.starter-state) #chat {
+body.conversation-empty #chat {
 	box-shadow: var(--composer-invite-ring), var(--shadow-border), inset 0 1px 0 var(--highlight);
 }
 
@@ -721,7 +727,7 @@ body:has(.starter-state) #chat {
 		inset 0 1px 0 var(--highlight);
 }
 
-body:has(.starter-state) #chat:focus-within {
+body.conversation-empty #chat:focus-within {
 	box-shadow:
 		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
 		var(--composer-invite-ring),
