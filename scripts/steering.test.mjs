@@ -121,6 +121,7 @@ test('steering chips send once; copy writes the turn without sending', async () 
 test('the last idle assistant turn mounts a steering bar that sends through the composer path', async () => {
 	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
+	const turnsSource = await readFile(new URL('../src/ui/chat-turns.ts', import.meta.url), 'utf8');
 	const barSource = await readFile(new URL('../src/ui/steering.ts', import.meta.url), 'utf8');
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	const styleSource = await readFile(new URL('../src/ui/steering.css', import.meta.url), 'utf8');
@@ -130,7 +131,8 @@ test('the last idle assistant turn mounts a steering bar that sends through the 
 	assert.match(surfaceSource, /steering: isLast && item\.role === 'Assistant' && requestState\.kind === 'idle'/);
 	assert.match(surfaceSource, /sendMessage\(formatSteeringMessage\(steering\)\)/);
 	assert.match(turnSource, /createSteeringBar/);
-	assert.match(turnSource, /text\.startsWith\(steeringPrefix\)/);
+	assert.match(turnsSource, /displayedLearnerTurn/);
+	assert.match(turnsSource, /learnerKind: 'steering'/);
 	assert.match(barSource, /aria-label', 'Steer this turn'/);
 	assert.doesNotMatch(barSource, /Need a different pace/);
 	assert.doesNotMatch(barSource, /request-action/);

@@ -5,6 +5,7 @@ import { createVoiceLevelMeter, type VoiceLevelMeter } from './voice-level-meter
 import './styles.css';
 import './cursor.css';
 import './dock.css';
+import './menu.css';
 import './transcript.css';
 import './chat-markdown.css';
 import './questionnaire.css';

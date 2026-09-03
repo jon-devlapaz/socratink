@@ -173,6 +173,7 @@ test('the live card mounts tool calls from history parts and admission stream ev
 		'utf8',
 	);
 	assert.match(turnsSource, /toolsFromParts\(message\.parts\)/);
+	assert.match(turnsSource, /isQuestionnaireTool\(call\.name\)/);
 	assert.match(turnSource, /createToolList\(item\.tools\)/);
 	assert.match(turnSource, /createToolList\(tools\)/);
 	assert.match(surfaceSource, /applyToolStreamEvent\(liveTools, event\)/);

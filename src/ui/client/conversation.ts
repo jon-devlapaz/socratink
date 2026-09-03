@@ -320,7 +320,10 @@ export class ChatRequestCoordinator {
 			});
 		} catch (error) {
 			if (!isLostConversationStream(error)) throw error;
-			return this.conversation.read(admission.submissionId, { signal });
+			return this.conversation.read(admission.submissionId, {
+				signal,
+				...(onEvent ? { onEvent } : {}),
+			});
 		}
 	}
 

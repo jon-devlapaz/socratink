@@ -1,18 +1,49 @@
 import type { FlueConversationSnapshot } from '@flue/sdk';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
-import { questionnaireFromParts } from './questionnaire.ts';
+import { compactMarkdownText } from './chat-markdown-parse.ts';
+import {
+	isQuestionnaireTool,
+	questionnaireAnswerPrefix,
+	questionnaireFromParts,
+} from './questionnaire.ts';
+import { steeringPrefix } from './steering.ts';
 import { toolsFromParts, type DisplayedToolCall } from './tool-card.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
+export type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
 
 export type DisplayedTurn = {
 	role: ChatMessageRole;
 	text: string;
+	learnerKind?: LearnerTurnKind;
+	trailText?: string;
 	questionnaire?: QuestionnaireDefinition;
 	modelRoute?: string;
 	tools?: DisplayedToolCall[];
 };
+
+export function displayedLearnerTurn(text: string): DisplayedTurn {
+	if (text.startsWith(questionnaireAnswerPrefix)) {
+		return {
+			role: 'You',
+			text,
+			learnerKind: 'questionnaire-reply',
+			trailText: compactMarkdownText(
+				text.slice(questionnaireAnswerPrefix.length).replace(/^- /gm, '').trim(),
+			),
+		};
+	}
+	if (text.startsWith(steeringPrefix)) {
+		return {
+			role: 'You',
+			text,
+			learnerKind: 'steering',
+			trailText: compactMarkdownText(text.slice(steeringPrefix.length).trim()),
+		};
+	}
+	return { role: 'You', text };
+}
 
 export function displayLabel(role: ChatMessageRole): string {
 	switch (role) {
@@ -48,12 +79,19 @@ export function visibleTurnsFromHistory(
 			message.role === 'assistant' ? modelRouteLabel(message.metadata) : undefined;
 		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
 		if (!text && !questionnaire && tools.length === 0) continue;
+		if (message.role === 'user') {
+			visible.push(displayedLearnerTurn(text));
+			continue;
+		}
+		const cardTools = questionnaire
+			? tools.filter((call) => !isQuestionnaireTool(call.name))
+			: tools;
 		visible.push({
-			role: message.role === 'user' ? 'You' : 'Assistant',
+			role: 'Assistant',
 			text,
 			...(questionnaire ? { questionnaire } : {}),
 			...(modelRoute ? { modelRoute } : {}),
-			...(tools.length ? { tools } : {}),
+			...(cardTools.length ? { tools: cardTools } : {}),
 		});
 	}
 	return visible;

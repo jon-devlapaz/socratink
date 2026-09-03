@@ -28,14 +28,25 @@ export function mountAppDock(core: HTMLButtonElement) {
 	}
 
 	function tabStops() {
+		const available = availableIndexes();
+		const focusable = available.includes(current) ? current : available[0];
 		for (const [index, item] of items.entries()) {
-			item.tabIndex = open && index === current ? 0 : -1;
+			item.tabIndex = open && index === focusable ? 0 : -1;
 		}
 	}
 
+	function availableIndexes() {
+		return items.flatMap((item, index) => (itemAvailable(item) ? [index] : []));
+	}
+
 	function select(index: number, focus: boolean) {
-		if (items.length === 0) return;
-		current = ((index % items.length) + items.length) % items.length;
+		const available = availableIndexes();
+		if (available.length === 0) return;
+		const wrapped = ((index % items.length) + items.length) % items.length;
+		const exact = available.indexOf(wrapped);
+		current = exact >= 0
+			? wrapped
+			: available.find((itemIndex) => itemIndex >= wrapped) ?? available[0]!;
 		tabStops();
 		cloud.turnTo(current);
 		if (focus) items[current]?.focus();

@@ -12,14 +12,13 @@ export type RequestControlElements = {
 export function applyRequestControlState(
 	state: ChatRequestState,
 	elements: RequestControlElements,
-): boolean {
+): void {
 	const controls = chatRequestControls(state);
 	elements.input.disabled = controls.composerLocked;
 	elements.button.disabled = controls.composerLocked;
 	elements.startOver.disabled = controls.startOverDisabled;
 	elements.core.classList.toggle('is-working', controls.busy);
 	elements.lockup.classList.toggle('is-working', controls.busy);
-	return controls.busy;
 }
 
 export function focusAfterRequestStatePaint(

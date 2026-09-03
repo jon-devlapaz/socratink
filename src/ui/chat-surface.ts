@@ -15,6 +15,7 @@ import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { mountAppDock } from './app-dock.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
+	displayedLearnerTurn,
 	groupEarlierSteps,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
@@ -24,20 +25,18 @@ import { modelRouteLabel } from '../config/model-route.ts';
 import { initChatAutoModel } from './chat-auto.ts';
 import {
 	formatQuestionnaireAnswers,
+	isQuestionnaireTool,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
 import { formatSteeringMessage } from './steering.ts';
 import {
 	applyToolStreamEvent,
-	createToolCard,
-	createToolList,
 	type DisplayedToolCall,
 } from './tool-card.ts';
 import {
 	applyReasoningStreamEvent,
 	createLiveReasoning,
 	resetLiveReasoning,
-	visibleThinkingStep,
 } from './thinking.ts';
 import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
@@ -45,6 +44,7 @@ import {
 	createActiveTurn,
 	createHistoryStep,
 	createPendingTurn,
+	type PendingTurnSession,
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
@@ -134,14 +134,11 @@ export function mountChatSurface(options: Readonly<{
 	let turns: DisplayedTurn[] = [];
 	let requestState: ChatRequestState = requests.state;
 	const transcript = attachTranscriptScroll(card);
-	const streamTimers: number[] = [];
 	const markdownRenderers: MarkdownRenderer[] = [];
+	let pendingSession: PendingTurnSession | undefined;
 	const turnSinks: TurnStreamSinks = {
 		trackRenderer: (renderer) => {
 			markdownRenderers.push(renderer);
-		},
-		trackTimer: (id) => {
-			streamTimers.push(id);
 		},
 	};
 
@@ -150,21 +147,22 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	function clearStream() {
-		for (const id of streamTimers) window.clearTimeout(id);
-		streamTimers.length = 0;
 		for (const renderer of markdownRenderers) renderer.destroy();
 		markdownRenderers.length = 0;
+	}
+
+	function releasePending() {
+		pendingSession?.dispose();
+		pendingSession = undefined;
 	}
 
 	function createRequestStateTurn(
 		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
 	) {
-		if (state.kind === 'terminal') {
-			return buildRequestStateTurn(state, () => requests.retry(), (result) => {
-				void runRequestCommand(result);
-			});
-		}
-		return buildRequestStateTurn(state, () => requests.recheck(), (result) => {
+		const resume = state.kind === 'terminal'
+			? () => requests.retry()
+			: () => requests.recheck();
+		return buildRequestStateTurn(state, resume, (result) => {
 			void runRequestCommand(result);
 		});
 	}
@@ -234,15 +232,23 @@ export function mountChatSurface(options: Readonly<{
 				}),
 			);
 			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
-				activeTurn.append(createPendingTurn({
-					cancelDisabled: requestState.kind === 'canceling',
-					observeRoot: activeTurn,
-					tools: liveTools,
-					reasoning: liveReasoning.text,
-					onCancel: () => {
-						void runRequestCommand(requests.cancel());
-					},
-				}));
+				if (!pendingSession) {
+					pendingSession = createPendingTurn({
+						cancelDisabled: requestState.kind === 'canceling',
+						tools: liveTools,
+						reasoning: liveReasoning.text,
+						onCancel: () => {
+							void runRequestCommand(requests.cancel());
+						},
+					});
+				} else {
+					pendingSession.setCancelDisabled(requestState.kind === 'canceling');
+					pendingSession.setReasoning(liveReasoning.text);
+					pendingSession.setTools(liveTools);
+				}
+				activeTurn.append(pendingSession.element);
+			} else {
+				releasePending();
 			}
 			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
 				activeTurn.append(createRequestStateTurn(requestState));
@@ -308,28 +314,16 @@ export function mountChatSurface(options: Readonly<{
 	});
 
 	function syncLiveThinking() {
-		const copy = activeTurn.querySelector('.turn.pending .thinking-step-copy');
-		if (copy) copy.textContent = visibleThinkingStep(liveReasoning.text);
+		pendingSession?.setReasoning(liveReasoning.text);
 	}
 
 	function syncLiveTools() {
-		const pending = activeTurn.querySelector('.turn.pending');
-		if (!pending) return;
-		let host = pending.querySelector('.tool-list');
-		if (!liveTools.length) {
-			host?.remove();
-			return;
-		}
-		if (!host) {
-			pending.append(createToolList(liveTools));
-			return;
-		}
-		host.replaceChildren(...liveTools.map(createToolCard));
+		pendingSession?.setTools(liveTools);
 	}
 
 	async function sendMessage(text: string) {
 		if (requests.state.kind !== 'idle') return;
-		turns = [...turns, { role: 'You', text }];
+		turns = [...turns, displayedLearnerTurn(text)];
 		input.value = '';
 		await startRequest(text);
 	}
@@ -337,6 +331,7 @@ export function mountChatSurface(options: Readonly<{
 	async function startRequest(text: string) {
 		liveTools.length = 0;
 		resetLiveReasoning(liveReasoning);
+		releasePending();
 		const result = requests.start(text);
 		requestState = requests.state;
 		applyRequestControls(requestState);
@@ -347,7 +342,9 @@ export function mountChatSurface(options: Readonly<{
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
 		const route = modelRouteLabel(reply.metadata);
-		const tools = liveTools.map((call) => ({ ...call }));
+		const tools = liveTools
+			.filter((call) => !(questionnaire && isQuestionnaireTool(call.name)))
+			.map((call) => ({ ...call }));
 		liveTools.length = 0;
 		resetLiveReasoning(liveReasoning);
 		turns = [

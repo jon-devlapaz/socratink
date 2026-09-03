@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
 	displayLabel,
+	displayedLearnerTurn,
 	groupEarlierSteps,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
@@ -87,16 +88,20 @@ test('projects assistant tool calls from dynamic-tool parts', () => {
 			role: 'Assistant',
 			text: '',
 			questionnaire,
-			tools: [
-				{
-					id: 'call_q',
-					name: 'present_question',
-					state: 'done',
-					output: 'Question presented on the card.',
-				},
-			],
 		},
 	]);
+});
+
+test('projects questionnaire and steering learner turns for trail copy', () => {
+	assert.deepEqual(
+		displayedLearnerTurn('Questionnaire answers:\n- Path: Worked example'),
+		{
+			role: 'You',
+			text: 'Questionnaire answers:\n- Path: Worked example',
+			learnerKind: 'questionnaire-reply',
+			trailText: 'Path: Worked example',
+		},
+	);
 });
 
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {

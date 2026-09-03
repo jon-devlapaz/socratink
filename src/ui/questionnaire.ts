@@ -25,6 +25,13 @@ export function questionnaireFromParts(
 	return part ? parseQuestionnaireDefinition(part.data) : undefined;
 }
 
+export const questionnaireAnswerPrefix = 'Questionnaire answers:';
+export const questionnaireToolName = 'present_question';
+
+export function isQuestionnaireTool(name: string): boolean {
+	return name === questionnaireToolName;
+}
+
 export function formatQuestionnaireAnswers(
 	definition: QuestionnaireDefinition,
 	answers: QuestionnaireAnswer[],
@@ -39,7 +46,7 @@ export function formatQuestionnaireAnswers(
 		if (answer.freeform) labels.push(answer.freeform);
 		return `- ${item.prompt}: ${labels.join(', ')}`;
 	});
-	return `Questionnaire answers:\n${lines.join('\n')}`;
+	return `${questionnaireAnswerPrefix}\n${lines.join('\n')}`;
 }
 
 function createButton(label: string, className: string): HTMLButtonElement {

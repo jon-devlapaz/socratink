@@ -2,16 +2,15 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import { createQuestionnaire, type QuestionnaireAnswer } from './questionnaire.ts';
-import { createSteeringBar, steeringPrefix, type SteeringKind } from './steering.ts';
+import { createSteeringBar, type SteeringKind } from './steering.ts';
 import { visibleThinkingStep } from './thinking.ts';
-import { createToolList, type DisplayedToolCall } from './tool-card.ts';
+import { createToolCard, createToolList, type DisplayedToolCall } from './tool-card.ts';
 
 const exceptionalLatencyMs = 10_000;
 const streamGapMs = 60;
 
 export type TurnStreamSinks = {
 	trackRenderer: (renderer: MarkdownRenderer) => void;
-	trackTimer: (id: number) => void;
 };
 
 export type ActiveTurnOptions = {
@@ -29,10 +28,17 @@ export type ActiveTurnHandlers = {
 
 export type PendingTurnOptions = {
 	cancelDisabled: boolean;
-	observeRoot: HTMLElement;
 	onCancel: () => void;
 	tools?: readonly DisplayedToolCall[];
 	reasoning?: string;
+};
+
+export type PendingTurnSession = {
+	readonly element: HTMLElement;
+	dispose(): void;
+	setReasoning(text: string): void;
+	setTools(calls: readonly DisplayedToolCall[]): void;
+	setCancelDisabled(disabled: boolean): void;
 };
 
 export function createHistoryStep(step: readonly DisplayedTurn[], index: number) {
@@ -99,11 +105,10 @@ export function createActiveTurn(
 
 export function createPendingTurn({
 	cancelDisabled,
-	observeRoot,
 	onCancel,
 	tools = [],
 	reasoning = '',
-}: PendingTurnOptions) {
+}: PendingTurnOptions): PendingTurnSession {
 	const wrap = document.createElement('div');
 	wrap.className = 'turn pending';
 	wrap.setAttribute('role', 'status');
@@ -177,13 +182,32 @@ export function createPendingTurn({
 	const timer = window.setTimeout(() => {
 		if (wrap.isConnected) latency.hidden = false;
 	}, exceptionalLatencyMs);
-	const observer = new MutationObserver(() => {
-		if (wrap.isConnected) return;
-		window.clearTimeout(timer);
-		observer.disconnect();
-	});
-	observer.observe(observeRoot, { childList: true });
-	return wrap;
+
+	return {
+		element: wrap,
+		dispose() {
+			window.clearTimeout(timer);
+		},
+		setReasoning(text) {
+			working.textContent = visibleThinkingStep(text);
+		},
+		setTools(calls) {
+			const host = wrap.querySelector('.tool-list');
+			if (!calls.length) {
+				host?.remove();
+				return;
+			}
+			if (!host) {
+				wrap.append(createToolList(calls));
+				return;
+			}
+			host.replaceChildren(...calls.map(createToolCard));
+		},
+		setCancelDisabled(disabled) {
+			cancel.disabled = disabled;
+			cancel.textContent = disabled ? 'Canceling…' : 'Cancel';
+		},
+	};
 }
 
 function appendTurnCopy(
@@ -214,55 +238,14 @@ function appendTurnCopy(
 		return;
 	}
 	const body = document.createElement('p');
-	fillTurnBody(body, item.text, stream, sinks.trackTimer);
+	if (!item.text) body.hidden = true;
+	else body.textContent = item.text;
 	parent.append(body);
 }
 
-function fillTurnBody(
-	body: HTMLParagraphElement,
-	text: string,
-	stream: boolean,
-	trackTimer: (id: number) => void,
-) {
-	body.replaceChildren();
-	if (!text) {
-		body.hidden = true;
-		return;
-	}
-	body.hidden = false;
-	if (!stream) {
-		body.textContent = text;
-		return;
-	}
-	const spans: HTMLSpanElement[] = [];
-	for (const token of text.split(/(\s+)/)) {
-		if (token === '') continue;
-		if (/^\s+$/.test(token)) {
-			body.append(token);
-			continue;
-		}
-		const word = document.createElement('span');
-		word.className = 'stream-word';
-		word.textContent = token;
-		body.append(word);
-		spans.push(word);
-	}
-	spans.forEach((word, index) => {
-		trackTimer(window.setTimeout(() => word.classList.add('is-in'), index * streamGapMs));
-	});
-}
-
 function historyBodyText(item: DisplayedTurn): string {
-	const text = item.text;
-	if (text.startsWith('Questionnaire answers:')) {
-		return compactMarkdownText(
-			text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim(),
-		);
-	}
-	if (text.startsWith(steeringPrefix)) {
-		return compactMarkdownText(text.slice(steeringPrefix.length).trim());
-	}
-	const compact = compactMarkdownText(text);
+	if (item.trailText) return item.trailText;
+	const compact = compactMarkdownText(item.text);
 	if (compact) return compact;
 	if (item.tools?.length) return item.tools.map((call) => call.name).join(', ');
 	return '';

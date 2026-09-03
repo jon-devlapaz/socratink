@@ -89,6 +89,36 @@ test('a lost admission stream falls back to the same submissionId without sendin
 	assert.deepEqual(reads, [admission, admission.submissionId]);
 });
 
+test('lost-stream fallback still forwards onEvent', async () => {
+	const seen = [];
+	const chunk = {
+		type: 'message-delta',
+		kind: 'reasoning',
+		delta: 'hmm',
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read(target, options) {
+			if (target === admission) throw streamNotFound('json');
+			options?.onEvent?.(chunk);
+			return reply;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		onEvent: (event) => {
+			seen.push(event);
+		},
+	});
+	await coordinator.start('hello');
+	assert.deepEqual(seen, [chunk]);
+});
+
 test('forwards admission-read stream events to the conversation listener', async () => {
 	const seen = [];
 	const chunk = {

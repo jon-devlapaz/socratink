@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compactMarkdownText, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
+import { compactMarkdownText, parseInline, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
 
 test('parses headings, paragraphs, lists, quotes, rules, fences, and tables', () => {
 	const blocks = parseMarkdownBlocks(
@@ -79,6 +79,12 @@ test('rejects unsafe hrefs and keeps http(s), mailto, and relative links', () =>
 	assert.equal(safeHref('mailto:hello@example.com'), 'mailto:hello@example.com');
 	assert.equal(safeHref('#section'), '#section');
 	assert.equal(safeHref('/local'), '/local');
+});
+
+test('keeps parentheses inside markdown link hrefs', () => {
+	const [link] = parseInline('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))');
+	assert.equal(link?.type, 'link');
+	assert.equal(link?.type === 'link' && link.href, 'https://en.wikipedia.org/wiki/Foo_(bar)');
 });
 
 test('keeps pipes inside inline code and escaped cells', () => {

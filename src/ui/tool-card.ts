@@ -1,4 +1,5 @@
 import type { ConversationStreamChunk, FlueConversationPart } from '@flue/sdk';
+import { isQuestionnaireTool } from './questionnaire.ts';
 
 const outputLimit = 8_000;
 
@@ -119,7 +120,7 @@ export function createToolCard(call: DisplayedToolCall): HTMLElement {
 
 export function visibleToolOutput(call: DisplayedToolCall): string | undefined {
 	if (!call.output) return undefined;
-	if (call.name === 'present_question' && call.state === 'done') return undefined;
+	if (isQuestionnaireTool(call.name) && call.state === 'done') return undefined;
 	return call.output;
 }
 

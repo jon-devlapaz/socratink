@@ -212,6 +212,7 @@ export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController 
 	let voiceLevel = 0;
 	let targetVoiceLevel = 0;
 	let attention = 0;
+	const offsetDrift = new THREE.Vector3();
 	const render = (now: number) => {
 		const dt = Math.min(now - previous, 60) / 1000;
 		previous = now;
@@ -247,7 +248,7 @@ export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController 
 		if (!still) {
 			timeUniform.value += dt * motion.timeScale;
 			offsetUniform.value.add(
-				new THREE.Vector3(
+				offsetDrift.set(
 					Math.sin(timeUniform.value * 0.13),
 					Math.cos(timeUniform.value * 0.09),
 					Math.sin(timeUniform.value * 0.07),

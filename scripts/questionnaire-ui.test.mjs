@@ -197,7 +197,7 @@ test('an empty conversation begins in the composer, with no starter menu on the 
 	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	const uiSources = await Promise.all(
-		['transcript.css', 'styles.css', 'dock.css'].map((name) =>
+		['transcript.css', 'styles.css', 'dock.css', 'menu.css'].map((name) =>
 			readFile(new URL(`../src/ui/${name}`, import.meta.url), 'utf8'),
 		),
 	);
@@ -227,6 +227,7 @@ test('the learning dock marks its tools unavailable and keeps labels honest', as
 	assert.match(indexSource, /Not yet/);
 	assert.doesNotMatch(indexSource, /href="\/goal"/);
 	assert.match(dockSource, /aria-disabled/);
+	assert.match(dockSource, /availableIndexes/);
 	assert.match(dockSource, /ArrowRight/);
 	assert.match(cloudSource, /spinToFront/);
 });

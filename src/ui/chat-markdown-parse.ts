@@ -478,11 +478,24 @@ function readLink(
 	if (source[textStart] !== '[') return undefined;
 	const closeText = source.indexOf(']', textStart + 1);
 	if (closeText === -1 || source[closeText + 1] !== '(') return undefined;
-	const closeHref = source.indexOf(')', closeText + 2);
+	let depth = 1;
+	let closeHref = -1;
+	for (let index = closeText + 2; index < source.length; index += 1) {
+		const character = source[index];
+		if (character === '\n') break;
+		if (character === '(') depth += 1;
+		if (character === ')') {
+			depth -= 1;
+			if (depth === 0) {
+				closeHref = index;
+				break;
+			}
+		}
+	}
 	if (closeHref === -1) return undefined;
 	const text = source.slice(textStart + 1, closeText);
 	const href = source.slice(closeText + 2, closeHref);
-	if (text.includes('\n') || href.includes('\n')) return undefined;
+	if (text.includes('\n')) return undefined;
 	return { text, href, end: closeHref + 1, image };
 }
 
