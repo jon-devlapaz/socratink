@@ -322,7 +322,7 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	async function sendMessage(text: string) {
-		if (requests.state.kind !== 'idle') return;
+		if (chatRequestControls(requests.state).composerLocked) return;
 		turns = [...turns, displayedLearnerTurn(text)];
 		input.value = '';
 		await startRequest(text);
@@ -389,7 +389,7 @@ export function mountChatSurface(options: Readonly<{
 		event.preventDefault();
 		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
-		if (!text || requests.state.kind !== 'idle') return;
+		if (!text || chatRequestControls(requests.state).composerLocked) return;
 		await sendMessage(text);
 	});
 

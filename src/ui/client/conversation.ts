@@ -52,8 +52,10 @@ export function chatRequestControls(state: ChatRequestState): {
 		case 'canceling':
 			return { busy: true, composerLocked: true, startOverDisabled: true };
 		case 'recovery':
-		case 'terminal':
 			return { busy: false, composerLocked: true, startOverDisabled: false };
+		case 'terminal':
+			// Confirmed stop/fail: Retry remains, but a new message is allowed.
+			return { busy: false, composerLocked: false, startOverDisabled: false };
 		default: {
 			const exhaustive: never = state;
 			return exhaustive;
@@ -141,6 +143,10 @@ export class ChatRequestCoordinator {
 	}
 
 	start(text: string): Promise<ChatRequestState> {
+		if (this.state.kind === 'terminal') {
+			this.pending = undefined;
+			this.state = { kind: 'idle' };
+		}
 		if (this.state.kind !== 'idle') throw new Error('A chat request is already active.');
 		const pending: PendingRequest = {
 			text,

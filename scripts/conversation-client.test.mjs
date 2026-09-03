@@ -566,6 +566,33 @@ test('a confirmed not-admitted send can retry once', async () => {
 	assert.equal(sends, 2);
 });
 
+test('a confirmed stop can send a different message without retrying the old one', async () => {
+	const sent = [];
+	const conversation = {
+		async send({ message }) {
+			sent.push(message.body);
+			if (sent.length === 1) {
+				throw new FlueApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
+			}
+			return { ...admission, submissionId: `sub-${sent.length}` };
+		},
+		async read() {
+			return reply;
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const stopped = await coordinator.start('hello');
+	assert.equal(stopped.kind, 'terminal');
+	assert.equal(stopped.outcome, 'not-admitted');
+	assert.equal(chatRequestControls(stopped).composerLocked, false);
+	const next = await coordinator.start('a new turn');
+	assert.equal(next.kind, 'completed');
+	assert.deepEqual(sent, ['hello', 'a new turn']);
+});
+
 test('rejects every overlapping admission attempt', async () => {
 	const conversation = {
 		async send({ signal }) {
@@ -593,7 +620,7 @@ test('maps user-facing errors without treating cancellation as a generic failure
 	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
 });
 
-test('recovery and terminal states lock only the composer while keeping Start over available', () => {
+test('recovery locks the composer; a confirmed stop leaves it open', () => {
 	assert.deepEqual(chatRequestControls({ kind: 'idle' }), {
 		busy: false,
 		composerLocked: false,
@@ -625,11 +652,11 @@ test('recovery and terminal states lock only the composer while keeping Start ov
 			outcome: 'aborted',
 			detail: 'Canceled.',
 		}),
-		{ busy: false, composerLocked: true, startOverDisabled: false },
+		{ busy: false, composerLocked: false, startOverDisabled: false },
 	);
 });
 
-test('a recovery action repaints an enabled focused Retry while the composer stays disabled', async (t) => {
+test('a recovery action focuses Recheck; a confirmed stop leaves the composer open', async (t) => {
 	class TestClassList {
 		#names = new Set();
 		toggle(name, force) {
@@ -737,9 +764,9 @@ test('a recovery action repaints an enabled focused Retry while the composer sta
 	const retry = activeTurn.querySelector('.request-actions .request-action');
 	assert.equal(retry.textContent, 'Retry');
 	assert.equal(retry.disabled, false);
-	assert.equal(document.activeElement, retry);
-	assert.equal(input.disabled, true);
-	assert.equal(button.disabled, true);
+	assert.equal(document.activeElement, input);
+	assert.equal(input.disabled, false);
+	assert.equal(button.disabled, false);
 });
 
 test('the pending view keeps stable accessible copy and a 10 second latency threshold', async () => {
