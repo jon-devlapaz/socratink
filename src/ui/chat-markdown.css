@@ -1,0 +1,212 @@
+.turn-markdown {
+	min-width: 0;
+	color: var(--ink);
+	font-size: calc(0.98rem * var(--type-scale, 1));
+	line-height: 1.55;
+	overflow-wrap: anywhere;
+}
+
+.turn-markdown > :first-child {
+	margin-top: 0;
+}
+
+.turn-markdown > * + * {
+	margin-top: 0.7em;
+}
+
+.turn-markdown p {
+	margin: 0;
+}
+
+.turn-markdown :is(h1, h2, h3, h4, h5, h6) {
+	margin: 0;
+	color: var(--ink);
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	line-height: 1.3;
+}
+
+.turn-markdown h1 {
+	font-size: calc(1.22rem * var(--type-scale, 1));
+}
+
+.turn-markdown h2 {
+	font-size: calc(1.12rem * var(--type-scale, 1));
+}
+
+.turn-markdown h3 {
+	font-size: calc(1.05rem * var(--type-scale, 1));
+}
+
+.turn-markdown :is(h4, h5, h6) {
+	font-size: calc(0.98rem * var(--type-scale, 1));
+}
+
+.turn-markdown ul,
+.turn-markdown ol {
+	margin: 0;
+	padding-left: 1.25em;
+}
+
+.turn-markdown li + li {
+	margin-top: 0.28em;
+}
+
+.turn-markdown li {
+	padding-left: 0.15em;
+}
+
+.turn-markdown blockquote {
+	margin: 0;
+	padding: 0.15em 0 0.15em 0.85em;
+	border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+	color: var(--muted);
+}
+
+.turn-markdown hr {
+	margin: 0.35em 0;
+	border: 0;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.turn-markdown a {
+	color: var(--accent);
+	text-underline-offset: 0.12em;
+}
+
+.turn-markdown a:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+	border-radius: 4px;
+}
+
+.turn-markdown :not(pre) > code {
+	padding: 0.12em 0.38em;
+	border-radius: 6px;
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 8%, var(--chip-strong));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+	font-size: 0.88em;
+}
+
+.code-block {
+	overflow: hidden;
+	border-radius: 12px;
+	background: var(--chip);
+	box-shadow: var(--shadow-border);
+}
+
+.code-block-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem;
+	padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+	background: color-mix(in srgb, var(--chip-strong) 70%, transparent);
+}
+
+.code-block-lang {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--muted);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+	font-size: 0.68rem;
+	font-weight: 650;
+	letter-spacing: 0.04em;
+	text-overflow: ellipsis;
+	text-transform: lowercase;
+	white-space: nowrap;
+}
+
+.code-block-copy {
+	flex: none;
+	padding: 0.28rem 0.58rem;
+	border: 0;
+	border-radius: 999px;
+	color: var(--ink);
+	background: var(--chip-strong);
+	box-shadow: var(--shadow-border);
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.68rem;
+	font-weight: 600;
+	transition-property: scale, background-color, box-shadow;
+	transition-duration: 150ms;
+	transition-timing-function: var(--ease-out);
+}
+
+.code-block-copy:hover,
+.code-block-copy:focus-visible {
+	box-shadow: var(--shadow-border-hover);
+	outline: none;
+}
+
+.code-block-copy:focus-visible {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+}
+
+.code-block-copy:active {
+	scale: 0.96;
+}
+
+.code-block pre {
+	margin: 0;
+	padding: 0.75rem 0.85rem 0.85rem;
+	overflow-x: auto;
+	color: var(--ink);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+	font-size: calc(0.82rem * var(--type-scale, 1));
+	line-height: 1.5;
+	white-space: pre;
+	tab-size: 2;
+}
+
+.code-block code {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+.markdown-table-wrap {
+	overflow-x: auto;
+	border-radius: 10px;
+	box-shadow: var(--shadow-border);
+}
+
+.markdown-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: calc(0.88rem * var(--type-scale, 1));
+}
+
+.markdown-table th,
+.markdown-table td {
+	padding: 0.42rem 0.65rem;
+	border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+	text-align: left;
+	vertical-align: top;
+}
+
+.markdown-table th {
+	color: var(--muted);
+	background: color-mix(in srgb, var(--chip-strong) 80%, transparent);
+	font-weight: 650;
+}
+
+.markdown-table tbody tr:nth-child(even) td {
+	background: color-mix(in srgb, var(--chip) 55%, transparent);
+}
+
+.markdown-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.code-block-copy {
+		transition: none;
+	}
+
+	.code-block-copy:active {
+		scale: none;
+	}
+}

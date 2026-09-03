@@ -6,6 +6,7 @@ import './styles.css';
 import './cursor.css';
 import './dock.css';
 import './transcript.css';
+import './chat-markdown.css';
 import './questionnaire.css';
 import './chat-auto.css';
 import './dictation.css';

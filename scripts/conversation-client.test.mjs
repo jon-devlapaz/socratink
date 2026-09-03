@@ -595,7 +595,7 @@ test('a recovery action repaints an enabled focused Retry while the composer sta
 		applyRequestControlState,
 		buildRequestStateTurn,
 		focusAfterRequestStatePaint,
-	} = await import('../src/ui/chat-surface.ts');
+	} = await import('../src/ui/chat-request-view.ts');
 	const input = new TestElement();
 	const button = new TestElement();
 	const startOver = new TestElement();
@@ -641,7 +641,7 @@ test('a recovery action repaints an enabled focused Retry while the composer sta
 });
 
 test('the pending view keeps stable accessible copy and a 10 second latency threshold', async () => {
-	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	const source = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
 	assert.match(source, /Waiting for Socratink/);
 	assert.match(source, /Taking longer than usual\./);
 	assert.match(source, /exceptionalLatencyMs = 10_000/);

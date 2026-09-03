@@ -439,7 +439,7 @@ html[data-type-size='small'] .active-node {
 	opacity: 0.7;
 }
 
-.turn p {
+.turn > p {
 	margin: 0;
 	overflow-wrap: anywhere;
 	font-size: calc(0.98rem * var(--type-scale));

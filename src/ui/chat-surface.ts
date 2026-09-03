@@ -15,7 +15,6 @@ import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { mountAppDock } from './app-dock.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
-	displayLabel,
 	groupEarlierSteps,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
@@ -24,11 +23,24 @@ import {
 import { modelRouteLabel } from '../config/model-route.ts';
 import { initChatAutoModel } from './chat-auto.ts';
 import {
-	createQuestionnaire,
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
 import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
+import type { MarkdownRenderer } from './chat-markdown.ts';
+import {
+	createActiveTurn,
+	createHistoryStep,
+	createPendingTurn,
+	createStarterTurn,
+	type TurnStreamSinks,
+} from './turn-view.ts';
+import { mountMenuSheet } from './menu-sheet.ts';
+import {
+	applyRequestControlState,
+	buildRequestStateTurn,
+	focusAfterRequestStatePaint,
+} from './chat-request-view.ts';
 
 type PaintKind = 'restore' | 'new-turn' | 'hold';
 
@@ -59,83 +71,6 @@ type ChatSurfaceElements = {
 };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const drawerCloseRatio = 0.25;
-const drawerFlickVelocity = 0.4;
-const peekOpenDistance = 48;
-const handleClickSlop = 8;
-const exceptionalLatencyMs = 10_000;
-const streamGapMs = 60;
-
-type RequestControlElements = Pick<
-	ChatSurfaceElements,
-	'input' | 'button' | 'startOver' | 'core' | 'lockup' | 'activeTurn'
->;
-
-export function applyRequestControlState(
-	state: ChatRequestState,
-	elements: RequestControlElements,
-): boolean {
-	const controls = chatRequestControls(state);
-	elements.input.disabled = controls.composerLocked;
-	elements.button.disabled = controls.composerLocked;
-	elements.startOver.disabled = controls.startOverDisabled;
-	elements.core.classList.toggle('is-working', controls.busy);
-	elements.lockup.classList.toggle('is-working', controls.busy);
-	return controls.busy;
-}
-
-export function focusAfterRequestStatePaint(
-	state: ChatRequestState,
-	elements: Pick<RequestControlElements, 'input' | 'activeTurn'>,
-): void {
-	if (chatRequestControls(state).composerLocked) {
-		const action = elements.activeTurn.querySelector<HTMLButtonElement>(
-			'.request-actions .request-action',
-		);
-		if (action) {
-			action.focus();
-			return;
-		}
-	}
-	elements.input.focus();
-}
-
-export function buildRequestStateTurn(
-	state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
-	action: () => Promise<ChatRequestState>,
-	runRequestCommand: (result: Promise<ChatRequestState>) => void,
-): HTMLElement {
-	const wrap = document.createElement('div');
-	wrap.className = `turn request-state ${state.kind === 'terminal' ? state.outcome : 'recovery'}`;
-	wrap.setAttribute('role', 'status');
-	wrap.setAttribute('aria-live', 'polite');
-	const label = document.createElement('span');
-	label.className = 'turn-label';
-	label.textContent = state.kind === 'recovery'
-		? 'Outcome unknown'
-		: state.outcome === 'aborted'
-			? 'Canceled'
-			: state.outcome === 'not-admitted'
-				? 'Not sent'
-				: 'Reply failed';
-	const body = document.createElement('p');
-	body.textContent = state.detail;
-	const actions = document.createElement('div');
-	actions.className = 'request-actions';
-	const button = document.createElement('button');
-	button.className = 'request-action';
-	button.type = 'button';
-	button.textContent = state.kind === 'terminal' ? 'Retry' : 'Recheck';
-	button.addEventListener('click', () => {
-		for (const actionButton of button.parentElement?.querySelectorAll('button') ?? []) {
-			actionButton.disabled = true;
-		}
-		runRequestCommand(action());
-	});
-	actions.append(button);
-	wrap.append(label, body, actions);
-	return wrap;
-}
 
 export function mountChatSurface(options: Readonly<{
 	elements?: ChatSurfaceElements;
@@ -149,16 +84,9 @@ export function mountChatSurface(options: Readonly<{
 		button,
 		core,
 		lockup,
-		canvas,
 		startOver,
 		card,
 		activeTurn,
-		peekHandle,
-		menuLayer,
-		menuPanel,
-		menuHandle,
-		menuBackdrop,
-		menuFirst,
 		trailToggle,
 		trailLabel,
 		appearance,
@@ -179,13 +107,21 @@ export function mountChatSurface(options: Readonly<{
 	const requests = new ChatRequestCoordinator(conversation);
 	const learningDock = mountAppDock(core);
 	let working = false;
-	let menuOpen = false;
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
 	let requestState: ChatRequestState = requests.state;
 	const transcript = attachTranscriptScroll(card);
 	const streamTimers: number[] = [];
+	const markdownRenderers: MarkdownRenderer[] = [];
+	const turnSinks: TurnStreamSinks = {
+		trackRenderer: (renderer) => {
+			markdownRenderers.push(renderer);
+		},
+		trackTimer: (id) => {
+			streamTimers.push(id);
+		},
+	};
 
 	function wait(ms: number) {
 		return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
@@ -194,156 +130,8 @@ export function mountChatSurface(options: Readonly<{
 	function clearStream() {
 		for (const id of streamTimers) window.clearTimeout(id);
 		streamTimers.length = 0;
-	}
-
-	function fillTurnBody(body: HTMLParagraphElement, text: string, stream: boolean) {
-		body.replaceChildren();
-		if (!text) {
-			body.hidden = true;
-			return;
-		}
-		body.hidden = false;
-		if (!stream) {
-			body.textContent = text;
-			return;
-		}
-		const spans: HTMLSpanElement[] = [];
-		for (const token of text.split(/(\s+)/)) {
-			if (token === '') continue;
-			if (/^\s+$/.test(token)) {
-				body.append(token);
-				continue;
-			}
-			const word = document.createElement('span');
-			word.className = 'stream-word';
-			word.textContent = token;
-			body.append(word);
-			spans.push(word);
-		}
-		spans.forEach((word, index) => {
-			streamTimers.push(window.setTimeout(() => word.classList.add('is-in'), index * streamGapMs));
-		});
-	}
-
-	function appendTurnCopy(parent: HTMLElement, item: DisplayedTurn, stream = false) {
-		const head = document.createElement('div');
-		head.className = 'turn-head';
-		const label = document.createElement('span');
-		label.className = 'turn-label';
-		label.textContent = displayLabel(item.role);
-		head.append(label);
-		if (item.role === 'Assistant' && item.modelRoute) {
-			const routeLabel = document.createElement('span');
-			routeLabel.className = 'turn-model';
-			routeLabel.textContent = item.modelRoute;
-			routeLabel.title = item.modelRoute;
-			head.append(routeLabel);
-		}
-		parent.append(head);
-		const body = document.createElement('p');
-		fillTurnBody(body, item.text, stream);
-		parent.append(body);
-	}
-
-	function createHistoryStep(step: readonly DisplayedTurn[], index: number) {
-		const entry = document.createElement('li');
-		entry.className = 'history-step';
-		const mark = document.createElement('span');
-		mark.className = 'history-step-mark';
-		mark.textContent = String(index + 1);
-		mark.setAttribute('aria-hidden', 'true');
-		const body = document.createElement('div');
-		body.className = 'history-step-body';
-		for (const item of step) {
-			const turn = document.createElement('div');
-			turn.className = `history-turn ${item.role.toLowerCase()}`;
-			const role = document.createElement('span');
-			role.className = 'sr-only';
-			role.textContent = displayLabel(item.role);
-			const copy = document.createElement('p');
-			copy.textContent = historyBodyText(item.text);
-			turn.append(role, copy);
-			body.append(turn);
-		}
-		entry.append(mark, body);
-		return entry;
-	}
-
-	function createActiveTurn(
-		item: DisplayedTurn,
-		{ announce = false, stagger = false, interactive = false, stream = false } = {},
-	) {
-		const wrap = document.createElement('div');
-		wrap.className = `turn ${item.role.toLowerCase()}`;
-		if (announce) wrap.setAttribute('aria-live', 'polite');
-		if (stagger) wrap.classList.add('stagger-item');
-		appendTurnCopy(wrap, item, stream);
-		if (item.questionnaire && interactive) {
-			const questionnaire = item.questionnaire;
-			wrap.append(
-				createQuestionnaire(questionnaire, (answers) => {
-					void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
-				}),
-			);
-		}
-		return wrap;
-	}
-
-	function createStarterTurn(): HTMLElement | null {
-		const template = document.querySelector<HTMLTemplateElement>('#starter-template');
-		if (!template) return null;
-		const wrap = template.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
-		if (!wrap) return null;
-		for (const chip of wrap.querySelectorAll<HTMLButtonElement | HTMLElement>('.starter-chip, .starter-spark-pill')) {
-			chip.addEventListener('click', () => {
-				const val = chip.getAttribute('data-prompt') || chip.textContent?.trim() || '';
-				if (val) {
-					input.value = val;
-					input.focus();
-				}
-			});
-		}
-		return wrap;
-	}
-
-	function createPendingTurn() {
-		const wrap = document.createElement('div');
-		wrap.className = 'turn pending';
-		wrap.setAttribute('role', 'status');
-		wrap.setAttribute('aria-live', 'polite');
-		const body = document.createElement('p');
-		const dot = document.createElement('span');
-		dot.className = 'pending-dot';
-		dot.setAttribute('aria-hidden', 'true');
-		const label = document.createElement('span');
-		label.className = 'pending-word';
-		label.textContent = 'Waiting for Socratink';
-		body.append(dot, label);
-		const cancel = document.createElement('button');
-		cancel.className = 'request-action';
-		cancel.type = 'button';
-		cancel.disabled = requestState.kind === 'canceling';
-		cancel.textContent = cancel.disabled ? 'Canceling…' : 'Cancel';
-		cancel.addEventListener('click', () => {
-			cancel.disabled = true;
-			cancel.textContent = 'Canceling…';
-			void runRequestCommand(requests.cancel());
-		});
-		const latency = document.createElement('p');
-		latency.className = 'pending-latency';
-		latency.textContent = 'Taking longer than usual.';
-		latency.hidden = true;
-		wrap.append(body, cancel, latency);
-		const timer = window.setTimeout(() => {
-			if (wrap.isConnected) latency.hidden = false;
-		}, exceptionalLatencyMs);
-		const observer = new MutationObserver(() => {
-			if (wrap.isConnected) return;
-			window.clearTimeout(timer);
-			observer.disconnect();
-		});
-		observer.observe(activeTurn, { childList: true });
-		return wrap;
+		for (const renderer of markdownRenderers) renderer.destroy();
+		markdownRenderers.length = 0;
 	}
 
 	function createRequestStateTurn(
@@ -385,121 +173,6 @@ export function mountChatSurface(options: Readonly<{
 		messages.hidden = !trailOpen;
 	}
 
-	function setMenuOpen(open: boolean) {
-		if (menuOpen === open) return;
-		if (open) learningDock.close();
-		menuOpen = open;
-		menuPanel.classList.remove('is-dragging');
-		menuLayer.classList.toggle('is-open', open);
-		menuLayer.setAttribute('aria-hidden', String(!open));
-		lockup.setAttribute('aria-expanded', String(open));
-		peekHandle.setAttribute('aria-expanded', String(open));
-		canvas.inert = open;
-		peekHandle.inert = open;
-		menuLayer.inert = !open;
-		if (open) {
-			menuPanel.style.transform = '';
-			menuFirst.focus();
-			return;
-		}
-		requestAnimationFrame(() => {
-			menuPanel.style.transform = '';
-		});
-		peekHandle.focus();
-	}
-
-	function suppressNextClick(handle: HTMLElement) {
-		let done = false;
-		const suppress = (event: Event) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			finish();
-		};
-		const finish = () => {
-			if (done) return;
-			done = true;
-			handle.removeEventListener('click', suppress, true);
-		};
-		handle.addEventListener('click', suppress, true);
-		window.setTimeout(finish, 500);
-	}
-
-	function bindSheetHandle(handle: HTMLElement, { openOnDown = false } = {}) {
-		if (reduceMotion) return;
-		let dragging = false;
-		let moved = false;
-		let startY = 0;
-		let lastY = 0;
-		let lastT = 0;
-		let velocity = 0;
-		let panelHeight = 0;
-
-		handle.addEventListener('pointerdown', (event) => {
-			if (event.button !== 0) return;
-			if (!openOnDown && !menuOpen) return;
-			if (openOnDown && menuOpen) return;
-			dragging = true;
-			moved = false;
-			startY = event.clientY;
-			lastY = event.clientY;
-			lastT = performance.now();
-			velocity = 0;
-			panelHeight = menuPanel.offsetHeight;
-			handle.setPointerCapture(event.pointerId);
-		});
-
-		handle.addEventListener('pointermove', (event) => {
-			if (!dragging) return;
-			const now = performance.now();
-			const dy = event.clientY - startY;
-			velocity = (event.clientY - lastY) / Math.max(now - lastT, 1);
-			lastY = event.clientY;
-			lastT = now;
-			if (!moved && Math.abs(dy) < handleClickSlop) return;
-			if (!moved) {
-				moved = true;
-				menuPanel.classList.add('is-dragging');
-				if (openOnDown) menuLayer.classList.add('is-pulling');
-			}
-			if (menuOpen) {
-				const offset = dy < 0 ? dy : dy * 0.15;
-				menuPanel.style.transform = `translate3d(0, ${offset}px, 0)`;
-				return;
-			}
-			const closedY = -panelHeight * 1.1;
-			let nextY = closedY + Math.max(0, dy);
-			if (nextY > 0) nextY *= 0.15;
-			menuPanel.style.transform = `translate3d(0, ${nextY}px, 0)`;
-		});
-
-		function finishDrag() {
-			if (!dragging) return;
-			dragging = false;
-			menuPanel.classList.remove('is-dragging');
-			menuLayer.classList.remove('is-pulling');
-			if (!moved) return;
-			suppressNextClick(handle);
-			const dy = lastY - startY;
-			if (openOnDown) {
-				if (dy > peekOpenDistance || velocity > drawerFlickVelocity) {
-					setMenuOpen(true);
-					return;
-				}
-				menuPanel.style.transform = '';
-				return;
-			}
-			const shouldClose = dy < -panelHeight * drawerCloseRatio || velocity < -drawerFlickVelocity;
-			if (shouldClose) {
-				setMenuOpen(false);
-				return;
-			}
-			menuPanel.style.transform = '';
-		}
-
-		handle.addEventListener('pointerup', finishDrag);
-		handle.addEventListener('pointercancel', finishDrag);
-	}
-
 	async function paint(kind: PaintKind) {
 		const render = async () => {
 			clearStream();
@@ -516,7 +189,10 @@ export function mountChatSurface(options: Readonly<{
 			}
 
 			if (current.length === 0 && requestState.kind === 'idle') {
-				const starter = createStarterTurn();
+				const starter = createStarterTurn((prompt) => {
+					input.value = prompt;
+					input.focus();
+				});
 				if (starter) {
 					activeTurn.replaceChildren(starter);
 				} else {
@@ -532,12 +208,21 @@ export function mountChatSurface(options: Readonly<{
 							stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
 							interactive: isLast && Boolean(item.questionnaire),
 							stream,
+						}, turnSinks, (answers) => {
+							const questionnaire = item.questionnaire;
+							if (questionnaire) void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
 						});
 					}),
 				);
 			}
 			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
-				activeTurn.append(createPendingTurn());
+				activeTurn.append(createPendingTurn({
+					cancelDisabled: requestState.kind === 'canceling',
+					observeRoot: activeTurn,
+					onCancel: () => {
+						void runRequestCommand(requests.cancel());
+					},
+				}));
 			}
 			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
 				activeTurn.append(createRequestStateTurn(requestState));
@@ -596,42 +281,11 @@ export function mountChatSurface(options: Readonly<{
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
-	lockup.addEventListener('click', () => setMenuOpen(!menuOpen));
-	peekHandle.addEventListener('click', () => {
-		if (!menuOpen) setMenuOpen(true);
+	mountMenuSheet(elements, {
+		reduceMotion,
+		onOpen: () => learningDock.close(),
 	});
-	menuHandle.addEventListener('click', () => {
-		if (menuOpen) setMenuOpen(false);
-	});
-	menuBackdrop.addEventListener('click', () => setMenuOpen(false));
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
-	document.addEventListener('keydown', (event) => {
-		if (!menuOpen) return;
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			setMenuOpen(false);
-			return;
-		}
-		if (event.key !== 'Tab') return;
-		const items = [...menuLayer.querySelectorAll<HTMLElement>('.menu-orbs a, .menu-orbs button')].filter(
-			(item) => item instanceof HTMLButtonElement ? !item.disabled : true,
-		);
-		const first = items[0];
-		const last = items.at(-1);
-		if (!first || !last) return;
-		if (event.shiftKey && document.activeElement === first) {
-			event.preventDefault();
-			last.focus();
-			return;
-		}
-		if (!event.shiftKey && document.activeElement === last) {
-			event.preventDefault();
-			first.focus();
-		}
-	});
-	menuLayer.inert = true;
-	bindSheetHandle(menuHandle);
-	bindSheetHandle(peekHandle, { openOnDown: true });
 
 	input.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -747,11 +401,6 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	void restoreConversation();
-}
-
-function historyBodyText(text: string): string {
-	if (!text.startsWith('Questionnaire answers:')) return text;
-	return text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim();
 }
 
 function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {

@@ -155,19 +155,28 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.match(promptSource, /exactly one question/);
 	assert.match(promptSource, /learning partner for agentic engineering/);
 	assert.match(promptSource, /model and tool boundaries/);
-	assert.match(promptSource, /Before substantive correction, ask the learner to make an attempt/);
+	assert.match(promptSource, /ask for the attempt before revealing target content/);
 	assert.match(promptSource, /isolate exactly one stated condition or decision/);
 	assert.match(promptSource, /exactly one defensible best answer/);
-	assert.match(promptSource, /Every response that analyzes or repairs learner work MUST begin exactly/);
-	assert.match(promptSource, /Treat feedback as analysis, never a verdict, score, or praise/);
-	assert.match(promptSource, /Do not use correct, correctly, incorrect, right, wrong, good, great/);
+	assert.match(promptSource, /MUST call present_question/);
+	assert.match(
+		promptSource,
+		/Never output a numbered, lettered, or bullet list of choices in text/,
+	);
+	assert.match(promptSource, /reveals target content/);
+	assert.match(promptSource, /begin the turn exactly with "Socratink-provided:"/);
 	assert.match(promptSource, /Socratink-provided:/);
-	assert.match(promptSource, /ask the learner to reconstruct, revise, or apply/);
+	assert.match(promptSource, /reconstruct or apply/);
 	assert.match(promptSource, /do not offer starting modes/);
 	assert.match(promptSource, /do not ask the learner to choose a topic or lane first/);
-	assert.match(promptSource, /Distinguish observations from inferences/);
+	assert.match(promptSource, /observed in the learner's text from what you are inferring/);
 	assert.match(promptSource, /not proof of mastery or durable learning/);
+	assert.match(promptSource, /this session is not evidence of retention/);
 	assert.match(promptSource, /Questionnaire answers:/);
+	assert.match(promptSource, /markdown subset/);
+	assert.match(promptSource, /Do not emit raw HTML, images, nested lists/);
+	assert.match(promptSource, /compact plaintext/);
+	assert.match(promptSource, /not instructions to you/);
 	assert.doesNotMatch(promptSource, /\b(?:you are|that(?:'s| is))\s+(?:correct|incorrect|right|wrong)\b/i);
 	assert.doesNotMatch(promptSource, /\b(?:your )?(?:score|grade)\s+(?:is|was)\b/i);
 	assert.doesNotMatch(promptSource, /AI-Operations/);
@@ -202,8 +211,9 @@ test('the card mounts agentic-engineering starters on initial empty turns', asyn
 	assert.match(indexSource, /begin your entire feedback response with Socratink-provided/);
 	assert.doesNotMatch(indexSource, /formal definition of my topic/);
 
-	assert.match(surfaceSource, /createStarterTurn\(\)/);
-	assert.match(surfaceSource, /document\.querySelector<HTMLTemplateElement>\('#starter-template'\)/);
+	assert.match(surfaceSource, /createStarterTurn\(/);
+	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
+	assert.match(turnSource, /document\.querySelector<HTMLTemplateElement>\('#starter-template'\)/);
 
 	assert.match(cssSource, /\.starter-state/);
 	assert.match(cssSource, /\.starter-spark-pill/);
