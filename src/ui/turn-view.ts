@@ -2,6 +2,8 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import { createQuestionnaire, type QuestionnaireAnswer } from './questionnaire.ts';
+import { createSteeringBar, steeringPrefix, type SteeringKind } from './steering.ts';
+import { visibleThinkingStep } from './thinking.ts';
 import { createToolList, type DisplayedToolCall } from './tool-card.ts';
 
 const exceptionalLatencyMs = 10_000;
@@ -16,7 +18,13 @@ export type ActiveTurnOptions = {
 	announce?: boolean;
 	stagger?: boolean;
 	interactive?: boolean;
+	steering?: boolean;
 	stream?: boolean;
+};
+
+export type ActiveTurnHandlers = {
+	onQuestionnaireSubmit: (answers: QuestionnaireAnswer[]) => void;
+	onSteer: (kind: SteeringKind) => void;
 };
 
 export type PendingTurnOptions = {
@@ -24,6 +32,7 @@ export type PendingTurnOptions = {
 	observeRoot: HTMLElement;
 	onCancel: () => void;
 	tools?: readonly DisplayedToolCall[];
+	reasoning?: string;
 };
 
 export function createHistoryStep(step: readonly DisplayedTurn[], index: number) {
@@ -52,9 +61,15 @@ export function createHistoryStep(step: readonly DisplayedTurn[], index: number)
 
 export function createActiveTurn(
 	item: DisplayedTurn,
-	{ announce = false, stagger = false, interactive = false, stream = false }: ActiveTurnOptions = {},
+	{
+		announce = false,
+		stagger = false,
+		interactive = false,
+		steering = false,
+		stream = false,
+	}: ActiveTurnOptions = {},
 	sinks: TurnStreamSinks,
-	onQuestionnaireSubmit: (answers: QuestionnaireAnswer[]) => void,
+	handlers: ActiveTurnHandlers,
 ) {
 	const wrap = document.createElement('div');
 	wrap.className = `turn ${item.role.toLowerCase()}`;
@@ -66,23 +81,18 @@ export function createActiveTurn(
 		const questionnaire = item.questionnaire;
 		wrap.append(
 			createQuestionnaire(questionnaire, (answers) => {
-				onQuestionnaireSubmit(answers);
+				handlers.onQuestionnaireSubmit(answers);
 			}),
 		);
 	}
-	return wrap;
-}
-
-export function createStarterTurn(onPick: (prompt: string) => void): HTMLElement | null {
-	const template = document.querySelector<HTMLTemplateElement>('#starter-template');
-	if (!template) return null;
-	const wrap = template.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
-	if (!wrap) return null;
-	for (const chip of wrap.querySelectorAll<HTMLButtonElement | HTMLElement>('.starter-spark-pill')) {
-		chip.addEventListener('click', () => {
-			const val = chip.getAttribute('data-prompt') || chip.textContent?.trim() || '';
-			if (val) onPick(val);
-		});
+	if (steering && item.role === 'Assistant' && item.text.trim()) {
+		wrap.append(
+			createSteeringBar({
+				sourceText: item.text,
+				selectionRoot: wrap,
+				onSteer: handlers.onSteer,
+			}),
+		);
 	}
 	return wrap;
 }
@@ -92,19 +102,39 @@ export function createPendingTurn({
 	observeRoot,
 	onCancel,
 	tools = [],
+	reasoning = '',
 }: PendingTurnOptions) {
 	const wrap = document.createElement('div');
 	wrap.className = 'turn pending';
 	wrap.setAttribute('role', 'status');
 	wrap.setAttribute('aria-live', 'polite');
-	const body = document.createElement('p');
-	const dot = document.createElement('span');
-	dot.className = 'pending-dot';
-	dot.setAttribute('aria-hidden', 'true');
-	const label = document.createElement('span');
-	label.className = 'pending-word';
-	label.textContent = 'Waiting for Socratink';
-	body.append(dot, label);
+	wrap.setAttribute('aria-label', 'Waiting for Socratink');
+	const stepsId = 'pending-thinking-steps';
+	const bar = document.createElement('div');
+	bar.className = 'thinking-bar';
+	const toggle = document.createElement('button');
+	toggle.className = 'thinking-toggle';
+	toggle.type = 'button';
+	toggle.setAttribute('aria-expanded', 'true');
+	toggle.setAttribute('aria-controls', stepsId);
+	toggle.setAttribute('aria-label', 'Hide what Socratink is doing');
+	const word = document.createElement('span');
+	word.className = 'thinking-shimmer';
+	word.setAttribute('aria-hidden', 'true');
+	word.textContent = 'Thinking';
+	const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	chevron.setAttribute('class', 'thinking-chevron');
+	chevron.setAttribute('viewBox', '0 0 16 16');
+	chevron.setAttribute('aria-hidden', 'true');
+	const chevronPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+	chevronPath.setAttribute('d', 'M6 3.5 11 8 6 12.5');
+	chevronPath.setAttribute('fill', 'none');
+	chevronPath.setAttribute('stroke', 'currentColor');
+	chevronPath.setAttribute('stroke-width', '1.5');
+	chevronPath.setAttribute('stroke-linecap', 'round');
+	chevronPath.setAttribute('stroke-linejoin', 'round');
+	chevron.append(chevronPath);
+	toggle.append(word, chevron);
 	const cancel = document.createElement('button');
 	cancel.className = 'request-action';
 	cancel.type = 'button';
@@ -115,11 +145,34 @@ export function createPendingTurn({
 		cancel.textContent = 'Canceling…';
 		onCancel();
 	});
-	const latency = document.createElement('p');
+	bar.append(toggle, cancel);
+	const steps = document.createElement('div');
+	steps.className = 'thinking-steps';
+	steps.id = stepsId;
+	const rail = document.createElement('span');
+	rail.className = 'thinking-steps-bar';
+	rail.setAttribute('aria-hidden', 'true');
+	const list = document.createElement('ul');
+	list.className = 'thinking-steps-list';
+	const working = document.createElement('li');
+	working.className = 'thinking-step-copy';
+	working.textContent = visibleThinkingStep(reasoning);
+	const latency = document.createElement('li');
 	latency.className = 'pending-latency';
 	latency.textContent = 'Taking longer than usual.';
 	latency.hidden = true;
-	wrap.append(body, cancel, latency);
+	list.append(working, latency);
+	steps.append(rail, list);
+	toggle.addEventListener('click', () => {
+		const expanded = toggle.getAttribute('aria-expanded') === 'true';
+		toggle.setAttribute('aria-expanded', String(!expanded));
+		toggle.setAttribute(
+			'aria-label',
+			expanded ? 'Show what Socratink is doing' : 'Hide what Socratink is doing',
+		);
+		steps.hidden = expanded;
+	});
+	wrap.append(bar, steps);
 	if (tools.length) wrap.append(createToolList(tools));
 	const timer = window.setTimeout(() => {
 		if (wrap.isConnected) latency.hidden = false;
@@ -201,10 +254,15 @@ function fillTurnBody(
 
 function historyBodyText(item: DisplayedTurn): string {
 	const text = item.text;
-	const body = text.startsWith('Questionnaire answers:')
-		? text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim()
-		: text;
-	const compact = compactMarkdownText(body);
+	if (text.startsWith('Questionnaire answers:')) {
+		return compactMarkdownText(
+			text.slice('Questionnaire answers:'.length).replace(/^- /gm, '').trim(),
+		);
+	}
+	if (text.startsWith(steeringPrefix)) {
+		return compactMarkdownText(text.slice(steeringPrefix.length).trim());
+	}
+	const compact = compactMarkdownText(text);
 	if (compact) return compact;
 	if (item.tools?.length) return item.tools.map((call) => call.name).join(', ');
 	return '';

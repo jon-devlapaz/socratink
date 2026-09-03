@@ -26,19 +26,25 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
+import { formatSteeringMessage } from './steering.ts';
 import {
 	applyToolStreamEvent,
 	createToolCard,
 	createToolList,
 	type DisplayedToolCall,
 } from './tool-card.ts';
+import {
+	applyReasoningStreamEvent,
+	createLiveReasoning,
+	resetLiveReasoning,
+	visibleThinkingStep,
+} from './thinking.ts';
 import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
 import {
 	createActiveTurn,
 	createHistoryStep,
 	createPendingTurn,
-	createStarterTurn,
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
@@ -111,8 +117,13 @@ export function mountChatSurface(options: Readonly<{
 	});
 	const conversation = openChatConversation();
 	const liveTools: DisplayedToolCall[] = [];
+	const liveReasoning = createLiveReasoning();
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
+			if (applyReasoningStreamEvent(liveReasoning, event)) {
+				syncLiveThinking();
+				return;
+			}
 			if (!applyToolStreamEvent(liveTools, event)) return;
 			syncLiveTools();
 		},
@@ -199,38 +210,35 @@ export function mountChatSurface(options: Readonly<{
 				activeTurn.classList.remove('is-exiting');
 			}
 
-			if (current.length === 0 && requestState.kind === 'idle') {
-				const starter = createStarterTurn((prompt) => {
-					input.value = prompt;
-					input.focus();
-				});
-				if (starter) {
-					activeTurn.replaceChildren(starter);
-				} else {
-					activeTurn.replaceChildren();
-				}
-			} else {
-				activeTurn.replaceChildren(
-					...current.map((item, index) => {
-						const isLast = index === current.length - 1;
-						const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
-						return createActiveTurn(item, {
-							announce: kind === 'hold' && isLast,
-							stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
-							interactive: isLast && Boolean(item.questionnaire),
-							stream,
-						}, turnSinks, (answers) => {
+			activeTurn.replaceChildren(
+				...current.map((item, index) => {
+					const isLast = index === current.length - 1;
+					const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
+					return createActiveTurn(item, {
+						announce: kind === 'hold' && isLast,
+						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
+						interactive: isLast && Boolean(item.questionnaire),
+						steering: isLast && item.role === 'Assistant' && requestState.kind === 'idle',
+						stream,
+					}, turnSinks, {
+						onQuestionnaireSubmit: (answers) => {
 							const questionnaire = item.questionnaire;
-							if (questionnaire) void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
-						});
-					}),
-				);
-			}
+							if (questionnaire) {
+								void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
+							}
+						},
+						onSteer: (steering) => {
+							void sendMessage(formatSteeringMessage(steering));
+						},
+					});
+				}),
+			);
 			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
 				activeTurn.append(createPendingTurn({
 					cancelDisabled: requestState.kind === 'canceling',
 					observeRoot: activeTurn,
 					tools: liveTools,
+					reasoning: liveReasoning.text,
 					onCancel: () => {
 						void runRequestCommand(requests.cancel());
 					},
@@ -241,6 +249,9 @@ export function mountChatSurface(options: Readonly<{
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
+			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
+			document.body.classList.toggle('conversation-empty', nothingSaidYet);
+			input.placeholder = nothingSaidYet ? 'What are you working on?' : '';
 			document.body.classList.toggle(
 				'questionnaire-active',
 				Boolean(current.at(-1)?.questionnaire && requestState.kind === 'idle'),
@@ -296,11 +307,9 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function sendMessage(text: string) {
-		if (requests.state.kind !== 'idle') return;
-		turns = [...turns, { role: 'You', text }];
-		input.value = '';
-		await startRequest(text);
+	function syncLiveThinking() {
+		const copy = activeTurn.querySelector('.turn.pending .thinking-step-copy');
+		if (copy) copy.textContent = visibleThinkingStep(liveReasoning.text);
 	}
 
 	function syncLiveTools() {
@@ -318,8 +327,16 @@ export function mountChatSurface(options: Readonly<{
 		host.replaceChildren(...liveTools.map(createToolCard));
 	}
 
+	async function sendMessage(text: string) {
+		if (requests.state.kind !== 'idle') return;
+		turns = [...turns, { role: 'You', text }];
+		input.value = '';
+		await startRequest(text);
+	}
+
 	async function startRequest(text: string) {
 		liveTools.length = 0;
+		resetLiveReasoning(liveReasoning);
 		const result = requests.start(text);
 		requestState = requests.state;
 		applyRequestControls(requestState);
@@ -332,6 +349,7 @@ export function mountChatSurface(options: Readonly<{
 		const route = modelRouteLabel(reply.metadata);
 		const tools = liveTools.map((call) => ({ ...call }));
 		liveTools.length = 0;
+		resetLiveReasoning(liveReasoning);
 		turns = [
 			...turns,
 			{

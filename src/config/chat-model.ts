@@ -23,7 +23,8 @@ export type ChatModel = {
 };
 
 const localChatModelLimits = {
-	reasoning: false,
+	// Lets Flue keep thinking blocks. Effort is sent only on the Vercel gateway URL.
+	reasoning: true,
 	contextWindow: 1_048_576,
 	maxTokens: 131_100,
 } as const;
