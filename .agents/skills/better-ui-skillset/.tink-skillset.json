@@ -1,0 +1,16 @@
+{
+  "source": "https://github.com/jakubkrehel/skills.git",
+  "revision": "267330e1adfc66a718fb65fa6918c1f06d0a689e",
+  "sourceRoot": "skills",
+  "members": [
+    "better-accessibility",
+    "better-colors",
+    "better-interface",
+    "better-layout",
+    "better-typography",
+    "better-ui",
+    "better-writing"
+  ],
+  "digestVersion": 2,
+  "digest": "6f73e12d3c96f04702b384e1fb562e180a3efe4f3d253040a948c075109f655b"
+}

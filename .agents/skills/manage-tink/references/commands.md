@@ -1,7 +1,7 @@
 # Tink commands
 
-Load when choosing or running a mutation (step 2). Use the `tink skill …`
-form for add, list, read, check, refresh, and remove.
+Load for Step 2 mutation selection. Prefer the `tink skill …` form for add,
+list, read, check, refresh, and remove.
 
 | Intent | Command |
 |---|---|
