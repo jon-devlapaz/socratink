@@ -25,12 +25,13 @@ import { modelRouteLabel } from '../config/model-route.ts';
 import { initChatAutoModel } from './chat-auto.ts';
 import {
 	formatQuestionnaireAnswers,
-	isQuestionnaireTool,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
+import { isRevealTool } from '../reveal.ts';
 import { formatSteeringMessage } from './steering.ts';
 import {
 	applyToolStreamEvent,
+	visibleCardTools,
 	type DisplayedToolCall,
 } from './tool-card.ts';
 import {
@@ -117,6 +118,7 @@ export function mountChatSurface(options: Readonly<{
 	});
 	const conversation = openChatConversation();
 	const liveTools: DisplayedToolCall[] = [];
+	const quietToolIds = new Set<string>();
 	const liveReasoning = createLiveReasoning();
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
@@ -124,6 +126,7 @@ export function mountChatSurface(options: Readonly<{
 				syncLiveThinking();
 				return;
 			}
+			if (isQuietToolStreamEvent(event, quietToolIds)) return;
 			if (!applyToolStreamEvent(liveTools, event)) return;
 			syncLiveTools();
 		},
@@ -330,6 +333,7 @@ export function mountChatSurface(options: Readonly<{
 
 	async function startRequest(text: string) {
 		liveTools.length = 0;
+		quietToolIds.clear();
 		resetLiveReasoning(liveReasoning);
 		releasePending();
 		const result = requests.start(text);
@@ -342,10 +346,9 @@ export function mountChatSurface(options: Readonly<{
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
 		const route = modelRouteLabel(reply.metadata);
-		const tools = liveTools
-			.filter((call) => !(questionnaire && isQuestionnaireTool(call.name)))
-			.map((call) => ({ ...call }));
+		const tools = visibleCardTools(liveTools, { questionnaire });
 		liveTools.length = 0;
+		quietToolIds.clear();
 		resetLiveReasoning(liveReasoning);
 		turns = [
 			...turns,
@@ -444,6 +447,17 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	void restoreConversation();
+}
+
+function isQuietToolStreamEvent(
+	event: { type: string; toolName?: string; toolCallId?: string },
+	quietToolIds: Set<string>,
+): boolean {
+	if (event.type === 'tool-input' && event.toolName && isRevealTool(event.toolName)) {
+		if (event.toolCallId) quietToolIds.add(event.toolCallId);
+		return true;
+	}
+	return Boolean(event.toolCallId && quietToolIds.has(event.toolCallId));
 }
 
 function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {

@@ -1,4 +1,5 @@
 import type { ConversationStreamChunk, FlueConversationPart } from '@flue/sdk';
+import { isRevealTool } from '../reveal.ts';
 import { isQuestionnaireTool } from './questionnaire.ts';
 
 const outputLimit = 8_000;
@@ -20,6 +21,17 @@ export function toolsFromParts(parts: readonly FlueConversationPart[]): Displaye
 		tools.push(displayedToolFromPart(part));
 	}
 	return tools;
+}
+
+export function visibleCardTools(
+	calls: readonly DisplayedToolCall[],
+	options: { readonly questionnaire?: unknown } = {},
+): DisplayedToolCall[] {
+	return calls.filter((call) => {
+		if (isRevealTool(call.name)) return false;
+		if (options.questionnaire && isQuestionnaireTool(call.name)) return false;
+		return true;
+	});
 }
 
 export function applyToolStreamEvent(
@@ -120,6 +132,7 @@ export function createToolCard(call: DisplayedToolCall): HTMLElement {
 
 export function visibleToolOutput(call: DisplayedToolCall): string | undefined {
 	if (!call.output) return undefined;
+	if (isRevealTool(call.name)) return undefined;
 	if (isQuestionnaireTool(call.name) && call.state === 'done') return undefined;
 	return call.output;
 }

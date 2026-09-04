@@ -92,6 +92,49 @@ test('projects assistant tool calls from dynamic-tool parts', () => {
 	]);
 });
 
+test('keeps mark_reveal off the card and skips a reveal-only empty turn', () => {
+	const reveal = { kind: 'worked_example', target: 'Recover an admitted request' };
+	assert.deepEqual(
+		visibleTurnsFromHistory({
+			settlements: [],
+			messages: [
+				{
+					display: 'visible',
+					role: 'assistant',
+					parts: [
+						{ type: 'text', text: 'A stable submission identifier is evidence.' },
+						{
+							type: 'dynamic-tool',
+							toolName: 'mark_reveal',
+							toolCallId: 'call_reveal',
+							state: 'output-available',
+							input: reveal,
+							output: 'Reveal recorded.',
+						},
+						{ type: 'data-reveal', data: reveal },
+					],
+				},
+				{
+					display: 'visible',
+					role: 'assistant',
+					parts: [
+						{
+							type: 'dynamic-tool',
+							toolName: 'mark_reveal',
+							toolCallId: 'call_quiet',
+							state: 'output-available',
+							input: { kind: 'hint' },
+							output: 'Reveal recorded.',
+						},
+						{ type: 'data-reveal', data: { kind: 'hint' } },
+					],
+				},
+			],
+		}),
+		[{ role: 'Assistant', text: 'A stable submission identifier is evidence.' }],
+	);
+});
+
 test('projects questionnaire and steering learner turns for trail copy', () => {
 	assert.deepEqual(
 		displayedLearnerTurn('Questionnaire answers:\n- Path: Worked example'),

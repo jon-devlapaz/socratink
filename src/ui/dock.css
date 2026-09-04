@@ -30,6 +30,15 @@ body.questionnaire-active .alive-cluster {
 	transition-duration: 400ms;
 }
 
+body.conversation-empty .alive-cluster {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: var(--orb-size);
+	translate: -50% -50%;
+	padding-bottom: 0;
+}
+
 .alive-anchor {
 	position: relative;
 	width: var(--orb-size);

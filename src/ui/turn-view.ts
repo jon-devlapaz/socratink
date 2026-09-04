@@ -141,13 +141,16 @@ export function createPendingTurn({
 	chevron.append(chevronPath);
 	toggle.append(word, chevron);
 	const cancel = document.createElement('button');
-	cancel.className = 'request-action';
+	cancel.className = 'thinking-cancel';
 	cancel.type = 'button';
-	cancel.disabled = cancelDisabled;
-	cancel.textContent = cancel.disabled ? 'Canceling…' : 'Cancel';
+	cancel.append(createStopIcon());
+	const setCanceling = (disabled: boolean) => {
+		cancel.disabled = disabled;
+		cancel.setAttribute('aria-label', disabled ? 'Canceling' : 'Cancel');
+	};
+	setCanceling(cancelDisabled);
 	cancel.addEventListener('click', () => {
-		cancel.disabled = true;
-		cancel.textContent = 'Canceling…';
+		setCanceling(true);
 		onCancel();
 	});
 	bar.append(toggle, cancel);
@@ -204,10 +207,25 @@ export function createPendingTurn({
 			host.replaceChildren(...calls.map(createToolCard));
 		},
 		setCancelDisabled(disabled) {
-			cancel.disabled = disabled;
-			cancel.textContent = disabled ? 'Canceling…' : 'Cancel';
+			setCanceling(disabled);
 		},
 	};
+}
+
+function createStopIcon() {
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svg.setAttribute('class', 'thinking-cancel-icon');
+	svg.setAttribute('viewBox', '0 0 16 16');
+	svg.setAttribute('aria-hidden', 'true');
+	const mark = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+	mark.setAttribute('x', '5');
+	mark.setAttribute('y', '5');
+	mark.setAttribute('width', '6');
+	mark.setAttribute('height', '6');
+	mark.setAttribute('rx', '1');
+	mark.setAttribute('fill', 'currentColor');
+	svg.append(mark);
+	return svg;
 }
 
 function appendTurnCopy(

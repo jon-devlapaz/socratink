@@ -481,8 +481,52 @@ html[data-type-size='small'] .active-node {
 	gap: 0.75rem;
 }
 
-.thinking-bar .request-action {
-	margin-top: 0;
+.thinking-bar .thinking-cancel {
+	margin-left: auto;
+}
+
+.thinking-cancel {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	color: var(--quiet);
+	background: none;
+	cursor: pointer;
+	transition-property: color, background-color, scale, box-shadow;
+	transition-duration: 150ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.thinking-cancel-icon {
+	display: block;
+	width: 1rem;
+	height: 1rem;
+}
+
+.thinking-cancel:hover,
+.thinking-cancel:focus-visible {
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.thinking-cancel:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.thinking-cancel:active:not(:disabled) {
+	scale: 0.96;
+}
+
+.thinking-cancel:disabled {
+	cursor: default;
+	opacity: 0.6;
 }
 
 .thinking-toggle {
@@ -666,6 +710,11 @@ html[data-type-size='small'] .active-node {
 		min-width: 44px;
 		min-height: 44px;
 	}
+
+	.thinking-cancel {
+		width: 44px;
+		height: 44px;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -693,7 +742,8 @@ html[data-type-size='small'] .active-node {
 	}
 
 	.thinking-toggle,
-	.thinking-chevron {
+	.thinking-chevron,
+	.thinking-cancel {
 		transition: none;
 	}
 
@@ -704,7 +754,8 @@ html[data-type-size='small'] .active-node {
 	}
 
 	.jump-latest:active,
-	.trail-toggle:active .trail-mark {
+	.trail-toggle:active .trail-mark,
+	.thinking-cancel:active:not(:disabled) {
 		scale: none;
 	}
 }

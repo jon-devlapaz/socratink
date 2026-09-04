@@ -3,12 +3,11 @@ import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import {
-	isQuestionnaireTool,
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
 } from './questionnaire.ts';
 import { steeringPrefix } from './steering.ts';
-import { toolsFromParts, type DisplayedToolCall } from './tool-card.ts';
+import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-card.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
 export type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
@@ -78,14 +77,12 @@ export function visibleTurnsFromHistory(
 		const modelRoute =
 			message.role === 'assistant' ? modelRouteLabel(message.metadata) : undefined;
 		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
-		if (!text && !questionnaire && tools.length === 0) continue;
+		const cardTools = visibleCardTools(tools, { questionnaire });
+		if (!text && !questionnaire && cardTools.length === 0) continue;
 		if (message.role === 'user') {
 			visible.push(displayedLearnerTurn(text));
 			continue;
 		}
-		const cardTools = questionnaire
-			? tools.filter((call) => !isQuestionnaireTool(call.name))
-			: tools;
 		visible.push({
 			role: 'Assistant',
 			text,

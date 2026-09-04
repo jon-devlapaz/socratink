@@ -5,6 +5,9 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createFlueClient } from '@flue/sdk';
+import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
+import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
+import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 
 const initialMessage =
@@ -21,58 +24,36 @@ const revisedAnswer = `Questionnaire answers:\n- What is your revised recovery a
 const assistanceText =
 	'A stable submission identifier is evidence that work may continue after the response stream is lost. Rechecking that submission preserves one admission, while resending can create duplicate work. This information was supplied by Socratink.';
 const finalSummary = `Your baseline decision was ${baselineChoice}. Socratink supplied the distinction between losing local observation and losing admitted work. Your revised decision was ${revisedChoice}. This is evidence from this session, not proof of mastery or durable learning.`;
-const baselineQuestionnaire = {
-	kind: 'question',
-	submitLabel: 'Submit initial reasoning',
-	items: [
-		{
-			name: 'baseline_recovery',
-			prompt: 'What should the client do first when admission is uncertain?',
-			required: true,
-			multiple: false,
-			choices: [
-				{ value: 'recheck-submission', label: 'Recheck the admitted request by its stable submission identifier' },
-				{ value: 'resend-message', label: 'Send the same message again' },
-				{ value: 'new-conversation', label: 'Start a new conversation' },
-				{ value: 'assume-failed', label: 'Assume the request failed' },
-			],
-			input: { label: 'Your reasoning' },
-		},
+const unboxedBaseline =
+	'Which recovery action should the client take first?\n\n1. Recheck the admitted request by its stable submission identifier\n2. Send the same message again\n3. Start a new conversation\n4. Assume the request failed';
+const baselinePresent = {
+	prompt: 'What should the client do first when admission is uncertain?',
+	choices: [
+		'Recheck the admitted request by its stable submission identifier',
+		'Send the same message again',
+		'Start a new conversation',
+		'Assume the request failed',
 	],
+	reasoning: true,
 };
-const comparisonQuestionnaire = {
-	kind: 'question',
-	submitLabel: 'Submit observation',
-	items: [
-		{
-			name: 'recovery_observation',
-			prompt: 'Which observation best distinguishes safe recovery from duplicate work?',
-			required: true,
-			multiple: false,
-			choices: [
-				{ value: 'submission-id', label: 'Whether the server issued a stable submission identifier' },
-				{ value: 'loading-indicator', label: 'Whether the local loading indicator stopped' },
-				{ value: 'message-length', label: 'How long the learner message is' },
-				{ value: 'model-name', label: 'Which model was selected' },
-			],
-			input: { label: 'Why this observation matters' },
-		},
+const comparisonPresent = {
+	prompt: 'Which observation best distinguishes safe recovery from duplicate work?',
+	choices: [
+		'Whether the server issued a stable submission identifier',
+		'Whether the local loading indicator stopped',
+		'How long the learner message is',
+		'Which model was selected',
 	],
+	reasoning: true,
 };
-const revisedQuestionnaire = {
-	kind: 'question',
-	submitLabel: 'Submit revised reasoning',
-	items: [
-		{
-			name: 'revised_recovery',
-			prompt: 'What is your revised recovery action?',
-			required: true,
-			multiple: false,
-			choices: baselineQuestionnaire.items[0].choices,
-			input: { label: 'Your reasoning' },
-		},
-	],
+const revisedPresent = {
+	prompt: 'What is your revised recovery action?',
+	choices: baselinePresent.choices,
+	reasoning: true,
 };
+const baselineQuestionnaire = questionnaireFromPresentQuestion(baselinePresent);
+const comparisonQuestionnaire = questionnaireFromPresentQuestion(comparisonPresent);
+const revisedQuestionnaire = questionnaireFromPresentQuestion(revisedPresent);
 const sockets = new Set();
 
 function listen(server) {
@@ -142,59 +123,67 @@ function questionnaireParts(message) {
 		.map((part) => part.data);
 }
 
-function assertProviderReceived(messages, expected) {
-	assert.ok(
-		JSON.stringify(messages).includes(JSON.stringify(expected)),
-		`provider should receive ${expected}`,
-	);
+function revealParts(message) {
+	return message.parts.filter((part) => part.type === 'data-reveal').map((part) => part.data);
 }
 
-function scriptedCompletionDeltas({ text, questionnaire, toolCallId, finishReason }) {
+function assertProviderReceived(messages, expected) {
+	const serialized = JSON.stringify(messages);
+	const escaped = JSON.stringify(expected).slice(1, -1);
+	assert.ok(serialized.includes(escaped), `provider should receive ${expected}`);
+}
+
+function scriptedCompletionDeltas({ text, tools, finishReason }) {
 	return [
 		{ index: 0, delta: { role: 'assistant' }, finish_reason: null },
 		...(text ? [{ index: 0, delta: { content: text }, finish_reason: null }] : []),
-		...(questionnaire
-			? [
+		...(tools ?? []).map((tool, index) => ({
+			index: 0,
+			delta: {
+				tool_calls: [
 					{
-						index: 0,
-						delta: {
-							tool_calls: [
-								{
-									index: 0,
-									id: toolCallId,
-									type: 'function',
-									function: { name: 'present_question', arguments: JSON.stringify(questionnaire) },
-								},
-							],
-						},
-						finish_reason: null,
+						index,
+						id: tool.id,
+						type: 'function',
+						function: { name: tool.name, arguments: JSON.stringify(tool.arguments) },
 					},
-				]
-			: []),
+				],
+			},
+			finish_reason: null,
+		})),
 		{ index: 0, delta: {}, finish_reason: finishReason },
 	];
+}
+
+function presentQuestionCall(id, input) {
+	return { id, name: 'present_question', arguments: input };
 }
 
 const scriptedProviderTurns = [
 	{
 		expectedMessages: [initialMessage],
-		text:
-			'The response stream disappeared, but the client does not yet know whether the server admitted the agent request.',
-		questionnaire: baselineQuestionnaire,
-		toolCallId: 'call_baseline',
+		text: unboxedBaseline,
+		finishReason: 'stop',
+	},
+	{
+		expectedMessages: [initialMessage, presentQuestionRetryBodies.unboxed],
+		tools: [presentQuestionCall('call_baseline', baselinePresent)],
 		finishReason: 'tool_calls',
 	},
 	{
 		expectedMessages: [baselineAnswer],
-		questionnaire: comparisonQuestionnaire,
-		toolCallId: 'call_comparison',
+		tools: [presentQuestionCall('call_comparison', comparisonPresent)],
 		finishReason: 'tool_calls',
 	},
 	{
 		expectedMessages: [baselineAnswer, comparisonAnswer],
 		text: assistanceText,
-		questionnaire: revisedQuestionnaire,
-		toolCallId: 'call_revision',
+		tools: [{ id: 'call_reveal', name: 'mark_reveal', arguments: revealExample }],
+		finishReason: 'tool_calls',
+	},
+	{
+		expectedMessages: [assistanceText],
+		tools: [presentQuestionCall('call_revision', revisedPresent)],
 		finishReason: 'tool_calls',
 	},
 	{
@@ -216,9 +205,10 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.model, 'auto');
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
+	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the completed loop should use exactly four provider calls');
+	assert.ok(turn, 'the completed loop should use exactly six provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -316,12 +306,13 @@ try {
 	);
 	assert.equal(revision.text, assistanceText);
 	questionnaireFromReply(revision, revisedQuestionnaire, 'revision');
+	assert.deepEqual(revision.data?.reveal?.at(-1), revealExample, 'revision should record reveal provenance');
 
 	const complete = await client.read(
 		await client.send({ message: { kind: 'user', body: revisedAnswer } }),
 	);
 	assert.equal(complete.text, finalSummary);
-	assert.equal(providerTurns, 4, 'the completed loop should make exactly four provider calls');
+	assert.equal(providerTurns, 6, 'the completed loop should make exactly six provider calls');
 
 	await stopApp(appProcess);
 	appProcess = startApp(appPort, providerPort);
@@ -333,11 +324,7 @@ try {
 		visibleTurns.map(({ role, text }) => ({ role, text })),
 		[
 			{ role: 'You', text: initialMessage },
-			{
-				role: 'Assistant',
-				text:
-					'The response stream disappeared, but the client does not yet know whether the server admitted the agent request.',
-			},
+			{ role: 'Assistant', text: unboxedBaseline },
 			{ role: 'You', text: baselineAnswer },
 			{ role: 'Assistant', text: '' },
 			{ role: 'You', text: comparisonAnswer },
@@ -345,20 +332,27 @@ try {
 			{ role: 'You', text: revisedAnswer },
 			{ role: 'Assistant', text: finalSummary },
 		],
-		'completed loop should restore the eight learner-visible turns in order',
+		'completed loop should restore the learner-visible turns in order',
 	);
+	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'Flue cannot unsay the unboxed list');
 	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
 	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);
+	assert.equal(visibleTurns[5]?.tools, undefined, 'mark_reveal is not card chrome');
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
 		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
 		'completed loop should restore all questionnaire data parts',
 	);
+	assert.deepEqual(
+		visibleMessages.flatMap(revealParts),
+		[revealExample],
+		'completed loop should restore reveal provenance on the assistance turn',
+	);
 
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, ${assetPaths.length} assets, four-turn agentic-engineering learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);

@@ -36,8 +36,8 @@ type SpherePalette = Readonly<{
 	lightB: { color: string; intensity: number };
 }>;
 
-// Light: an ink sphere with a warm rim on cream. Dark inverts that: a cream
-// body on dark paper, shaded with warm light instead of a grey fill.
+// Light: an ink sphere with a warm rim on cream. Dark stays in the paper/ink
+// family: a lifted warm stone with a muted ink rim, not an inverted cream lamp.
 export const spherePalettes: Readonly<Record<'light' | 'dark', SpherePalette>> = {
 	light: {
 		base: '#000000',
@@ -47,11 +47,11 @@ export const spherePalettes: Readonly<Record<'light' | 'dark', SpherePalette>> =
 		lightB: { color: '#d2c6b2', intensity: 0.4 },
 	},
 	dark: {
-		base: '#f4eee3',
-		blackCore: 0.12,
-		hotRim: 0.2,
-		lightA: { color: '#c9bba6', intensity: 1.35 },
-		lightB: { color: '#fffcf0', intensity: 0.9 },
+		base: '#3d3a36',
+		blackCore: 0.32,
+		hotRim: 0.08,
+		lightA: { color: '#6f6e69', intensity: 1.15 },
+		lightB: { color: '#cecdc3', intensity: 0.42 },
 	},
 };
 
@@ -131,16 +131,16 @@ export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController 
 			uSubdivision: { value: new THREE.Vector2(192, 192) },
 			uOffset: { value: new THREE.Vector3() },
 			uDistortionFrequency: { value: 1.5 },
-			uDistortionStrength: { value: 0.65 },
+			uDistortionStrength: { value: 0 },
 			uDisplacementFrequency: { value: 2.12 },
-			uDisplacementStrength: { value: D2.displacementStrength },
+			uDisplacementStrength: { value: 0 },
 			uFresnelOffset: { value: D2.fresnel.offset },
 			uFresnelMultiplier: { value: D2.fresnel.multiplier },
 			uFresnelPower: { value: D2.fresnel.power },
 			uBlackCore: { value: initialPalette.blackCore },
 			uHotRim: { value: initialPalette.hotRim },
 			uBaseColor: { value: new THREE.Color(initialPalette.base) },
-			uTime: { value: Math.random() * 10 },
+			uTime: { value: 0 },
 		},
 	});
 	const mesh = new THREE.Mesh(geometry, material);
@@ -199,7 +199,7 @@ export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController 
 	resize();
 
 	let frame = 0;
-	let previous = performance.now();
+	let previous: number | undefined;
 	const displacement = material.uniforms.uDisplacementStrength!;
 	const distortion = material.uniforms.uDistortionStrength!;
 	const lightAColor = material.uniforms.uLightAColor!;
@@ -214,9 +214,13 @@ export function mountOrganicSphere(mount: HTMLElement): OrganicSphereController 
 	let attention = 0;
 	const offsetDrift = new THREE.Vector3();
 	const render = (now: number) => {
-		const dt = Math.min(now - previous, 60) / 1000;
+		// First paint is a centered rest sphere; motion eases in on later frames.
+		const dt = previous === undefined ? 0 : Math.min(now - previous, 60) / 1000;
 		previous = now;
-		const still = mount.classList.contains('is-still');
+		// Empty arrival keeps a centered rest sphere; the cursor can also freeze it.
+		const still =
+			mount.classList.contains('is-still') ||
+			document.body.classList.contains('conversation-empty');
 		const voiceEase = 1 - Math.exp(-dt * (targetVoiceLevel > voiceLevel ? 18 : 5));
 		voiceLevel += (targetVoiceLevel - voiceLevel) * voiceEase;
 		attention += (pointer.attention - attention) * (1 - Math.exp(-dt * 6));

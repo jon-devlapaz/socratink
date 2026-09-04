@@ -24,16 +24,9 @@ const runId = randomUUID();
 const prompt = `Synthetic observability preflight ${runId}. Present the questionnaire.`;
 const expectedReply = `Synthetic Braintrust response for ${runId}.`;
 const questionnaire = {
-	kind: 'quiz',
-	submitLabel: 'Continue',
-	items: [
-		{
-			name: 'path',
-			prompt: 'How should we begin?',
-			choices: [{ value: 'trace', label: 'Example trace' }],
-			input: { label: 'Why?' },
-		},
-	],
+	prompt: 'How should we begin?',
+	choices: ['Example trace', 'A puzzle'],
+	reasoning: true,
 };
 const selectedLabel = 'Example trace';
 const explanation = 'I want a concrete example.';
@@ -97,6 +90,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.messages).includes(runId));
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
+	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
 
 	providerTurns += 1;
 	if (providerTurns === 1) {
@@ -155,9 +149,9 @@ try {
 		await client.send({ message: { kind: 'user', body: prompt } }),
 	);
 	assert.ok(Array.isArray(presented.data?.questionnaire));
-	assert.equal(presented.data.questionnaire.at(-1)?.kind, questionnaire.kind);
-	assert.equal(presented.data.questionnaire.at(-1)?.items?.length, questionnaire.items.length);
-	assert.equal(presented.data.questionnaire.at(-1)?.items?.[0]?.prompt, questionnaire.items[0].prompt);
+	assert.equal(presented.data.questionnaire.at(-1)?.kind, 'question');
+	assert.equal(presented.data.questionnaire.at(-1)?.items?.length, 1);
+	assert.equal(presented.data.questionnaire.at(-1)?.items?.[0]?.prompt, questionnaire.prompt);
 
 	const answered = await client.read(
 		await client.send({ message: { kind: 'user', body: answers } }),

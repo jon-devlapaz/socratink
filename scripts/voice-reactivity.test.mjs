@@ -44,12 +44,13 @@ test('attention wakes the sphere a little; an open dock calms it; only voice mov
 	assert.deepEqual(sphereMotionForState({ voice: 0, attention: 3, open: false }), noticed);
 });
 
-test('the dark palette is a cream body with a bright rim on dark paper', () => {
-	assert.ok(spherePalettes.dark.blackCore < spherePalettes.light.blackCore);
-	assert.ok(spherePalettes.dark.hotRim > spherePalettes.light.hotRim);
-	assert.ok(spherePalettes.dark.lightB.intensity > spherePalettes.light.lightB.intensity);
+test('the dark palette is a warm stone body on dark paper, not a cream lamp', () => {
 	assert.equal(spherePalettes.light.base, '#000000');
-	assert.equal(spherePalettes.dark.base, '#f4eee3');
+	assert.equal(spherePalettes.dark.base, '#3d3a36');
+	assert.equal(spherePalettes.dark.lightB.color, '#cecdc3');
+	assert.ok(spherePalettes.dark.blackCore < spherePalettes.light.blackCore);
+	assert.ok(spherePalettes.dark.hotRim < spherePalettes.light.hotRim);
+	assert.ok(spherePalettes.dark.lightB.intensity < 0.7);
 });
 
 test('starts local analysis and releases every audio resource on stop', async () => {

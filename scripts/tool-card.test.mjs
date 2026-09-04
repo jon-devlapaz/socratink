@@ -6,6 +6,7 @@ import {
 	formatToolOutput,
 	toolStateLabel,
 	toolsFromParts,
+	visibleCardTools,
 	visibleToolOutput,
 } from '../src/ui/tool-card.ts';
 
@@ -162,6 +163,40 @@ test('keeps present_question output off the card once the form is up', () => {
 		}),
 		'timeout',
 	);
+	assert.equal(
+		visibleToolOutput({
+			id: 'call_4',
+			name: 'mark_reveal',
+			state: 'done',
+			output: 'Reveal recorded.',
+		}),
+		undefined,
+	);
+});
+
+test('keeps mark_reveal off the card, and present_question once the form is up', () => {
+	const reveal = {
+		id: 'call_reveal',
+		name: 'mark_reveal',
+		state: 'done',
+		output: 'Reveal recorded.',
+	};
+	const question = {
+		id: 'call_q',
+		name: 'present_question',
+		state: 'done',
+		output: 'Question presented on the card.',
+	};
+	const trace = {
+		id: 'call_trace',
+		name: 'trace_code',
+		state: 'done',
+		output: 'ok',
+	};
+	assert.deepEqual(visibleCardTools([reveal, question, trace]), [question, trace]);
+	assert.deepEqual(visibleCardTools([reveal, question, trace], { questionnaire: { kind: 'question' } }), [
+		trace,
+	]);
 });
 
 test('the live card mounts tool calls from history parts and admission stream events', async () => {
@@ -173,10 +208,12 @@ test('the live card mounts tool calls from history parts and admission stream ev
 		'utf8',
 	);
 	assert.match(turnsSource, /toolsFromParts\(message\.parts\)/);
-	assert.match(turnsSource, /isQuestionnaireTool\(call\.name\)/);
+	assert.match(turnsSource, /visibleCardTools\(/);
 	assert.match(turnSource, /createToolList\(item\.tools\)/);
 	assert.match(turnSource, /createToolList\(tools\)/);
 	assert.match(surfaceSource, /applyToolStreamEvent\(liveTools, event\)/);
+	assert.match(surfaceSource, /isQuietToolStreamEvent\(event, quietToolIds\)/);
+	assert.match(surfaceSource, /visibleCardTools\(liveTools/);
 	assert.match(surfaceSource, /\.\.\.\(tools\.length \? \{ tools \} : \{\}\)/);
 	assert.match(conversationSource, /onEvent\?: \(event: ConversationStreamChunk\) => void/);
 	assert.match(conversationSource, /\.\.\.\(onEvent \? \{ onEvent \} : \{\}\)/);

@@ -149,15 +149,21 @@ test('the card mounts questionnaires from turn data, not a post-paint inject', a
 test('the agent mounts the Flue-native questionnaire writer and presentation tool', async () => {
 	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(promptSource, /useDataWriter\('questionnaire'/);
+	assert.match(promptSource, /useDataWriter\(revealDataName/);
 	assert.match(promptSource, /schema: QuestionnaireSchema/);
-	assert.match(promptSource, /name: 'present_question'/);
-	assert.match(promptSource, /input: QuestionnaireSchema/);
-	assert.match(promptSource, /exactly one question/);
+	assert.match(promptSource, /schema: RevealSchema/);
+	assert.match(promptSource, /name: presentQuestionToolName/);
+	assert.match(promptSource, /name: revealToolName/);
+	assert.match(promptSource, /input: PresentQuestionInputSchema/);
+	assert.match(promptSource, /input: RevealSchema/);
+	assert.match(promptSource, /useAgentFinish/);
+	assert.match(promptSource, /two to eight choices/);
 	assert.match(promptSource, /learning partner/);
 	assert.match(promptSource, /ask for the attempt before revealing target content/);
 	assert.match(promptSource, /isolate exactly one stated condition or decision/);
 	assert.match(promptSource, /exactly one defensible best answer/);
 	assert.match(promptSource, /MUST call present_question/);
+	assert.match(promptSource, /call mark_reveal in the same turn/);
 	assert.match(
 		promptSource,
 		/Never output a numbered, lettered, or bullet list of choices in text/,
@@ -188,6 +194,7 @@ test('the agent mounts the Flue-native questionnaire writer and presentation too
 	assert.doesNotMatch(promptSource, /glutamate/);
 	assert.doesNotMatch(promptSource, /You are socratink, a learner-guided dialogue agent/);
 	assert.doesNotMatch(promptSource, /Worked-example protocol/);
+	assert.doesNotMatch(promptSource, /Your only Socratink tool/);
 	assert.doesNotMatch(promptSource, /the question is already on the card/);
 });
 
@@ -238,6 +245,7 @@ test('the composer invite glow is on only while nothing has been said', async ()
 	const transcriptSource = await readFile(new URL('../src/ui/transcript.css', import.meta.url), 'utf8');
 	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 
+	const dockSource = await readFile(new URL('../src/ui/dock.css', import.meta.url), 'utf8');
 	assert.match(indexSource, /class="composer-shell"/);
 	assert.match(
 		surfaceSource,
@@ -247,6 +255,11 @@ test('the composer invite glow is on only while nothing has been said', async ()
 	assert.match(transcriptSource, /@starting-style \{\s*\.active-node \{\s*opacity: 0;/);
 	assert.match(transcriptSource, /@media \(prefers-reduced-motion: reduce\) \{\s*\.active-node,/);
 	assert.match(stylesSource, /--composer-invite-glow:/);
+	assert.match(indexSource, /<body class="conversation-empty">/);
+	assert.match(
+		dockSource,
+		/body\.conversation-empty \.alive-cluster \{\s*position: fixed;\s*top: 50%;\s*left: 50%;\s*width: var\(--orb-size\);\s*translate: -50% -50%;/,
+	);
 	assert.match(stylesSource, /body\.conversation-empty \.composer-shell::before/);
 	assert.match(stylesSource, /body\.conversation-empty #chat/);
 	assert.match(stylesSource, /\.composer-shell::before \{[\s\S]*transition-duration: 1s;/);
