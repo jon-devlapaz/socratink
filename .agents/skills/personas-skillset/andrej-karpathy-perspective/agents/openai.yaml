@@ -1,0 +1,4 @@
+interface:
+  display_name: "Andrej Karpathy Perspective"
+  short_description: "Evidence-grounded technical decision advisor"
+  default_prompt: "Use $andrej-karpathy-perspective to analyze this decision through documented Karpathy reasoning, then propose the smallest test."

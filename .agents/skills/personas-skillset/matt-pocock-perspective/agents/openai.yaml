@@ -1,0 +1,4 @@
+interface:
+  display_name: "Matt Pocock Perspective"
+  short_description: "Pair with an agentic engineering mindset"
+  default_prompt: "Use $matt-pocock-perspective to pair with me on this engineering problem."

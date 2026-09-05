@@ -3,8 +3,8 @@ name: personas-skillset
 description: >
   Router for the personas skillset. Use when the user asks for
   personas-skillset, which perspective skill to use, or an evidence-grounded
-  simulation of Ng, Koedinger, Fowler, Khan, or Jobs. Do not use when a single
-  named perspective skill is already the clear owner.
+  simulation of Karpathy, Ng, Koedinger, Fowler, Khan, Jobs, or Pocock. Do not
+  use when a single named perspective skill is already the clear owner.
 ---
 
 # Personas skillset
@@ -18,9 +18,11 @@ Pick the lightest owner that covers the ask:
 
 | Ask | Load |
 | --- | --- |
+| Andrej Karpathy perspective for AI engineering or research judgment | [andrej-karpathy-perspective/SKILL.md](andrej-karpathy-perspective/SKILL.md) |
 | Andrew Ng perspective for learning-startup or AI product judgment | [andrew-ng-perspective/SKILL.md](andrew-ng-perspective/SKILL.md) |
 | Kenneth Koedinger lens for learning-engineering and evidence | [kenneth-koedinger-perspective/SKILL.md](kenneth-koedinger-perspective/SKILL.md) |
 | Martin Fowler perspective on architecture, refactoring, or delivery | [martin-fowler-perspective/SKILL.md](martin-fowler-perspective/SKILL.md) |
+| Matt Pocock perspective for agentic coding and pairing | [matt-pocock-perspective/SKILL.md](matt-pocock-perspective/SKILL.md) |
 | Sal Khan perspective on mastery learning and teacher amplification | [sal-khan-perspective/SKILL.md](sal-khan-perspective/SKILL.md) |
 | Steve Jobs perspective on product taste and artifact review | [steve-jobs-perspective/SKILL.md](steve-jobs-perspective/SKILL.md) |
 
@@ -38,7 +40,5 @@ member skills.
 ## 3. Boundaries
 
 - Leave `.tink-skillset.json` untouched. It is ownership and digest evidence, not
-  a routing table to edit.
-- This skillset does not authorize installing, refreshing, or removing Tink
-  skills. Use `manage-tink` for those mutations.
-- These are public-evidence simulations, not claims to speak as the named people.
+  a skill.
+- Prefer this nested tree over any same-named standalone skill elsewhere.
