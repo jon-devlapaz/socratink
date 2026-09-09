@@ -47,8 +47,11 @@ artifacts/
 # Cursor installer lockfile; Tink uses .tink/skills.lock
 skills-lock.json
 
-# Python bytecode from Brain helper smoke tests
+# Python bytecode and local operator tooling from Brain/Docent skills
 __pycache__/
+.venv/
+pyproject.toml
+uv.lock
 .variate/
 # Agent scratch logs; kept on disk, not source
 .audit/
