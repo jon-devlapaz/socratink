@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="theme-color" content="#100f0f" />
+		<title>Log in · Socratink</title>
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23050505'/%3E%3C/svg%3E"
+		/>
+	</head>
+	<body class="login-page">
+		<div class="login-spot" aria-hidden="true"></div>
+
+		<main class="login-shell">
+			<div class="login-aura" aria-hidden="true"></div>
+			<section class="login-card" aria-labelledby="login-title">
+				<header class="login-brand">
+					<a class="login-wordmark" href="/" aria-label="Socratink home">
+						<span class="login-mark" aria-hidden="true"></span>
+						<img class="login-wordmark-img" src="./brand-wordmark.png" alt="" />
+					</a>
+					<h1 id="login-title">Welcome back</h1>
+					<p class="login-lede">Log in to continue learning</p>
+				</header>
+
+				<div class="login-body" id="login-body">
+					<form class="login-form" id="login-form" novalidate>
+						<div class="login-field">
+							<div class="login-field-head">
+								<label for="auth-email">Email address</label>
+								<span class="login-error" id="email-error" role="alert" hidden></span>
+							</div>
+							<div class="login-input-shell" id="email-shell">
+								<span class="login-input-icon" aria-hidden="true">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+										<rect width="20" height="16" x="2" y="4" rx="2" />
+										<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+									</svg>
+								</span>
+								<input
+									id="auth-email"
+									name="email"
+									type="email"
+									required
+									placeholder="name@example.com"
+									autocomplete="email"
+									inputmode="email"
+									spellcheck="false"
+									autocapitalize="none"
+									autocorrect="off"
+									aria-required="true"
+									aria-invalid="false"
+								/>
+							</div>
+						</div>
+						<button class="login-primary" type="submit" id="email-submit">
+							Continue with email
+						</button>
+					</form>
+
+					<div class="login-sent" id="login-sent" role="status" aria-live="polite" hidden>
+						<div class="login-sent-icon" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+						</div>
+						<p class="login-sent-title">Sign-in link sent</p>
+						<p class="login-sent-copy">
+							Demo only — nothing was emailed to
+							<span class="login-sent-email" id="sent-email"></span>.
+						</p>
+						<button class="login-primary" type="button" id="enter-demo">
+							Continue
+						</button>
+						<button class="login-text" type="button" id="use-other-email">
+							Use a different email
+						</button>
+					</div>
+
+					<div class="login-divider" aria-hidden="true"><span>or</span></div>
+
+					<div class="login-oauth">
+						<button class="login-oauth-btn" type="button" data-provider="google">
+							<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+								<path
+									d="M12.479 14.265v-3.279h11.049c.108.571.164 1.247.164 1.979 0 2.46-.672 5.502-2.84 7.669C18.744 22.829 16.051 24 12.483 24 5.869 24 .308 18.613.308 12S5.869 0 12.483 0c3.659 0 6.265 1.436 8.223 3.307L18.392 5.62c-1.404-1.317-3.307-2.341-5.913-2.341C7.65 3.279 3.873 7.171 3.873 12s3.777 8.721 8.606 8.721c3.132 0 4.916-1.258 6.059-2.401.927-.927 1.537-2.251 1.777-4.059l-7.854.004z"
+								/>
+							</svg>
+							<span>Google</span>
+						</button>
+						<button class="login-oauth-btn" type="button" data-provider="github">
+							<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+								/>
+							</svg>
+							<span>GitHub</span>
+						</button>
+					</div>
+				</div>
+
+			</section>
+		</main>
+
+		<script type="module" src="/login.ts"></script>
+	</body>
+</html>

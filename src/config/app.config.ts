@@ -2,6 +2,7 @@ export const appConfig = {
 	chatAgentPath: '/api/agents/chat',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatAutoModelStorageKey: 'socratink-chat-auto-model',
+	demoAuthStorageKey: 'socratink-demo-auth',
 	themeStorageKey: 'socratink-theme', // keep in sync with the boot script in src/ui/index.html
 	typeSizeStorageKey: 'socratink-type-size', // keep in sync with the boot script in src/ui/index.html
 	braintrustProjectName: 'socratink',

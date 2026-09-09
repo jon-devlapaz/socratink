@@ -13,7 +13,7 @@
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
-		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:voice-reactivity && pnpm test:icon-cloud && pnpm test:steering && pnpm build",
+		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:voice-reactivity && pnpm test:icon-cloud && pnpm test:steering && pnpm test:login && pnpm build",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
 		"test:braintrust": "node scripts/braintrust-config.test.mjs",
@@ -32,7 +32,8 @@
 		"test:chat-markdown": "node --test scripts/chat-markdown.test.mjs",
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:voice-reactivity": "node --test scripts/voice-reactivity.test.mjs",
-		"test:icon-cloud": "node --test scripts/icon-cloud.test.mjs"
+		"test:icon-cloud": "node --test scripts/icon-cloud.test.mjs",
+		"test:login": "node --test scripts/login-ui.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/pi-ai": "^0.83.0",

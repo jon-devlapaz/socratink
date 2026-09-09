@@ -26,6 +26,7 @@ app.route('/api/agents/chat', createAgentRouter(Chat));
 app.all('/api/*', (context) =>
 	context.json({ error: { type: 'not_found', message: 'API route not found.' } }, 404),
 );
+app.get('/login', (context) => context.redirect('/login.html'));
 app.use('*', serveStatic({ root: './dist/client' }));
 app.get('*', serveStatic({ path: './dist/client/index.html' }));
 

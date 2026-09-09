@@ -1,3 +1,4 @@
+import { hasDemoAuthSession } from './demo-auth.ts';
 import { mountChatSurface } from './chat-surface.ts';
 import { mountOrganicSphere } from './effects/organic-sphere.ts';
 import { mountSmoothCursor } from './effects/smooth-cursor.ts';
@@ -14,15 +15,19 @@ import './chat-auto.css';
 import './dictation.css';
 import './steering.css';
 
-const core = document.querySelector<HTMLElement>('.alive-core');
-if (!core) throw new Error('Socratink chat markup is missing the alive-core node.');
+if (!hasDemoAuthSession()) {
+	location.replace('/login.html');
+} else {
+	const core = document.querySelector<HTMLElement>('.alive-core');
+	if (!core) throw new Error('Socratink chat markup is missing the alive-core node.');
 
-let voiceActivity: VoiceLevelMeter | undefined;
-try {
-	const sphere = mountOrganicSphere(core);
-	voiceActivity = createVoiceLevelMeter(sphere.setVoiceLevel);
-} catch {
-	core.replaceChildren();
+	let voiceActivity: VoiceLevelMeter | undefined;
+	try {
+		const sphere = mountOrganicSphere(core);
+		voiceActivity = createVoiceLevelMeter(sphere.setVoiceLevel);
+	} catch {
+		core.replaceChildren();
+	}
+	mountSmoothCursor();
+	mountChatSurface({ voiceActivity });
 }
-mountSmoothCursor();
-mountChatSurface({ voiceActivity });
