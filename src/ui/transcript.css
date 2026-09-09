@@ -585,6 +585,59 @@ html[data-type-size='small'] .active-node {
 	transform: rotate(90deg);
 }
 
+.thinking-orbs {
+	--blob-size: calc(7px * var(--type-scale));
+	--blob-travel: calc(5px * var(--type-scale));
+	--blob-gap: calc(4px * var(--type-scale));
+	display: inline-flex;
+	align-items: center;
+	padding: 1px calc(4px * var(--type-scale));
+	color: currentColor;
+	user-select: none;
+	pointer-events: none;
+}
+
+.thinking-gooey-filter {
+	position: absolute;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+}
+
+.thinking-blobs {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--blob-gap, 4px);
+	filter: url(#thinking-gooey);
+	isolation: isolate;
+}
+
+.thinking-blob {
+	display: block;
+	flex: none;
+	width: var(--blob-size, 7px);
+	height: var(--blob-size, 7px);
+	border-radius: 9999px;
+	background-color: currentColor;
+	animation: gooey-blob 1.5s ease-in-out infinite;
+	will-change: transform;
+}
+
+@keyframes gooey-blob {
+	0%, 100% {
+		transform: translateX(0) scale(1);
+	}
+	25% {
+		transform: translateX(var(--blob-travel, 5px)) scale(1.2);
+	}
+	50% {
+		transform: translateX(0) scale(1);
+	}
+	75% {
+		transform: translateX(calc(-1 * var(--blob-travel, 5px))) scale(1.2);
+	}
+}
+
 .thinking-steps {
 	display: grid;
 	grid-template-columns: 2px minmax(0, 1fr);
@@ -745,6 +798,11 @@ html[data-type-size='small'] .active-node {
 	.thinking-chevron,
 	.thinking-cancel {
 		transition: none;
+	}
+
+	.thinking-blob {
+		animation: none;
+		transform: none;
 	}
 
 	.stream-word {

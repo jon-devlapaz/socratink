@@ -139,7 +139,8 @@ export function createPendingTurn({
 	chevronPath.setAttribute('stroke-linecap', 'round');
 	chevronPath.setAttribute('stroke-linejoin', 'round');
 	chevron.append(chevronPath);
-	toggle.append(word, chevron);
+	const orbs = createThinkingOrbs();
+	toggle.append(orbs, word, chevron);
 	const cancel = document.createElement('button');
 	cancel.className = 'thinking-cancel';
 	cancel.type = 'button';
@@ -226,6 +227,58 @@ function createStopIcon() {
 	mark.setAttribute('fill', 'currentColor');
 	svg.append(mark);
 	return svg;
+}
+
+export function createThinkingOrbs(): HTMLElement {
+	const wrap = document.createElement('span');
+	wrap.className = 'thinking-orbs';
+	wrap.setAttribute('aria-hidden', 'true');
+
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svg.setAttribute('class', 'thinking-gooey-filter');
+	svg.setAttribute('width', '0');
+	svg.setAttribute('height', '0');
+	svg.setAttribute('aria-hidden', 'true');
+
+	const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+	const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+	filter.setAttribute('id', 'thinking-gooey');
+	filter.setAttribute('x', '-50%');
+	filter.setAttribute('y', '-50%');
+	filter.setAttribute('width', '200%');
+	filter.setAttribute('height', '200%');
+
+	const blur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+	blur.setAttribute('in', 'SourceGraphic');
+	blur.setAttribute('stdDeviation', '1.2');
+	blur.setAttribute('result', 'blur');
+
+	const matrix = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+	matrix.setAttribute('in', 'blur');
+	matrix.setAttribute('mode', 'matrix');
+	matrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7');
+	matrix.setAttribute('result', 'gooey');
+
+	const blend = document.createElementNS('http://www.w3.org/2000/svg', 'feBlend');
+	blend.setAttribute('in', 'SourceGraphic');
+	blend.setAttribute('in2', 'gooey');
+
+	filter.append(blur, matrix, blend);
+	defs.append(filter);
+	svg.append(defs);
+
+	const blobs = document.createElement('span');
+	blobs.className = 'thinking-blobs';
+
+	for (let i = 0; i < 3; i++) {
+		const blob = document.createElement('span');
+		blob.className = 'thinking-blob';
+		blob.style.animationDelay = `${(i * 0.2).toFixed(1)}s`;
+		blobs.append(blob);
+	}
+
+	wrap.append(svg, blobs);
+	return wrap;
 }
 
 function appendTurnCopy(

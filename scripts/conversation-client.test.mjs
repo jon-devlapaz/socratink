@@ -779,4 +779,7 @@ test('the pending view keeps stable accessible copy and a 10 second latency thre
 	assert.match(source, /thinking-cancel/);
 	assert.match(source, /aria-label', disabled \? 'Canceling' : 'Cancel'/);
 	assert.match(source, /Thinking/);
+	assert.match(source, /thinking-orbs/);
+	assert.match(source, /thinking-blob/);
+	assert.match(source, /thinking-gooey/);
 });
