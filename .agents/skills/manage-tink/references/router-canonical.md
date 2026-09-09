@@ -1,6 +1,6 @@
 # Canonical skillset router
 
-Output contract for a skillset-root **overlay** `SKILL.md`. Progressive
+Output contract for a skillset-root router `SKILL.md`. Progressive
 disclosure: metadata decides activation; the body loads on trigger; members
 load only after **handoff**.
 

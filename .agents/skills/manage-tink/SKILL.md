@@ -74,7 +74,7 @@ input and stop unless installation was separately authorized. Honor create-only
 and divergence refusals. Use `tink skill add NAME` to promote a bare library
 skill. Receipt-backed roots remain skillsets. Use `tink skill harvest` to fill
 the library from known harness roots, and only the matching
-`tink skillset add`, `refresh`, or `remove` command for a skillset mutation.
+`tink skillset add`, `refresh`, `update`, or `remove` command for a skillset mutation.
 
 **Expected:** The command finishes and its stdout, stderr, and exit status are
 known.
@@ -105,24 +105,22 @@ sync publication, report the potentially partial state and explain that
 rerunning the same idempotent `tink skill sync` is the recovery path; ask
 before retrying.
 
-### Step 4b: Offer a skillset router after add
+### Step 4b: Elevate skillset router on ask
 
-After a successful `tink skillset add NAME-skillset`, if
-`.agents/skills/NAME-skillset/SKILL.md` is missing, ask once whether to create
-a root **overlay** router for that skillset.
-
-Only after yes, load
+Tink automatically generates a verify-clean baseline `SKILL.md` router during
+skillset installation. When the user asks to elevate, optimize, or customize
+the router (e.g., "Use manage-tink to create a skillset router for NAME" or
+"elevate the router for NAME"), load
 [references/skillset-router.md](references/skillset-router.md) and follow it in
-**create** mode.
+**overwrite** mode.
 
-Skip when the root already exists, on refresh or remove, or when the user
-declines. Overwrite needs its own explicit ask.
+Do not overwrite unprompted. Refresh and remove preserve the existing router.
 
-**Expected:** The ask ran only after a successful add with a missing project
-root router, and create ran only after approval.
+**Expected:** The elevated router passes `verify-router.mjs` and replaces the
+baseline router without altering receipt digests.
 
 **On failure:** Report the skillset-router failure. Leave receipts and member
-skills untouched. The skillset add remains successful.
+skills untouched.
 
 ### Step 5: Configure shell completion when requested
 
@@ -208,8 +206,8 @@ command success as incomplete until this proof lands.
 
 - `skill-scout` — Scout candidate skills with evidence before choosing one to
   add through Tink.
-- [references/skillset-router.md](references/skillset-router.md) — Create or
-  overwrite a skillset-root overlay router after add, or when the user asks.
+- [references/skillset-router.md](references/skillset-router.md) — Required
+  skillset-root router after add; also overwrite when the user asks.
 
 ## Authority
 
@@ -223,8 +221,8 @@ command success as incomplete until this proof lands.
 | Harvest harness skills into library | `tink skill harvest` |
 | Inspect a public GitHub skill source | `tink inspect GITHUB_URL` (read-only) |
 | List project / library skillsets | `tink skillset list` / `tink skillset list --library` |
-| Add / refresh / remove a canonical skillset | The matching `tink skillset … NAME-skillset` command |
-| Yes to the post-add skillset-router offer | Create via [references/skillset-router.md](references/skillset-router.md) only |
+| Add / refresh / update / remove a canonical skillset | The matching `tink skillset …` command (`tink skillset add <url> [name]`, `tink skillset update [name]`, or `tink skillset add <name>`) |
+| Elevate / regenerate a skillset router | Elevate via [references/skillset-router.md](references/skillset-router.md) |
 | Author a pinned skillset definition | Only the exact `catalog/by-skillset/NAME-skillset/meta.json` input; does not authorize install |
 | Configure shell completion | Only the matching shell command |
 | Persist shell completion | Only the exact startup file the user authorizes |
@@ -241,8 +239,9 @@ refresh, and destroy each need their own ask.
 
 - `.tink-source.json` is the refresh **receipt**; leave it as Tink wrote it.
 - `.tink-skillset.json` is skillset ownership and digest evidence. Its presence
-  owns the root even when a root `SKILL.md` **overlay** also exists; standalone
-  library commands leave that root alone.
+  owns the root even when a root `SKILL.md` router also exists; standalone
+  library commands leave that root alone. The receipt digest ignores root
+  `SKILL.md` so manage-tink can author the required router.
 - Skillset definitions under `catalog/by-skillset/` are the only externally
   authored Tink-home metadata. Create or change one only with explicit authority;
   keep revision and members tied to that authorized file, not to inspection

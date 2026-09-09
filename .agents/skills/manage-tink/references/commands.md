@@ -21,18 +21,24 @@ list, read, check, refresh, and remove.
 | Read from the library | `tink skill read NAME --library` |
 | Raw description | `tink skill read NAME --raw` |
 | Check | `tink skill check` |
+| Diagnose environment and consistency | `tink doctor` |
 | Generate project manifest and lockfile | `tink skill lock --source NAME=PATH` for each local skill; every path must resolve inside the project |
 | Verify manifest, lockfile, and installed trees | `tink skill verify` |
 | Sync the exact pinned manifest set | `tink skill sync` (preflights expected project/library/catalog refusals, then publishes sequentially; rerun after an operational interruption) |
 | Refresh all clean imports | `tink skill refresh` |
 | Refresh one | `tink skill refresh NAME` |
+| List stale imports (read-only) | `tink skill outdated` |
+| Preview refresh without writing | `tink skill refresh --dry-run [NAME]` |
+| Roll back the last refresh (single use) | `tink skill rollback NAME` |
 | Refresh the active binary's embedded manage-tink | `tink skill refresh manage-tink` (explicitly replaces a differing receipt-free reserved copy; refuses remote provenance) |
 | Remove one project skill | `tink skill remove NAME` |
-| Add a pinned skillset | `tink skillset add NAME-skillset` |
+| Add a skillset from a GitHub tree URL | `tink skillset add <url> [optional-name]` |
+| Add a pinned catalog skillset | `tink skillset add NAME-skillset` (or `NAME`) |
 | List project skillsets | `tink skillset list` |
 | List library skillsets | `tink skillset list --library` |
-| Refresh a clean pinned skillset | `tink skillset refresh NAME-skillset` |
-| Remove one project skillset | `tink skillset remove NAME-skillset` |
+| Refresh a clean pinned skillset | `tink skillset refresh NAME-skillset` (or `NAME`) |
+| Update skillset(s) to latest upstream commit | `tink skillset update [NAME[-skillset]]` |
+| Remove one project skillset | `tink skillset remove NAME-skillset` (or `NAME`) |
 | Update the tink CLI binary | `tink update` (newer host asset only; verifies release digest, archive shape, and exact candidate version before replacement) |
 | Destroy managed project skills | `tink destroy --yes` (non-TTY/scripts) or `tink destroy` (TTY, confirm `y`); preserves guidance and unrelated `.agents/` siblings |
 
@@ -40,9 +46,8 @@ list, read, check, refresh, and remove.
 
 - Live skills: `<project>/.agents/skills/<name>/` with `SKILL.md`.
 - Live skillsets:
-  `<project>/.agents/skills/<name>-skillset/<member>/SKILL.md`. Names must be
-  typed canonically with `-skillset`; Tink does not infer the suffix on
-  mutating commands.
+  `<project>/.agents/skills/<name>-skillset/<member>/SKILL.md`. Skillset directories
+  end canonically with `-skillset`; CLI mutating commands auto-append `-skillset` if omitted.
 - Home (`$TINK_HOME` or `~/.tink`) is not an agent discovery root. Installs
   library trees at `skills/<name>/`. List the library with
   `tink library list` (`tink skill list --library` remains a compatibility
@@ -101,6 +106,8 @@ list, read, check, refresh, and remove.
   it may repair its library copy, while library state never overwrites a
   divergent project. Receipt presence owns the root even when it also contains
   `SKILL.md`; standalone skill commands never expose, promote, or replace it.
+  The receipt digest ignores root `SKILL.md` so manage-tink can author the
+  required router without dirtying the install; refresh preserves that router.
   `skillset remove` deletes only the project tree and keeps
   both the definition and library copy.
   New receipts use `digestVersion: 2`; a clean legacy receipt migrates only via

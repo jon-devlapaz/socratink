@@ -25,6 +25,10 @@ Pick the lightest owner that covers the ask:
 | Type scale, wrapping, truncation, OpenType, text spacing, font loading | [better-typography/SKILL.md](better-typography/SKILL.md) |
 | Palettes, tokens, formats, contrast measurement, color remediation | [better-colors/SKILL.md](better-colors/SKILL.md) |
 | Radius, shadows, icons, motion, optical alignment, surface polish | [better-ui/SKILL.md](better-ui/SKILL.md) |
+| Stress-test one component in every reachable state on a temporary page | [break/SKILL.md](break/SKILL.md) |
+| How an existing interface or effect was built | [explain-interface/SKILL.md](explain-interface/SKILL.md) |
+| Change-scoped review of a branch, PR, commit range, or uncommitted diff | [interface-review/SKILL.md](interface-review/SKILL.md) |
+| Multiple design variants of one piece of UI to compare and pick | [variant/SKILL.md](variant/SKILL.md) |
 
 If the user names a member, load that member only.
 
