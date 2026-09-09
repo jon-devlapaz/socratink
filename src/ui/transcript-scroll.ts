@@ -6,9 +6,7 @@ type TranscriptScroll = {
 	followLiveEdge(): void;
 	pinCurrentStart(): void;
 	scrollToStart(): void;
-	refresh(): void;
 	hold(mutate: () => void | Promise<void>): Promise<void>;
-	preserveAround(mutate: () => void | Promise<void>): Promise<void>;
 	stopFollowing(): void;
 };
 
@@ -112,12 +110,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		});
 	}
 
-	function refresh() {
-		following = true;
-		syncSpacer();
-		syncChrome();
-	}
-
 	function stopFollowing() {
 		if (!following) {
 			syncChrome();
@@ -185,7 +177,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		followLiveEdge,
 		pinCurrentStart,
 		scrollToStart,
-		refresh,
 		async hold(mutate) {
 			if (following) {
 				await mutate();
@@ -194,7 +185,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 			}
 			await preserveAround(mutate);
 		},
-		preserveAround,
 		stopFollowing,
 	};
 }

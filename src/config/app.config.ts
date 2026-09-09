@@ -10,5 +10,3 @@ export const appConfig = {
 	vercelAiGatewayBaseUrl: 'https://ai-gateway.vercel.sh/v1',
 	vercelAiGatewayModelId: 'minimax/minimax-m2.7',
 } as const;
-
-export type AppConfig = typeof appConfig;

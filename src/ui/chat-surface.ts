@@ -94,9 +94,7 @@ export function mountChatSurface(options: Readonly<{
 		form,
 		input,
 		messages,
-		button,
 		core,
-		lockup,
 		startOver,
 		card,
 		activeTurn,
@@ -123,12 +121,12 @@ export function mountChatSurface(options: Readonly<{
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
 			if (applyReasoningStreamEvent(liveReasoning, event)) {
-				syncLiveThinking();
+				pendingSession?.setReasoning(liveReasoning.text);
 				return;
 			}
 			if (isQuietToolStreamEvent(event, quietToolIds)) return;
 			if (!applyToolStreamEvent(liveTools, event)) return;
-			syncLiveTools();
+			pendingSession?.setTools(liveTools);
 		},
 	});
 	const learningDock = mountAppDock(core);
@@ -291,10 +289,6 @@ export function mountChatSurface(options: Readonly<{
 		dictation.setEnabled(!chatRequestControls(state).composerLocked);
 	}
 
-	function focusAfterRequestPaint(state: ChatRequestState) {
-		focusAfterRequestStatePaint(state, elements);
-	}
-
 	initAppearance(appearance);
 	initTypeSize(typeSize);
 	startOver.addEventListener('click', () => {
@@ -315,14 +309,6 @@ export function mountChatSurface(options: Readonly<{
 			form.requestSubmit();
 		}
 	});
-
-	function syncLiveThinking() {
-		pendingSession?.setReasoning(liveReasoning.text);
-	}
-
-	function syncLiveTools() {
-		pendingSession?.setTools(liveTools);
-	}
 
 	async function sendMessage(text: string) {
 		if (chatRequestControls(requests.state).composerLocked) return;
@@ -385,7 +371,7 @@ export function mountChatSurface(options: Readonly<{
 		}
 		applyRequestControls(state);
 		await paint('hold');
-		focusAfterRequestPaint(state);
+		focusAfterRequestStatePaint(state, elements);
 	}
 
 	form.addEventListener('submit', async (event) => {
@@ -441,7 +427,7 @@ export function mountChatSurface(options: Readonly<{
 			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
-			focusAfterRequestPaint(requestState);
+			focusAfterRequestStatePaint(requestState, elements);
 		}
 		if (unsettled) await runRequestCommand(requests.recheck());
 	}

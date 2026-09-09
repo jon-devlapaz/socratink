@@ -68,10 +68,7 @@ export function visibleTurnsFromHistory(
 			continue;
 		}
 		if (message.submissionId && supersededSubmissionIds.has(message.submissionId)) continue;
-		const text = message.parts
-			.filter((part) => part.type === 'text')
-			.map((part) => part.text)
-			.join('\n\n');
+		const text = visibleText(message);
 		const questionnaire =
 			message.role === 'assistant' ? questionnaireFromParts(message.parts) : undefined;
 		const modelRoute =

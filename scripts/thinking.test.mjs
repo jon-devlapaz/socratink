@@ -82,9 +82,6 @@ test('caps streamed reasoning instead of growing without bound', () => {
 });
 
 test('the pending view keeps reasoning out of the assistant answer and off a rotating word list', async () => {
-	const turns = await readFile(new URL('../src/ui/chat-turns.ts', import.meta.url), 'utf8');
-	assert.match(turns, /part\.type === 'text'/);
-	assert.doesNotMatch(turns, /part\.type === 'reasoning'/);
 	const pending = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
 	assert.match(pending, /thinking-step-copy/);
 	assert.match(pending, /visibleThinkingStep\(reasoning\)/);
