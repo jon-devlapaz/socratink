@@ -8,7 +8,9 @@ export type RateLimiter = {
 	consume(key: string): RateLimitResult;
 };
 
-// Internal process default, not a public SLA. Tests inject a fake clock and max.
+// One Chat turn is several HTTP hits (send, read, abort). 120/min is a
+// per-process cap so one cookie cannot spin the model loop unbounded; not a
+// published quota. Tests inject a fake clock and max.
 export const chatRateLimitWindowMs = 60_000;
 export const chatRateLimitMax = 120;
 

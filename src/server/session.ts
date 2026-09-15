@@ -20,7 +20,7 @@ export async function readSessionUserId(
 	return isSessionUserId(value) ? value : undefined;
 }
 
-export async function writeSessionCookie(
+async function writeSessionCookie(
 	context: Context,
 	userId: string,
 	secret: string,

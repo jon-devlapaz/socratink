@@ -25,10 +25,10 @@ export function resolveSessionSecret(environment: SessionEnvironment): string {
 }
 
 export function sessionUsesSecureCookie(environment: SessionEnvironment): boolean {
-	return (
+	return Boolean(
 		environment.NODE_ENV === 'production' ||
-		Boolean(environment.NF_PROJECT_ID) ||
-		environment.VERCEL === '1'
+		environment.NF_PROJECT_ID ||
+		environment.VERCEL === '1',
 	);
 }
 
