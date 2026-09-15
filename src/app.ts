@@ -5,7 +5,6 @@ import { Chat } from './agents/chat.ts';
 import { configureBraintrust } from './braintrust.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
 import { chatModel } from './config/chat-model.ts';
-import { resolveCredentialsSecret } from './config/credentials.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { requireChatSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
@@ -25,8 +24,6 @@ import './server/provider.ts';
 configureBraintrust(process.env);
 
 const sessionSecret = resolveSessionSecret(process.env);
-// Fail closed on hosted like SESSION_SECRET. Chat still uses jon-local; BYOK is later.
-resolveCredentialsSecret(process.env);
 const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
 	max: chatRateLimitMax,

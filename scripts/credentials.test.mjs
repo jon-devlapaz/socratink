@@ -4,16 +4,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
-	credentialTraceFields,
 	localCredentialsFilename,
 	localCredentialsSecret,
 	resolveCredentialStoreTarget,
 	resolveCredentialsSecret,
 } from '../src/config/credentials.ts';
+import {
+	createPostgresCredentialDb,
+	createSqliteCredentialDb,
+} from '../src/server/credential-db.ts';
 import { decryptSecret, deriveCredentialsKey, encryptSecret } from '../src/server/credential-crypto.ts';
 import {
 	createCredentialStore,
-	disabledUserKeyError,
 	foreignUserKeyError,
 	missingUserKeyError,
 	UserKeyError,
@@ -30,7 +32,7 @@ async function withStore(run) {
 	const filename = join(directory, 'credentials.db');
 	const store = createCredentialStore({
 		secret: testSecret,
-		target: { kind: 'sqlite', filename },
+		db: createSqliteCredentialDb(filename),
 	});
 	try {
 		return await run(store, filename);
@@ -132,7 +134,7 @@ test('foreign user cannot read by name or credentialRef', async () => {
 	});
 });
 
-test('missing, disabled, and deleted keys fail closed with no jon-local fallback', async () => {
+test('missing and deleted keys fail closed with no jon-local fallback', async () => {
 	await withStore(async (store) => {
 		await assert.rejects(
 			store.getUserKey({ userId: ownerId, name: keyName }),
@@ -143,27 +145,11 @@ test('missing, disabled, and deleted keys fail closed with no jon-local fallback
 			},
 		);
 
-		const first = await store.updateUserKey({
+		const { credentialRef } = await store.updateUserKey({
 			userId: ownerId,
 			name: keyName,
 			value: plaintext,
 		});
-		await store.disableUserKey({ userId: ownerId, name: keyName });
-		await assert.rejects(
-			store.getUserKey({ userId: ownerId, name: keyName }),
-			(error) => {
-				assertUserKeyError(error, disabledUserKeyError);
-				return true;
-			},
-		);
-		await assert.rejects(
-			store.getUserKeyByRef({ userId: ownerId, credentialRef: first.credentialRef }),
-			(error) => {
-				assertUserKeyError(error, disabledUserKeyError);
-				return true;
-			},
-		);
-
 		await store.deleteUserKey({ userId: ownerId, name: keyName });
 		await assert.rejects(
 			store.getUserKey({ userId: ownerId, name: keyName }),
@@ -173,7 +159,7 @@ test('missing, disabled, and deleted keys fail closed with no jon-local fallback
 			},
 		);
 		await assert.rejects(
-			store.getUserKeyByRef({ userId: ownerId, credentialRef: first.credentialRef }),
+			store.getUserKeyByRef({ userId: ownerId, credentialRef }),
 			(error) => {
 				assertUserKeyError(error, missingUserKeyError);
 				return true;
@@ -211,7 +197,7 @@ test('overwrite rotates the secret and revokes the previous credentialRef', asyn
 	});
 });
 
-test('traces and logs fixtures contain credentialRef and never the secret', async () => {
+test('logs and on-disk rows contain credentialRef and never the secret', async () => {
 	await withStore(async (store, filename) => {
 		const { credentialRef } = await store.updateUserKey({
 			userId: ownerId,
@@ -221,7 +207,7 @@ test('traces and logs fixtures contain credentialRef and never the secret', asyn
 		const trace = {
 			project: 'socratink',
 			event: 'credential.resolve',
-			...credentialTraceFields(credentialRef),
+			credentialRef,
 		};
 		const serialized = JSON.stringify(trace);
 		assert.match(serialized, /credentialRef/);
@@ -236,4 +222,80 @@ test('traces and logs fixtures contain credentialRef and never the secret', asyn
 		assert.match(onDisk.toString('utf8'), /socratink_credentials/);
 		assert.doesNotMatch(onDisk.toString('utf8'), /flue_/);
 	});
+});
+
+test('postgres adapter writes $1 SQL and serves typed rows without a live database', async () => {
+	/** @type {{ text: string, values: unknown[] }[]} */
+	const calls = [];
+	/** @type {{ user_id: string, name: string, credential_ref: string, ciphertext: string } | undefined} */
+	let stored;
+	const db = createPostgresCredentialDb({
+		async query(text, values = []) {
+			calls.push({ text, values });
+			if (text.includes('CREATE TABLE')) return { rows: [] };
+			if (text.startsWith('DELETE')) {
+				assert.match(text, /\$1/);
+				assert.doesNotMatch(text, /\?/);
+				if (stored && stored.user_id === values[0] && stored.name === values[1]) stored = undefined;
+				return { rows: [] };
+			}
+			if (text.includes('INSERT INTO')) {
+				assert.match(text, /\$1/);
+				assert.doesNotMatch(text, /\?/);
+				stored = {
+					user_id: String(values[0]),
+					name: String(values[1]),
+					credential_ref: String(values[2]),
+					ciphertext: String(values[3]),
+				};
+				return { rows: [{ credential_ref: stored.credential_ref }] };
+			}
+			if (text.includes('SELECT') && text.includes('WHERE user_id = $1 AND name = $2')) {
+				assert.doesNotMatch(text, /\?/);
+				if (stored && stored.user_id === values[0] && stored.name === values[1]) {
+					return { rows: [stored] };
+				}
+				return { rows: [] };
+			}
+			if (text.includes('SELECT') && text.includes('WHERE credential_ref = $1')) {
+				assert.doesNotMatch(text, /\?/);
+				if (stored && stored.credential_ref === values[0]) return { rows: [stored] };
+				return { rows: [] };
+			}
+			throw new Error(`unexpected postgres sql: ${text}`);
+		},
+		async end() {},
+	});
+	const store = createCredentialStore({ secret: testSecret, db });
+	try {
+		const { credentialRef } = await store.updateUserKey({
+			userId: ownerId,
+			name: keyName,
+			value: plaintext,
+		});
+		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), plaintext);
+		assert.equal(await store.getUserKeyByRef({ userId: ownerId, credentialRef }), plaintext);
+		await assert.rejects(
+			store.getUserKeyByRef({ userId: foreignId, credentialRef }),
+			(error) => {
+				assertUserKeyError(error, foreignUserKeyError);
+				return true;
+			},
+		);
+		await store.deleteUserKey({ userId: ownerId, name: keyName });
+		await assert.rejects(
+			store.getUserKey({ userId: ownerId, name: keyName }),
+			(error) => {
+				assertUserKeyError(error, missingUserKeyError);
+				return true;
+			},
+		);
+		assert.ok(calls.some((call) => call.text.includes('$3') && call.text.includes('INSERT')));
+		assert.equal(
+			calls.some((call) => call.text.includes('?') && !call.text.includes('$')),
+			false,
+		);
+	} finally {
+		await store.close();
+	}
 });

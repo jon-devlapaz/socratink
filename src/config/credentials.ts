@@ -42,7 +42,3 @@ export function resolveCredentialStoreTarget(environment: CredentialsEnvironment
 		}
 	}
 }
-
-export function credentialTraceFields(credentialRef: string): { credentialRef: string } {
-	return { credentialRef };
-}

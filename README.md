@@ -30,15 +30,15 @@ endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
 routing. Otherwise Chat uses AI Gateway. Northflank still requires
 `AI_GATEWAY_API_KEY` when that fallback is used.
 
-Hosted Node deployments require `DATABASE_URL`, `SESSION_SECRET`, and
-`CREDENTIALS_SECRET`; the process refuses to start without durable conversation
-storage, a session signing secret, or the AES-GCM key for the credential store.
-Local development uses file-backed SQLite at `.cache/flue/local.db`, a local
-session secret when `SESSION_SECRET` is unset, and
-`socratink-local-credentials-secret` when `CREDENTIALS_SECRET` is unset.
+Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
+refuses to start without durable conversation storage or a session signing
+secret. Local development uses file-backed SQLite at `.cache/flue/local.db` and
+a local session secret when `SESSION_SECRET` is unset.
 
-Authenticated users have a server-side credential store keyed by session
-`userId` plus name. Rows live in the product table `socratink_credentials`
+Opening the credential store requires `CREDENTIALS_SECRET` on hosted
+environments and uses `socratink-local-credentials-secret` when that env is
+unset locally. The store is a library keyed by session `userId` plus name; Chat
+does not open it yet. Rows live in the product table `socratink_credentials`
 (Postgres when `DATABASE_URL` is set; otherwise
 `.cache/socratink/credentials.db`). That file is not Flue's conversation
 database, and secrets are not stored in `flue_*` tables. Profiles hold a
