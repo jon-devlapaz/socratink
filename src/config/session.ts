@@ -46,6 +46,14 @@ export function conversationBelongsToUser(conversationId: string, userId: string
 	return conversationId.startsWith(prefix) && conversationId.length > prefix.length;
 }
 
+export function userIdFromConversationId(conversationId: string | undefined): string | undefined {
+	if (!conversationId) return undefined;
+	const separator = conversationId.indexOf(':');
+	if (separator <= 0) return undefined;
+	const userId = conversationId.slice(0, separator);
+	return conversationBelongsToUser(conversationId, userId) ? userId : undefined;
+}
+
 export function chatConversationIdFromPath(path: string): string | undefined {
 	const prefix = `${appConfig.chatAgentPath}/`;
 	if (!path.startsWith(prefix)) return undefined;

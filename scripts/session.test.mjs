@@ -9,6 +9,7 @@ import {
 	namespacedConversationId,
 	resolveSessionSecret,
 	sessionCookieName,
+	userIdFromConversationId,
 } from '../src/config/session.ts';
 import {
 	forbiddenChatError,
@@ -71,6 +72,11 @@ test('conversation ids are userId:nonce and reject foreign prefixes', () => {
 	assert.equal(isSessionUserId('user-a:nonce'), false);
 	assert.equal(isSessionUserId(''), false);
 	assert.equal(namespacedConversationId('user-a', 'nonce-1'), 'user-a:nonce-1');
+	assert.equal(userIdFromConversationId('user-a:nonce-1'), 'user-a');
+	assert.equal(userIdFromConversationId('user-ab:nonce-1'), 'user-ab');
+	assert.equal(userIdFromConversationId('user-a:'), undefined);
+	assert.equal(userIdFromConversationId('user-a'), undefined);
+	assert.equal(userIdFromConversationId(undefined), undefined);
 	assert.equal(conversationBelongsToUser('user-a:nonce-1', 'user-a'), true);
 	assert.equal(conversationBelongsToUser('user-a:', 'user-a'), false);
 	assert.equal(conversationBelongsToUser('user-a', 'user-a'), false);
