@@ -49,6 +49,7 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
+import { mountOpenaiKey } from './openai-key.ts';
 import {
 	applyRequestControlState,
 	buildRequestStateTurn,
@@ -108,6 +109,7 @@ export function mountChatSurface(options: Readonly<{
 		dictationStatus,
 	} = elements;
 	initChatAutoModel(autoModel);
+	mountOpenaiKey();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,

@@ -105,6 +105,8 @@ test('owner can get a stored key by name and by credentialRef', async () => {
 		assert.notEqual(credentialRef, plaintext);
 		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), plaintext);
 		assert.equal(await store.getUserKeyByRef({ userId: ownerId, credentialRef }), plaintext);
+		assert.equal(await store.hasUserKey({ userId: ownerId, name: keyName }), true);
+		assert.equal(await store.hasUserKey({ userId: foreignId, name: keyName }), false);
 	});
 });
 

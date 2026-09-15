@@ -11,6 +11,7 @@ import {
 } from '@flue/runtime';
 import { currentSpan } from 'braintrust';
 import { chatModel } from '../config/chat-model.ts';
+import { capturedChatModelSpecifier } from '../server/learner-key.ts';
 import { modelRouteMetadata } from '../config/model-route.ts';
 import {
 	PresentQuestionInputSchema,
@@ -37,7 +38,7 @@ import {
 installPresentQuestionTextCapture();
 
 export function Chat({ id }: AgentProps) {
-	useModel(`${chatModel.providerId}/${chatModel.modelId}`);
+	useModel(capturedChatModelSpecifier() ?? `${chatModel.providerId}/${chatModel.modelId}`);
 	const [boxedRetry, setBoxedRetry] = usePersistentState('present-question-retry', false);
 	useAgentStart(() => {
 		if (boxedRetry) setBoxedRetry(false);

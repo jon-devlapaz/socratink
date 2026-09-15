@@ -9,14 +9,22 @@ import {
 	createProvider,
 	InMemoryCredentialStore,
 } from '@earendil-works/pi-ai';
+import { specifierForLearnerChat } from '../src/config/chat-model.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
-import { createCredentialStore } from '../src/server/credentials.ts';
 import {
+	createCredentialStore,
+	missingUserKeyError,
+	UserKeyError,
+} from '../src/server/credentials.ts';
+import {
+	capturedChatModelSpecifier,
 	capturedLearnerUserId,
-	chatCredentialName,
+	openaiCredentialName,
 	resolveLearnerChatApiKey,
+	runWithChatSpecifier,
 	runWithLearnerKey,
+	specifierForStoredLearner,
 } from '../src/server/learner-key.ts';
 
 const testSecret = 'test-learner-key-secret-for-aes-256-gcm';
@@ -146,8 +154,8 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 	assert.equal(capturedLearnerUserId(), undefined);
 
 	await withStore(async (store) => {
-		await store.updateUserKey({ userId: aliceId, name: chatCredentialName, value: aliceKey });
-		await store.updateUserKey({ userId: bobId, name: chatCredentialName, value: bobKey });
+		await store.updateUserKey({ userId: aliceId, name: openaiCredentialName, value: aliceKey });
+		await store.updateUserKey({ userId: bobId, name: openaiCredentialName, value: bobKey });
 
 		const resolveGate = createOverlapGate(3);
 		const wireGate = createOverlapGate(3);
@@ -215,5 +223,75 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 		assert.equal(envHasFixtureSecret(), false);
 		assert.notEqual(process.env.JON_LOCAL_API_KEY, aliceKey);
 		assert.notEqual(process.env.JON_LOCAL_API_KEY, bobKey);
+	});
+});
+
+test('a stored-key resolve does not fall back to the operator key when the row is missing', async () => {
+	await withStore(async (store) => {
+		await assert.rejects(
+			() =>
+				runWithLearnerKey(aliceLiveId, () =>
+					resolveLearnerChatApiKey({
+						store,
+						operatorApiKey: operatorKey,
+					}),
+				),
+			(error) => {
+				assert.equal(error instanceof UserKeyError, true);
+				assert.equal(error.type, missingUserKeyError.type);
+				return true;
+			},
+		);
+		await assert.rejects(
+			() =>
+				resolveLearnerChatApiKey({
+					store,
+					operatorApiKey: operatorKey,
+				}),
+			(error) => {
+				assert.equal(error instanceof UserKeyError, true);
+				assert.equal(error.type, missingUserKeyError.type);
+				return true;
+			},
+		);
+	});
+});
+
+test('unsigned and disconnected Chat keep the operator key on jon-local', async () => {
+	assert.deepEqual(await resolveLearnerChatApiKey({ operatorApiKey: operatorKey }), {
+		auth: { apiKey: operatorKey },
+	});
+	assert.deepEqual(
+		await runWithLearnerKey(aliceLiveId, () =>
+			resolveLearnerChatApiKey({ operatorApiKey: operatorKey }),
+		),
+		{ auth: { apiKey: operatorKey } },
+	);
+});
+
+test('Chat uses openai/gpt-4o only while a learner key is connected', async () => {
+	const operator = { providerId: 'jon-local', modelId: 'auto' };
+	assert.equal(specifierForLearnerChat({ kind: 'operator' }, operator), 'jon-local/auto');
+	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-4o');
+	assert.equal(
+		runWithChatSpecifier('openai/gpt-4o', () => capturedChatModelSpecifier()),
+		'openai/gpt-4o',
+	);
+	assert.equal(capturedChatModelSpecifier(), undefined);
+
+	await withStore(async (store) => {
+		await store.updateUserKey({ userId: aliceId, name: openaiCredentialName, value: aliceKey });
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: aliceId, operator }),
+			'openai/gpt-4o',
+		);
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: bobId, operator }),
+			'jon-local/auto',
+		);
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: undefined, operator }),
+			'jon-local/auto',
+		);
 	});
 });

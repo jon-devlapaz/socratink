@@ -147,9 +147,12 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 			return;
 		}
 		if (event.key !== 'Tab') return;
-		const items = [...menuLayer.querySelectorAll<HTMLElement>('.menu-orbs a, .menu-orbs button')].filter(
-			(item) => item instanceof HTMLButtonElement ? !item.disabled : true,
-		);
+		const items = [...menuLayer.querySelectorAll<HTMLElement>(
+			'.menu-orbs a, .menu-orbs button, .menu-key input, .menu-key button',
+		)].filter((item) => {
+			if (item.hidden || item.closest('[hidden]')) return false;
+			return !(item instanceof HTMLButtonElement && item.disabled);
+		});
 		const first = items[0];
 		const last = items.at(-1);
 		if (!first || !last) return;
