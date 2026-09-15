@@ -7,8 +7,10 @@ import {
 import { userIdFromConversationId } from '../config/session.ts';
 import { missingUserKeyError, UserKeyError, type CredentialStore } from './credentials.ts';
 
-// Flue AuthContext has no user. Thread userId from conversationId (userId:nonce),
-// not cookies, process.env, or Pi's provider-keyed store.
+// Flue AuthContext has no user. Thread userId from the HTTP instance id
+// (userId:nonce), not cookies, process.env, or Pi's provider-keyed store.
+// Submission-scope agent intercepts omit conversationId; session-scope
+// conversationId is Flue's conv_* identity, not the namespaced URL.
 
 export const openaiCredentialName = 'openai';
 
@@ -24,6 +26,13 @@ export function capturedLearnerUserId(): string | undefined {
 
 export function capturedChatModelSpecifier(): string | undefined {
 	return chatSpecifier.getStore();
+}
+
+export function learnerIdFromExecution(ctx: {
+	readonly instanceId?: string;
+	readonly conversationId?: string;
+}): string | undefined {
+	return ctx.instanceId ?? ctx.conversationId;
 }
 
 export function runWithLearnerKey<T>(conversationId: string | undefined, fn: () => T): T {
@@ -79,7 +88,7 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 			observe() {},
 			interceptor: async (operation, ctx, next) => {
 				if (operation.type !== 'agent') return next();
-				return runWithLearnerKey(ctx.conversationId, async () => {
+				return runWithLearnerKey(learnerIdFromExecution(ctx), async () => {
 					const specifier = await specifierForStoredLearner({
 						store: options.store,
 						userId: capturedLearnerUserId(),
