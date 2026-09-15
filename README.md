@@ -30,10 +30,20 @@ endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
 routing. Otherwise Chat uses AI Gateway. Northflank still requires
 `AI_GATEWAY_API_KEY` when that fallback is used.
 
-Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
-refuses to start without durable conversation storage or a session signing
-secret. Local development uses file-backed SQLite at `.cache/flue/local.db` and
-a local session secret when `SESSION_SECRET` is unset.
+Hosted Node deployments require `DATABASE_URL`, `SESSION_SECRET`, and
+`CREDENTIALS_SECRET`; the process refuses to start without durable conversation
+storage, a session signing secret, or the AES-GCM key for the credential store.
+Local development uses file-backed SQLite at `.cache/flue/local.db`, a local
+session secret when `SESSION_SECRET` is unset, and
+`socratink-local-credentials-secret` when `CREDENTIALS_SECRET` is unset.
+
+Authenticated users have a server-side credential store keyed by session
+`userId` plus name. Rows live in the product table `socratink_credentials`
+(Postgres when `DATABASE_URL` is set; otherwise
+`.cache/socratink/credentials.db`). That file is not Flue's conversation
+database, and secrets are not stored in `flue_*` tables. Profiles hold a
+`credentialRef`, never a raw key. Chat still uses operator `jon-local`; this is
+not learner BYOK.
 
 Chat requires a signed HttpOnly session cookie. Conversation ids are
 `${userId}:${nonce}` so one session cannot resume another. Agent routes are
@@ -72,9 +82,9 @@ This demonstrates a persisted, observable interaction and its software
 reliability boundaries. It does not establish agentic-engineering mastery,
 durable learning, transfer, learning effectiveness, or production readiness.
 Hosted Chat now requires a signed session cookie, conversation ownership, and
-per-user rate limits. It still does not provide an identity vendor, a secret
-store, or learner BYOK. Keep the public domain off until those later slices
-exist if learners will paste keys.
+per-user rate limits. The encrypted credential store exists for authenticated
+sessions; it is not a paste UI, OpenRouter OAuth, or learner BYOK. Keep the
+public domain off until those later slices exist if learners will paste keys.
 
 ## Northflank staging
 
@@ -87,6 +97,7 @@ container listening on port `3000`. Configure one service replica with:
 - a private PostgreSQL addon;
 - `DATABASE_URL` mapped from the addon's `POSTGRES_URI` secret;
 - `SESSION_SECRET` stored as a Northflank runtime secret;
+- `CREDENTIALS_SECRET` stored as a Northflank runtime secret;
 - `AI_GATEWAY_API_KEY` stored as a Northflank runtime secret.
 
 Use Northflank's `recreate` rollout strategy. Do not use rolling or canary
@@ -95,9 +106,9 @@ live owner for a conversation, including during replacement.
 
 Keep the PostgreSQL addon private. The current Northflank deployment is a
 private staging target. Do not expose its port or attach the production domain
-until an identity vendor and (if learners will paste keys) a secret store are
-implemented and verified. Session cookies, conversation ownership, and rate
-limits are necessary but not sufficient for a public BYOK URL.
+until an identity vendor and learner BYOK are implemented and verified. Session
+cookies, conversation ownership, rate limits, and the encrypted credential
+store are necessary but not sufficient for a public BYOK URL.
 
 ## Braintrust observability
 
