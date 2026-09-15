@@ -5,14 +5,52 @@ import { Chat } from './agents/chat.ts';
 import { configureBraintrust } from './braintrust.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
 import { chatModel } from './config/chat-model.ts';
-import { chatConversationIdFromPath, rememberConversationAuto } from './server/chat-auto.ts';
+import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
+import { requireChatSession } from './server/chat-access.ts';
+import { rememberConversationAuto } from './server/chat-auto.ts';
+import {
+	chatRateLimitMax,
+	chatRateLimitWindowMs,
+	createRateLimiter,
+} from './server/rate-limit.ts';
+import {
+	clearSessionCookie,
+	mintSessionUserId,
+	readSessionUserId,
+	unauthorizedSessionError,
+} from './server/session.ts';
 import './server/provider.ts';
 
 configureBraintrust(process.env);
 
+const sessionSecret = resolveSessionSecret(process.env);
+const chatRateLimiter = createRateLimiter({
+	windowMs: chatRateLimitWindowMs,
+	max: chatRateLimitMax,
+});
+
 const app = new Hono();
 
 app.get('/healthz', (context) => context.json({ status: 'ok' }));
+app.get('/api/session', async (context) => {
+	const userId = await readSessionUserId(context, sessionSecret);
+	if (!userId) {
+		return context.json({ error: unauthorizedSessionError }, 401);
+	}
+	return context.json({ userId });
+});
+app.post('/api/session', async (context) => {
+	const userId = await mintSessionUserId(context, sessionSecret, process.env);
+	return context.json({ userId });
+});
+app.get('/api/session/logout', (context) => {
+	clearSessionCookie(context, process.env);
+	return context.redirect('/login.html');
+});
+app.use(
+	'/api/agents/chat/*',
+	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter }),
+);
 app.use('/api/agents/chat/*', async (context, next) => {
 	if (chatAllowsAutoSelection(chatModel.modelId)) {
 		rememberConversationAuto(

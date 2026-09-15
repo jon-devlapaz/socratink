@@ -10,6 +10,10 @@ import {
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
 import { chatAutoModelHeader, parseFreeLlmAutoModelId } from '../../config/chat-auto.ts';
+import {
+	conversationBelongsToUser,
+	namespacedConversationId,
+} from '../../config/session.ts';
 
 type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
@@ -78,9 +82,12 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
-export function openChatConversation() {
+export function openChatConversation(userId: string) {
+	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
-		localStorage.getItem(appConfig.chatConversationStorageKey) ?? crypto.randomUUID();
+		stored && conversationBelongsToUser(stored, userId)
+			? stored
+			: namespacedConversationId(userId, crypto.randomUUID());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,

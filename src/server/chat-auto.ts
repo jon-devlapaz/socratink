@@ -1,24 +1,11 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { ProviderStreams, StreamOptions } from '@earendil-works/pi-ai';
 import { instrument } from '@flue/runtime';
-import { appConfig } from '../config/app.config.ts';
 import { parseFreeLlmAutoModelId, type FreeLlmAutoModelId } from '../config/chat-auto.ts';
 
 const requested = new AsyncLocalStorage<FreeLlmAutoModelId>();
 const pending = new Map<string, FreeLlmAutoModelId>();
 const instrumentationKey = Symbol.for('socratink.chat-auto');
-
-export function chatConversationIdFromPath(path: string): string | undefined {
-	const prefix = `${appConfig.chatAgentPath}/`;
-	if (!path.startsWith(prefix)) return undefined;
-	const id = path.slice(prefix.length).split('/')[0];
-	if (!id) return undefined;
-	try {
-		return decodeURIComponent(id);
-	} catch {
-		return id;
-	}
-}
 
 export function rememberConversationAuto(
 	conversationId: string | undefined,

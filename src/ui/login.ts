@@ -1,15 +1,14 @@
-import {
-	clearDemoAuthSession,
-	hasDemoAuthSession,
-	isPlausibleEmail,
-	setDemoAuthSession,
-} from './demo-auth.ts';
+import { createSession } from './session.ts';
 import './login.css';
 
 function requireElement<T extends Element>(selector: string): T {
 	const node = document.querySelector<T>(selector);
 	if (!node) throw new Error(`Login markup is missing ${selector}.`);
 	return node;
+}
+
+function isPlausibleEmail(value: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 const form = requireElement<HTMLFormElement>('#login-form');
@@ -22,9 +21,17 @@ const sentEmail = requireElement<HTMLElement>('#sent-email');
 const enterDemo = requireElement<HTMLButtonElement>('#enter-demo');
 const useOtherEmail = requireElement<HTMLButtonElement>('#use-other-email');
 
-function enterNotebook(): void {
-	setDemoAuthSession();
-	location.assign('/');
+async function enterNotebook(): Promise<void> {
+	emailSubmit.disabled = true;
+	enterDemo.disabled = true;
+	try {
+		await createSession();
+		location.assign('/');
+	} catch {
+		emailSubmit.disabled = false;
+		enterDemo.disabled = false;
+		showError('Unable to start a session.');
+	}
 }
 
 function showError(message: string | null): void {
@@ -49,10 +56,6 @@ function showForm(): void {
 	form.hidden = false;
 	emailInput.value = '';
 	emailInput.focus();
-}
-
-if (hasDemoAuthSession() && new URLSearchParams(location.search).has('signout')) {
-	clearDemoAuthSession();
 }
 
 form.addEventListener('submit', (event) => {
@@ -82,11 +85,15 @@ emailInput.addEventListener('input', () => {
 	if (!emailError.hidden) showError(null);
 });
 
-enterDemo.addEventListener('click', () => enterNotebook());
+enterDemo.addEventListener('click', () => {
+	void enterNotebook();
+});
 useOtherEmail.addEventListener('click', () => showForm());
 
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
-	button.addEventListener('click', () => enterNotebook());
+	button.addEventListener('click', () => {
+		void enterNotebook();
+	});
 }
 
 emailInput.focus();

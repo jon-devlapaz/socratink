@@ -140,11 +140,18 @@ try {
 	await close(portProbe);
 	process.env.JON_LOCAL_BASE_URL = `http://127.0.0.1:${providerPort}/v1`;
 	process.env.JON_LOCAL_API_KEY = 'synthetic-braintrust-key';
+	process.env.SESSION_SECRET ??= 'socratink-braintrust-session-secret';
 
 	const { startFlueNodeServer } = await import('../dist/app.mjs');
 	lifecycle = await startFlueNodeServer({ hostname: '127.0.0.1', port: appPort });
 
-	const client = createFlueClient({ url: `http://127.0.0.1:${appPort}/api/agents/chat/${runId}` });
+	const origin = `http://127.0.0.1:${appPort}`;
+	const { mintSessionFixture } = await import('./session-fixture.mjs');
+	const session = await mintSessionFixture(origin);
+	const client = createFlueClient({
+		url: `${origin}/api/agents/chat/${encodeURIComponent(`${session.userId}:${runId}`)}`,
+		headers: { cookie: session.cookie },
+	});
 	const presented = await client.read(
 		await client.send({ message: { kind: 'user', body: prompt } }),
 	);
