@@ -21,6 +21,12 @@ test('parses only the FreeLLMAPI auto strategies Socratink exposes', () => {
 		chatConversationIdFromPath(`${appConfig.chatAgentPath}/b8a5dac1-943b-4f16-b1b7-5216ac87d6eb/stream`),
 		'b8a5dac1-943b-4f16-b1b7-5216ac87d6eb',
 	);
+	assert.equal(
+		chatConversationIdFromPath(
+			`${appConfig.chatAgentPath}/${encodeURIComponent('user-a:nonce')}/stream`,
+		),
+		'user-a:nonce',
+	);
 });
 
 test('rewrites the FreeLLMAPI payload model after admission', () => {

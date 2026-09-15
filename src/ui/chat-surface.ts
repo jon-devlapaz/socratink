@@ -88,7 +88,8 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 export function mountChatSurface(options: Readonly<{
 	elements?: ChatSurfaceElements;
 	voiceActivity?: DictationVoiceActivity;
-}> = {}): void {
+	userId: string;
+}>): void {
 	const elements = options.elements ?? queryChatSurface();
 	const {
 		form,
@@ -114,7 +115,7 @@ export function mountChatSurface(options: Readonly<{
 		voiceActivity: options.voiceActivity,
 		onSendRequested: () => form.requestSubmit(),
 	});
-	const conversation = openChatConversation();
+	const conversation = openChatConversation(options.userId);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	const liveReasoning = createLiveReasoning();

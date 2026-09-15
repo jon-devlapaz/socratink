@@ -413,7 +413,7 @@ test('restore without an unsettled admission returns to idle without sending', (
 	});
 });
 
-test('openChatConversation reuses the stored conversation id', () => {
+test('openChatConversation namespaces and reuses the stored conversation id', () => {
 	const store = new Map();
 	const originalStorage = globalThis.localStorage;
 	const originalLocation = globalThis.location;
@@ -430,12 +430,16 @@ test('openChatConversation reuses the stored conversation id', () => {
 	};
 	globalThis.location = { origin: 'http://localhost' };
 	try {
-		openChatConversation();
+		openChatConversation('user-a');
 		const stored = store.get(appConfig.chatConversationStorageKey);
-		assert.equal(typeof stored, 'string');
-		assert.ok(stored.length > 0);
-		openChatConversation();
+		assert.match(stored, /^user-a:/);
+		openChatConversation('user-a');
 		assert.equal(store.get(appConfig.chatConversationStorageKey), stored);
+		store.set(appConfig.chatConversationStorageKey, 'other-user:old');
+		openChatConversation('user-a');
+		const replaced = store.get(appConfig.chatConversationStorageKey);
+		assert.match(replaced, /^user-a:/);
+		assert.notEqual(replaced, 'other-user:old');
 	} finally {
 		if (originalStorage === undefined) delete globalThis.localStorage;
 		else globalThis.localStorage = originalStorage;

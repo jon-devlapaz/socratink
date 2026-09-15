@@ -6,9 +6,11 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createFlueClient } from '@flue/sdk';
 import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
+import { namespacedConversationId } from '../src/config/session.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
+import { mintSessionFixture } from './session-fixture.mjs';
 
 const initialMessage =
 	'Help me reason about recovery when an agent response stream disconnects after its request may already be admitted.';
@@ -229,6 +231,7 @@ function startApp(appPort, providerPort) {
 			...process.env,
 			NODE_ENV: 'development',
 			PORT: String(appPort),
+			SESSION_SECRET: 'socratink-smoke-session-secret',
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
 		},
@@ -290,7 +293,26 @@ try {
 		assert.ok((await asset.arrayBuffer()).byteLength > 0, `asset ${path} should not be empty`);
 	}
 
-	const client = createFlueClient({ url: `${origin}/api/agents/chat/smoke-conversation` });
+	const unauthenticatedChat = await fetch(`${origin}/api/agents/chat/smoke-conversation`);
+	assert.equal(unauthenticatedChat.status, 401, 'Chat without a session cookie should return 401');
+	assert.deepEqual(await unauthenticatedChat.json(), {
+		error: { type: 'unauthorized', message: 'A signed session is required.' },
+	});
+
+	const session = await mintSessionFixture(origin);
+	const foreignChat = await fetch(
+		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,
+		{ headers: { cookie: session.cookie } },
+	);
+	assert.equal(foreignChat.status, 403, 'Chat with a foreign conversation id should return 403');
+	assert.deepEqual(await foreignChat.json(), {
+		error: { type: 'forbidden', message: 'This conversation does not belong to the current session.' },
+	});
+
+	const client = createFlueClient({
+		url: `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(session.userId, 'smoke'))}`,
+		headers: { cookie: session.cookie },
+	});
 	const baseline = await client.read(
 		await client.send({ message: { kind: 'user', body: initialMessage } }),
 	);
@@ -352,7 +374,7 @@ try {
 	);
 
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);

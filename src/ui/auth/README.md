@@ -1,17 +1,22 @@
-# Demo login
+# Login
 
-Vanilla `/login.html` preview ported from the `auth-preview-draft` tag on
-`socratink-landing-page`. No real auth — a localStorage flag unlocks the chat.
+Vanilla `/login.html` mints a signed HttpOnly session cookie. Email still shows a
+fake “link sent” panel; Google / GitHub still skip provider OAuth. Neither is
+identity verification. The cookie is the session.
 
 ## Flow
 
-1. Visit `/` without `socratink-demo-auth` → redirect to `/login.html`
-2. Email continues to a fake “link sent” panel, then **Continue**
-3. Google / GitHub buttons skip straight into the app
-4. Menu **Sign out** clears the flag via `/login.html?signout=1`
+1. Visit `/` without a valid session cookie → client fetch of `/api/session`
+   fails and the page redirects to `/login.html`
+2. Email continues to a fake “link sent” panel, then **Continue** `POST`s
+   `/api/session`
+3. Google / GitHub buttons also `POST /api/session` and enter Chat
+4. Menu **Sign out** goes to `/api/session/logout`, which clears the cookie
+
+Chat conversation ids are `${userId}:${nonce}`. Foreign ids return 403.
 
 ## Files
 
 - `../login.html`, `../login.ts`, `../login.css` — page
-- `../demo-auth.ts` — session helpers
+- `../session.ts` — browser session helpers
 - `../brand-wordmark.png` — shared product wordmark

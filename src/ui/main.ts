@@ -1,4 +1,4 @@
-import { hasDemoAuthSession } from './demo-auth.ts';
+import { readSession } from './session.ts';
 import { mountChatSurface } from './chat-surface.ts';
 import { mountOrganicSphere } from './effects/organic-sphere.ts';
 import { mountSmoothCursor } from './effects/smooth-cursor.ts';
@@ -15,9 +15,13 @@ import './chat-auto.css';
 import './dictation.css';
 import './steering.css';
 
-if (!hasDemoAuthSession()) {
-	location.replace('/login.html');
-} else {
+void (async () => {
+	const session = await readSession();
+	if (!session) {
+		location.replace('/login.html');
+		return;
+	}
+
 	const core = document.querySelector<HTMLElement>('.alive-core');
 	if (!core) throw new Error('Socratink chat markup is missing the alive-core node.');
 
@@ -29,5 +33,5 @@ if (!hasDemoAuthSession()) {
 		core.replaceChildren();
 	}
 	mountSmoothCursor();
-	mountChatSurface({ voiceActivity });
-}
+	mountChatSurface({ voiceActivity, userId: session.userId });
+})();

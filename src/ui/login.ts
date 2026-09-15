@@ -1,9 +1,4 @@
-import {
-	clearDemoAuthSession,
-	hasDemoAuthSession,
-	isPlausibleEmail,
-	setDemoAuthSession,
-} from './demo-auth.ts';
+import { clearSession, createSession, isPlausibleEmail } from './session.ts';
 import './login.css';
 
 function requireElement<T extends Element>(selector: string): T {
@@ -22,9 +17,17 @@ const sentEmail = requireElement<HTMLElement>('#sent-email');
 const enterDemo = requireElement<HTMLButtonElement>('#enter-demo');
 const useOtherEmail = requireElement<HTMLButtonElement>('#use-other-email');
 
-function enterNotebook(): void {
-	setDemoAuthSession();
-	location.assign('/');
+async function enterNotebook(): Promise<void> {
+	emailSubmit.disabled = true;
+	enterDemo.disabled = true;
+	try {
+		await createSession();
+		location.assign('/');
+	} catch {
+		emailSubmit.disabled = false;
+		enterDemo.disabled = false;
+		showError('Unable to start a session.');
+	}
 }
 
 function showError(message: string | null): void {
@@ -51,42 +54,48 @@ function showForm(): void {
 	emailInput.focus();
 }
 
-if (hasDemoAuthSession() && new URLSearchParams(location.search).has('signout')) {
-	clearDemoAuthSession();
-}
-
-form.addEventListener('submit', (event) => {
-	event.preventDefault();
-	const email = emailInput.value.trim();
-	if (!email) {
-		showError('Please enter your email address.');
-		emailInput.focus();
-		return;
-	}
-	if (!isPlausibleEmail(email)) {
-		showError('Please enter a valid email address.');
-		emailInput.focus();
-		return;
+void (async () => {
+	if (new URLSearchParams(location.search).has('signout')) {
+		await clearSession();
 	}
 
-	emailSubmit.disabled = true;
-	emailSubmit.textContent = 'Sending link…';
-	window.setTimeout(() => {
-		emailSubmit.disabled = false;
-		emailSubmit.textContent = 'Continue with email';
-		showSent(email);
-	}, 380);
-});
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+		const email = emailInput.value.trim();
+		if (!email) {
+			showError('Please enter your email address.');
+			emailInput.focus();
+			return;
+		}
+		if (!isPlausibleEmail(email)) {
+			showError('Please enter a valid email address.');
+			emailInput.focus();
+			return;
+		}
 
-emailInput.addEventListener('input', () => {
-	if (!emailError.hidden) showError(null);
-});
+		emailSubmit.disabled = true;
+		emailSubmit.textContent = 'Sending link…';
+		window.setTimeout(() => {
+			emailSubmit.disabled = false;
+			emailSubmit.textContent = 'Continue with email';
+			showSent(email);
+		}, 380);
+	});
 
-enterDemo.addEventListener('click', () => enterNotebook());
-useOtherEmail.addEventListener('click', () => showForm());
+	emailInput.addEventListener('input', () => {
+		if (!emailError.hidden) showError(null);
+	});
 
-for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
-	button.addEventListener('click', () => enterNotebook());
-}
+	enterDemo.addEventListener('click', () => {
+		void enterNotebook();
+	});
+	useOtherEmail.addEventListener('click', () => showForm());
 
-emailInput.focus();
+	for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
+		button.addEventListener('click', () => {
+			void enterNotebook();
+		});
+	}
+
+	emailInput.focus();
+})();

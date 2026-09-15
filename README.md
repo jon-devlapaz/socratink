@@ -30,9 +30,14 @@ endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
 routing. Otherwise Chat uses AI Gateway. Northflank still requires
 `AI_GATEWAY_API_KEY` when that fallback is used.
 
-Hosted Node deployments require `DATABASE_URL`; the process refuses to start
-without durable conversation storage. Local development uses file-backed
-SQLite at `.cache/flue/local.db`.
+Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
+refuses to start without durable conversation storage or a session signing
+secret. Local development uses file-backed SQLite at `.cache/flue/local.db` and
+a local session secret when `SESSION_SECRET` is unset.
+
+Chat requires a signed HttpOnly session cookie. Conversation ids are
+`${userId}:${nonce}` so one session cannot resume another. Agent routes are
+rate-limited by that user id. This is not OAuth, a user directory, or BYOK.
 
 ## Verify the app
 
@@ -66,8 +71,10 @@ For an operator walkthrough:
 This demonstrates a persisted, observable interaction and its software
 reliability boundaries. It does not establish agentic-engineering mastery,
 durable learning, transfer, learning effectiveness, or production readiness.
-The hosted surface still requires authentication, conversation authorization,
-and rate limiting before public exposure.
+Hosted Chat now requires a signed session cookie, conversation ownership, and
+per-user rate limits. It still does not provide an identity vendor, a secret
+store, or learner BYOK. Keep the public domain off until those later slices
+exist if learners will paste keys.
 
 ## Northflank staging
 
@@ -79,6 +86,7 @@ container listening on port `3000`. Configure one service replica with:
 - readiness check `GET /healthz`;
 - a private PostgreSQL addon;
 - `DATABASE_URL` mapped from the addon's `POSTGRES_URI` secret;
+- `SESSION_SECRET` stored as a Northflank runtime secret;
 - `AI_GATEWAY_API_KEY` stored as a Northflank runtime secret.
 
 Use Northflank's `recreate` rollout strategy. Do not use rolling or canary
@@ -87,8 +95,9 @@ live owner for a conversation, including during replacement.
 
 Keep the PostgreSQL addon private. The current Northflank deployment is a
 private staging target. Do not expose its port or attach the production domain
-until authentication, conversation authorization, and rate limiting are
-implemented and verified.
+until an identity vendor and (if learners will paste keys) a secret store are
+implemented and verified. Session cookies, conversation ownership, and rate
+limits are necessary but not sufficient for a public BYOK URL.
 
 ## Braintrust observability
 
