@@ -10,7 +10,7 @@ import {
 	InMemoryCredentialStore,
 } from '@earendil-works/pi-ai';
 import { specifierForLearnerChat } from '../src/config/chat-model.ts';
-import { namespacedConversationId } from '../src/config/session.ts';
+import { namespacedConversationId, userIdFromConversationId } from '../src/config/session.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
 import {
 	createCredentialStore,
@@ -20,6 +20,7 @@ import {
 import {
 	capturedChatModelSpecifier,
 	capturedLearnerUserId,
+	learnerIdFromExecution,
 	openaiCredentialName,
 	resolveLearnerChatApiKey,
 	runWithChatSpecifier,
@@ -292,6 +293,59 @@ test('Chat uses openai/gpt-5-nano only while a learner key is connected', async 
 		assert.equal(
 			await specifierForStoredLearner({ store, userId: undefined, operator }),
 			'jon-local/auto',
+		);
+
+		const flueConversationId = 'conv_01ARZ3NDEKTSV4RRFFQ69G5FAV';
+		assert.equal(userIdFromConversationId(flueConversationId), undefined);
+		assert.equal(
+			learnerIdFromExecution({ conversationId: flueConversationId }),
+			flueConversationId,
+		);
+		assert.equal(
+			learnerIdFromExecution({
+				instanceId: aliceLiveId,
+				conversationId: flueConversationId,
+			}),
+			aliceLiveId,
+		);
+		assert.equal(
+			runWithLearnerKey(learnerIdFromExecution({ conversationId: flueConversationId }), () =>
+				capturedLearnerUserId(),
+			),
+			undefined,
+		);
+		assert.equal(
+			runWithLearnerKey(
+				learnerIdFromExecution({
+					instanceId: aliceLiveId,
+					conversationId: flueConversationId,
+				}),
+				() => capturedLearnerUserId(),
+			),
+			aliceId,
+		);
+		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: userIdFromConversationId(
+					learnerIdFromExecution({ conversationId: flueConversationId }),
+				),
+				operator,
+			}),
+			'jon-local/auto',
+		);
+		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: userIdFromConversationId(
+					learnerIdFromExecution({
+						instanceId: aliceLiveId,
+						conversationId: flueConversationId,
+					}),
+				),
+				operator,
+			}),
+			'openai/gpt-5-nano',
 		);
 	});
 });
