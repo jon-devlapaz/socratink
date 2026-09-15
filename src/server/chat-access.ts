@@ -1,6 +1,8 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import { conversationBelongsToUser } from '../config/session.ts';
-import { chatConversationIdFromPath } from './chat-auto.ts';
+import {
+	chatConversationIdFromPath,
+	conversationBelongsToUser,
+} from '../config/session.ts';
 import type { RateLimiter } from './rate-limit.ts';
 import { readSessionUserId } from './session.ts';
 
@@ -35,7 +37,7 @@ export function requireChatSession(options: {
 		}
 
 		const conversationId = chatConversationIdFromPath(context.req.path);
-		if (conversationId && !conversationBelongsToUser(conversationId, userId)) {
+		if (!conversationId || !conversationBelongsToUser(conversationId, userId)) {
 			return jsonError(context, 403, forbiddenChatError);
 		}
 

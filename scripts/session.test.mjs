@@ -3,7 +3,9 @@ import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
 import {
+	chatConversationIdFromPath,
 	conversationBelongsToUser,
+	isSessionUserId,
 	namespacedConversationId,
 	resolveSessionSecret,
 	sessionCookieName,
@@ -65,12 +67,26 @@ test('uses SESSION_SECRET when configured and a local secret otherwise', () => {
 });
 
 test('conversation ids are userId:nonce and reject foreign prefixes', () => {
+	assert.equal(isSessionUserId('user-a'), true);
+	assert.equal(isSessionUserId('user-a:nonce'), false);
+	assert.equal(isSessionUserId(''), false);
 	assert.equal(namespacedConversationId('user-a', 'nonce-1'), 'user-a:nonce-1');
 	assert.equal(conversationBelongsToUser('user-a:nonce-1', 'user-a'), true);
 	assert.equal(conversationBelongsToUser('user-a:', 'user-a'), false);
 	assert.equal(conversationBelongsToUser('user-a', 'user-a'), false);
 	assert.equal(conversationBelongsToUser('user-ab:nonce-1', 'user-a'), false);
 	assert.equal(conversationBelongsToUser('user-b:nonce-1', 'user-a'), false);
+	assert.equal(
+		chatConversationIdFromPath(`${appConfig.chatAgentPath}/b8a5dac1-943b-4f16-b1b7-5216ac87d6eb/stream`),
+		'b8a5dac1-943b-4f16-b1b7-5216ac87d6eb',
+	);
+	assert.equal(
+		chatConversationIdFromPath(
+			`${appConfig.chatAgentPath}/${encodeURIComponent('user-a:nonce')}/stream`,
+		),
+		'user-a:nonce',
+	);
+	assert.equal(chatConversationIdFromPath(`${appConfig.chatAgentPath}/`), undefined);
 });
 
 test('rate limiter uses the injected clock and counter', () => {
@@ -113,6 +129,16 @@ test('chat routes reject a foreign conversation id with 403', async () => {
 	);
 	assert.equal(owned.status, 200);
 	assert.deepEqual(await owned.json(), { ok: true });
+
+	const missingId = await app.request(`${appConfig.chatAgentPath}/`, { headers: { cookie } });
+	assert.equal(missingId.status, 403);
+	assert.deepEqual(await missingId.json(), { error: forbiddenChatError });
+
+	const unnamespaced = await app.request(`${appConfig.chatAgentPath}/bare-id`, {
+		headers: { cookie },
+	});
+	assert.equal(unnamespaced.status, 403);
+	assert.deepEqual(await unnamespaced.json(), { error: forbiddenChatError });
 });
 
 test('chat routes rate-limit a session with a fake clock', async () => {

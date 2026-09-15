@@ -1,12 +1,9 @@
 import { appConfig } from '../config/app.config.ts';
+import { isSessionUserId } from '../config/session.ts';
 
 export type SessionUser = {
 	userId: string;
 };
-
-export function isPlausibleEmail(value: string): boolean {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-}
 
 export async function readSession(): Promise<SessionUser | undefined> {
 	try {
@@ -29,17 +26,7 @@ export async function createSession(): Promise<SessionUser> {
 	return session;
 }
 
-export async function clearSession(): Promise<void> {
-	try {
-		await fetch(appConfig.sessionPath, { method: 'DELETE', credentials: 'same-origin' });
-	} finally {
-		localStorage.removeItem(appConfig.chatConversationStorageKey);
-	}
-}
-
 function sessionUserFromUnknown(value: unknown): SessionUser | undefined {
 	if (typeof value !== 'object' || value === null || !('userId' in value)) return undefined;
-	const userId = value.userId;
-	if (typeof userId !== 'string' || userId.length === 0 || userId.includes(':')) return undefined;
-	return { userId };
+	return isSessionUserId(value.userId) ? { userId: value.userId } : undefined;
 }

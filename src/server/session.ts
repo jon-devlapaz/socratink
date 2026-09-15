@@ -1,18 +1,23 @@
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import type { Context } from 'hono';
 import {
+	isSessionUserId,
 	sessionCookieName,
 	sessionUsesSecureCookie,
 	type SessionEnvironment,
 } from '../config/session.ts';
+
+export const unauthorizedSessionError = {
+	type: 'unauthorized',
+	message: 'A signed session is required.',
+} as const;
 
 export async function readSessionUserId(
 	context: Context,
 	secret: string,
 ): Promise<string | undefined> {
 	const value = await getSignedCookie(context, secret, sessionCookieName);
-	if (typeof value !== 'string' || value.length === 0 || value.includes(':')) return undefined;
-	return value;
+	return isSessionUserId(value) ? value : undefined;
 }
 
 export async function writeSessionCookie(

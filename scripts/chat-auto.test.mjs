@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appConfig } from '../src/config/app.config.ts';
 import { chatAllowsAutoSelection, parseFreeLlmAutoModelId } from '../src/config/chat-auto.ts';
 import {
 	applyRequestedAutoModel,
-	chatConversationIdFromPath,
 	rememberConversationAuto,
 	runWithConversationAuto,
 	wrapStreamsForChatAuto,
@@ -17,16 +15,6 @@ test('parses only the FreeLLMAPI auto strategies Socratink exposes', () => {
 	assert.equal(parseFreeLlmAutoModelId('Qwen/Qwen3'), undefined);
 	assert.equal(chatAllowsAutoSelection('auto'), true);
 	assert.equal(chatAllowsAutoSelection('minimax/minimax-m2.7'), false);
-	assert.equal(
-		chatConversationIdFromPath(`${appConfig.chatAgentPath}/b8a5dac1-943b-4f16-b1b7-5216ac87d6eb/stream`),
-		'b8a5dac1-943b-4f16-b1b7-5216ac87d6eb',
-	);
-	assert.equal(
-		chatConversationIdFromPath(
-			`${appConfig.chatAgentPath}/${encodeURIComponent('user-a:nonce')}/stream`,
-		),
-		'user-a:nonce',
-	);
 });
 
 test('rewrites the FreeLLMAPI payload model after admission', () => {
