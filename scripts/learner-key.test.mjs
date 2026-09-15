@@ -269,13 +269,13 @@ test('unsigned and disconnected Chat keep the operator key on jon-local', async 
 	);
 });
 
-test('Chat uses openai/gpt-4o only while a learner key is connected', async () => {
+test('Chat uses openai/gpt-5-nano only while a learner key is connected', async () => {
 	const operator = { providerId: 'jon-local', modelId: 'auto' };
 	assert.equal(specifierForLearnerChat({ kind: 'operator' }, operator), 'jon-local/auto');
-	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-4o');
+	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
 	assert.equal(
-		runWithChatSpecifier('openai/gpt-4o', () => capturedChatModelSpecifier()),
-		'openai/gpt-4o',
+		runWithChatSpecifier('openai/gpt-5-nano', () => capturedChatModelSpecifier()),
+		'openai/gpt-5-nano',
 	);
 	assert.equal(capturedChatModelSpecifier(), undefined);
 
@@ -283,7 +283,7 @@ test('Chat uses openai/gpt-4o only while a learner key is connected', async () =
 		await store.updateUserKey({ userId: aliceId, name: openaiCredentialName, value: aliceKey });
 		assert.equal(
 			await specifierForStoredLearner({ store, userId: aliceId, operator }),
-			'openai/gpt-4o',
+			'openai/gpt-5-nano',
 		);
 		assert.equal(
 			await specifierForStoredLearner({ store, userId: bobId, operator }),
