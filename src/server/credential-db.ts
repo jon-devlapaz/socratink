@@ -73,7 +73,7 @@ export function createCredentialDb(target: DatabaseTarget): CredentialDb {
 	}
 }
 
-export function openPostgresCredentialDb(connectionString: string): CredentialDb {
+function openPostgresCredentialDb(connectionString: string): CredentialDb {
 	const pool = new Pool({ connectionString, max: 2 });
 	return createPostgresCredentialDb({
 		query: (text, values) => pool.query(text, values),

@@ -27,8 +27,7 @@ export function resolveCredentialsSecret(environment: CredentialsEnvironment): s
 	return localCredentialsSecret;
 }
 
-// Flue owns `.cache/flue/local.db` and `flue_*` tables. Application secrets
-// use Postgres when DATABASE_URL is set, otherwise a product SQLite file.
+// Flue owns `.cache/flue/local.db` and `flue_*` tables.
 export function resolveCredentialStoreTarget(environment: CredentialsEnvironment): DatabaseTarget {
 	const database = resolveDatabaseTarget(environment);
 	switch (database.kind) {
