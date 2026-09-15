@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
+import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { appConfig } from '../src/config/app.config.ts';
-import { chatProviderId, resolveChatModel, specifierForLearnerChat } from '../src/config/chat-model.ts';
+import {
+	chatProviderId,
+	openaiChatModelId,
+	resolveChatModel,
+	specifierForLearnerChat,
+} from '../src/config/chat-model.ts';
 
 const localDefaults = {
 	providerId: chatProviderId,
@@ -185,10 +191,16 @@ const localDefaults = {
 
 {
 	assert.equal(
+		openaiProvider()
+			.getModels()
+			.some((model) => model.id === openaiChatModelId),
+		true,
+	);
+	assert.equal(
 		specifierForLearnerChat({ kind: 'operator' }, { providerId: chatProviderId, modelId: 'auto' }),
 		'jon-local/auto',
 	);
-	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-4o');
+	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
 }
 
 console.log('Chat model routing contract passed.');

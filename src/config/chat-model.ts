@@ -4,7 +4,8 @@ export const chatProviderId = 'jon-local';
 
 export const openaiChatProviderId = 'openai';
 
-export const openaiChatModelId = 'gpt-4o';
+// Cheapest openai nano in pi-ai's openaiProvider() catalog (2.5M/day shared-traffic bucket).
+export const openaiChatModelId = 'gpt-5-nano';
 
 export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' };
 
