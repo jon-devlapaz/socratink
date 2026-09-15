@@ -21,6 +21,25 @@ export const rateLimitedChatError = {
 	message: 'Too many Chat requests for this session.',
 } as const;
 
+export function requireSignedSession(options: {
+	secret: string;
+	rateLimiter: RateLimiter;
+}): MiddlewareHandler {
+	return async (context, next) => {
+		const userId = await readSessionUserId(context, options.secret);
+		if (!userId) return jsonError(context, 401, unauthorizedChatError);
+
+		const limited = options.rateLimiter.consume(userId);
+		if (!limited.ok) {
+			const retryAfterSeconds = Math.max(1, Math.ceil(limited.retryAfterMs / 1000));
+			context.header('Retry-After', String(retryAfterSeconds));
+			return jsonError(context, 429, rateLimitedChatError);
+		}
+
+		return next();
+	};
+}
+
 export function requireChatSession(options: {
 	secret: string;
 	rateLimiter: RateLimiter;

@@ -32,6 +32,7 @@ export type CredentialStore = {
 	}): Promise<{ credentialRef: string }>;
 	getUserKey(params: { userId: string; name: string }): Promise<string>;
 	getUserKeyByRef(params: { userId: string; credentialRef: string }): Promise<string>;
+	hasUserKey(params: { userId: string; name: string }): Promise<boolean>;
 	deleteUserKey(params: { userId: string; name: string }): Promise<void>;
 	close(): Promise<void>;
 };
@@ -73,6 +74,13 @@ export function createCredentialStore(options: {
 			if (!row) throw new UserKeyError(missingUserKeyError);
 			if (row.userId !== userId) throw new UserKeyError(foreignUserKeyError);
 			return decryptSecret(row.ciphertext, key);
+		},
+
+		async hasUserKey(params) {
+			const userId = requireUserId(params.userId);
+			const name = requireName(params.name);
+			const row = await db.getByName({ userId, name });
+			return row !== undefined;
 		},
 
 		async deleteUserKey(params) {

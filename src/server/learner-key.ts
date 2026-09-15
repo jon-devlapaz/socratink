@@ -1,20 +1,29 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { instrument } from '@flue/runtime';
+import {
+	specifierForLearnerChat,
+	type ChatModel,
+} from '../config/chat-model.ts';
 import { userIdFromConversationId } from '../config/session.ts';
-import type { CredentialStore } from './credentials.ts';
+import { missingUserKeyError, UserKeyError, type CredentialStore } from './credentials.ts';
 
 // Flue AuthContext has no user. Thread userId from conversationId (userId:nonce),
 // not cookies, process.env, or Pi's provider-keyed store.
 
-export const chatCredentialName = 'chat';
+export const openaiCredentialName = 'openai';
 
 const learnerUser = new AsyncLocalStorage<string>();
+const chatSpecifier = new AsyncLocalStorage<string>();
 const instrumentationKey = Symbol.for('socratink.learner-key');
 
-export type LearnerKeyStore = Pick<CredentialStore, 'getUserKey'>;
+export type LearnerKeyStore = Pick<CredentialStore, 'getUserKey' | 'hasUserKey'>;
 
 export function capturedLearnerUserId(): string | undefined {
 	return learnerUser.getStore();
+}
+
+export function capturedChatModelSpecifier(): string | undefined {
+	return chatSpecifier.getStore();
 }
 
 export function runWithLearnerKey<T>(conversationId: string | undefined, fn: () => T): T {
@@ -23,31 +32,61 @@ export function runWithLearnerKey<T>(conversationId: string | undefined, fn: () 
 	return learnerUser.run(userId, fn);
 }
 
+export function runWithChatSpecifier<T>(specifier: string, fn: () => T): T {
+	return chatSpecifier.run(specifier, fn);
+}
+
+export async function specifierForStoredLearner(options: {
+	store: Pick<CredentialStore, 'hasUserKey'>;
+	userId: string | undefined;
+	operator: Pick<ChatModel, 'providerId' | 'modelId'>;
+}): Promise<string> {
+	const connected = options.userId
+		? await options.store.hasUserKey({
+				userId: options.userId,
+				name: openaiCredentialName,
+			})
+		: false;
+	return specifierForLearnerChat(
+		connected ? { kind: 'openai' } : { kind: 'operator' },
+		options.operator,
+	);
+}
+
 export async function resolveLearnerChatApiKey(options: {
 	store?: LearnerKeyStore;
 	credentialName?: string;
-	operatorApiKey: string | undefined;
+	operatorApiKey?: string;
 }): Promise<{ auth: { apiKey: string | undefined } }> {
-	const userId = capturedLearnerUserId();
-	if (!userId || !options.store) {
+	if (!options.store) {
 		return { auth: { apiKey: options.operatorApiKey } };
 	}
 
+	const userId = capturedLearnerUserId();
+	if (!userId) throw new UserKeyError(missingUserKeyError);
+
 	const apiKey = await options.store.getUserKey({
 		userId,
-		name: options.credentialName ?? chatCredentialName,
+		name: options.credentialName ?? openaiCredentialName,
 	});
 	return { auth: { apiKey } };
 }
 
-export function installLearnerKeyCapture(): void {
+export function installLearnerKeyCapture(options: { store: LearnerKeyStore; operator: ChatModel }): void {
 	try {
 		instrument({
 			key: instrumentationKey,
 			observe() {},
 			interceptor: async (operation, ctx, next) => {
 				if (operation.type !== 'agent') return next();
-				return runWithLearnerKey(ctx.conversationId, next);
+				return runWithLearnerKey(ctx.conversationId, async () => {
+					const specifier = await specifierForStoredLearner({
+						store: options.store,
+						userId: capturedLearnerUserId(),
+						operator: options.operator,
+					});
+					return runWithChatSpecifier(specifier, next);
+				});
 			},
 			dispose() {},
 		});

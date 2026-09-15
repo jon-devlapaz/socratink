@@ -8,6 +8,9 @@ import { chatModel } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { requireChatSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
+import { getCredentialStore } from './server/credential-runtime.ts';
+import { openaiCredentialName } from './server/learner-key.ts';
+import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
 import {
 	chatRateLimitMax,
 	chatRateLimitWindowMs,
@@ -24,6 +27,7 @@ import './server/provider.ts';
 configureBraintrust(process.env);
 
 const sessionSecret = resolveSessionSecret(process.env);
+const credentialStore = getCredentialStore();
 const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
 	max: chatRateLimitMax,
@@ -47,12 +51,21 @@ app.get('/api/session/logout', (context) => {
 	clearSessionCookie(context, process.env);
 	return context.redirect('/login.html');
 });
+mountOpenaiKeyRoutes(app, {
+	secret: sessionSecret,
+	rateLimiter: chatRateLimiter,
+	store: credentialStore,
+});
 app.use(
 	'/api/agents/chat/*',
 	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter }),
 );
 app.use('/api/agents/chat/*', async (context, next) => {
-	if (chatAllowsAutoSelection(chatModel.modelId)) {
+	const userId = await readSessionUserId(context, sessionSecret);
+	const connected = userId
+		? await credentialStore.hasUserKey({ userId, name: openaiCredentialName })
+		: false;
+	if (!connected && chatAllowsAutoSelection(chatModel.modelId)) {
 		rememberConversationAuto(
 			chatConversationIdFromPath(context.req.path),
 			context.req.header(chatAutoModelHeader),

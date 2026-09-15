@@ -2,6 +2,12 @@ import { appConfig } from './app.config.ts';
 
 export const chatProviderId = 'jon-local';
 
+export const openaiChatProviderId = 'openai';
+
+export const openaiChatModelId = 'gpt-4o';
+
+export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' };
+
 export type ChatModelEnvironment = {
 	readonly VERCEL?: string;
 	readonly NF_PROJECT_ID?: string;
@@ -93,3 +99,19 @@ export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
 }
 
 export const chatModel = resolveChatModel(process.env);
+
+export function specifierForLearnerChat(
+	route: LearnerChatRoute,
+	operator: Pick<ChatModel, 'providerId' | 'modelId'> = chatModel,
+): string {
+	switch (route.kind) {
+		case 'operator':
+			return `${operator.providerId}/${operator.modelId}`;
+		case 'openai':
+			return `${openaiChatProviderId}/${openaiChatModelId}`;
+		default: {
+			const exhaustive: never = route;
+			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);
+		}
+	}
+}

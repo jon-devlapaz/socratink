@@ -345,6 +345,26 @@
 						<span>Sign out</span>
 					</a>
 				</nav>
+				<form class="menu-key" id="openai-key" autocomplete="off">
+					<p id="openai-key-copy">
+						Paste an OpenAI platform API key. This is not a ChatGPT Plus login.
+					</p>
+					<p id="openai-key-status" aria-live="polite">Not connected. Chat uses the local Socratink model.</p>
+					<label class="menu-key-field" id="openai-key-field">
+						<span class="sr-only">OpenAI API key</span>
+						<input
+							id="openai-key-input"
+							name="apiKey"
+							type="password"
+							autocomplete="off"
+							spellcheck="false"
+						/>
+					</label>
+					<div class="menu-key-actions">
+						<button id="openai-key-connect" type="submit">Connect</button>
+						<button id="openai-key-disconnect" type="button" hidden>Disconnect</button>
+					</div>
+				</form>
 				<div class="menu-handle" id="menu-handle" aria-hidden="true"></div>
 			</div>
 		</div>

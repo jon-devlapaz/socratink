@@ -1,6 +1,7 @@
 export const appConfig = {
 	chatAgentPath: '/api/agents/chat',
 	sessionPath: '/api/session',
+	openaiKeyPath: '/api/openai-key',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatAutoModelStorageKey: 'socratink-chat-auto-model',
 	themeStorageKey: 'socratink-theme', // keep in sync with the boot script in src/ui/index.html

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { appConfig } from '../src/config/app.config.ts';
-import { chatProviderId, resolveChatModel } from '../src/config/chat-model.ts';
+import { chatProviderId, resolveChatModel, specifierForLearnerChat } from '../src/config/chat-model.ts';
 
 const localDefaults = {
 	providerId: chatProviderId,
@@ -181,6 +181,14 @@ const localDefaults = {
 	]);
 	assert.deepEqual(reads, ['second', 'second']);
 	delete process.env.VERCEL_OIDC_TOKEN;
+}
+
+{
+	assert.equal(
+		specifierForLearnerChat({ kind: 'operator' }, { providerId: chatProviderId, modelId: 'auto' }),
+		'jon-local/auto',
+	);
+	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-4o');
 }
 
 console.log('Chat model routing contract passed.');

@@ -472,3 +472,60 @@ html:has(.menu-layer.is-open) .app-canvas {
 		opacity: 0;
 	}
 }
+
+.menu-key {
+	display: grid;
+	gap: 0.55rem;
+	width: min(22rem, calc(100% - 2.5rem));
+	margin: 0.4rem auto 1.1rem;
+	color: var(--muted);
+	font-size: 0.78rem;
+	line-height: 1.35;
+	text-align: left;
+}
+
+.menu-key-field input {
+	width: 100%;
+	min-height: 2.4rem;
+	padding: 0.45rem 0.7rem;
+	border: 0;
+	border-radius: 0.7rem;
+	color: var(--ink);
+	background: var(--path);
+	box-shadow: var(--shadow-border);
+	font: inherit;
+}
+
+.menu-key-field input:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+}
+
+.menu-key-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.menu-key-actions button {
+	min-height: 2.1rem;
+	padding: 0.3rem 0.85rem;
+	border: 0;
+	border-radius: 999px;
+	color: var(--ink);
+	background: var(--path);
+	box-shadow: var(--shadow-border);
+	cursor: pointer;
+	font: inherit;
+}
+
+.menu-key-actions button:hover,
+.menu-key-actions button:focus-visible {
+	background: var(--path-hover);
+	box-shadow: var(--shadow-border-hover);
+}
+
+.menu-key-actions button:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+}
