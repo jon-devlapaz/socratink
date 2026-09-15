@@ -5,6 +5,7 @@ import { appConfig } from '../config/app.config.ts';
 import { chatModel, resolveChatModel } from '../config/chat-model.ts';
 import { installPresentQuestionTextCapture } from '../agents/present-question.ts';
 import { installChatAutoCapture, wrapStreamsForChatAuto } from './chat-auto.ts';
+import { installLearnerKeyCapture, resolveLearnerChatApiKey } from './learner-key.ts';
 import { installModelRouteCapture, wrapStreamsForRouteCapture } from './model-route.ts';
 
 setProvider(
@@ -13,7 +14,10 @@ setProvider(
 		auth: {
 			apiKey: {
 				name: 'Chat model API key',
-				resolve: async () => ({ auth: { apiKey: resolveChatModel(process.env).apiKey } }),
+				resolve: async () =>
+					resolveLearnerChatApiKey({
+						operatorApiKey: resolveChatModel(process.env).apiKey,
+					}),
 			},
 		},
 		models: [
@@ -39,4 +43,5 @@ setProvider(
 );
 installModelRouteCapture();
 installChatAutoCapture();
+installLearnerKeyCapture();
 installPresentQuestionTextCapture();
