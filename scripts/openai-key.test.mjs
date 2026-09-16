@@ -143,6 +143,7 @@ test('paste-key UI lives on Chat chrome and does not keep the secret in the brow
 	const route = await readFile(new URL('../src/ui/chat-route.ts', import.meta.url), 'utf8');
 	const surface = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	const chat = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
+	const menu = await readFile(new URL('../src/ui/menu.css', import.meta.url), 'utf8');
 	assert.match(html, /id="openai-key"/);
 	assert.match(html, /id="providers-toggle"/);
 	assert.match(html, /id="providers-panel"/);
@@ -151,6 +152,7 @@ test('paste-key UI lives on Chat chrome and does not keep the secret in the brow
 	assert.match(html, /id="openai-models"/);
 	assert.match(html, /id="openrouter-models"/);
 	assert.doesNotMatch(html, /id="auto-model"/);
+	assert.match(menu, /\.provider-models\[hidden\]/);
 	assert.ok(html.includes(providersChatStatusCopy(operatorChatStatus)));
 	assert.match(html, /OpenAI platform API key/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
