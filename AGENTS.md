@@ -12,19 +12,21 @@ operator loop, read matching files in [.agents/learnings/](.agents/learnings/).
 
 ## Cold archive and freezes
 
-Never preload or glob-read [`research/_cold-archive/**`](research/_cold-archive/).
-Archive material is recoverable history, not default agent context.
+Never preload or glob-read `research/_cold-archive/**` (gitignored; evacuated
+in FM-PARETO-CUT-02). Recovery copies live on the host only — see
+[`research/README.md`](research/README.md):
 
-Mega skill packs moved to
-[`research/_cold-archive/PARETO-01/skills/`](research/_cold-archive/PARETO-01/skills/)
-(`personas-skillset`, `common-skills-skillset`, `variate`) are **archive-only**.
+`/Users/jondev/dev/archives/socratink-cold-archive/2026-09-16-from-main/`
+
+Mega skill packs under that host archive (`PARETO-01/skills/`:
+`personas-skillset`, `common-skills-skillset`, `variate`) are **archive-only**.
 Do not list or load them as default project skills unless Captain explicitly
 restores them to `.agents/skills/`.
 
-Praxist-as-progress and extra WebGL scope freezes live in
-[`research/_cold-archive/PARETO-01/FREEZE.md`](research/_cold-archive/PARETO-01/FREEZE.md).
-That file does not authorize deleting `living-ink` / `src/ui/effects/living-ink*`
-or any Chat knee code.
+Praxist-as-progress and extra WebGL scope freezes live in host
+`…/PARETO-01/FREEZE.md` (same archives folder). That file does not authorize
+deleting `living-ink` / `src/ui/effects/living-ink*` or any Chat knee code.
+WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete).
 
 ## Commands
 
@@ -108,7 +110,7 @@ names intact. A product change must not become a framework rewrite.
 - `README.md` — supported setup, hosting, and observability behavior
 - `ZEN.md` — required maintainability agreements and design heuristics
 - `.agents/learnings/` — dated postmortems; read matching files before repeating a campaign or operator failure
-- `research/_cold-archive/` — cold NOISE archives; never preload (see FREEZE.md in each cut folder)
+- Host cold archives — `/Users/jondev/dev/archives/socratink-cold-archive/` (never preload; see `research/README.md`)
 
 Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
 `.vercel/`, logs, artifacts, and environment files are not source.
@@ -277,13 +279,17 @@ Unless the user already requested the exact action, ask before:
 - Duplicate project doctrine in `CLAUDE.md`, `.cursor/rules/`, `.cursorrules`,
   `.github/copilot-instructions.md`, `.cursor/skills/`, or `.claude/skills/`.
 
-## Cold archive and research preload
+## Research preload
 
-Never preload `research/_cold-archive/**` into agent context. Those packs were
-evacuated from git in FM-PARETO-CUT-02; recovery copies live on the host at
-`/Users/jondev/dev/archives/socratink-cold-archive/` (see `research/README.md`).
 Load `research/pareto/` and thin `research/chat-signal/` contracts only when the
-task needs them.
+task needs them. Cold-archive recovery: see **Cold archive and freezes** above
+and [`research/README.md`](research/README.md).
+
+## `.agents/evals` and `.agents/roles`
+
+Keep these trees. Load on demand only — do not preload eval packs or role
+adapters into every coding session. Canonical product contract remains this
+root `AGENTS.md`; role files under `.agents/roles/` are identity adapters.
 
 ## Coding-agent portability
 
