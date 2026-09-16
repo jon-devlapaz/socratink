@@ -9,7 +9,9 @@ import {
 	openChatConversation,
 	startNewChatConversation,
 	unsettledSubmissionFromHistory,
+	watchChatConversationReset,
 } from './client/conversation.ts';
+import { learnerVisibleAssistantText } from './assistant-text.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { mountAppDock } from './app-dock.ts';
@@ -192,7 +194,13 @@ export function mountChatSurface(options: Readonly<{
 		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
 	) {
 		const resume = state.kind === 'terminal'
-			? () => requests.retry()
+			? async () => {
+				if (state.outcome === 'not-admitted') {
+					await sendMessage(input.value);
+					return requests.state;
+				}
+				return requests.retry();
+			}
 			: () => requests.recheck();
 		return buildRequestStateTurn(state, resume, (result) => {
 			void runRequestCommand(result);
@@ -325,7 +333,10 @@ export function mountChatSurface(options: Readonly<{
 	initTypeSize(typeSize);
 	startOver.addEventListener('click', () => {
 		dictation.cancel();
-		startNewChatConversation();
+		startNewChatConversation(options.userId);
+	});
+	watchChatConversationReset(() => {
+		location.reload();
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
@@ -344,8 +355,6 @@ export function mountChatSurface(options: Readonly<{
 
 	async function sendMessage(text: string) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		turns = [...turns, displayedLearnerTurn(text)];
-		input.value = '';
 		await startRequest(text);
 	}
 
@@ -357,6 +366,14 @@ export function mountChatSurface(options: Readonly<{
 		const result = requests.start(text);
 		requestState = requests.state;
 		applyRequestControls(requestState);
+		if (requestState.kind === 'terminal') {
+			await paint('hold');
+			focusAfterRequestStatePaint(requestState, elements);
+			await result;
+			return;
+		}
+		input.value = '';
+		turns = [...turns, displayedLearnerTurn(text)];
 		await paint('new-turn');
 		await applyRequestState(await result);
 	}
@@ -374,7 +391,7 @@ export function mountChatSurface(options: Readonly<{
 			{
 				role: 'Assistant',
 				...(ink ? { ink } : {}),
-				text: reply.text,
+				text: learnerVisibleAssistantText(reply.text),
 				...(questionnaire ? { questionnaire } : {}),
 				...(route ? { modelRoute: route } : {}),
 				...(tools.length ? { tools } : {}),

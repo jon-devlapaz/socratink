@@ -2,6 +2,7 @@ import { inkCueFromParts, type InkCue } from '../ink-cue.ts';
 import type { FlueConversationSnapshot } from '@flue/sdk';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
+import { assistantTurnHasVisibleContent, learnerVisibleAssistantText } from './assistant-text.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import {
 	questionnaireAnswerPrefix,
@@ -78,15 +79,17 @@ export function visibleTurnsFromHistory(
 		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
 		const cardTools = visibleCardTools(tools, { questionnaire });
 		const ink = message.role === 'assistant' ? inkCueFromParts(message.parts) : undefined;
-		if (!text && !questionnaire && cardTools.length === 0) continue;
 		if (message.role === 'user') {
+			if (!text) continue;
 			visible.push(displayedLearnerTurn(text));
 			continue;
 		}
+		const assistantText = learnerVisibleAssistantText(text);
+		if (!assistantTurnHasVisibleContent({ text, questionnaire, tools })) continue;
 		visible.push({
 			role: 'Assistant',
 			...(ink ? { ink } : {}),
-			text,
+			text: assistantText,
 			...(questionnaire ? { questionnaire } : {}),
 			...(modelRoute ? { modelRoute } : {}),
 			...(cardTools.length ? { tools: cardTools } : {}),

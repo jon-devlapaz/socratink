@@ -10,6 +10,9 @@ import {
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
+import { learnerMessageLengthError } from '../../config/chat-message.ts';
+import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
+import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-card.ts';
 import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
@@ -99,9 +102,21 @@ export function openChatConversation(userId: string) {
 	});
 }
 
-export function startNewChatConversation() {
-	localStorage.removeItem(appConfig.chatConversationStorageKey);
+export function startNewChatConversation(userId: string) {
+	const conversationId = namespacedConversationId(userId, crypto.randomUUID());
+	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
+	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();
+}
+
+export function watchChatConversationReset(onReset: () => void): () => void {
+	const listener = (event: StorageEvent) => {
+		if (event.key !== appConfig.chatConversationResetKey || !event.newValue) return;
+		localStorage.setItem(appConfig.chatConversationStorageKey, event.newValue);
+		onReset();
+	};
+	window.addEventListener('storage', listener);
+	return () => window.removeEventListener('storage', listener);
 }
 
 export function unsettledSubmissionFromHistory(
@@ -136,6 +151,7 @@ export class ChatRequestCoordinator {
 	private readonly conversation: ChatTurnClient;
 	private readonly abortSignal: () => AbortSignal;
 	private readonly settlementSignal: () => AbortSignal;
+	private readonly streamTools: DisplayedToolCall[] = [];
 	private readonly onEvent?: (event: ConversationStreamChunk) => void;
 
 	constructor(
@@ -149,12 +165,22 @@ export class ChatRequestCoordinator {
 		this.onEvent = options.onEvent;
 	}
 
+	private observeStreamEvent(event: ConversationStreamChunk): void {
+		applyToolStreamEvent(this.streamTools, event);
+		this.onEvent?.(event);
+	}
+
 	start(text: string): Promise<ChatRequestState> {
 		if (this.state.kind === 'terminal') {
 			this.pending = undefined;
 			this.state = { kind: 'idle' };
 		}
 		if (this.state.kind !== 'idle') throw new Error('A chat request is already active.');
+		const lengthError = learnerMessageLengthError(text);
+		if (lengthError) {
+			this.state = { kind: 'terminal', text, outcome: 'not-admitted', detail: lengthError };
+			return Promise.resolve(this.state);
+		}
 		const pending: PendingRequest = {
 			text,
 			controller: new AbortController(),
@@ -300,6 +326,7 @@ export class ChatRequestCoordinator {
 	}
 
 	private async sendAndRead(pending: PendingRequest): Promise<ChatRequestState> {
+		this.streamTools.length = 0;
 		try {
 			const admission = await this.conversation.send({
 				message: { kind: 'user', body: pending.text },
@@ -325,17 +352,16 @@ export class ChatRequestCoordinator {
 	}
 
 	private async readWithLostStreamFallback(admission: AgentSendResult, signal: AbortSignal) {
-		const onEvent = this.onEvent;
+		const onEvent = (event: ConversationStreamChunk) => this.observeStreamEvent(event);
 		try {
 			return await this.conversation.read(admission, {
 				signal,
-				...(onEvent ? { onEvent } : {}),
+				onEvent,
 			});
 		} catch (error) {
 			if (!isLostConversationStream(error)) throw error;
 			return this.conversation.read(admission.submissionId, {
 				signal,
-				...(onEvent ? { onEvent } : {}),
 			});
 		}
 	}
@@ -366,6 +392,17 @@ export class ChatRequestCoordinator {
 	}
 
 	private completedState(pending: PendingRequest, reply: AgentReadResult): ChatRequestState {
+		if (!assistantTurnHasVisibleContent({
+			text: reply.text,
+			data: reply.data,
+			tools: this.streamTools,
+		})) {
+			return this.terminalState(
+				pending,
+				'failed',
+				'Socratink finished without a reply. Send a shorter message or try again.',
+			);
+		}
 		this.state = { kind: 'completed', text: pending.text, reply };
 		return this.state;
 	}

@@ -11,7 +11,9 @@ import {
 	isOpenRouterCreditLimitError,
 	openChatConversation,
 	settlementReadTimeoutMs,
+	startNewChatConversation,
 	unsettledSubmissionFromHistory,
+	watchChatConversationReset,
 } from '../src/ui/client/conversation.ts';
 
 const admission = {
@@ -90,12 +92,12 @@ test('a lost admission stream falls back to the same submissionId without sendin
 	assert.deepEqual(reads, [admission, admission.submissionId]);
 });
 
-test('lost-stream fallback still forwards onEvent', async () => {
-	const seen = [];
-	const chunk = {
-		type: 'message-delta',
-		kind: 'reasoning',
-		delta: 'hmm',
+test('lost-stream fallback does not observe tools from origin replay', async () => {
+	const priorToolChunk = {
+		type: 'tool-input',
+		toolCallId: 'call-old',
+		toolName: 'lookup',
+		input: {},
 	};
 	const conversation = {
 		async send() {
@@ -103,21 +105,19 @@ test('lost-stream fallback still forwards onEvent', async () => {
 		},
 		async read(target, options) {
 			if (target === admission) throw streamNotFound('json');
-			options?.onEvent?.(chunk);
-			return reply;
+			options?.onEvent?.(priorToolChunk);
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
 		},
 		async abort() {
 			throw new Error('should not abort');
 		},
 	};
-	const coordinator = new ChatRequestCoordinator(conversation, {
-		...coordinatorOptions,
-		onEvent: (event) => {
-			seen.push(event);
-		},
-	});
-	await coordinator.start('hello');
-	assert.deepEqual(seen, [chunk]);
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
 });
 
 test('forwards admission-read stream events to the conversation listener', async () => {
@@ -313,6 +313,36 @@ test('a bounded abort failure becomes recoverable and never claims the reply sto
 	assert.equal(await running, state);
 });
 
+test('bare-id recheck does not complete a marker-only reply from prior-turn tools alone', async () => {
+	const priorToolChunk = {
+		type: 'tool-input',
+		toolCallId: 'call-old',
+		toolName: 'lookup',
+		input: {},
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read(target, options) {
+			if (target === admission) throw new Error('connection lost');
+			assert.equal(options?.onEvent, undefined);
+			options?.onEvent?.(priorToolChunk);
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	assert.equal((await coordinator.start('hello')).kind, 'recovery');
+
+	const state = await coordinator.recheck();
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
+});
+
 test('an admitted observation failure reattaches to the same submission without sending again', async () => {
 	let sends = 0;
 	const reads = [];
@@ -447,6 +477,18 @@ test('openChatConversation namespaces and reuses the stored conversation id', ()
 		if (originalLocation === undefined) delete globalThis.location;
 		else globalThis.location = originalLocation;
 	}
+});
+
+test('oversized reject keeps the composer draft for editing', async () => {
+	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(
+		source,
+		/async function sendMessage[\s\S]*?input\.value = ''[\s\S]*?await startRequest/,
+	);
+	assert.match(
+		source,
+		/if \(requestState\.kind === 'terminal'\)[\s\S]*?return;\s*\}\s*input\.value = '';/,
+	);
 });
 
 test('chat-surface restore begins restore then hydrates and rechecks', async () => {
@@ -817,4 +859,252 @@ test('the pending view keeps stable accessible copy and a 10 second latency thre
 	assert.match(source, /thinking-orbs/);
 	assert.match(source, /thinking-blob/);
 	assert.match(source, /thinking-gooey/);
+});
+
+test('Retry works after an oversized reject', async () => {
+	const conversation = {
+		async send() {
+			throw new Error('oversized messages must not be sent');
+		},
+		async read() {
+			throw new Error('oversized messages must not be read');
+		},
+		async abort() {
+			throw new Error('oversized messages must not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const text = 'x'.repeat(16_001);
+	const rejected = await coordinator.start(text);
+
+	assert.equal(rejected.kind, 'terminal');
+	assert.equal(rejected.outcome, 'not-admitted');
+
+	const retried = await coordinator.retry();
+	assert.equal(retried.kind, 'terminal');
+	assert.equal(retried.outcome, 'not-admitted');
+});
+
+test('rejects oversized learner messages before admission', async () => {
+	const conversation = {
+		async send() {
+			throw new Error('oversized messages must not be sent');
+		},
+		async read() {
+			throw new Error('oversized messages must not be read');
+		},
+		async abort() {
+			throw new Error('oversized messages must not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const text = 'x'.repeat(16_001);
+	const state = await coordinator.start(text);
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'not-admitted');
+	assert.match(state.detail, /16,000 characters/);
+	assert.match(state.detail, /16,001 characters/);
+});
+
+test('treats an empty assistant reply as a confirmed failure', async () => {
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return { text: '   ', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
+});
+
+test('treats a marker-only assistant reply as a confirmed failure', async () => {
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
+});
+
+test('completes marker-only text when the reply includes a questionnaire', async () => {
+	const questionnaire = {
+		kind: 'question',
+		submitLabel: 'Continue',
+		items: [
+			{
+				name: 'path',
+				prompt: 'How should we begin?',
+				required: true,
+				multiple: false,
+				choices: [
+					{ value: 'example', label: 'Worked example' },
+					{ value: 'attempt', label: 'Try unaided' },
+				],
+			},
+		],
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return {
+				text: '«STATION_IDENT»',
+				data: { questionnaire: [questionnaire] },
+				submissionId: 'sub-1',
+			};
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'completed');
+	assert.deepEqual(state.reply.data.questionnaire, [questionnaire]);
+});
+
+test('startNewChatConversation stores a shared reset token before reload', () => {
+	const store = new Map();
+	const originalStorage = globalThis.localStorage;
+	const originalLocation = globalThis.location;
+	let reloaded = false;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.location = {
+		reload() {
+			reloaded = true;
+		},
+	};
+	try {
+		startNewChatConversation('user-a');
+		const conversationId = store.get(appConfig.chatConversationStorageKey);
+		assert.match(conversationId, /^user-a:/);
+		assert.equal(store.get(appConfig.chatConversationResetKey), conversationId);
+		assert.equal(reloaded, true);
+	} finally {
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+		if (originalLocation === undefined) delete globalThis.location;
+		else globalThis.location = originalLocation;
+	}
+});
+
+test('watchChatConversationReset syncs other tabs to the new conversation id', () => {
+	const store = new Map([
+		[appConfig.chatConversationStorageKey, 'user-a:old'],
+	]);
+	const originalWindow = globalThis.window;
+	const originalStorage = globalThis.localStorage;
+	let reset = 0;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.window = {
+		addEventListener(type, listener) {
+			this[`on-${type}`] = listener;
+		},
+		removeEventListener(type) {
+			delete this[`on-${type}`];
+		},
+	};
+	try {
+		watchChatConversationReset(() => {
+			reset += 1;
+		});
+		window[`on-storage`]({
+			key: appConfig.chatConversationResetKey,
+			newValue: 'user-a:new',
+		});
+		assert.equal(store.get(appConfig.chatConversationStorageKey), 'user-a:new');
+		assert.equal(reset, 1);
+	} finally {
+		if (originalWindow === undefined) delete globalThis.window;
+		else globalThis.window = originalWindow;
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+	}
+});
+
+test('watchChatConversationReset reloads when both keys already hold the same id', () => {
+	const store = new Map([
+		[appConfig.chatConversationStorageKey, 'user-a:new'],
+	]);
+	const originalWindow = globalThis.window;
+	const originalStorage = globalThis.localStorage;
+	let reset = 0;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.window = {
+		addEventListener(type, listener) {
+			this[`on-${type}`] = listener;
+		},
+		removeEventListener(type) {
+			delete this[`on-${type}`];
+		},
+	};
+	try {
+		watchChatConversationReset(() => {
+			reset += 1;
+		});
+		window[`on-storage`]({
+			key: appConfig.chatConversationResetKey,
+			newValue: 'user-a:new',
+		});
+		assert.equal(store.get(appConfig.chatConversationStorageKey), 'user-a:new');
+		assert.equal(reset, 1);
+	} finally {
+		if (originalWindow === undefined) delete globalThis.window;
+		else globalThis.window = originalWindow;
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+	}
 });
