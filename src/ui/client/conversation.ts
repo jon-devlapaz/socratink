@@ -10,6 +10,7 @@ import {
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
+import { learnerMessageLengthError } from '../../config/chat-message.ts';
 import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
@@ -99,9 +100,22 @@ export function openChatConversation(userId: string) {
 	});
 }
 
-export function startNewChatConversation() {
-	localStorage.removeItem(appConfig.chatConversationStorageKey);
+export function startNewChatConversation(userId: string) {
+	const conversationId = namespacedConversationId(userId, crypto.randomUUID());
+	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
+	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();
+}
+
+export function watchChatConversationReset(onReset: () => void): () => void {
+	const listener = (event: StorageEvent) => {
+		if (event.key !== appConfig.chatConversationResetKey || !event.newValue) return;
+		if (event.newValue === localStorage.getItem(appConfig.chatConversationStorageKey)) return;
+		localStorage.setItem(appConfig.chatConversationStorageKey, event.newValue);
+		onReset();
+	};
+	window.addEventListener('storage', listener);
+	return () => window.removeEventListener('storage', listener);
 }
 
 export function unsettledSubmissionFromHistory(
@@ -155,6 +169,11 @@ export class ChatRequestCoordinator {
 			this.state = { kind: 'idle' };
 		}
 		if (this.state.kind !== 'idle') throw new Error('A chat request is already active.');
+		const lengthError = learnerMessageLengthError(text);
+		if (lengthError) {
+			this.state = { kind: 'terminal', text, outcome: 'not-admitted', detail: lengthError };
+			return Promise.resolve(this.state);
+		}
 		const pending: PendingRequest = {
 			text,
 			controller: new AbortController(),
@@ -366,6 +385,13 @@ export class ChatRequestCoordinator {
 	}
 
 	private completedState(pending: PendingRequest, reply: AgentReadResult): ChatRequestState {
+		if (!reply.text.trim()) {
+			return this.terminalState(
+				pending,
+				'failed',
+				'Socratink finished without a reply. Send a shorter message or try again.',
+			);
+		}
 		this.state = { kind: 'completed', text: pending.text, reply };
 		return this.state;
 	}

@@ -7,6 +7,7 @@ import {
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
+import { learnerVisibleAssistantText } from '../src/ui/assistant-text.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -332,4 +333,38 @@ test('projects the routed model from assistant response metadata', () => {
 			modelRoute: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
 		},
 	]);
+});
+
+test('strips internal assistant markers before history is shown', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{
+				display: 'visible',
+				role: 'user',
+				parts: [{ type: 'text', text: 'recovery-after-long' }],
+			},
+			{
+				display: 'visible',
+				role: 'assistant',
+				parts: [{
+					type: 'text',
+					text: '«STATION_IDENT» (Just making sure we are on the same page!) Photosynthesis needs light.',
+				}],
+			},
+		],
+	});
+
+	assert.equal(
+		turns[1]?.text,
+		'(Just making sure we are on the same page!) Photosynthesis needs light.',
+	);
+});
+
+test('learnerVisibleAssistantText removes stacked internal markers', () => {
+	assert.equal(
+		learnerVisibleAssistantText('«STATION_IDENT» «DEBUG_ONLY» Hello'),
+		'Hello',
+	);
+	assert.equal(learnerVisibleAssistantText('No marker here.'), 'No marker here.');
 });

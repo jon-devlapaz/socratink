@@ -7,6 +7,7 @@ export const appConfig = {
 	openrouterConnectPath: '/api/openrouter/connect',
 	openrouterCallbackPath: '/api/openrouter/callback',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
+	chatConversationResetKey: 'socratink-chat-conversation-reset',
 	chatModelStorageKey: 'socratink-chat-model',
 	themeStorageKey: 'socratink-theme', // keep in sync with the boot script in src/ui/index.html
 	typeSizeStorageKey: 'socratink-type-size', // keep in sync with the boot script in src/ui/index.html

@@ -11,7 +11,9 @@ import {
 	isOpenRouterCreditLimitError,
 	openChatConversation,
 	settlementReadTimeoutMs,
+	startNewChatConversation,
 	unsettledSubmissionFromHistory,
+	watchChatConversationReset,
 } from '../src/ui/client/conversation.ts';
 
 const admission = {
@@ -817,4 +819,125 @@ test('the pending view keeps stable accessible copy and a 10 second latency thre
 	assert.match(source, /thinking-orbs/);
 	assert.match(source, /thinking-blob/);
 	assert.match(source, /thinking-gooey/);
+});
+
+test('rejects oversized learner messages before admission', async () => {
+	const conversation = {
+		async send() {
+			throw new Error('oversized messages must not be sent');
+		},
+		async read() {
+			throw new Error('oversized messages must not be read');
+		},
+		async abort() {
+			throw new Error('oversized messages must not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const text = 'x'.repeat(16_001);
+	const state = await coordinator.start(text);
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'not-admitted');
+	assert.match(state.detail, /16,000 characters/);
+	assert.match(state.detail, /16,001 characters/);
+});
+
+test('treats an empty assistant reply as a confirmed failure', async () => {
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return { text: '   ', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
+});
+
+test('startNewChatConversation stores a shared reset token before reload', () => {
+	const store = new Map();
+	const originalStorage = globalThis.localStorage;
+	const originalLocation = globalThis.location;
+	let reloaded = false;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.location = {
+		reload() {
+			reloaded = true;
+		},
+	};
+	try {
+		startNewChatConversation('user-a');
+		const conversationId = store.get(appConfig.chatConversationStorageKey);
+		assert.match(conversationId, /^user-a:/);
+		assert.equal(store.get(appConfig.chatConversationResetKey), conversationId);
+		assert.equal(reloaded, true);
+	} finally {
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+		if (originalLocation === undefined) delete globalThis.location;
+		else globalThis.location = originalLocation;
+	}
+});
+
+test('watchChatConversationReset syncs other tabs to the new conversation id', () => {
+	const store = new Map([
+		[appConfig.chatConversationStorageKey, 'user-a:old'],
+	]);
+	const originalWindow = globalThis.window;
+	const originalStorage = globalThis.localStorage;
+	let reset = 0;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.window = {
+		addEventListener(type, listener) {
+			this[`on-${type}`] = listener;
+		},
+		removeEventListener(type) {
+			delete this[`on-${type}`];
+		},
+	};
+	try {
+		watchChatConversationReset(() => {
+			reset += 1;
+		});
+		window[`on-storage`]({
+			key: appConfig.chatConversationResetKey,
+			newValue: 'user-a:new',
+		});
+		assert.equal(store.get(appConfig.chatConversationStorageKey), 'user-a:new');
+		assert.equal(reset, 1);
+	} finally {
+		if (originalWindow === undefined) delete globalThis.window;
+		else globalThis.window = originalWindow;
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+	}
 });
