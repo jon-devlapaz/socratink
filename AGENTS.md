@@ -10,6 +10,22 @@ agreements as requirements and its software-design heuristics as defaults.
 Before Praxist runs, multi-agent research campaigns, or repeating a failed
 operator loop, read matching files in [.agents/learnings/](.agents/learnings/).
 
+## Cold archive and freezes
+
+Never preload or glob-read [`research/_cold-archive/**`](research/_cold-archive/).
+Archive material is recoverable history, not default agent context.
+
+Mega skill packs moved to
+[`research/_cold-archive/PARETO-01/skills/`](research/_cold-archive/PARETO-01/skills/)
+(`personas-skillset`, `common-skills-skillset`, `variate`) are **archive-only**.
+Do not list or load them as default project skills unless Captain explicitly
+restores them to `.agents/skills/`.
+
+Praxist-as-progress and extra WebGL scope freezes live in
+[`research/_cold-archive/PARETO-01/FREEZE.md`](research/_cold-archive/PARETO-01/FREEZE.md).
+That file does not authorize deleting `living-ink` / `src/ui/effects/living-ink*`
+or any Chat knee code.
+
 ## Commands
 
 Run commands from the repository root.
@@ -92,6 +108,7 @@ names intact. A product change must not become a framework rewrite.
 - `README.md` — supported setup, hosting, and observability behavior
 - `ZEN.md` — required maintainability agreements and design heuristics
 - `.agents/learnings/` — dated postmortems; read matching files before repeating a campaign or operator failure
+- `research/_cold-archive/` — cold NOISE archives; never preload (see FREEZE.md in each cut folder)
 
 Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
 `.vercel/`, logs, artifacts, and environment files are not source.
