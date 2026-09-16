@@ -1,4 +1,5 @@
 import type { ConversationStreamChunk, FlueConversationPart } from '@flue/sdk';
+import { inkToolName } from '../ink-cue.ts';
 import { isRevealTool } from '../reveal.ts';
 import { isQuestionnaireTool } from './questionnaire.ts';
 
@@ -28,7 +29,7 @@ export function visibleCardTools(
 	options: { readonly questionnaire?: unknown } = {},
 ): DisplayedToolCall[] {
 	return calls.filter((call) => {
-		if (isRevealTool(call.name)) return false;
+		if (isRevealTool(call.name) || call.name === inkToolName) return false;
 		if (options.questionnaire && isQuestionnaireTool(call.name)) return false;
 		return true;
 	});
@@ -132,7 +133,7 @@ export function createToolCard(call: DisplayedToolCall): HTMLElement {
 
 export function visibleToolOutput(call: DisplayedToolCall): string | undefined {
 	if (!call.output) return undefined;
-	if (isRevealTool(call.name)) return undefined;
+	if (isRevealTool(call.name) || call.name === inkToolName) return undefined;
 	if (isQuestionnaireTool(call.name) && call.state === 'done') return undefined;
 	return call.output;
 }
