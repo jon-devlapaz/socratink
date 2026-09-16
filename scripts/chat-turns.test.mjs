@@ -335,6 +335,28 @@ test('projects the routed model from assistant response metadata', () => {
 	]);
 });
 
+test('skips marker-only assistant history rows after stripping', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [{ submissionId: 'sub-1', outcome: 'failed' }],
+		messages: [
+			{
+				display: 'visible',
+				role: 'user',
+				submissionId: 'sub-1',
+				parts: [{ type: 'text', text: 'hello' }],
+			},
+			{
+				display: 'visible',
+				role: 'assistant',
+				submissionId: 'sub-1',
+				parts: [{ type: 'text', text: '«STATION_IDENT»' }],
+			},
+		],
+	});
+
+	assert.deepEqual(turns, [{ role: 'You', text: 'hello' }]);
+});
+
 test('strips internal assistant markers before history is shown', () => {
 	const turns = visibleTurnsFromHistory({
 		settlements: [],

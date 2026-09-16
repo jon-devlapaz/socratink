@@ -349,7 +349,6 @@ export function mountChatSurface(options: Readonly<{
 
 	async function sendMessage(text: string) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		input.value = '';
 		await startRequest(text);
 	}
 
@@ -367,6 +366,7 @@ export function mountChatSurface(options: Readonly<{
 			await result;
 			return;
 		}
+		input.value = '';
 		turns = [...turns, displayedLearnerTurn(text)];
 		await paint('new-turn');
 		await applyRequestState(await result);

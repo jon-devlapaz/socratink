@@ -79,15 +79,17 @@ export function visibleTurnsFromHistory(
 		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
 		const cardTools = visibleCardTools(tools, { questionnaire });
 		const ink = message.role === 'assistant' ? inkCueFromParts(message.parts) : undefined;
-		if (!text && !questionnaire && cardTools.length === 0) continue;
 		if (message.role === 'user') {
+			if (!text) continue;
 			visible.push(displayedLearnerTurn(text));
 			continue;
 		}
+		const assistantText = learnerVisibleAssistantText(text);
+		if (!assistantText.trim() && !questionnaire && cardTools.length === 0) continue;
 		visible.push({
 			role: 'Assistant',
 			...(ink ? { ink } : {}),
-			text: learnerVisibleAssistantText(text),
+			text: assistantText,
 			...(questionnaire ? { questionnaire } : {}),
 			...(modelRoute ? { modelRoute } : {}),
 			...(cardTools.length ? { tools: cardTools } : {}),

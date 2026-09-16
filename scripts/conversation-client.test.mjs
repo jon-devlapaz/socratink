@@ -451,6 +451,18 @@ test('openChatConversation namespaces and reuses the stored conversation id', ()
 	}
 });
 
+test('oversized reject keeps the composer draft for editing', async () => {
+	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(
+		source,
+		/async function sendMessage[\s\S]*?input\.value = ''[\s\S]*?await startRequest/,
+	);
+	assert.match(
+		source,
+		/if \(requestState\.kind === 'terminal'\)[\s\S]*?return;\s*\}\s*input\.value = '';/,
+	);
+});
+
 test('chat-surface restore begins restore then hydrates and rechecks', async () => {
 	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	assert.match(source, /requests\.beginRestore\(\)/);
