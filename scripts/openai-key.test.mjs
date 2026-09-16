@@ -6,7 +6,7 @@ import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
 import { operatorChatStatus } from '../src/config/chat-model.ts';
-import { openaiChatStatusCopy, openrouterChatStatusCopy } from '../src/ui/chat-route.ts';
+import { openaiChatStatusCopy, openrouterChatStatusCopy, providersChatStatusCopy } from '../src/ui/chat-route.ts';
 import { mountChatRoute } from '../src/server/chat-route.ts';
 import { openCredentialStore } from '../src/server/credential-runtime.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
@@ -92,8 +92,10 @@ test('openai key routes require a session and never echo the secret', async () =
 		const connectedBody = await connected.json();
 		assert.deepEqual(connectedBody, { kind: 'openai', openai: true, openrouter: false });
 		assert.equal(JSON.stringify(connectedBody).includes(fixtureKey), false);
+		assert.equal(providersChatStatusCopy(connectedBody), 'Chat uses your OpenAI key.');
 		assert.match(openaiChatStatusCopy(connectedBody), /Chat uses your OpenAI key/);
-		assert.doesNotMatch(openrouterChatStatusCopy(connectedBody), /Chat uses your OpenRouter key/);
+		assert.doesNotMatch(openrouterChatStatusCopy(connectedBody), /Chat uses/);
+		assert.equal(openrouterChatStatusCopy(connectedBody), '');
 
 		const status = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
 		assert.deepEqual(await status.json(), { kind: 'openai', openai: true, openrouter: false });
@@ -107,7 +109,27 @@ test('openai key routes require a session and never echo the secret', async () =
 			headers: { cookie },
 		});
 		assert.deepEqual(await cleared.json(), operatorChatStatus);
+		assert.equal(providersChatStatusCopy(operatorChatStatus), 'Chat uses the local Socratink model.');
+		assert.doesNotMatch(openaiChatStatusCopy(operatorChatStatus), /Chat uses/);
+		assert.doesNotMatch(openrouterChatStatusCopy(operatorChatStatus), /Chat uses/);
 	});
+});
+
+test('closed Providers copy has one owner from kind', () => {
+	const operator = { kind: 'operator', openai: false, openrouter: false };
+	const openai = { kind: 'openai', openai: true, openrouter: false };
+	const both = { kind: 'openrouter', openai: true, openrouter: true };
+	assert.equal(providersChatStatusCopy(operator), 'Chat uses the local Socratink model.');
+	assert.equal(providersChatStatusCopy(openai), 'Chat uses your OpenAI key.');
+	assert.equal(providersChatStatusCopy(both), 'Chat uses your OpenRouter key.');
+	assert.doesNotMatch(providersChatStatusCopy(both), /OpenAI/);
+	assert.doesNotMatch(providersChatStatusCopy(both), /ChatGPT Plus/);
+	assert.doesNotMatch(providersChatStatusCopy(both), /Claude/);
+	assert.equal(openaiChatStatusCopy(both), 'OpenAI key stored.');
+	assert.doesNotMatch(openaiChatStatusCopy(both), /Chat uses/);
+	assert.match(openrouterChatStatusCopy(both), /Chat uses your OpenRouter key/);
+	assert.equal(openaiChatStatusCopy(operator), '');
+	assert.equal(openrouterChatStatusCopy(openai), '');
 });
 
 test('paste-key UI lives on Chat chrome and does not keep the secret in the browser', async () => {
@@ -117,17 +139,26 @@ test('paste-key UI lives on Chat chrome and does not keep the secret in the brow
 	const surface = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	const chat = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(html, /id="openai-key"/);
+	assert.match(html, /id="providers-toggle"/);
+	assert.match(html, /id="providers-panel"/);
+	assert.match(html, /<p id="providers-status"[^>]*aria-live="polite"/);
+	assert.match(html, /id="providers-panel"[\s\S]*id="openai-key"[\s\S]*id="openrouter"/);
+	assert.ok(html.includes(providersChatStatusCopy(operatorChatStatus)));
 	assert.match(html, /OpenAI platform API key/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
+	assert.doesNotMatch(html, /id="openai-key-status"[^>]*aria-live/);
+	assert.doesNotMatch(html, /id="openrouter-status"[^>]*aria-live/);
 	assert.match(script, /openaiKeyPath/);
 	assert.match(script, /method: 'PUT'/);
 	assert.match(script, /method: 'DELETE'/);
 	assert.doesNotMatch(script, /localStorage/);
 	assert.match(route, /chatRoutePath/);
+	assert.match(route, /export function providersChatStatusCopy/);
 	assert.match(route, /case 'openai'/);
 	assert.match(route, /Chat uses your OpenAI key/);
 	assert.match(route, /OpenAI key stored/);
 	assert.match(surface, /loadLearnerChatStatus/);
+	assert.match(surface, /paintProviders/);
 	assert.match(surface, /paintOpenaiKey/);
 	assert.match(chat, /capturedChatModelSpecifier/);
 	assert.match(chat, /useModel/);
