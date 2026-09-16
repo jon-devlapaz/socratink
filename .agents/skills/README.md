@@ -13,11 +13,16 @@ Portable `SKILL.md` packages for coding agents. Load on demand — do not preloa
 
 ## Also present
 
-- `braintrust-docent`, `braintrust-wiki`, `docent-wiki` — observability docs
-- `karpathy-guidelines` — coding guidelines skill
+- `braintrust-docent`, `braintrust-wiki`, `docent-wiki` — observability docs (load on demand)
+
+## Sibling `.agents` trees (not skills)
+
+- `.agents/evals/` — load on demand only; do not preload
+- `.agents/roles/` — identity adapters; load on demand; root `AGENTS.md` stays canonical
+- `.agents/learnings/` — dated postmortems; read matching files before repeating a failure
 
 ## Archive-only (removed from hot tree)
 
-Mega packs and meta coding cluster cold-archived or deleted in FM-PARETO-CUT / CUT-02
-(`personas`, `common-skills`, `variate`, `better-ui-skillset`, `clean-code`, …).
-Do not restore into `.agents/skills/` without Captain word.
+Mega packs / meta cluster / `karpathy-guidelines` live under host
+`/Users/jondev/dev/archives/socratink-cold-archive/2026-09-16-from-main/`
+(see `research/README.md`). Do not restore into `.agents/skills/` without Captain word.
