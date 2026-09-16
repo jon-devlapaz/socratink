@@ -316,6 +316,8 @@ test('OpenRouter connect UI lives on Chat chrome and does not keep the minted ke
 	assert.match(surface, /mountOpenrouter/);
 	assert.match(surface, /loadLearnerChatStatus/);
 	assert.match(provider, /openrouterProvider/);
+	assert.match(provider, /capOpenrouterChatMaxTokens/);
+	assert.match(provider, /getModels: \(\) => capOpenrouterChatMaxTokens\(openrouter\.getModels\(\)\)/);
 	assert.match(provider, /resolveStoredLearnerApiKey/);
 	assert.match(provider, /credentialNameForLearnerChat\(\{ kind: 'openrouter' \}\)/);
 	assert.doesNotMatch(provider, /Models\.login/);

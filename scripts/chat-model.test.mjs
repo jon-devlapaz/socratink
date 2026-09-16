@@ -3,9 +3,11 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../src/config/app.config.ts';
 import {
+	capOpenrouterChatMaxTokens,
 	chatProviderId,
 	credentialNameForLearnerChat,
 	openaiChatModelId,
+	openrouterChatMaxTokens,
 	openrouterChatModelId,
 	resolveChatModel,
 	specifierForLearnerChat,
@@ -213,6 +215,29 @@ const localDefaults = {
 	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
 	assert.equal(credentialNameForLearnerChat({ kind: 'openai' }), 'openai');
 	assert.equal(credentialNameForLearnerChat({ kind: 'openrouter' }), 'openrouter');
+}
+
+{
+	const catalog = openrouterProvider().getModels();
+	const catalogNano = catalog.find((model) => model.id === openrouterChatModelId);
+	assert.equal(catalogNano?.maxTokens, 128000);
+	assert.equal(openrouterChatMaxTokens, 8192);
+	assert.ok(openrouterChatMaxTokens < 100000);
+
+	const capped = capOpenrouterChatMaxTokens(catalog);
+	const cappedNano = capped.find((model) => model.id === openrouterChatModelId);
+	assert.equal(cappedNano?.maxTokens, openrouterChatMaxTokens);
+	const other = catalog.find((model) => model.id !== openrouterChatModelId);
+	assert.ok(other);
+	assert.equal(
+		capped.find((model) => model.id === other.id)?.maxTokens,
+		other.maxTokens,
+	);
+
+	const openaiNano = openaiProvider()
+		.getModels()
+		.find((model) => model.id === openaiChatModelId);
+	assert.equal(openaiNano?.maxTokens, 128000);
 }
 
 console.log('Chat model routing contract passed.');
