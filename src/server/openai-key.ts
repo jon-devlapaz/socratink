@@ -4,6 +4,7 @@ import {
 	requireSignedSession,
 	unauthorizedChatError,
 } from './chat-access.ts';
+import { learnerChatStatusResponse } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
 import { openaiCredentialName } from './learner-key.ts';
 import type { RateLimiter } from './rate-limit.ts';
@@ -33,29 +34,15 @@ export function mountOpenaiKeyRoutes(
 			rateLimiter: options.rateLimiter,
 		}),
 	);
-	app.get(appConfig.openaiKeyPath, (context) => readOpenaiKey(context, options));
 	app.put(appConfig.openaiKeyPath, (context) => writeOpenaiKey(context, options));
 	app.delete(appConfig.openaiKeyPath, (context) => clearOpenaiKey(context, options));
-}
-
-async function readOpenaiKey(
-	context: Context,
-	options: { secret: string; store: OpenaiKeyStore },
-) {
-	const userId = await requireUser(context, options.secret);
-	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
-	const connected = await options.store.hasUserKey({
-		userId,
-		name: openaiCredentialName,
-	});
-	return context.json({ connected });
 }
 
 async function writeOpenaiKey(
 	context: Context,
 	options: { secret: string; store: OpenaiKeyStore },
 ) {
-	const userId = await requireUser(context, options.secret);
+	const userId = await readSessionUserId(context, options.secret);
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	const apiKey = await readPastedKey(context);
 	if (!apiKey) return context.json({ error: invalidOpenaiKeyError }, 400);
@@ -64,21 +51,17 @@ async function writeOpenaiKey(
 		name: openaiCredentialName,
 		value: apiKey,
 	});
-	return context.json({ connected: true });
+	return learnerChatStatusResponse(context, options);
 }
 
 async function clearOpenaiKey(
 	context: Context,
 	options: { secret: string; store: OpenaiKeyStore },
 ) {
-	const userId = await requireUser(context, options.secret);
+	const userId = await readSessionUserId(context, options.secret);
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	await options.store.deleteUserKey({ userId, name: openaiCredentialName });
-	return context.json({ connected: false });
-}
-
-async function requireUser(context: Context, secret: string): Promise<string | undefined> {
-	return readSessionUserId(context, secret);
+	return learnerChatStatusResponse(context, options);
 }
 
 async function readPastedKey(context: Context): Promise<string | undefined> {

@@ -38,9 +38,11 @@ a local session secret when `SESSION_SECRET` is unset.
 Opening the credential store requires `CREDENTIALS_SECRET` on hosted
 environments and uses `socratink-local-credentials-secret` when that env is
 unset locally. The store is keyed by session `userId` plus name. Authenticated
-Chat reads a stored OpenAI paste key or an OpenRouter PKCE-minted key from it;
-unsigned local Chat and smoke stay on operator `jon-local`. Rows live in the
-product table `socratink_credentials` (Postgres when `DATABASE_URL` is set;
+Chat uses one exclusive learner route: an OpenRouter PKCE row drives
+`openrouter/openai/gpt-5-nano`; otherwise an OpenAI paste row drives
+`openai/gpt-5-nano`. Unsigned local Chat and smoke stay on operator
+`jon-local`. Rows live in the product table `socratink_credentials`
+(Postgres when `DATABASE_URL` is set;
 otherwise `.cache/socratink/credentials.db`). That file is not Flue's
 conversation database, and secrets are not stored in `flue_*` tables. Profiles
 hold a `credentialRef`, never a raw key.

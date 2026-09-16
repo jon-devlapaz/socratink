@@ -24,7 +24,8 @@ import {
 	openaiCredentialName,
 	openrouterCredentialName,
 	requireAgentInstanceUserId,
-	resolveLearnerChatApiKey,
+	resolveOperatorChatApiKey,
+	resolveStoredLearnerApiKey,
 	runWithChatSpecifier,
 	runWithLearnerKey,
 	specifierForStoredLearner,
@@ -64,11 +65,9 @@ function createOverlapGate(count) {
 	};
 }
 
-function envHasFixtureSecret() {
+function envHasFixtureSecret(...secrets) {
 	const serialized = JSON.stringify(process.env);
-	return (
-		serialized.includes(aliceKey) || serialized.includes(bobKey) || serialized.includes(operatorKey)
-	);
+	return [aliceKey, bobKey, operatorKey, ...secrets].some((secret) => serialized.includes(secret));
 }
 
 async function withStore(run) {
@@ -119,9 +118,9 @@ function createIsolatedModels(options) {
 				apiKey: {
 					name: 'Chat model API key',
 					resolve: () =>
-						resolveLearnerChatApiKey({
+						resolveStoredLearnerApiKey({
 							store: options.store,
-							operatorApiKey: operatorKey,
+							name: options.name,
 						}),
 				},
 			},
@@ -152,13 +151,13 @@ function createIsolatedModels(options) {
 	return { credentials, models, model: models.getModel(providerId, modelId) };
 }
 
-test('overlapping streams plus cookie-less recovery keep each learner key on its own wire', async () => {
-	assert.equal(envHasFixtureSecret(), false);
+async function assertOverlappingLearnerWires(name, aliceSecret, bobSecret) {
+	assert.equal(envHasFixtureSecret(aliceSecret, bobSecret), false);
 	assert.equal(capturedLearnerUserId(), undefined);
 
 	await withStore(async (store) => {
-		await store.updateUserKey({ userId: aliceId, name: openaiCredentialName, value: aliceKey });
-		await store.updateUserKey({ userId: bobId, name: openaiCredentialName, value: bobKey });
+		await store.updateUserKey({ userId: aliceId, name, value: aliceSecret });
+		await store.updateUserKey({ userId: bobId, name, value: bobSecret });
 
 		const resolveGate = createOverlapGate(3);
 		const wireGate = createOverlapGate(3);
@@ -167,7 +166,11 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 		const isolatedStore = {
 			async getUserKey(params) {
 				assert.equal(capturedLearnerUserId(), params.userId);
-				assert.notEqual(process.env.JON_LOCAL_API_KEY, params.userId === aliceId ? aliceKey : bobKey);
+				assert.equal(params.name, name);
+				assert.notEqual(
+					process.env.JON_LOCAL_API_KEY,
+					params.userId === aliceId ? aliceSecret : bobSecret,
+				);
 				await resolveGate.arrive();
 				return store.getUserKey(params);
 			},
@@ -175,6 +178,7 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 
 		const { credentials, models, model } = createIsolatedModels({
 			store: isolatedStore,
+			name,
 			async onWire(streamModel, streamOptions) {
 				await wireGate.arrive();
 				wire.push({
@@ -202,16 +206,16 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 		assert.equal(capturedLearnerUserId(), undefined);
 		assert.equal(wire.length, 3);
 
-		const aliceWires = wire.filter((entry) => entry.apiKey === aliceKey);
-		const bobWires = wire.filter((entry) => entry.apiKey === bobKey);
+		const aliceWires = wire.filter((entry) => entry.apiKey === aliceSecret);
+		const bobWires = wire.filter((entry) => entry.apiKey === bobSecret);
 		assert.equal(aliceWires.length, 2);
 		assert.equal(bobWires.length, 1);
 		assert.equal(
-			wire.some((entry) => entry.apiKey === aliceKey && entry.userId === bobId),
+			wire.some((entry) => entry.apiKey === aliceSecret && entry.userId === bobId),
 			false,
 		);
 		assert.equal(
-			wire.some((entry) => entry.apiKey === bobKey && entry.userId === aliceId),
+			wire.some((entry) => entry.apiKey === bobSecret && entry.userId === aliceId),
 			false,
 		);
 		assert.equal(
@@ -223,10 +227,22 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 		}
 		assert.equal(bobWires[0]?.userId, bobId);
 		assert.deepEqual(await credentials.list(), []);
-		assert.equal(envHasFixtureSecret(), false);
-		assert.notEqual(process.env.JON_LOCAL_API_KEY, aliceKey);
-		assert.notEqual(process.env.JON_LOCAL_API_KEY, bobKey);
+		assert.equal(envHasFixtureSecret(aliceSecret, bobSecret), false);
+		assert.notEqual(process.env.JON_LOCAL_API_KEY, aliceSecret);
+		assert.notEqual(process.env.JON_LOCAL_API_KEY, bobSecret);
 	});
+}
+
+test('overlapping streams plus cookie-less recovery keep each learner key on its own wire', async () => {
+	await assertOverlappingLearnerWires(openaiCredentialName, aliceKey, bobKey);
+});
+
+test('overlapping OpenRouter resolves keep each learner key on its own wire', async () => {
+	await assertOverlappingLearnerWires(
+		openrouterCredentialName,
+		'sk-or-fixture-alice',
+		'sk-or-fixture-bob',
+	);
 });
 
 test('a stored-key resolve does not fall back to the operator key when the row is missing', async () => {
@@ -234,9 +250,9 @@ test('a stored-key resolve does not fall back to the operator key when the row i
 		await assert.rejects(
 			() =>
 				runWithLearnerKey(aliceLiveId, () =>
-					resolveLearnerChatApiKey({
+					resolveStoredLearnerApiKey({
 						store,
-						operatorApiKey: operatorKey,
+						name: openaiCredentialName,
 					}),
 				),
 			(error) => {
@@ -247,9 +263,9 @@ test('a stored-key resolve does not fall back to the operator key when the row i
 		);
 		await assert.rejects(
 			() =>
-				resolveLearnerChatApiKey({
+				resolveStoredLearnerApiKey({
 					store,
-					operatorApiKey: operatorKey,
+					name: openaiCredentialName,
 				}),
 			(error) => {
 				assert.equal(error instanceof UserKeyError, true);
@@ -261,13 +277,11 @@ test('a stored-key resolve does not fall back to the operator key when the row i
 });
 
 test('unsigned and disconnected Chat keep the operator key on jon-local', async () => {
-	assert.deepEqual(await resolveLearnerChatApiKey({ operatorApiKey: operatorKey }), {
+	assert.deepEqual(await resolveOperatorChatApiKey({ apiKey: operatorKey }), {
 		auth: { apiKey: operatorKey },
 	});
 	assert.deepEqual(
-		await runWithLearnerKey(aliceLiveId, () =>
-			resolveLearnerChatApiKey({ operatorApiKey: operatorKey }),
-		),
+		await runWithLearnerKey(aliceLiveId, () => resolveOperatorChatApiKey({ apiKey: operatorKey })),
 		{ auth: { apiKey: operatorKey } },
 	);
 });
@@ -357,18 +371,18 @@ test('Chat uses openrouter/openai/gpt-5-nano when an OpenRouter key is connected
 		);
 		assert.equal(
 			await runWithLearnerKey(aliceLiveId, () =>
-				resolveLearnerChatApiKey({
+				resolveStoredLearnerApiKey({
 					store,
-					credentialName: openrouterCredentialName,
+					name: openrouterCredentialName,
 				}),
 			).then((result) => result.auth.apiKey),
 			openrouterKey,
 		);
 		assert.equal(
 			await runWithLearnerKey(aliceLiveId, () =>
-				resolveLearnerChatApiKey({
+				resolveStoredLearnerApiKey({
 					store,
-					credentialName: openaiCredentialName,
+					name: openaiCredentialName,
 				}),
 			).then((result) => result.auth.apiKey),
 			aliceKey,

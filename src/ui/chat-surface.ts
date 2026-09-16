@@ -49,8 +49,9 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
-import { mountOpenaiKey } from './openai-key.ts';
-import { mountOpenrouter } from './openrouter.ts';
+import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
+import { mountOpenrouter, paintOpenrouter } from './openrouter.ts';
+import { loadLearnerChatStatus } from './chat-route.ts';
 import {
 	applyRequestControlState,
 	buildRequestStateTurn,
@@ -110,8 +111,14 @@ export function mountChatSurface(options: Readonly<{
 		dictationStatus,
 	} = elements;
 	initChatAutoModel(autoModel);
-	mountOpenaiKey();
-	mountOpenrouter();
+	async function refreshLearnerChat() {
+		const status = await loadLearnerChatStatus();
+		paintOpenaiKey(status);
+		paintOpenrouter(status);
+	}
+	mountOpenaiKey(refreshLearnerChat);
+	mountOpenrouter(refreshLearnerChat);
+	void refreshLearnerChat();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,

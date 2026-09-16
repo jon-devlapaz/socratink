@@ -16,6 +16,7 @@ import {
 	requireSignedSession,
 	unauthorizedChatError,
 } from './chat-access.ts';
+import { learnerChatStatusResponse } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
 import { openrouterCredentialName } from './learner-key.ts';
 import type { RateLimiter } from './rate-limit.ts';
@@ -65,40 +66,26 @@ export function mountOpenrouterRoutes(
 	});
 	app.use(`${appConfig.openrouterPath}/*`, signed);
 	app.use(appConfig.openrouterPath, signed);
-	app.get(appConfig.openrouterPath, (context) => readOpenrouter(context, options));
 	app.delete(appConfig.openrouterPath, (context) => clearOpenrouter(context, options));
 	app.post(appConfig.openrouterConnectPath, (context) => startOpenrouter(context, options));
 	app.get(appConfig.openrouterCallbackPath, (context) => finishOpenrouter(context, options));
-}
-
-async function readOpenrouter(
-	context: Context,
-	options: { secret: string; store: OpenRouterStore },
-) {
-	const userId = await requireUser(context, options.secret);
-	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
-	const connected = await options.store.hasUserKey({
-		userId,
-		name: openrouterCredentialName,
-	});
-	return context.json({ connected });
 }
 
 async function clearOpenrouter(
 	context: Context,
 	options: { secret: string; store: OpenRouterStore },
 ) {
-	const userId = await requireUser(context, options.secret);
+	const userId = await readSessionUserId(context, options.secret);
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	await options.store.deleteUserKey({ userId, name: openrouterCredentialName });
-	return context.json({ connected: false });
+	return learnerChatStatusResponse(context, options);
 }
 
 async function startOpenrouter(
 	context: Context,
 	options: { secret: string; oauth?: OpenRouterOAuthEndpoints },
 ) {
-	const userId = await requireUser(context, options.secret);
+	const userId = await readSessionUserId(context, options.secret);
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	const { verifier, challenge } = await generateOpenRouterPkce();
 	await writePkceCookie(context, options.secret, encodeOpenRouterPkceCookie(userId, verifier));
@@ -120,7 +107,7 @@ async function finishOpenrouter(
 		oauth?: OpenRouterOAuthEndpoints;
 	},
 ) {
-	const userId = await requireUser(context, options.secret);
+	const userId = await readSessionUserId(context, options.secret);
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 
 	const code = context.req.query('code')?.trim();
@@ -193,10 +180,6 @@ export async function exchangeOpenRouterCode(options: {
 	} finally {
 		clearTimeout(timeout);
 	}
-}
-
-async function requireUser(context: Context, secret: string): Promise<string | undefined> {
-	return readSessionUserId(context, secret);
 }
 
 async function signedPkceCookie(context: Context, secret: string): Promise<string | undefined> {

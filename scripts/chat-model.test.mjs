@@ -4,6 +4,7 @@ import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../src/config/app.config.ts';
 import {
 	chatProviderId,
+	credentialNameForLearnerChat,
 	openaiChatModelId,
 	openrouterChatModelId,
 	resolveChatModel,
@@ -210,6 +211,8 @@ const localDefaults = {
 	);
 	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
 	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
+	assert.equal(credentialNameForLearnerChat({ kind: 'openai' }), 'openai');
+	assert.equal(credentialNameForLearnerChat({ kind: 'openrouter' }), 'openrouter');
 }
 
 console.log('Chat model routing contract passed.');

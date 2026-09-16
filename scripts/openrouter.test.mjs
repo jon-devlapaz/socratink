@@ -12,15 +12,19 @@ import {
 	openRouterKeyLabel,
 	sha256Base64Url,
 } from '../src/config/openrouter.ts';
+import { credentialNameForLearnerChat, operatorChatStatus } from '../src/config/chat-model.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
+import { openaiChatStatusCopy, openrouterChatStatusCopy } from '../src/ui/chat-route.ts';
+import { mountChatRoute } from '../src/server/chat-route.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
 import { createCredentialStore } from '../src/server/credentials.ts';
 import {
 	openrouterCredentialName,
-	resolveLearnerChatApiKey,
+	resolveStoredLearnerApiKey,
 	runWithLearnerKey,
 	specifierForStoredLearner,
 } from '../src/server/learner-key.ts';
+import { mountOpenaiKeyRoutes } from '../src/server/openai-key.ts';
 import {
 	foreignOpenRouterPkceError,
 	invalidOpenRouterCallbackError,
@@ -59,15 +63,26 @@ async function withApp(run, oauth) {
 		db: createSqliteCredentialDb(join(directory, 'credentials.db')),
 	});
 	const app = new Hono();
+	const rateLimiter = createRateLimiter({ windowMs: 1_000, max: 120 });
 	app.post(appConfig.sessionPath, async (context) => {
 		const userId = await mintSessionUserId(context, testSecret);
 		return context.json({ userId });
 	});
+	mountOpenaiKeyRoutes(app, {
+		secret: testSecret,
+		rateLimiter,
+		store,
+	});
 	mountOpenrouterRoutes(app, {
 		secret: testSecret,
-		rateLimiter: createRateLimiter({ windowMs: 1_000, max: 120 }),
+		rateLimiter,
 		store,
 		oauth,
+	});
+	mountChatRoute(app, {
+		secret: testSecret,
+		rateLimiter,
+		store,
 	});
 	try {
 		return await run(app, store);
@@ -106,7 +121,7 @@ test('openrouter routes require a session and never echo the minted key', async 
 
 	try {
 		await withApp(async (app, store) => {
-			const missing = await app.request(appConfig.openrouterPath);
+			const missing = await app.request(appConfig.chatRoutePath);
 			assert.equal(missing.status, 401);
 
 			const unsignedConnect = await app.request(appConfig.openrouterConnectPath, { method: 'POST' });
@@ -118,9 +133,9 @@ test('openrouter routes require a session and never echo the minted key', async 
 			assert.equal(unsignedCallback.status, 401);
 
 			const { userId, cookie } = await mintCookie(app);
-			const empty = await app.request(appConfig.openrouterPath, { headers: { cookie } });
+			const empty = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
 			assert.equal(empty.status, 200);
-			assert.deepEqual(await empty.json(), { connected: false });
+			assert.deepEqual(await empty.json(), operatorChatStatus);
 
 			const started = await app.request(`http://127.0.0.1${appConfig.openrouterConnectPath}`, {
 				method: 'POST',
@@ -179,9 +194,9 @@ test('openrouter routes require a session and never echo the minted key', async 
 			);
 			assert.equal(
 				await runWithLearnerKey(namespacedConversationId(userId, 'live'), () =>
-					resolveLearnerChatApiKey({
+					resolveStoredLearnerApiKey({
 						store,
-						credentialName: openrouterCredentialName,
+						name: credentialNameForLearnerChat({ kind: 'openrouter' }),
 					}),
 				).then((result) => result.auth.apiKey),
 				fixtureKey,
@@ -191,20 +206,22 @@ test('openrouter routes require a session and never echo the minted key', async 
 				'openrouter/openai/gpt-5-nano',
 			);
 
-			const status = await app.request(appConfig.openrouterPath, { headers: { cookie } });
+			const status = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
 			const statusBody = await status.json();
-			assert.deepEqual(statusBody, { connected: true });
+			assert.deepEqual(statusBody, { kind: 'openrouter', openai: false, openrouter: true });
 			assert.equal(JSON.stringify(statusBody).includes(fixtureKey), false);
+			assert.match(openrouterChatStatusCopy(statusBody), /Chat uses your OpenRouter key/);
+			assert.doesNotMatch(openaiChatStatusCopy(statusBody), /Chat uses your OpenAI key/);
 
 			const { cookie: otherCookie } = await mintCookie(app);
-			const other = await app.request(appConfig.openrouterPath, { headers: { cookie: otherCookie } });
-			assert.deepEqual(await other.json(), { connected: false });
+			const other = await app.request(appConfig.chatRoutePath, { headers: { cookie: otherCookie } });
+			assert.deepEqual(await other.json(), operatorChatStatus);
 
 			const cleared = await app.request(appConfig.openrouterPath, {
 				method: 'DELETE',
 				headers: { cookie },
 			});
-			assert.deepEqual(await cleared.json(), { connected: false });
+			assert.deepEqual(await cleared.json(), operatorChatStatus);
 			assert.equal(
 				await specifierForStoredLearner({ store, userId, operator }),
 				'jon-local/auto',
@@ -297,11 +314,59 @@ test('OpenRouter connect UI lives on Chat chrome and does not keep the minted ke
 	assert.doesNotMatch(script, /localStorage/);
 	assert.doesNotMatch(script, /sessionStorage/);
 	assert.match(surface, /mountOpenrouter/);
+	assert.match(surface, /loadLearnerChatStatus/);
 	assert.match(provider, /openrouterProvider/);
-	assert.match(provider, /credentialName: openrouterCredentialName/);
+	assert.match(provider, /resolveStoredLearnerApiKey/);
+	assert.match(provider, /credentialNameForLearnerChat\(\{ kind: 'openrouter' \}\)/);
 	assert.doesNotMatch(provider, /Models\.login/);
 	assert.doesNotMatch(provider, /OPENROUTER_API_KEY/);
 	assert.doesNotMatch(provider, /openRouterOAuth/);
 	assert.doesNotMatch(provider, /process\.env\.\w+\s*=/);
 	assert.doesNotMatch(provider, /loginLabel/);
+	assert.doesNotMatch(provider, /resolveLearnerChatApiKey/);
+});
+
+test('both stored keys paint Chat as OpenRouter-driven', async () => {
+	const both = { kind: 'openrouter', openai: true, openrouter: true };
+	assert.match(openrouterChatStatusCopy(both), /Chat uses your OpenRouter key/);
+	assert.doesNotMatch(openaiChatStatusCopy(both), /Chat uses your OpenAI key/);
+	assert.match(openaiChatStatusCopy(both), /OpenAI key stored/);
+
+	const tokenServer = createServer((_request, response) => {
+		response.writeHead(200, { 'content-type': 'application/json' });
+		response.end(JSON.stringify({ key: fixtureKey }));
+	});
+	const tokenPort = await listen(tokenServer);
+
+	try {
+		await withApp(async (app) => {
+			const { cookie } = await mintCookie(app);
+			const pasted = await app.request(appConfig.openaiKeyPath, {
+				method: 'PUT',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify({ apiKey: 'sk-fixture-openai' }),
+			});
+			assert.deepEqual(await pasted.json(), { kind: 'openai', openai: true, openrouter: false });
+
+			const started = await app.request(`http://127.0.0.1${appConfig.openrouterConnectPath}`, {
+				method: 'POST',
+				headers: { cookie },
+			});
+			const finished = await app.request(
+				`http://127.0.0.1${appConfig.openrouterCallbackPath}?code=fixture-code`,
+				{ headers: { cookie: mergeCookies(started, cookie) } },
+			);
+			assert.equal(finished.status, 302);
+
+			const status = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
+			const body = await status.json();
+			assert.deepEqual(body, both);
+			assert.equal(JSON.stringify(body).includes(fixtureKey), false);
+			assert.match(openrouterChatStatusCopy(body), /Chat uses your OpenRouter key/);
+			assert.doesNotMatch(openaiChatStatusCopy(body), /Chat uses your OpenAI key/);
+			assert.match(openaiChatStatusCopy(body), /OpenAI key stored\. Chat is using OpenRouter/);
+		}, { tokenUrl: `http://127.0.0.1:${tokenPort}/api/v1/auth/keys` });
+	} finally {
+		await close(tokenServer);
+	}
 });

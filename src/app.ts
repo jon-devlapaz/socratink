@@ -8,6 +8,7 @@ import { chatModel, type LearnerChatRoute } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { requireChatSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
+import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
 import { learnerChatRouteForUser } from './server/learner-key.ts';
 import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
@@ -58,6 +59,11 @@ mountOpenaiKeyRoutes(app, {
 	store: credentialStore,
 });
 mountOpenrouterRoutes(app, {
+	secret: sessionSecret,
+	rateLimiter: chatRateLimiter,
+	store: credentialStore,
+});
+mountChatRoute(app, {
 	secret: sessionSecret,
 	rateLimiter: chatRateLimiter,
 	store: credentialStore,

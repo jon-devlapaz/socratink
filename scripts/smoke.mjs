@@ -305,18 +305,25 @@ try {
 		error: { type: 'unauthorized', message: 'A signed session is required.' },
 	});
 
-	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
-	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
-	assert.deepEqual(await unauthenticatedKey.json(), {
+	const unauthenticatedRoute = await fetch(`${origin}/api/chat-route`);
+	assert.equal(unauthenticatedRoute.status, 401, 'Chat route without a session cookie should return 401');
+	assert.deepEqual(await unauthenticatedRoute.json(), {
 		error: { type: 'unauthorized', message: 'A signed session is required.' },
 	});
 
 	const session = await mintSessionFixture(origin);
-	const disconnectedKey = await fetch(`${origin}/api/openai-key`, {
+	const disconnectedRoute = await fetch(`${origin}/api/chat-route`, {
 		headers: { cookie: session.cookie },
 	});
-	assert.equal(disconnectedKey.status, 200, 'signed session can read OpenAI key status');
-	assert.deepEqual(await disconnectedKey.json(), { connected: false });
+	assert.equal(disconnectedRoute.status, 200, 'signed session can read Chat route status');
+	assert.deepEqual(await disconnectedRoute.json(), {
+		kind: 'operator',
+		openai: false,
+		openrouter: false,
+	});
+
+	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
+	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
 
 	const unauthenticatedOpenrouter = await fetch(`${origin}/api/openrouter`);
 	assert.equal(
@@ -324,15 +331,6 @@ try {
 		401,
 		'OpenRouter route without a session cookie should return 401',
 	);
-	assert.deepEqual(await unauthenticatedOpenrouter.json(), {
-		error: { type: 'unauthorized', message: 'A signed session is required.' },
-	});
-
-	const disconnectedOpenrouter = await fetch(`${origin}/api/openrouter`, {
-		headers: { cookie: session.cookie },
-	});
-	assert.equal(disconnectedOpenrouter.status, 200, 'signed session can read OpenRouter status');
-	assert.deepEqual(await disconnectedOpenrouter.json(), { connected: false });
 
 	const foreignChat = await fetch(
 		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,
