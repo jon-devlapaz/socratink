@@ -2,7 +2,6 @@ import {
 	FlueApiError,
 	type AgentReadResult,
 } from '@flue/sdk';
-import { learnerMessageLengthError } from '../config/chat-message.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
@@ -348,21 +347,8 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function rejectAdmission(text: string, detail: string) {
-		requestState = { kind: 'terminal', text, outcome: 'not-admitted', detail };
-		applyRequestControls(requestState);
-		await paint('hold');
-		focusAfterRequestStatePaint(requestState, elements);
-	}
-
 	async function sendMessage(text: string) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		const lengthError = learnerMessageLengthError(text);
-		if (lengthError) {
-			await rejectAdmission(text, lengthError);
-			return;
-		}
-		turns = [...turns, displayedLearnerTurn(text)];
 		input.value = '';
 		await startRequest(text);
 	}
@@ -378,8 +364,10 @@ export function mountChatSurface(options: Readonly<{
 		if (requestState.kind === 'terminal') {
 			await paint('hold');
 			focusAfterRequestStatePaint(requestState, elements);
+			await result;
 			return;
 		}
+		turns = [...turns, displayedLearnerTurn(text)];
 		await paint('new-turn');
 		await applyRequestState(await result);
 	}

@@ -11,6 +11,7 @@ import {
 import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
+import { learnerVisibleAssistantText } from '../assistant-text.ts';
 import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
@@ -110,7 +111,6 @@ export function startNewChatConversation(userId: string) {
 export function watchChatConversationReset(onReset: () => void): () => void {
 	const listener = (event: StorageEvent) => {
 		if (event.key !== appConfig.chatConversationResetKey || !event.newValue) return;
-		if (event.newValue === localStorage.getItem(appConfig.chatConversationStorageKey)) return;
 		localStorage.setItem(appConfig.chatConversationStorageKey, event.newValue);
 		onReset();
 	};
@@ -385,7 +385,7 @@ export class ChatRequestCoordinator {
 	}
 
 	private completedState(pending: PendingRequest, reply: AgentReadResult): ChatRequestState {
-		if (!reply.text.trim()) {
+		if (!learnerVisibleAssistantText(reply.text).trim()) {
 			return this.terminalState(
 				pending,
 				'failed',

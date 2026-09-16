@@ -821,6 +821,30 @@ test('the pending view keeps stable accessible copy and a 10 second latency thre
 	assert.match(source, /thinking-gooey/);
 });
 
+test('Retry works after an oversized reject', async () => {
+	const conversation = {
+		async send() {
+			throw new Error('oversized messages must not be sent');
+		},
+		async read() {
+			throw new Error('oversized messages must not be read');
+		},
+		async abort() {
+			throw new Error('oversized messages must not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const text = 'x'.repeat(16_001);
+	const rejected = await coordinator.start(text);
+
+	assert.equal(rejected.kind, 'terminal');
+	assert.equal(rejected.outcome, 'not-admitted');
+
+	const retried = await coordinator.retry();
+	assert.equal(retried.kind, 'terminal');
+	assert.equal(retried.outcome, 'not-admitted');
+});
+
 test('rejects oversized learner messages before admission', async () => {
 	const conversation = {
 		async send() {
@@ -850,6 +874,26 @@ test('treats an empty assistant reply as a confirmed failure', async () => {
 		},
 		async read() {
 			return { text: '   ', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
+});
+
+test('treats a marker-only assistant reply as a confirmed failure', async () => {
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
 		},
 		async abort() {
 			throw new Error('should not abort');
@@ -901,6 +945,50 @@ test('startNewChatConversation stores a shared reset token before reload', () =>
 test('watchChatConversationReset syncs other tabs to the new conversation id', () => {
 	const store = new Map([
 		[appConfig.chatConversationStorageKey, 'user-a:old'],
+	]);
+	const originalWindow = globalThis.window;
+	const originalStorage = globalThis.localStorage;
+	let reset = 0;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.window = {
+		addEventListener(type, listener) {
+			this[`on-${type}`] = listener;
+		},
+		removeEventListener(type) {
+			delete this[`on-${type}`];
+		},
+	};
+	try {
+		watchChatConversationReset(() => {
+			reset += 1;
+		});
+		window[`on-storage`]({
+			key: appConfig.chatConversationResetKey,
+			newValue: 'user-a:new',
+		});
+		assert.equal(store.get(appConfig.chatConversationStorageKey), 'user-a:new');
+		assert.equal(reset, 1);
+	} finally {
+		if (originalWindow === undefined) delete globalThis.window;
+		else globalThis.window = originalWindow;
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+	}
+});
+
+test('watchChatConversationReset reloads when both keys already hold the same id', () => {
+	const store = new Map([
+		[appConfig.chatConversationStorageKey, 'user-a:new'],
 	]);
 	const originalWindow = globalThis.window;
 	const originalStorage = globalThis.localStorage;
