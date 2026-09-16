@@ -11,7 +11,8 @@ import {
 import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
-import { learnerVisibleAssistantText } from '../assistant-text.ts';
+import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
+import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-card.ts';
 import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
@@ -150,6 +151,7 @@ export class ChatRequestCoordinator {
 	private readonly conversation: ChatTurnClient;
 	private readonly abortSignal: () => AbortSignal;
 	private readonly settlementSignal: () => AbortSignal;
+	private readonly streamTools: DisplayedToolCall[] = [];
 	private readonly onEvent?: (event: ConversationStreamChunk) => void;
 
 	constructor(
@@ -161,6 +163,11 @@ export class ChatRequestCoordinator {
 		this.settlementSignal =
 			options.settlementSignal ?? (() => AbortSignal.timeout(settlementReadTimeoutMs));
 		this.onEvent = options.onEvent;
+	}
+
+	private observeStreamEvent(event: ConversationStreamChunk): void {
+		applyToolStreamEvent(this.streamTools, event);
+		this.onEvent?.(event);
 	}
 
 	start(text: string): Promise<ChatRequestState> {
@@ -319,6 +326,7 @@ export class ChatRequestCoordinator {
 	}
 
 	private async sendAndRead(pending: PendingRequest): Promise<ChatRequestState> {
+		this.streamTools.length = 0;
 		try {
 			const admission = await this.conversation.send({
 				message: { kind: 'user', body: pending.text },
@@ -344,17 +352,17 @@ export class ChatRequestCoordinator {
 	}
 
 	private async readWithLostStreamFallback(admission: AgentSendResult, signal: AbortSignal) {
-		const onEvent = this.onEvent;
+		const onEvent = (event: ConversationStreamChunk) => this.observeStreamEvent(event);
 		try {
 			return await this.conversation.read(admission, {
 				signal,
-				...(onEvent ? { onEvent } : {}),
+				onEvent,
 			});
 		} catch (error) {
 			if (!isLostConversationStream(error)) throw error;
 			return this.conversation.read(admission.submissionId, {
 				signal,
-				...(onEvent ? { onEvent } : {}),
+				onEvent,
 			});
 		}
 	}
@@ -363,6 +371,7 @@ export class ChatRequestCoordinator {
 		try {
 			const reply = await this.conversation.read(admission.submissionId, {
 				signal: this.settlementSignal(),
+				onEvent: (event) => this.observeStreamEvent(event),
 			});
 			return this.completedState(pending, reply);
 		} catch (error) {
@@ -385,7 +394,11 @@ export class ChatRequestCoordinator {
 	}
 
 	private completedState(pending: PendingRequest, reply: AgentReadResult): ChatRequestState {
-		if (!learnerVisibleAssistantText(reply.text).trim()) {
+		if (!assistantTurnHasVisibleContent({
+			text: reply.text,
+			data: reply.data,
+			tools: this.streamTools,
+		})) {
 			return this.terminalState(
 				pending,
 				'failed',

@@ -919,6 +919,45 @@ test('treats a marker-only assistant reply as a confirmed failure', async () => 
 	assert.match(state.detail, /without a reply/i);
 });
 
+test('completes marker-only text when the reply includes a questionnaire', async () => {
+	const questionnaire = {
+		kind: 'question',
+		submitLabel: 'Continue',
+		items: [
+			{
+				name: 'path',
+				prompt: 'How should we begin?',
+				required: true,
+				multiple: false,
+				choices: [
+					{ value: 'example', label: 'Worked example' },
+					{ value: 'attempt', label: 'Try unaided' },
+				],
+			},
+		],
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read() {
+			return {
+				text: '«STATION_IDENT»',
+				data: { questionnaire: [questionnaire] },
+				submissionId: 'sub-1',
+			};
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'completed');
+	assert.deepEqual(state.reply.data.questionnaire, [questionnaire]);
+});
+
 test('startNewChatConversation stores a shared reset token before reload', () => {
 	const store = new Map();
 	const originalStorage = globalThis.localStorage;
