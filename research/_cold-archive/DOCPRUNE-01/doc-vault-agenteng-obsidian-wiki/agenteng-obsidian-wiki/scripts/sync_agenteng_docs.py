@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+src_dir = Path(__file__).resolve().parent.parent / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
+from agenteng_obsidian_wiki.cli import main
+
+raise SystemExit(main())
