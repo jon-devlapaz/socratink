@@ -270,7 +270,10 @@ try {
 	assert.match(html, /<title>Socratink<\/title>/);
 	assert.match(html, /id="openai-key"/);
 	assert.match(html, /OpenAI platform API key/);
+	assert.match(html, /id="openrouter"/);
+	assert.match(html, /OpenRouter credits/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
+	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);
 	assert.equal(browserRoute.status, 200, 'unknown browser route should receive the SPA');
 	assert.match(await browserRoute.text(), /<title>Socratink<\/title>/);
@@ -314,6 +317,22 @@ try {
 	});
 	assert.equal(disconnectedKey.status, 200, 'signed session can read OpenAI key status');
 	assert.deepEqual(await disconnectedKey.json(), { connected: false });
+
+	const unauthenticatedOpenrouter = await fetch(`${origin}/api/openrouter`);
+	assert.equal(
+		unauthenticatedOpenrouter.status,
+		401,
+		'OpenRouter route without a session cookie should return 401',
+	);
+	assert.deepEqual(await unauthenticatedOpenrouter.json(), {
+		error: { type: 'unauthorized', message: 'A signed session is required.' },
+	});
+
+	const disconnectedOpenrouter = await fetch(`${origin}/api/openrouter`, {
+		headers: { cookie: session.cookie },
+	});
+	assert.equal(disconnectedOpenrouter.status, 200, 'signed session can read OpenRouter status');
+	assert.deepEqual(await disconnectedOpenrouter.json(), { connected: false });
 
 	const foreignChat = await fetch(
 		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,

@@ -7,7 +7,12 @@ export const openaiChatProviderId = 'openai';
 // Cheapest openai nano in pi-ai's openaiProvider() catalog (2.5M/day shared-traffic bucket).
 export const openaiChatModelId = 'gpt-5-nano';
 
-export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' };
+export const openrouterChatProviderId = 'openrouter';
+
+// Same cheap openai nano, addressed through Pi's openrouterProvider() catalog.
+export const openrouterChatModelId = 'openai/gpt-5-nano';
+
+export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' } | { kind: 'openrouter' };
 
 export type ChatModelEnvironment = {
 	readonly VERCEL?: string;
@@ -110,6 +115,8 @@ export function specifierForLearnerChat(
 			return `${operator.providerId}/${operator.modelId}`;
 		case 'openai':
 			return `${openaiChatProviderId}/${openaiChatModelId}`;
+		case 'openrouter':
+			return `${openrouterChatProviderId}/${openrouterChatModelId}`;
 		default: {
 			const exhaustive: never = route;
 			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);

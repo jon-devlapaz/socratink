@@ -50,6 +50,7 @@ import {
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
 import { mountOpenaiKey } from './openai-key.ts';
+import { mountOpenrouter } from './openrouter.ts';
 import {
 	applyRequestControlState,
 	buildRequestStateTurn,
@@ -110,6 +111,7 @@ export function mountChatSurface(options: Readonly<{
 	} = elements;
 	initChatAutoModel(autoModel);
 	mountOpenaiKey();
+	mountOpenrouter();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,

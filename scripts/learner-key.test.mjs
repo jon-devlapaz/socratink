@@ -22,6 +22,7 @@ import {
 	capturedLearnerUserId,
 	missingChatInstanceIdError,
 	openaiCredentialName,
+	openrouterCredentialName,
 	requireAgentInstanceUserId,
 	resolveLearnerChatApiKey,
 	runWithChatSpecifier,
@@ -326,6 +327,55 @@ test('Chat uses openai/gpt-5-nano only while a learner key is connected', async 
 				assert.equal(error.message, missingChatInstanceIdError.message);
 				return true;
 			},
+		);
+	});
+});
+
+test('Chat uses openrouter/openai/gpt-5-nano when an OpenRouter key is connected', async () => {
+	const operator = { providerId: 'jon-local', modelId: 'auto' };
+	const openrouterKey = 'sk-or-fixture-alice';
+	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
+
+	await withStore(async (store) => {
+		await store.updateUserKey({
+			userId: aliceId,
+			name: openrouterCredentialName,
+			value: openrouterKey,
+		});
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: aliceId, operator }),
+			'openrouter/openai/gpt-5-nano',
+		);
+		await store.updateUserKey({
+			userId: aliceId,
+			name: openaiCredentialName,
+			value: aliceKey,
+		});
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: aliceId, operator }),
+			'openrouter/openai/gpt-5-nano',
+		);
+		assert.equal(
+			await runWithLearnerKey(aliceLiveId, () =>
+				resolveLearnerChatApiKey({
+					store,
+					credentialName: openrouterCredentialName,
+				}),
+			).then((result) => result.auth.apiKey),
+			openrouterKey,
+		);
+		assert.equal(
+			await runWithLearnerKey(aliceLiveId, () =>
+				resolveLearnerChatApiKey({
+					store,
+					credentialName: openaiCredentialName,
+				}),
+			).then((result) => result.auth.apiKey),
+			aliceKey,
+		);
+		assert.equal(
+			await specifierForStoredLearner({ store, userId: bobId, operator }),
+			'jon-local/auto',
 		);
 	});
 });

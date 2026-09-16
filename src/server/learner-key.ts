@@ -3,6 +3,7 @@ import { instrument } from '@flue/runtime';
 import {
 	specifierForLearnerChat,
 	type ChatModel,
+	type LearnerChatRoute,
 } from '../config/chat-model.ts';
 import { userIdFromConversationId } from '../config/session.ts';
 import { missingUserKeyError, UserKeyError, type CredentialStore } from './credentials.ts';
@@ -13,6 +14,8 @@ import { missingUserKeyError, UserKeyError, type CredentialStore } from './crede
 // conv_* identity and cannot recover a learner.
 
 export const openaiCredentialName = 'openai';
+
+export const openrouterCredentialName = 'openrouter';
 
 export const missingChatInstanceIdError = {
 	type: 'missing_chat_instance_id',
@@ -49,17 +52,41 @@ export function runWithChatSpecifier<T>(specifier: string, fn: () => T): T {
 	return chatSpecifier.run(specifier, fn);
 }
 
+export async function learnerChatRouteForUser(options: {
+	store: Pick<CredentialStore, 'hasUserKey'>;
+	userId: string;
+}): Promise<LearnerChatRoute> {
+	// One Chat specifier. OpenRouter wins when both learner rows exist so
+	// resolve() cannot mix an OpenAI key onto the openrouter provider.
+	if (
+		await options.store.hasUserKey({
+			userId: options.userId,
+			name: openrouterCredentialName,
+		})
+	) {
+		return { kind: 'openrouter' };
+	}
+	if (
+		await options.store.hasUserKey({
+			userId: options.userId,
+			name: openaiCredentialName,
+		})
+	) {
+		return { kind: 'openai' };
+	}
+	return { kind: 'operator' };
+}
+
 export async function specifierForStoredLearner(options: {
 	store: Pick<CredentialStore, 'hasUserKey'>;
 	userId: string;
 	operator: Pick<ChatModel, 'providerId' | 'modelId'>;
 }): Promise<string> {
-	const connected = await options.store.hasUserKey({
-		userId: options.userId,
-		name: openaiCredentialName,
-	});
 	return specifierForLearnerChat(
-		connected ? { kind: 'openai' } : { kind: 'operator' },
+		await learnerChatRouteForUser({
+			store: options.store,
+			userId: options.userId,
+		}),
 		options.operator,
 	);
 }

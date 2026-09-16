@@ -37,17 +37,18 @@ a local session secret when `SESSION_SECRET` is unset.
 
 Opening the credential store requires `CREDENTIALS_SECRET` on hosted
 environments and uses `socratink-local-credentials-secret` when that env is
-unset locally. The store is a library keyed by session `userId` plus name; Chat
-does not open it yet. Rows live in the product table `socratink_credentials`
-(Postgres when `DATABASE_URL` is set; otherwise
-`.cache/socratink/credentials.db`). That file is not Flue's conversation
-database, and secrets are not stored in `flue_*` tables. Profiles hold a
-`credentialRef`, never a raw key. Chat still uses operator `jon-local`; this is
-not learner BYOK.
+unset locally. The store is keyed by session `userId` plus name. Authenticated
+Chat reads a stored OpenAI paste key or an OpenRouter PKCE-minted key from it;
+unsigned local Chat and smoke stay on operator `jon-local`. Rows live in the
+product table `socratink_credentials` (Postgres when `DATABASE_URL` is set;
+otherwise `.cache/socratink/credentials.db`). That file is not Flue's
+conversation database, and secrets are not stored in `flue_*` tables. Profiles
+hold a `credentialRef`, never a raw key.
 
 Chat requires a signed HttpOnly session cookie. Conversation ids are
 `${userId}:${nonce}` so one session cannot resume another. Agent routes are
-rate-limited by that user id. This is not OAuth, a user directory, or BYOK.
+rate-limited by that user id. OpenRouter connect is PKCE that mints a user API
+key; it is not Socratink identity and not a ChatGPT or Claude login.
 
 ## Verify the app
 
@@ -82,9 +83,10 @@ This demonstrates a persisted, observable interaction and its software
 reliability boundaries. It does not establish agentic-engineering mastery,
 durable learning, transfer, learning effectiveness, or production readiness.
 Hosted Chat now requires a signed session cookie, conversation ownership, and
-per-user rate limits. The encrypted credential store exists for authenticated
-sessions; it is not a paste UI, OpenRouter OAuth, or learner BYOK. Keep the
-public domain off until those later slices exist if learners will paste keys.
+per-user rate limits. Authenticated learners can paste an OpenAI platform key
+or connect OpenRouter PKCE; the minted or pasted secret stays in the encrypted
+store. Keep the public domain off until that hosted path is verified for the
+learners who will use it.
 
 ## Northflank staging
 

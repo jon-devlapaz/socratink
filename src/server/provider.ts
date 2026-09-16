@@ -1,6 +1,7 @@
 import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { setProvider } from '@flue/runtime';
 import { appConfig } from '../config/app.config.ts';
 import { chatModel, resolveChatModel } from '../config/chat-model.ts';
@@ -10,11 +11,13 @@ import { getCredentialStore } from './credential-runtime.ts';
 import {
 	installLearnerKeyCapture,
 	openaiCredentialName,
+	openrouterCredentialName,
 	resolveLearnerChatApiKey,
 } from './learner-key.ts';
 import { installModelRouteCapture, wrapStreamsForRouteCapture } from './model-route.ts';
 
 const openai = openaiProvider();
+const openrouter = openrouterProvider();
 const credentialStore = getCredentialStore();
 
 setProvider(
@@ -59,6 +62,19 @@ setProvider({
 				resolveLearnerChatApiKey({
 					store: credentialStore,
 					credentialName: openaiCredentialName,
+				}),
+		},
+	},
+});
+setProvider({
+	...openrouter,
+	auth: {
+		apiKey: {
+			name: 'OpenRouter API key',
+			resolve: async () =>
+				resolveLearnerChatApiKey({
+					store: credentialStore,
+					credentialName: openrouterCredentialName,
 				}),
 		},
 	},
