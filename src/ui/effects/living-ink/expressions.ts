@@ -1,7 +1,7 @@
 import { INK_BASE, type InkPart, type InkScene } from './scene.ts';
 
-// Capsules become spheres when diameter === length. Keeping the same primitive
-// across expressions lets the existing renderer interpolate their dimensions.
+// Capsules become spheres when diameter === length. Cue recipes keep one
+// primitive so morphs stay a single body. Rest is the landing hero sphere.
 type Point = [number, number];
 function stroke(from: Point, to: Point, diameter = 0.25): InkPart {
 	const dx = to[0] - from[0],
@@ -26,23 +26,28 @@ const scene = (name: string, parts: InkPart[], blend = 0.13): InkScene => ({
 	parts,
 });
 
+const LANDING_ORB_VOLUMES = 12;
+const landingOrb = (): InkScene => ({
+	version: 1,
+	name: 'Hero ink: sphere',
+	blend: 0.28,
+	material: { color: '#060709', roughness: 0.23, metalness: 0 },
+	motion: { speed: 0.65, amplitude: 0.035, pointer: 0.22 },
+	parts: Array.from({ length: LANDING_ORB_VOLUMES }, () => ({
+		shape: 'sphere',
+		operation: 'union',
+		position: [0, 0, 0],
+		scale: [1.7, 1.7, 1.7],
+		rotation: [0, 0, 0],
+	})),
+});
+
 export const INK_EXPRESSIONS = {
 	rest: {
 		label: 'At rest',
 		symbol: 'Ink droplet',
 		meaning: 'An idea has room to take shape.',
-		scene: {
-			...scene(
-				'Ink droplet',
-				[
-					stroke([0, -0.3], [0, -0.1], 1.3),
-					stroke([0.06, 0.05], [0.14, 0.55], 0.75),
-					stroke([0.18, 0.55], [0.22, 0.87], 0.3),
-				],
-				0.35,
-			),
-			motion: { speed: 0.4, amplitude: 0.055, pointer: 0.14 },
-		},
+		scene: landingOrb(),
 	},
 	question: {
 		label: 'A question opens',

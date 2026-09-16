@@ -1,5 +1,5 @@
-// Internal geometry contract, ported from the verified landing renderer.
-// Only the fixed expression recipes enter this initial app integration.
+// Internal geometry contract, ported from the landing renderer.
+// Rest uses the twelve-volume landing hero sphere; cues stay within 14 parts.
 export type InkPart = {
 	shape: 'sphere' | 'capsule' | 'box';
 	operation: 'union' | 'subtract' | 'intersect';
@@ -13,6 +13,7 @@ export type InkScene = {
 	blend: number;
 	material: { color: string; roughness: number; metalness: number };
 	motion: { speed: number; amplitude: number; pointer: number };
+	kinematics?: 'none' | 'respiration';
 	parts: InkPart[];
 };
 export const INK_BASE: Omit<InkScene, 'name' | 'parts'> = {
