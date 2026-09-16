@@ -92,12 +92,12 @@ test('a lost admission stream falls back to the same submissionId without sendin
 	assert.deepEqual(reads, [admission, admission.submissionId]);
 });
 
-test('lost-stream fallback still forwards onEvent', async () => {
-	const seen = [];
-	const chunk = {
-		type: 'message-delta',
-		kind: 'reasoning',
-		delta: 'hmm',
+test('lost-stream fallback does not observe tools from origin replay', async () => {
+	const priorToolChunk = {
+		type: 'tool-input',
+		toolCallId: 'call-old',
+		toolName: 'lookup',
+		input: {},
 	};
 	const conversation = {
 		async send() {
@@ -105,21 +105,19 @@ test('lost-stream fallback still forwards onEvent', async () => {
 		},
 		async read(target, options) {
 			if (target === admission) throw streamNotFound('json');
-			options?.onEvent?.(chunk);
-			return reply;
+			options?.onEvent?.(priorToolChunk);
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
 		},
 		async abort() {
 			throw new Error('should not abort');
 		},
 	};
-	const coordinator = new ChatRequestCoordinator(conversation, {
-		...coordinatorOptions,
-		onEvent: (event) => {
-			seen.push(event);
-		},
-	});
-	await coordinator.start('hello');
-	assert.deepEqual(seen, [chunk]);
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
 });
 
 test('forwards admission-read stream events to the conversation listener', async () => {
@@ -313,6 +311,36 @@ test('a bounded abort failure becomes recoverable and never claims the reply sto
 	assert.match(state.detail, /could not be confirmed/i);
 	assert.doesNotMatch(state.detail, /stopped this reply/i);
 	assert.equal(await running, state);
+});
+
+test('bare-id recheck does not complete a marker-only reply from prior-turn tools alone', async () => {
+	const priorToolChunk = {
+		type: 'tool-input',
+		toolCallId: 'call-old',
+		toolName: 'lookup',
+		input: {},
+	};
+	const conversation = {
+		async send() {
+			return admission;
+		},
+		async read(target, options) {
+			if (target === admission) throw new Error('connection lost');
+			assert.equal(options?.onEvent, undefined);
+			options?.onEvent?.(priorToolChunk);
+			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
+		},
+		async abort() {
+			throw new Error('should not abort');
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	assert.equal((await coordinator.start('hello')).kind, 'recovery');
+
+	const state = await coordinator.recheck();
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'failed');
+	assert.match(state.detail, /without a reply/i);
 });
 
 test('an admitted observation failure reattaches to the same submission without sending again', async () => {

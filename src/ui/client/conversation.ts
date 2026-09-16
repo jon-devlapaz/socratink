@@ -362,7 +362,6 @@ export class ChatRequestCoordinator {
 			if (!isLostConversationStream(error)) throw error;
 			return this.conversation.read(admission.submissionId, {
 				signal,
-				onEvent,
 			});
 		}
 	}
@@ -371,7 +370,6 @@ export class ChatRequestCoordinator {
 		try {
 			const reply = await this.conversation.read(admission.submissionId, {
 				signal: this.settlementSignal(),
-				onEvent: (event) => this.observeStreamEvent(event),
 			});
 			return this.completedState(pending, reply);
 		} catch (error) {

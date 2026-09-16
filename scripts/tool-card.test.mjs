@@ -217,7 +217,8 @@ test('the live card mounts tool calls from history parts and admission stream ev
 	assert.match(surfaceSource, /\.\.\.\(tools\.length \? \{ tools \} : \{\}\)/);
 	assert.match(conversationSource, /onEvent\?: \(event: ConversationStreamChunk\) => void/);
 	assert.match(conversationSource, /applyToolStreamEvent\(this\.streamTools, event\)/);
-	assert.match(conversationSource, /onEvent: \(event\) => this\.observeStreamEvent\(event\)/);
+	assert.match(conversationSource, /read\(admission, \{[\s\S]*?onEvent/);
+	assert.doesNotMatch(conversationSource, /read\(admission\.submissionId, \{[\s\S]*?onEvent/);
 	const cssSource = await readFile(new URL('../src/ui/tool-card.css', import.meta.url), 'utf8');
 	assert.doesNotMatch(cssSource, /\.tool-card \{[^}]*box-shadow/);
 	assert.doesNotMatch(cssSource, /\.tool-card \{[^}]*background:/);
