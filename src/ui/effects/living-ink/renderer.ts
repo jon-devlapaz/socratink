@@ -1,8 +1,15 @@
+// Chat orb renderer: rest is a parked wet sphere; cues are glyphs that
+// wobble with sin/cos + voice. Dual-SDF morphs the two anatomies. Landing
+// folio APIs stay in the landing lab.
 import * as THREE from 'three';
 import Raymarcher, { type Entity } from 'three-raymarcher';
-import { type InkScene } from './scene.ts';
+import { type InkBody, type InkScene } from './scene.ts';
+import { applyInkFinish } from './finish.ts';
 
 const operation = { union: 0, subtract: 1, intersect: 2 };
+const INK_MORPH = 1.7;
+const INK_MENISCUS_BLEND = 1;
+const ORB_CAMERA_Z = 5.35;
 const rotation = (v: number[]) =>
 	new THREE.Quaternion().setFromEuler(
 		new THREE.Euler(
@@ -10,15 +17,17 @@ const rotation = (v: number[]) =>
 		),
 	);
 
+// A dim room, one small window, a wide faint sky, a rim catch from behind:
+// a wet pool, not a product under softboxes.
 function createEnvironment(renderer: THREE.WebGLRenderer) {
 	const room = new THREE.Scene();
-	room.background = new THREE.Color(0.025, 0.028, 0.033);
+	room.background = new THREE.Color(0.045, 0.043, 0.038);
 	const panels: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>[] =
 		[];
 	for (const [position, scale, strength] of [
-		[[-3, 4, 1], [2.5, 2], 18],
-		[[4, 1, 1], [0.7, 3], 10],
-		[[-1, -3, 1], [2, 0.5], 4],
+		[[-2.6, 4, 2.2], [0.8, 0.8], 16],
+		[[0, 4.5, 3.5], [7, 3], 0.7],
+		[[3, -2, -4], [2.5, 1.2], 2.2],
 	] as const) {
 		const panel = new THREE.Mesh(
 			new THREE.CircleGeometry(1, 64),
@@ -43,6 +52,25 @@ function createEnvironment(renderer: THREE.WebGLRenderer) {
 	return environment;
 }
 
+function toEntities(recipe: InkScene): Entity[] {
+	return recipe.parts.map((part) => ({
+		shape: Raymarcher.shapes[part.shape],
+		operation: operation[part.operation],
+		position: new THREE.Vector3(...part.position),
+		scale: new THREE.Vector3(...part.scale),
+		rotation: rotation(part.rotation),
+		color: new THREE.Color(recipe.material.color),
+	}));
+}
+
+function extentOf(entities: Entity[]) {
+	return entities.reduce(
+		(extent, entity) =>
+			Math.max(extent, entity.position.length() + entity.scale.length() * 0.5),
+		0,
+	);
+}
+
 export function mountInk(
 	mount: HTMLElement,
 	initial: InkScene,
@@ -59,21 +87,27 @@ export function mountInk(
 	renderer.domElement.style.cssText = 'display:block;width:100%;height:100%';
 	const scene = new THREE.Scene();
 	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 40);
-	camera.position.z = 4.5;
+	camera.position.z = initial.body === 'orb' ? ORB_CAMERA_Z : 4.5;
 	let environment = createEnvironment(renderer);
 	const ink = new Raymarcher({
 		envMap: environment.texture,
 		envMapIntensity: 1.2,
-		resolution: 0.75,
+		resolution: 1,
 	});
 	// The library defaults to a 0.05-unit march floor. Our ~2-unit ink forms
 	// need finer sampling to avoid stepped highlights on their curved surface.
 	ink.userData.raymarcher.material.defines.MIN_DISTANCE = '0.005';
+	const finish = applyInkFinish(ink.userData.raymarcher.material);
 	scene.add(ink);
 	mount.replaceChildren(renderer.domElement);
 	let recipe = structuredClone(initial);
 	let entities: Entity[] = [];
 	let targets: Entity[] = [];
+	let was: Entity[] = [];
+	let wasTargets: Entity[] = [];
+	let wasBody: InkBody | null = null;
+	let wasExtent = 0;
+	let pending: InkScene | null = null;
 	let time = 0;
 	let voiceLevel = 0;
 	let voiceTarget = 0;
@@ -87,7 +121,9 @@ export function mountInk(
 	let theme = 'light';
 	let renderCount = 0;
 	let transition = 0;
-	let requestedCount = 0;
+	let morph = 0;
+	let morphDuration = 0;
+	let bleed = 0.4;
 	const origin = new THREE.Vector2();
 	const nextPosition = new THREE.Vector3();
 	const nextScale = new THREE.Vector3();
@@ -96,52 +132,112 @@ export function mountInk(
 	const frameTimes: number[] = [];
 	const motion = { ...recipe.motion };
 
+	function parkVolumes(posed: Entity[], rests: Entity[]) {
+		posed.forEach((entity, i) => {
+			const rest = rests[i];
+			if (!rest) return;
+			entity.position.copy(rest.position);
+			entity.scale.copy(rest.scale);
+			entity.rotation.copy(rest.rotation);
+			entity.color.copy(rest.color);
+		});
+	}
+
+	function poseGlyph(posed: Entity[], rests: Entity[], ease: number) {
+		const a = reduced ? 0 : motion.amplitude + voiceLevel * 0.035;
+		posed.forEach((entity, i) => {
+			const rest = rests[i];
+			if (!rest) return;
+			const phase = i * 2.39996;
+			const x = rest.position.x + Math.sin(time * 0.8 + phase) * a;
+			const y = rest.position.y + Math.sin(time * 0.63 + phase * 1.3) * a;
+			const z = rest.position.z + Math.cos(time * 0.7 + phase) * a * 0.6;
+			entity.position.lerp(
+				nextPosition.set(
+					x + pointer.x * motion.pointer * (0.3 + i * 0.15),
+					y + pointer.y * motion.pointer * (0.3 + i * 0.15),
+					z,
+				),
+				ease,
+			);
+			entity.scale.lerp(
+				nextScale
+					.copy(rest.scale)
+					.multiplyScalar(1 + Math.sin(time * 0.9 + phase) * a * 0.12),
+				ease,
+			);
+			entity.rotation.slerp(rest.rotation, ease);
+			entity.color.lerp(rest.color, ease);
+		});
+	}
+
+	function poseBody(
+		body: InkBody,
+		posed: Entity[],
+		rests: Entity[],
+		ease: number,
+	) {
+		switch (body) {
+			case 'orb':
+				parkVolumes(posed, rests);
+				return;
+			case 'glyph':
+				poseGlyph(posed, rests, ease);
+				return;
+			default: {
+				const _exhaustive: never = body;
+				throw new Error(`Unhandled ink body: ${_exhaustive}`);
+			}
+		}
+	}
+
 	function setScene(next: InkScene) {
-		if (!next.parts.length || next.parts.length > 8)
-			throw new Error('Ink requires 1 to 8 parts.');
+		if (!next.parts.length || next.parts.length > 14)
+			throw new Error('Ink requires 1 to 14 parts.');
+		if (morph > 0) {
+			pending = next;
+			return;
+		}
+		const prior = entities;
+		const priorTargets = targets;
+		const priorBody = recipe.body;
 		recipe = structuredClone(next);
 		frameTimes.length = 0;
-		targets = next.parts.map((p) => ({
-			shape: Raymarcher.shapes[p.shape],
-			operation: operation[p.operation],
-			position: new THREE.Vector3(...p.position),
-			scale: new THREE.Vector3(...p.scale),
-			rotation: rotation(p.rotation),
-			color: new THREE.Color(next.material.color),
+		targets = toEntities(next);
+		was = reduced ? [] : prior;
+		wasTargets = reduced ? [] : priorTargets;
+		wasBody = was.length ? priorBody : null;
+		wasExtent = extentOf(was);
+		entities = targets.map((target) => ({
+			...target,
+			position: target.position.clone(),
+			scale: target.scale.clone(),
+			rotation: target.rotation.clone(),
+			color: target.color.clone(),
 		}));
-		requestedCount = targets.length;
-		// New parts grow in; removed parts contract into the body before disposal.
-		const count = Math.max(entities.length, targets.length);
-		const priorEntities = entities;
-		entities = Array.from({ length: count }, (_, i) => {
-			const target = targets[i];
-			const prior = priorEntities[i]!;
-			if (!target) {
-				targets.push({
-					...prior,
-					operation: 0,
-					position: targets[0]!.position.clone(),
-					scale: new THREE.Vector3(0.001, 0.001, 0.001),
-					rotation: prior.rotation.clone(),
-					color: targets[0]!.color.clone(),
-				});
-				return { ...prior, operation: 0 };
-			}
-			return {
-				...target,
-				position: (prior?.position ?? target.position).clone(),
-				scale: prior
-					? prior.scale.clone()
-					: target.scale
-							.clone()
-							.multiplyScalar(priorEntities.length ? 0.001 : 1),
-				rotation: (prior?.rotation ?? target.rotation).clone(),
-				color: (prior?.color ?? target.color).clone(),
-			};
-		});
-		ink.userData.layers = [entities];
-		transition = 1.6;
+		morphDuration = was.length ? INK_MORPH : 0;
+		morph = morphDuration;
+		finish.morph.value = 0;
+		finish.morphSplit.value = was.length;
+		ink.userData.layers = [was.concat(entities)];
+		ink.userData.blending = next.blend;
+		ink.userData.roughness = next.material.roughness;
+		ink.userData.metalness = next.material.metalness;
+		transition = morphDuration || (prior.length ? 0.85 : 0);
 		schedule();
+	}
+	function settle() {
+		was = [];
+		wasTargets = [];
+		wasBody = null;
+		finish.morph.value = 1;
+		finish.morphSplit.value = 0;
+		ink.userData.layers = [entities];
+		if (pending) {
+			const next = pending;
+			pending = null;
+			setScene(next);
+		}
 	}
 	function resize() {
 		const width = mount.clientWidth,
@@ -173,45 +269,37 @@ export function mountInk(
 		voiceLevel = THREE.MathUtils.lerp(voiceLevel, voiceTarget, ease);
 		if (moving) time += dt * (motion.speed + voiceLevel * 0.5);
 		if (!frozen) pointer.lerp(reduced ? origin : pointerTarget, ease);
-		let extent = 1;
-		entities.forEach((entity, i) => {
-			const target = targets[i]!;
-			const phase = i * 2.39996;
-			const a = reduced ? 0 : motion.amplitude + voiceLevel * 0.035;
-			const x = target.position.x + Math.sin(time * 0.8 + phase) * a;
-			const y = target.position.y + Math.sin(time * 0.63 + phase * 1.3) * a;
-			const z = target.position.z + Math.cos(time * 0.7 + phase) * a * 0.6;
-			entity.position.lerp(
-				nextPosition.set(
-					x + pointer.x * motion.pointer * (0.3 + i * 0.15),
-					y + pointer.y * motion.pointer * (0.3 + i * 0.15),
-					z,
-				),
-				ease,
-			);
-			entity.scale.lerp(
-				nextScale
-					.copy(target.scale)
-					.multiplyScalar(1 + Math.sin(time * 0.9 + phase) * a * 0.12),
-				ease,
-			);
-			entity.rotation.slerp(target.rotation, ease);
-			entity.color.lerp(target.color, ease);
-			if (i < requestedCount)
-				extent = Math.max(
-					extent,
-					target.position.length() + target.scale.length() * 0.5,
-				);
-		});
-		camera.position.z = THREE.MathUtils.lerp(
-			camera.position.z,
-			((extent + 0.2) / Math.sin(THREE.MathUtils.degToRad(19))) * 1.02,
-			ease,
+		const morphing = morph > 0;
+		const morphU = morphing ? 1 - morph / morphDuration : 1;
+		const meniscus = morphing ? Math.sqrt(Math.sin(Math.PI * morphU)) : 0;
+		if (morphing && was.length && wasBody) poseBody(wasBody, was, wasTargets, ease);
+		poseBody(recipe.body, entities, targets, ease);
+		const extent = Math.max(
+			1,
+			THREE.MathUtils.lerp(wasExtent, extentOf(targets), morphU),
 		);
+		let living = 0;
+		let cameraZ = camera.position.z;
+		switch (recipe.body) {
+			case 'orb':
+				living = 1;
+				cameraZ = ORB_CAMERA_Z;
+				break;
+			case 'glyph':
+				living = 0;
+				cameraZ =
+					((extent + 0.2) / Math.sin(THREE.MathUtils.degToRad(19))) * 1.02;
+				break;
+			default: {
+				const _exhaustive: never = recipe.body;
+				throw new Error(`Unhandled ink body: ${_exhaustive}`);
+			}
+		}
+		camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraZ, ease);
 		ink.userData.blending = THREE.MathUtils.lerp(
 			ink.userData.blending,
-			recipe.blend,
-			ease,
+			recipe.blend + meniscus * (INK_MENISCUS_BLEND - recipe.blend),
+			morphing ? 1 : ease,
 		);
 		ink.userData.roughness = THREE.MathUtils.lerp(
 			ink.userData.roughness,
@@ -223,7 +311,13 @@ export function mountInk(
 			recipe.material.metalness,
 			ease,
 		);
-		ink.userData.envMapIntensity = theme === 'dark' ? 1.55 : 1.2;
+		ink.userData.envMapIntensity = theme === 'dark' ? 1.35 : 1.2;
+		finish.time.value = time;
+		finish.living.value = living;
+		finish.pointer.value.copy(pointer).multiplyScalar(motion.pointer);
+		finish.impulse.value = voiceLevel;
+		finish.bleed.value = bleed + meniscus * 0.22;
+		finish.morph.value = morphU;
 		renderer.render(scene, camera);
 		renderCount++;
 		onFrame?.();
@@ -239,16 +333,18 @@ export function mountInk(
 		}
 		const dt = Math.min(elapsed / 1000, 0.06);
 		transition = reduced ? 0 : Math.max(0, transition - dt);
-		if (transition === 0 && entities.length > requestedCount) {
-			entities.length = requestedCount;
-			targets.length = requestedCount;
-		}
+		if (!frozen) morph = reduced ? 0 : Math.max(0, morph - dt);
+		if (morph === 0 && (was.length || pending)) settle();
 		draw(dt);
 		if (
 			(!frozen &&
 				!reduced &&
-				(motion.speed > 0 || pointer.distanceTo(pointerTarget) > 0.001)) ||
-			transition > 0
+				(motion.speed > 0 ||
+					pointer.distanceTo(pointerTarget) > 0.001 ||
+					voiceLevel > 0.001 ||
+					Math.abs(voiceLevel - voiceTarget) > 0.001)) ||
+			transition > 0 ||
+			(!frozen && morph > 0)
 		)
 			schedule();
 	}
@@ -261,8 +357,8 @@ export function mountInk(
 		schedule();
 	}
 	const observer = new ResizeObserver(resize);
-	const intersection = new IntersectionObserver(([entry]) => {
-		visible = entry?.isIntersecting ?? false;
+	const intersection = new IntersectionObserver((entries) => {
+		visible = entries[0]?.isIntersecting ?? false;
 		previous = 0;
 		schedule();
 	});
@@ -315,6 +411,13 @@ export function mountInk(
 		},
 		setTheme(value: string) {
 			theme = value;
+			finish.paper.value.setStyle(
+				getComputedStyle(document.documentElement)
+					.getPropertyValue('--paper')
+					.trim(),
+			);
+			finish.bleed.value = value === 'dark' ? 0.12 : 0.4;
+			bleed = finish.bleed.value;
 			transition = 1;
 			schedule();
 		},
@@ -341,7 +444,7 @@ export function mountInk(
 			const sorted = frameTimes.slice().sort((a, b) => a - b);
 			return {
 				renderer: 'three-raymarcher',
-				transitioning: transition > 0,
+				transitioning: transition > 0 || morph > 0 || pending !== null,
 				ready: renderCount > 0 && !lost,
 				paused: frozen,
 				reducedMotion: reduced,
