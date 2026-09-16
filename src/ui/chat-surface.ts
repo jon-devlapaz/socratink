@@ -194,7 +194,13 @@ export function mountChatSurface(options: Readonly<{
 		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
 	) {
 		const resume = state.kind === 'terminal'
-			? () => requests.retry()
+			? async () => {
+				if (state.outcome === 'not-admitted') {
+					await sendMessage(input.value);
+					return requests.state;
+				}
+				return requests.retry();
+			}
 			: () => requests.recheck();
 		return buildRequestStateTurn(state, resume, (result) => {
 			void runRequestCommand(result);

@@ -2,14 +2,10 @@ import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { questionnaireFromReplyData } from './questionnaire.ts';
 import { visibleCardTools, type DisplayedToolCall } from './tool-card.ts';
 
-const internalAssistantMarkerPattern = /^«[A-Z][A-Z0-9_]*»\s*/u;
+const internalAssistantMarkersPattern = /^(?:«[A-Z][A-Z0-9_]*»\s*)+/u;
 
 export function learnerVisibleAssistantText(text: string): string {
-	let visible = text;
-	while (internalAssistantMarkerPattern.test(visible)) {
-		visible = visible.replace(internalAssistantMarkerPattern, '');
-	}
-	return visible;
+	return text.replace(internalAssistantMarkersPattern, '');
 }
 
 export function assistantTurnHasVisibleContent(input: {
