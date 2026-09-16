@@ -20,8 +20,9 @@ import {
 import {
 	capturedChatModelSpecifier,
 	capturedLearnerUserId,
-	learnerIdFromExecution,
+	missingChatInstanceIdError,
 	openaiCredentialName,
+	requireAgentInstanceUserId,
 	resolveLearnerChatApiKey,
 	runWithChatSpecifier,
 	runWithLearnerKey,
@@ -184,8 +185,8 @@ test('overlapping streams plus cookie-less recovery keep each learner key on its
 		});
 		assert.ok(model);
 
-		async function streamConversation(conversationId) {
-			return runWithLearnerKey(conversationId, async () => {
+		async function streamConversation(instanceId) {
+			return runWithLearnerKey(instanceId, async () => {
 				const result = await models.streamSimple(model, { messages: [] }).result();
 				assert.equal(result?.stopReason, 'stop');
 			});
@@ -290,62 +291,41 @@ test('Chat uses openai/gpt-5-nano only while a learner key is connected', async 
 			await specifierForStoredLearner({ store, userId: bobId, operator }),
 			'jon-local/auto',
 		);
-		assert.equal(
-			await specifierForStoredLearner({ store, userId: undefined, operator }),
-			'jon-local/auto',
-		);
 
-		const flueConversationId = 'conv_01ARZ3NDEKTSV4RRFFQ69G5FAV';
-		assert.equal(userIdFromConversationId(flueConversationId), undefined);
-		assert.equal(
-			learnerIdFromExecution({ conversationId: flueConversationId }),
-			flueConversationId,
-		);
-		assert.equal(
-			learnerIdFromExecution({
-				instanceId: aliceLiveId,
-				conversationId: flueConversationId,
-			}),
-			aliceLiveId,
-		);
-		assert.equal(
-			runWithLearnerKey(learnerIdFromExecution({ conversationId: flueConversationId }), () =>
-				capturedLearnerUserId(),
-			),
-			undefined,
-		);
-		assert.equal(
-			runWithLearnerKey(
-				learnerIdFromExecution({
-					instanceId: aliceLiveId,
-					conversationId: flueConversationId,
-				}),
-				() => capturedLearnerUserId(),
-			),
-			aliceId,
-		);
+		assert.equal(userIdFromConversationId(aliceLiveId), aliceId);
+		assert.equal(requireAgentInstanceUserId(aliceLiveId), aliceId);
 		assert.equal(
 			await specifierForStoredLearner({
 				store,
-				userId: userIdFromConversationId(
-					learnerIdFromExecution({ conversationId: flueConversationId }),
-				),
-				operator,
-			}),
-			'jon-local/auto',
-		);
-		assert.equal(
-			await specifierForStoredLearner({
-				store,
-				userId: userIdFromConversationId(
-					learnerIdFromExecution({
-						instanceId: aliceLiveId,
-						conversationId: flueConversationId,
-					}),
-				),
+				userId: requireAgentInstanceUserId(aliceLiveId),
 				operator,
 			}),
 			'openai/gpt-5-nano',
+		);
+
+		const flueConversationId = 'conv_01ARZ3NDEKTSV4RRFFQ69G5FAV';
+		assert.equal(userIdFromConversationId(undefined), undefined);
+		assert.equal(userIdFromConversationId(flueConversationId), undefined);
+		assert.equal(runWithLearnerKey(undefined, () => capturedLearnerUserId()), undefined);
+		assert.equal(
+			runWithLearnerKey(flueConversationId, () => capturedLearnerUserId()),
+			undefined,
+		);
+		assert.throws(
+			() => requireAgentInstanceUserId(undefined),
+			(error) => {
+				assert.equal(error instanceof Error, true);
+				assert.equal(error.message, missingChatInstanceIdError.message);
+				return true;
+			},
+		);
+		assert.throws(
+			() => requireAgentInstanceUserId(flueConversationId),
+			(error) => {
+				assert.equal(error instanceof Error, true);
+				assert.equal(error.message, missingChatInstanceIdError.message);
+				return true;
+			},
 		);
 	});
 });

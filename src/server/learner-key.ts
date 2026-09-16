@@ -9,10 +9,15 @@ import { missingUserKeyError, UserKeyError, type CredentialStore } from './crede
 
 // Flue AuthContext has no user. Thread userId from the HTTP instance id
 // (userId:nonce), not cookies, process.env, or Pi's provider-keyed store.
-// Submission-scope agent intercepts omit conversationId; session-scope
-// conversationId is Flue's conv_* identity, not the namespaced URL.
+// Agent intercepts read ctx.instanceId. Session-scope conversationId is Flue's
+// conv_* identity and cannot recover a learner.
 
 export const openaiCredentialName = 'openai';
+
+export const missingChatInstanceIdError = {
+	type: 'missing_chat_instance_id',
+	message: 'Chat agent intercept requires a namespaced instance id.',
+} as const;
 
 const learnerUser = new AsyncLocalStorage<string>();
 const chatSpecifier = new AsyncLocalStorage<string>();
@@ -28,15 +33,14 @@ export function capturedChatModelSpecifier(): string | undefined {
 	return chatSpecifier.getStore();
 }
 
-export function learnerIdFromExecution(ctx: {
-	readonly instanceId?: string;
-	readonly conversationId?: string;
-}): string | undefined {
-	return ctx.instanceId ?? ctx.conversationId;
+export function requireAgentInstanceUserId(instanceId: string | undefined): string {
+	const userId = userIdFromConversationId(instanceId);
+	if (!userId) throw new Error(missingChatInstanceIdError.message);
+	return userId;
 }
 
-export function runWithLearnerKey<T>(conversationId: string | undefined, fn: () => T): T {
-	const userId = userIdFromConversationId(conversationId);
+export function runWithLearnerKey<T>(instanceId: string | undefined, fn: () => T): T {
+	const userId = userIdFromConversationId(instanceId);
 	if (!userId) return fn();
 	return learnerUser.run(userId, fn);
 }
@@ -47,15 +51,13 @@ export function runWithChatSpecifier<T>(specifier: string, fn: () => T): T {
 
 export async function specifierForStoredLearner(options: {
 	store: Pick<CredentialStore, 'hasUserKey'>;
-	userId: string | undefined;
+	userId: string;
 	operator: Pick<ChatModel, 'providerId' | 'modelId'>;
 }): Promise<string> {
-	const connected = options.userId
-		? await options.store.hasUserKey({
-				userId: options.userId,
-				name: openaiCredentialName,
-			})
-		: false;
+	const connected = await options.store.hasUserKey({
+		userId: options.userId,
+		name: openaiCredentialName,
+	});
 	return specifierForLearnerChat(
 		connected ? { kind: 'openai' } : { kind: 'operator' },
 		options.operator,
@@ -88,10 +90,11 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 			observe() {},
 			interceptor: async (operation, ctx, next) => {
 				if (operation.type !== 'agent') return next();
-				return runWithLearnerKey(learnerIdFromExecution(ctx), async () => {
+				const userId = requireAgentInstanceUserId(ctx.instanceId);
+				return runWithLearnerKey(ctx.instanceId, async () => {
 					const specifier = await specifierForStoredLearner({
 						store: options.store,
-						userId: capturedLearnerUserId(),
+						userId,
 						operator: options.operator,
 					});
 					return runWithChatSpecifier(specifier, next);
