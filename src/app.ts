@@ -4,13 +4,13 @@ import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
 import { configureBraintrust } from './braintrust.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
-import { chatModel, type LearnerChatRoute } from './config/chat-model.ts';
+import { chatModel, chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { requireChatSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
 import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
-import { learnerChatRouteForUser } from './server/learner-key.ts';
+import { learnerChatRouteForUser, rememberConversationChatPick } from './server/learner-key.ts';
 import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
 import { mountOpenrouterRoutes } from './server/openrouter.ts';
 import {
@@ -77,12 +77,11 @@ app.use('/api/agents/chat/*', async (context, next) => {
 	const route: LearnerChatRoute = userId
 		? await learnerChatRouteForUser({ store: credentialStore, userId })
 		: { kind: 'operator' };
+	const conversationId = chatConversationIdFromPath(context.req.path);
 	if (route.kind === 'operator' && chatAllowsAutoSelection(chatModel.modelId)) {
-		rememberConversationAuto(
-			chatConversationIdFromPath(context.req.path),
-			context.req.header(chatAutoModelHeader),
-		);
+		rememberConversationAuto(conversationId, context.req.header(chatAutoModelHeader));
 	}
+	rememberConversationChatPick(conversationId, context.req.header(chatModelHeader));
 	return next();
 });
 app.route('/api/agents/chat', createAgentRouter(Chat));

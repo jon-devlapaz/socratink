@@ -370,6 +370,48 @@ test('Chat uses openrouter/openai/gpt-5-nano when an OpenRouter key is connected
 			'openrouter/openai/gpt-5-nano',
 		);
 		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: aliceId,
+				operator,
+				requested: 'openai/gpt-5',
+			}),
+			'openai/gpt-5',
+		);
+		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: aliceId,
+				operator,
+				requested: 'openrouter/openai/gpt-5-mini',
+			}),
+			'openrouter/openai/gpt-5-mini',
+		);
+		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: aliceId,
+				operator,
+				requested: 'openai/gpt-4o',
+			}),
+			'openrouter/openai/gpt-5-nano',
+		);
+		await store.deleteUserKey({ userId: aliceId, name: openaiCredentialName });
+		assert.equal(
+			await specifierForStoredLearner({
+				store,
+				userId: aliceId,
+				operator,
+				requested: 'openai/gpt-5',
+			}),
+			'openrouter/openai/gpt-5-nano',
+		);
+		await store.updateUserKey({
+			userId: aliceId,
+			name: openaiCredentialName,
+			value: aliceKey,
+		});
+		assert.equal(
 			await runWithLearnerKey(aliceLiveId, () =>
 				resolveStoredLearnerApiKey({
 					store,

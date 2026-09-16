@@ -3,14 +3,19 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../src/config/app.config.ts';
 import {
+	applyLearnerChatPick,
 	capOpenrouterChatMaxTokens,
 	chatProviderId,
 	credentialNameForLearnerChat,
+	formatLearnerChatSpecifier,
+	learnerChatModelChoices,
 	openaiChatModelId,
 	openrouterChatMaxTokens,
 	openrouterChatModelId,
+	parseLearnerChatSpecifier,
 	resolveChatModel,
 	specifierForLearnerChat,
+	specifierForLearnerChatFromStatus,
 } from '../src/config/chat-model.ts';
 
 const localDefaults = {
@@ -212,9 +217,74 @@ const localDefaults = {
 		'jon-local/auto',
 	);
 	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
+	assert.equal(
+		specifierForLearnerChat({ kind: 'openai', modelId: 'gpt-5' }),
+		'openai/gpt-5',
+	);
+	assert.equal(
+		specifierForLearnerChat({ kind: 'openai', modelId: 'gpt-4o' }),
+		'openai/gpt-5-nano',
+	);
 	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
+	assert.equal(
+		specifierForLearnerChat({ kind: 'openrouter', modelId: 'openai/gpt-5-mini' }),
+		'openrouter/openai/gpt-5-mini',
+	);
 	assert.equal(credentialNameForLearnerChat({ kind: 'openai' }), 'openai');
 	assert.equal(credentialNameForLearnerChat({ kind: 'openrouter' }), 'openrouter');
+	assert.deepEqual(parseLearnerChatSpecifier('openai/gpt-5'), {
+		kind: 'openai',
+		modelId: 'gpt-5',
+	});
+	assert.equal(parseLearnerChatSpecifier('openai/gpt-4o'), undefined);
+	assert.equal(
+		formatLearnerChatSpecifier({ kind: 'openrouter', modelId: 'openai/gpt-5-mini' }),
+		'openrouter/openai/gpt-5-mini',
+	);
+	assert.equal(
+		specifierForLearnerChatFromStatus(
+			{ openai: true, openrouter: true },
+			{ providerId: chatProviderId, modelId: 'auto' },
+			'openai/gpt-5',
+		),
+		'openai/gpt-5',
+	);
+	assert.equal(
+		specifierForLearnerChatFromStatus(
+			{ openai: true, openrouter: true },
+			{ providerId: chatProviderId, modelId: 'auto' },
+		),
+		'openrouter/openai/gpt-5-nano',
+	);
+	assert.equal(
+		specifierForLearnerChatFromStatus(
+			{ openai: false, openrouter: true },
+			{ providerId: chatProviderId, modelId: 'auto' },
+			'openai/gpt-5',
+		),
+		'openrouter/openai/gpt-5-nano',
+	);
+	assert.deepEqual(
+		applyLearnerChatPick(
+			{ kind: 'openrouter', openai: true, openrouter: true },
+			'openai/gpt-5',
+		),
+		{ kind: 'openai', openai: true, openrouter: true },
+	);
+	for (const choice of learnerChatModelChoices) {
+		assert.equal(
+			openaiProvider()
+				.getModels()
+				.some((model) => model.id === choice.openaiModelId),
+			true,
+		);
+		assert.equal(
+			openrouterProvider()
+				.getModels()
+				.some((model) => model.id === choice.openrouterModelId),
+			true,
+		);
+	}
 }
 
 {
@@ -227,7 +297,16 @@ const localDefaults = {
 	const capped = capOpenrouterChatMaxTokens(catalog);
 	const cappedNano = capped.find((model) => model.id === openrouterChatModelId);
 	assert.equal(cappedNano?.maxTokens, openrouterChatMaxTokens);
-	const other = catalog.find((model) => model.id !== openrouterChatModelId);
+	for (const choice of learnerChatModelChoices) {
+		assert.equal(
+			capped.find((model) => model.id === choice.openrouterModelId)?.maxTokens,
+			openrouterChatMaxTokens,
+		);
+	}
+	const allowlisted = new Set(
+		learnerChatModelChoices.map((choice) => choice.openrouterModelId),
+	);
+	const other = catalog.find((model) => !allowlisted.has(model.id));
 	assert.ok(other);
 	assert.equal(
 		capped.find((model) => model.id === other.id)?.maxTokens,

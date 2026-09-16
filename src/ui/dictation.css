@@ -11,13 +11,6 @@
 	display: block;
 }
 
-#chat:has(.dictation-status[data-state='starting']) .composer-model,
-#chat:has(.dictation-status[data-state='listening']) .composer-model,
-#chat:has(.dictation-status[data-state='stopping']) .composer-model,
-#chat:has(.dictation-status[data-state='error']) .composer-model {
-	display: none;
-}
-
 .dictation-voice {
 	display: none;
 	align-items: center;

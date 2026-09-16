@@ -309,6 +309,8 @@ test('OpenRouter connect UI lives on Chat chrome and does not keep the minted ke
 	assert.match(html, /id="openrouter"/);
 	assert.match(html, /id="providers-status"/);
 	assert.match(html, /id="providers-panel"/);
+	assert.match(html, /id="openrouter-models"/);
+	assert.doesNotMatch(html, /id="auto-model"/);
 	assert.match(html, /action="\/api\/openrouter\/connect"/);
 	assert.match(html, /OpenRouter credits/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);

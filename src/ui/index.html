@@ -167,40 +167,6 @@
 						required
 					></textarea>
 					<div class="composer-footer">
-						<div class="composer-model">
-							<div class="auto-model-picker">
-								<button
-									id="auto-model"
-									class="auto-model-trigger"
-									type="button"
-									value="auto"
-									aria-haspopup="listbox"
-									aria-expanded="false"
-									aria-controls="auto-model-menu"
-									aria-label="Routing"
-								>
-									<span class="auto-model-icons" aria-hidden="true"></span>
-									<span class="auto-model-name">Default</span>
-									<svg class="auto-model-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-										<path
-											d="M6 9l6 6 6-6"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										/>
-									</svg>
-								</button>
-								<div
-									id="auto-model-menu"
-									class="auto-model-menu"
-									role="listbox"
-									aria-label="Routing"
-									data-open="false"
-									inert
-								></div>
-							</div>
-						</div>
 						<div id="dictation-status" class="dictation-status" role="status" aria-live="polite" data-state="idle">
 							<span class="dictation-voice" aria-hidden="true">
 								<span class="dictation-pulse"></span>
@@ -433,6 +399,13 @@
 								<button id="openai-key-connect" type="submit">Connect</button>
 								<button id="openai-key-disconnect" type="button" hidden>Disconnect</button>
 							</div>
+							<div
+								id="openai-models"
+								class="provider-models"
+								hidden
+								role="listbox"
+								aria-label="OpenAI models"
+							></div>
 						</form>
 						<form
 							class="menu-key"
@@ -450,6 +423,13 @@
 								<button id="openrouter-connect" type="submit">Connect OpenRouter</button>
 								<button id="openrouter-disconnect" type="button" hidden>Disconnect</button>
 							</div>
+							<div
+								id="openrouter-models"
+								class="provider-models"
+								hidden
+								role="listbox"
+								aria-label="OpenRouter models"
+							></div>
 						</form>
 					</div>
 				</div>

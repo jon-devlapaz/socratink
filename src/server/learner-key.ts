@@ -2,7 +2,9 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { instrument } from '@flue/runtime';
 import {
 	credentialNameForLearnerChat,
-	specifierForLearnerChat,
+	formatLearnerChatSpecifier,
+	parseLearnerChatSpecifier,
+	specifierForLearnerChatFromStatus,
 	type ChatModel,
 	type LearnerChatRoute,
 	type LearnerChatStatus,
@@ -27,6 +29,7 @@ export const missingChatInstanceIdError = {
 
 const learnerUser = new AsyncLocalStorage<string>();
 const chatSpecifier = new AsyncLocalStorage<string>();
+const pendingChatPicks = new Map<string, string>();
 const instrumentationKey = Symbol.for('socratink.learner-key');
 
 export type LearnerKeyStore = Pick<CredentialStore, 'getUserKey' | 'hasUserKey'>;
@@ -84,18 +87,37 @@ export async function learnerChatRouteForUser(options: {
 	return { kind: status.kind };
 }
 
+export function rememberConversationChatPick(
+	conversationId: string | undefined,
+	value: string | undefined | null,
+): void {
+	if (!conversationId) return;
+	const pick = parseLearnerChatSpecifier(value);
+	if (!pick) {
+		pendingChatPicks.delete(conversationId);
+		return;
+	}
+	pendingChatPicks.set(conversationId, formatLearnerChatSpecifier(pick));
+}
+
 export async function specifierForStoredLearner(options: {
 	store: Pick<CredentialStore, 'hasUserKey'>;
 	userId: string;
 	operator: Pick<ChatModel, 'providerId' | 'modelId'>;
+	requested?: string | null;
 }): Promise<string> {
-	return specifierForLearnerChat(
-		await learnerChatRouteForUser({
-			store: options.store,
-			userId: options.userId,
-		}),
-		options.operator,
-	);
+	const status = await learnerChatStatusForUser({
+		store: options.store,
+		userId: options.userId,
+	});
+	return specifierForLearnerChatFromStatus(status, options.operator, options.requested);
+}
+
+function consumeConversationChatPick(conversationId: string | undefined): string | undefined {
+	if (!conversationId) return undefined;
+	const requested = pendingChatPicks.get(conversationId);
+	pendingChatPicks.delete(conversationId);
+	return requested;
 }
 
 export async function resolveOperatorChatApiKey(options: {
@@ -137,6 +159,7 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 						store: options.store,
 						userId,
 						operator: options.operator,
+						requested: consumeConversationChatPick(ctx.conversationId),
 					});
 					return runWithChatSpecifier(specifier, next);
 				});

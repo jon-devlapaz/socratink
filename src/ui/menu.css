@@ -641,3 +641,42 @@ html:has(.menu-layer.is-open) .app-canvas {
 	outline: none;
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
 }
+
+.provider-models {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.provider-models[hidden] {
+	display: none;
+}
+
+.provider-model {
+	min-height: 2.1rem;
+	padding: 0.35rem 0.75rem;
+	border: 0;
+	border-radius: 0.7rem;
+	color: var(--muted);
+	background: var(--path);
+	box-shadow: var(--shadow-border);
+	cursor: pointer;
+	font: inherit;
+	text-align: left;
+}
+
+.provider-model:hover,
+.provider-model:focus-visible {
+	color: var(--ink);
+	background: var(--path-hover);
+	box-shadow: var(--shadow-border-hover);
+}
+
+.provider-model:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+}
+
+.provider-model.is-selected {
+	color: var(--ink);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), var(--shadow-border);
+}

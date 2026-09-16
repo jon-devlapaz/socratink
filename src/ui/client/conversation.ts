@@ -9,7 +9,8 @@ import {
 	type FlueConversationSnapshot,
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
-import { chatAutoModelHeader, parseFreeLlmAutoModelId } from '../../config/chat-auto.ts';
+import { chatModelHeader } from '../../config/chat-model.ts';
+import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
 	namespacedConversationId,
@@ -92,9 +93,8 @@ export function openChatConversation(userId: string) {
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 		headers: (): Record<string, string> => {
-			const model =
-				parseFreeLlmAutoModelId(localStorage.getItem(appConfig.chatAutoModelStorageKey)) ?? 'auto';
-			return { [chatAutoModelHeader]: model };
+			const specifier = storedLearnerChatSpecifier();
+			return specifier ? { [chatModelHeader]: specifier } : {};
 		},
 	});
 }
