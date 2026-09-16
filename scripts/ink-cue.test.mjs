@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import {
 	parseInkCue,
 	inkCueFromParts,
@@ -71,6 +71,7 @@ test('request controls and real input take precedence over an assistant cue', ()
 });
 test('rest is the landing hero sphere', () => {
 	const { scene } = INK_EXPRESSIONS.rest;
+	assert.equal(scene.body, 'orb');
 	assert.equal(scene.name, 'Hero ink: sphere');
 	assert.equal(scene.blend, 0.28);
 	assert.deepEqual(scene.material, {
@@ -91,7 +92,11 @@ test('rest is the landing hero sphere', () => {
 test('cue recipes fit the renderer budget', () => {
 	for (const [name, { scene }] of Object.entries(INK_EXPRESSIONS)) {
 		assert.ok(scene.parts.length > 0 && scene.parts.length <= 14);
-		if (name === 'rest') continue;
+		if (name === 'rest') {
+			assert.equal(scene.body, 'orb');
+			continue;
+		}
+		assert.equal(scene.body, 'glyph');
 		for (const part of scene.parts) {
 			assert.equal(part.shape, 'capsule');
 			assert.equal(part.operation, 'union');
@@ -115,5 +120,39 @@ test('orb CSS keeps the 1120px ink poster from covering Chat', async () => {
 	assert.match(
 		css,
 		/\.alive-core:has\(\.living-ink-render\[data-ink-ready='true'\]\) \.living-ink-poster \{[\s\S]*?\tvisibility: hidden;/,
+	);
+});
+
+test('Chat ink has no landing-lab contract', async () => {
+	const renderer = await readFile(
+		new URL('../src/ui/effects/living-ink/renderer.ts', import.meta.url),
+		'utf8',
+	);
+	const scene = await readFile(
+		new URL('../src/ui/effects/living-ink/scene.ts', import.meta.url),
+		'utf8',
+	);
+	const finish = await readFile(
+		new URL('../src/ui/effects/living-ink/finish.ts', import.meta.url),
+		'utf8',
+	);
+	assert.match(scene, /export type InkBody = 'orb' \| 'glyph'/);
+	assert.match(
+		renderer,
+		/export function mountInk\(\n\tmount: HTMLElement,\n\tinitial: InkScene,\n\tonFrame\?: \(\) => void,/,
+	);
+	assert.doesNotMatch(renderer, /startsWith\('Hero ink/);
+	assert.doesNotMatch(
+		renderer,
+		/checkOcclusion|surfaceMotion|triggerImpulse|setScrollVelocity|onReady/,
+	);
+	assert.doesNotMatch(finish, /surfaceMotion/);
+	assert.doesNotMatch(scene, /kinematics/);
+	await assert.rejects(
+		() =>
+			access(
+				new URL('../src/ui/effects/living-ink/kinematics.ts', import.meta.url),
+			),
+		{ code: 'ENOENT' },
 	);
 });

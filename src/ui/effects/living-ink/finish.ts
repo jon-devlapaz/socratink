@@ -12,9 +12,6 @@ uniform int morphSplit;
 uniform float living;
 uniform vec2 pointer;
 uniform float impulse;
-uniform float surfaceMotion;
-uniform float surfaceStrength;
-uniform float motionTime;
 
 // Slow, shallow undulation of the ink skin so light moves across the body
 // while the silhouette holds still.
@@ -57,30 +54,6 @@ SDF map(const in vec3 position) {
 	p.xy = mat2(cos(turn), -sin(turn), sin(turn), cos(turn)) * p.xy;
 	p.x -= living * (0.055 * sin(p.y * 2.1 + time * 0.82) + pointer.x * (0.3 + 0.22 * p.y));
 	p.y -= living * (0.035 * sin(p.x * 2.5 - time * 0.67) + pointer.y * 0.35);
-	if (surfaceMotion > 0.0) {
-		// A shared breath and a small, delayed lean toward attention. Keep the
-		// articulated silhouettes steady while their skin remains responsive.
-		float inhale = 1.0 + 0.009 * sin(motionTime * 0.57);
-		p.y /= inhale;
-		p.xz *= sqrt(inhale);
-		p.x -= pointer.x * (0.42 + 0.1 * p.y);
-		p.y -= pointer.y * 0.32;
-	}
-	float voice = 0.0;
-	float voiceHead = 0.0;
-	if (surfaceMotion == 1.0) {
-		// One bulge travels left to right through the stroke, then the whole
-		// ribbon takes a breath. No extra humps along the body.
-		float t = mod(motionTime, 8.0);
-		float headX = mix(-1.55, 1.65, saturate(t / 5.8));
-		float envelope = smoothstep(0.0, 0.55, t) * (1.0 - smoothstep(5.3, 6.4, t));
-		voiceHead = p.x - headX;
-		float soften = 1.0 - 0.65 * smoothstep(0.15, 1.05, p.x);
-		voice = surfaceStrength * envelope * soften * exp(-voiceHead * voiceHead / 0.16);
-		p.y -= voice * 0.016;
-		voice += surfaceStrength * 0.13 * exp(-(t - 6.6) * (t - 6.6) / 0.4)
-			* (1.0 - smoothstep(7.2, 8.0, t));
-	}
 	SDF scene;
 	if (morphSplit > 0) {
 		SDF was = mapParts(p, 0, morphSplit);
@@ -98,31 +71,7 @@ SDF map(const in vec3 position) {
 		scene = mapParts(p, 0, numEntities);
 	}
 	scene.distance += skin(p) * (1.0 + living * 0.6);
-	if (surfaceMotion == 1.0) {
-		scene.distance -= voice * 0.07;
-	}
-	if (surfaceMotion == 2.0) {
-		// A viscous swell climbs the pooled body, then the whole drop takes a
-		// breath. The skin stays a wet meniscus — no carved grooves.
-		float t = mod(motionTime, 10.0);
-		float head = mix(-0.95, 1.05, saturate(t / 6.4));
-		float envelope = smoothstep(0.0, 0.7, t) * (1.0 - smoothstep(6.2, 7.6, t));
-		float d = p.y - head;
-		float swell = envelope * exp(-d * d / 0.18);
-		float breath = 0.12 * exp(-(t - 8.4) * (t - 8.4) / 0.55)
-			* (1.0 - smoothstep(9.2, 10.0, t));
-		scene.distance -= surfaceStrength * (0.055 * swell + 0.028 * breath);
-	}
-	if (surfaceMotion == 3.0) {
-		float t = mod(motionTime, 8.0);
-		float head = mix(-1.35, 1.65, saturate(t / 5.4));
-		float envelope = smoothstep(0.0, 0.5, t) * (1.0 - smoothstep(5.3, 6.5, t));
-		float d = p.y + 0.12 * p.x - head;
-		scene.distance -= surfaceStrength * envelope * 0.04 * exp(-d * d / 0.1);
-	}
 	scene.distance *= 1.0 - living * 0.18;
-	// Ripple slopes need a shorter conservative march to keep their skin intact.
-	if (surfaceMotion > 0.0) scene.distance *= 0.72;
 	return scene;
 }
 
@@ -154,9 +103,6 @@ export function applyInkFinish(material: THREE.RawShaderMaterial) {
 		living: { value: 0 },
 		pointer: { value: new THREE.Vector2() },
 		impulse: { value: 0 },
-		surfaceMotion: { value: 0 },
-		surfaceStrength: { value: 1 },
-		motionTime: { value: 0 },
 	};
 	Object.assign(material.uniforms, finish);
 	material.fragmentShader = material.fragmentShader

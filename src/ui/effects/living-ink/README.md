@@ -3,15 +3,16 @@
 The Chat dock button is the landing-page living-ink orb: one WebGL body,
 not a CSS blob plus a separate poster.
 
-`renderer.ts`, `finish.ts`, and the rest recipe were ported from
-`socratink-landing/src/lib/ink` on 2026-09-16. They reuse three-raymarcher
+Chat owns `renderer.ts`. Rest is a twelve-volume wet sphere (`body: 'orb'`);
+`ink_express` cues are glyphs (`body: 'glyph'`). Dual-SDF morphs the two. The
+wet-pool look in `finish.ts` and the rest recipe come from the landing hero
+(`socratink-landing/src/lib/ink`, 2026-09-16). They reuse three-raymarcher
 0.4.0 (MIT) and Three.js 0.185.1. The library keeps its upstream license in the
-installed package. Review both copies when changing the common renderer; this
-integration does not introduce a cross-repository package.
+installed package. This integration does not introduce a cross-repository
+package, wrap Flue, or import landing folio APIs.
 
 App-specific additions: bounded microphone energy, the existing dock/cursor
-pause state, theme observation, and the poster fallback. Landing folio
-occlusion is off so the composer can overlap the orb. WebGL is loaded after
+pause state, theme observation, and the poster fallback. WebGL is loaded after
 the conversation UI; failure must leave a usable dock and static poster.
 The 1120×1120 fallback poster is contained inside `.alive-core`. Physical-phone
 GPU performance and real microphone hardware have not been established here.
@@ -55,7 +56,8 @@ proves their transport and rendering, not real-model tool-selection reliability.
 Run `pnpm check` and `pnpm smoke`. The smoke uses a deterministic fake model,
 executes the native ink tool, and checks its data after a server restart.
 `pnpm test:ink` checks malformed inputs, cue precedence, quiet tool display,
-the landing hero rest recipe, cue geometry budget, and poster containment.
+the landing hero rest recipe, cue geometry budget, poster containment, and that
+Chat ink has no kinematics file or landing-lab APIs.
 
 For the optional real Chrome/WebGL boundary, provide an installed Playwright
 module and Chrome executable if they are not available under the defaults:
