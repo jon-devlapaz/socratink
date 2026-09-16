@@ -277,6 +277,14 @@ Unless the user already requested the exact action, ask before:
 - Duplicate project doctrine in `CLAUDE.md`, `.cursor/rules/`, `.cursorrules`,
   `.github/copilot-instructions.md`, `.cursor/skills/`, or `.claude/skills/`.
 
+## Cold archive and research preload
+
+Never preload `research/_cold-archive/**` into agent context. Those packs were
+evacuated from git in FM-PARETO-CUT-02; recovery copies live on the host at
+`/Users/jondev/dev/archives/socratink-cold-archive/` (see `research/README.md`).
+Load `research/pareto/` and thin `research/chat-signal/` contracts only when the
+task needs them.
+
 ## Coding-agent portability
 
 This root `AGENTS.md` is the project-wide contract for coding agents. It is not

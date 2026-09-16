@@ -1,9 +1,23 @@
-# Project skills
+# Agent skills (product)
 
-Complete, repository-owned Agent Skills live in this directory. Each skill is a
-directory containing a `SKILL.md` file and any resources it needs.
+Portable `SKILL.md` packages for coding agents. Load on demand — do not preload the whole tree.
 
-Person-perspective and mega skill packs (`personas-skillset`,
-`common-skills-skillset`, `variate`) were cold-archived under
-[`research/_cold-archive/PARETO-01/skills/`](../../research/_cold-archive/PARETO-01/skills/)
-and are not default loadable skills. Restore only when Captain re-authorizes.
+## Keep (product / governance)
+
+- `socratink-brain` — Brain orient before consequential product/learning work
+- `flue-wiki` — Flue harness truth
+- `agenteng-wiki` — agenteng distilled docs helper
+- `catch-brain-to-product` — Brain↔product catch
+- `working-loop` — operator loop (not product wins)
+- `typesafe-ai` — TypeSafe / Jev judgments
+
+## Also present
+
+- `braintrust-docent`, `braintrust-wiki`, `docent-wiki` — observability docs
+- `karpathy-guidelines` — coding guidelines skill
+
+## Archive-only (removed from hot tree)
+
+Mega packs and meta coding cluster cold-archived or deleted in FM-PARETO-CUT / CUT-02
+(`personas`, `common-skills`, `variate`, `better-ui-skillset`, `clean-code`, …).
+Do not restore into `.agents/skills/` without Captain word.

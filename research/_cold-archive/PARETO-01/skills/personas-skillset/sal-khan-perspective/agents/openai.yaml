@@ -1,4 +1,0 @@
-interface:
-  display_name: "Sal Khan Perspective"
-  short_description: "Reason with a mastery-learning lens"
-  default_prompt: "Use $sal-khan-perspective to assess this learning or education-AI decision."

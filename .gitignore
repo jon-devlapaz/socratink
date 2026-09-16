@@ -106,3 +106,6 @@ praxist_task/roles/solver/skill.md
 praxist_task/roles/starter/role.yaml
 praxist_task/roles/starter/skill.md
 praxist_task/tests/test_contract.py
+
+# Cold archives live outside the product repo (see research/README.md)
+research/_cold-archive/
