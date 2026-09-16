@@ -12,16 +12,29 @@ export async function loadLearnerChatStatus(): Promise<LearnerChatStatus> {
 	return isLearnerChatStatus(body) ? body : operatorChatStatus;
 }
 
+export function providersChatStatusCopy(status: LearnerChatStatus): string {
+	switch (status.kind) {
+		case 'operator':
+			return 'Chat uses the local Socratink model.';
+		case 'openai':
+			return 'Chat uses your OpenAI key.';
+		case 'openrouter':
+			return 'Chat uses your OpenRouter key.';
+		default: {
+			const exhaustive: never = status.kind;
+			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);
+		}
+	}
+}
+
 export function openaiChatStatusCopy(status: LearnerChatStatus): string {
+	if (!status.openai) return '';
 	switch (status.kind) {
 		case 'openai':
 			return 'Connected. Chat uses your OpenAI key.';
 		case 'openrouter':
-			return status.openai
-				? 'OpenAI key stored. Chat is using OpenRouter.'
-				: 'Not connected. Chat is using OpenRouter.';
 		case 'operator':
-			return 'Not connected. Chat uses the local Socratink model.';
+			return 'OpenAI key stored.';
 		default: {
 			const exhaustive: never = status.kind;
 			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);
@@ -30,15 +43,13 @@ export function openaiChatStatusCopy(status: LearnerChatStatus): string {
 }
 
 export function openrouterChatStatusCopy(status: LearnerChatStatus): string {
+	if (!status.openrouter) return '';
 	switch (status.kind) {
 		case 'openrouter':
 			return 'Connected. Chat uses your OpenRouter key.';
 		case 'openai':
-			return status.openrouter
-				? 'OpenRouter key stored. Chat is using OpenAI.'
-				: 'Not connected. Chat is using OpenAI.';
 		case 'operator':
-			return 'Not connected. Chat uses the local Socratink model.';
+			return 'OpenRouter key stored.';
 		default: {
 			const exhaustive: never = status.kind;
 			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);

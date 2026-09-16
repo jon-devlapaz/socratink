@@ -7,7 +7,10 @@ export function paintOpenrouter(status: LearnerChatStatus, form?: HTMLFormElemen
 	const statusNode = requireElement<HTMLElement>('#openrouter-status', root);
 	const connect = requireElement<HTMLButtonElement>('#openrouter-connect', root);
 	const disconnect = requireElement<HTMLButtonElement>('#openrouter-disconnect', root);
-	statusNode.textContent = openrouterChatStatusCopy(status);
+	const copy = openrouterChatStatusCopy(status);
+	statusNode.textContent = copy;
+	statusNode.hidden = copy.length === 0;
+	statusNode.removeAttribute('role');
 	connect.hidden = status.openrouter;
 	disconnect.hidden = !status.openrouter;
 }
@@ -25,7 +28,9 @@ export function mountOpenrouter(refresh: () => Promise<void>, form?: HTMLFormEle
 				credentials: 'same-origin',
 			});
 			if (!response.ok) {
+				status.hidden = false;
 				status.textContent = 'Could not disconnect OpenRouter. Try again.';
+				status.setAttribute('role', 'alert');
 				return;
 			}
 			await refresh();

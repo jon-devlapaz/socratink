@@ -151,6 +151,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 			'.menu-orbs a, .menu-orbs button, .menu-key input, .menu-key button',
 		)].filter((item) => {
 			if (item.hidden || item.closest('[hidden]')) return false;
+			if (item.closest('[inert]')) return false;
 			return !(item instanceof HTMLButtonElement && item.disabled);
 		});
 		const first = items[0];

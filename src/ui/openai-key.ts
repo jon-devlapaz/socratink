@@ -9,7 +9,10 @@ export function paintOpenaiKey(status: LearnerChatStatus, form?: HTMLFormElement
 	const input = requireElement<HTMLInputElement>('#openai-key-input', root);
 	const connect = requireElement<HTMLButtonElement>('#openai-key-connect', root);
 	const disconnect = requireElement<HTMLButtonElement>('#openai-key-disconnect', root);
-	statusNode.textContent = openaiChatStatusCopy(status);
+	const copy = openaiChatStatusCopy(status);
+	statusNode.textContent = copy;
+	statusNode.hidden = copy.length === 0;
+	statusNode.removeAttribute('role');
 	field.hidden = status.openai;
 	connect.hidden = status.openai;
 	disconnect.hidden = !status.openai;
@@ -37,7 +40,9 @@ export function mountOpenaiKey(refresh: () => Promise<void>, form?: HTMLFormElem
 				body: JSON.stringify({ apiKey }),
 			});
 			if (!response.ok) {
+				status.hidden = false;
 				status.textContent = 'Could not store that key. Try again.';
+				status.setAttribute('role', 'alert');
 				return;
 			}
 			await refresh();
@@ -54,7 +59,9 @@ export function mountOpenaiKey(refresh: () => Promise<void>, form?: HTMLFormElem
 				credentials: 'same-origin',
 			});
 			if (!response.ok) {
+				status.hidden = false;
 				status.textContent = 'Could not disconnect that key. Try again.';
+				status.setAttribute('role', 'alert');
 				return;
 			}
 			await refresh();

@@ -269,6 +269,8 @@ try {
 	const html = await root.text();
 	assert.match(html, /<title>Socratink<\/title>/);
 	assert.match(html, /id="openai-key"/);
+	assert.match(html, /id="providers-toggle"/);
+	assert.match(html, /id="providers-status"/);
 	assert.match(html, /OpenAI platform API key/);
 	assert.match(html, /id="openrouter"/);
 	assert.match(html, /OpenRouter credits/);

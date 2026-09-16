@@ -51,6 +51,7 @@ import {
 import { mountMenuSheet } from './menu-sheet.ts';
 import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
 import { mountOpenrouter, paintOpenrouter } from './openrouter.ts';
+import { mountProviders, paintProviders } from './providers.ts';
 import { loadLearnerChatStatus } from './chat-route.ts';
 import {
 	applyRequestControlState,
@@ -113,9 +114,11 @@ export function mountChatSurface(options: Readonly<{
 	initChatAutoModel(autoModel);
 	async function refreshLearnerChat() {
 		const status = await loadLearnerChatStatus();
+		paintProviders(status);
 		paintOpenaiKey(status);
 		paintOpenrouter(status);
 	}
+	mountProviders();
 	mountOpenaiKey(refreshLearnerChat);
 	mountOpenrouter(refreshLearnerChat);
 	void refreshLearnerChat();
