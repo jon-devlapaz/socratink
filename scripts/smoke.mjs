@@ -9,6 +9,7 @@ import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
+import { inkCueFromParts } from '../src/ink-cue.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
 
@@ -190,6 +191,11 @@ const scriptedProviderTurns = [
 	},
 	{
 		expectedMessages: [baselineAnswer, comparisonAnswer, revisedAnswer],
+		tools: [{ id: 'call_ink', name: 'ink_express', arguments: { expression: 'connect' } }],
+		finishReason: 'tool_calls',
+	},
+	{
+		expectedMessages: [revisedAnswer, 'Visual cue recorded.'],
 		text: finalSummary,
 		finishReason: 'stop',
 	},
@@ -208,9 +214,10 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
+	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the completed loop should use exactly six provider calls');
+	assert.ok(turn, 'the completed loop should use exactly seven provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -371,7 +378,7 @@ try {
 		await client.send({ message: { kind: 'user', body: revisedAnswer } }),
 	);
 	assert.equal(complete.text, finalSummary);
-	assert.equal(providerTurns, 6, 'the completed loop should make exactly six provider calls');
+	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
 
 	await stopApp(appProcess);
 	appProcess = startApp(appPort, providerPort);
@@ -399,6 +406,9 @@ try {
 	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);
 	assert.equal(visibleTurns[5]?.tools, undefined, 'mark_reveal is not card chrome');
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
+	assert.deepEqual(visibleTurns[7]?.ink, { expression: 'connect' });
+	assert.equal(visibleTurns[7]?.tools, undefined, 'cosmetic ink is not card chrome');
+	assert.deepEqual(inkCueFromParts(visibleMessages.at(-1).parts), { expression: 'connect' });
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
 		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
@@ -410,8 +420,14 @@ try {
 		'completed loop should restore reveal provenance on the assistance turn',
 	);
 
+	if (process.env.INK_BROWSER === '1') {
+		providerTurns = 0;
+		const { verifyInkBrowser } = await import('./ink-browser-smoke.mjs');
+		await verifyInkBrowser({ origin, initialMessage });
+	}
+
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, ink_express, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
