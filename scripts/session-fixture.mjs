@@ -11,6 +11,22 @@ export function cookiePairFromResponse(response) {
 	return pair;
 }
 
+export function mergeCookies(response, previous = '') {
+	const listed =
+		typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
+	const headers = listed.length > 0 ? listed : [response.headers.get('set-cookie')].filter(Boolean);
+	const map = new Map();
+	for (const part of previous.split(';').map((entry) => entry.trim()).filter(Boolean)) {
+		map.set(part.split('=', 1)[0], part);
+	}
+	for (const header of headers) {
+		const pair = header.split(';', 1)[0];
+		if (!pair || !pair.includes('=')) continue;
+		map.set(pair.split('=', 1)[0], pair);
+	}
+	return [...map.values()].join('; ');
+}
+
 export async function mintSessionFixture(origin) {
 	const response = await fetch(`${origin}/api/session`, { method: 'POST' });
 	assert.equal(response.status, 200, 'session fixture should mint a signed cookie');

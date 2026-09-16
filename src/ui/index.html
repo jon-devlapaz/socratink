@@ -365,6 +365,23 @@
 						<button id="openai-key-disconnect" type="button" hidden>Disconnect</button>
 					</div>
 				</form>
+				<form
+					class="menu-key"
+					id="openrouter"
+					method="post"
+					action="/api/openrouter/connect"
+					autocomplete="off"
+				>
+					<p id="openrouter-copy">
+						Connect OpenRouter to mint an API key from your OpenRouter credits. This is not a
+						ChatGPT or Claude login.
+					</p>
+					<p id="openrouter-status" aria-live="polite">Not connected. Chat uses the local Socratink model.</p>
+					<div class="menu-key-actions">
+						<button id="openrouter-connect" type="submit">Connect OpenRouter</button>
+						<button id="openrouter-disconnect" type="button" hidden>Disconnect</button>
+					</div>
+				</form>
 				<div class="menu-handle" id="menu-handle" aria-hidden="true"></div>
 			</div>
 		</div>

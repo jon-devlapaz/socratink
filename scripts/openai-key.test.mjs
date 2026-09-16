@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
+import { operatorChatStatus } from '../src/config/chat-model.ts';
+import { openaiChatStatusCopy, openrouterChatStatusCopy } from '../src/ui/chat-route.ts';
+import { mountChatRoute } from '../src/server/chat-route.ts';
 import { openCredentialStore } from '../src/server/credential-runtime.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
 import { createCredentialStore } from '../src/server/credentials.ts';
@@ -23,13 +26,19 @@ async function withApp(run) {
 		db: createSqliteCredentialDb(join(directory, 'credentials.db')),
 	});
 	const app = new Hono();
+	const rateLimiter = createRateLimiter({ windowMs: 1_000, max: 120 });
 	app.post(appConfig.sessionPath, async (context) => {
 		const userId = await mintSessionUserId(context, testSecret);
 		return context.json({ userId });
 	});
 	mountOpenaiKeyRoutes(app, {
 		secret: testSecret,
-		rateLimiter: createRateLimiter({ windowMs: 1_000, max: 120 }),
+		rateLimiter,
+		store,
+	});
+	mountChatRoute(app, {
+		secret: testSecret,
+		rateLimiter,
 		store,
 	});
 	try {
@@ -56,15 +65,15 @@ test('hosted credential store fails closed without CREDENTIALS_SECRET', () => {
 
 test('openai key routes require a session and never echo the secret', async () => {
 	await withApp(async (app) => {
-		const missing = await app.request(appConfig.openaiKeyPath);
+		const missing = await app.request(appConfig.chatRoutePath);
 		assert.equal(missing.status, 401);
 
 		const { cookie } = await mintCookie(app);
-		const empty = await app.request(appConfig.openaiKeyPath, {
+		const empty = await app.request(appConfig.chatRoutePath, {
 			headers: { cookie },
 		});
 		assert.equal(empty.status, 200);
-		assert.deepEqual(await empty.json(), { connected: false });
+		assert.deepEqual(await empty.json(), operatorChatStatus);
 
 		const invalid = await app.request(appConfig.openaiKeyPath, {
 			method: 'PUT',
@@ -81,27 +90,30 @@ test('openai key routes require a session and never echo the secret', async () =
 		});
 		assert.equal(connected.status, 200);
 		const connectedBody = await connected.json();
-		assert.deepEqual(connectedBody, { connected: true });
+		assert.deepEqual(connectedBody, { kind: 'openai', openai: true, openrouter: false });
 		assert.equal(JSON.stringify(connectedBody).includes(fixtureKey), false);
+		assert.match(openaiChatStatusCopy(connectedBody), /Chat uses your OpenAI key/);
+		assert.doesNotMatch(openrouterChatStatusCopy(connectedBody), /Chat uses your OpenRouter key/);
 
-		const status = await app.request(appConfig.openaiKeyPath, { headers: { cookie } });
-		assert.deepEqual(await status.json(), { connected: true });
+		const status = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
+		assert.deepEqual(await status.json(), { kind: 'openai', openai: true, openrouter: false });
 
 		const { cookie: otherCookie } = await mintCookie(app);
-		const other = await app.request(appConfig.openaiKeyPath, { headers: { cookie: otherCookie } });
-		assert.deepEqual(await other.json(), { connected: false });
+		const other = await app.request(appConfig.chatRoutePath, { headers: { cookie: otherCookie } });
+		assert.deepEqual(await other.json(), operatorChatStatus);
 
 		const cleared = await app.request(appConfig.openaiKeyPath, {
 			method: 'DELETE',
 			headers: { cookie },
 		});
-		assert.deepEqual(await cleared.json(), { connected: false });
+		assert.deepEqual(await cleared.json(), operatorChatStatus);
 	});
 });
 
 test('paste-key UI lives on Chat chrome and does not keep the secret in the browser', async () => {
 	const html = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
 	const script = await readFile(new URL('../src/ui/openai-key.ts', import.meta.url), 'utf8');
+	const route = await readFile(new URL('../src/ui/chat-route.ts', import.meta.url), 'utf8');
 	const surface = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	const chat = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
 	assert.match(html, /id="openai-key"/);
@@ -111,14 +123,21 @@ test('paste-key UI lives on Chat chrome and does not keep the secret in the brow
 	assert.match(script, /method: 'PUT'/);
 	assert.match(script, /method: 'DELETE'/);
 	assert.doesNotMatch(script, /localStorage/);
-	assert.match(surface, /mountOpenaiKey/);
+	assert.match(route, /chatRoutePath/);
+	assert.match(route, /case 'openai'/);
+	assert.match(route, /Chat uses your OpenAI key/);
+	assert.match(route, /OpenAI key stored/);
+	assert.match(surface, /loadLearnerChatStatus/);
+	assert.match(surface, /paintOpenaiKey/);
 	assert.match(chat, /capturedChatModelSpecifier/);
 	assert.match(chat, /useModel/);
 
 	const provider = await readFile(new URL('../src/server/provider.ts', import.meta.url), 'utf8');
 	assert.match(provider, /openaiProvider/);
-	assert.match(provider, /store: credentialStore/);
+	assert.match(provider, /resolveStoredLearnerApiKey/);
+	assert.match(provider, /credentialNameForLearnerChat\(\{ kind: 'openai' \}\)/);
 	assert.doesNotMatch(provider, /Models\.login/);
 	assert.doesNotMatch(provider, /OPENAI_API_KEY/);
 	assert.doesNotMatch(provider, /process\.env\.\w+\s*=/);
+	assert.doesNotMatch(provider, /resolveLearnerChatApiKey/);
 });

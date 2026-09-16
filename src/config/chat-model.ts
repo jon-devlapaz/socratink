@@ -7,7 +7,56 @@ export const openaiChatProviderId = 'openai';
 // Cheapest openai nano in pi-ai's openaiProvider() catalog (2.5M/day shared-traffic bucket).
 export const openaiChatModelId = 'gpt-5-nano';
 
-export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' };
+export const openrouterChatProviderId = 'openrouter';
+
+// Same cheap openai nano, addressed through Pi's openrouterProvider() catalog.
+export const openrouterChatModelId = 'openai/gpt-5-nano';
+
+export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' } | { kind: 'openrouter' };
+
+export type LearnerCredentialName = Exclude<LearnerChatRoute['kind'], 'operator'>;
+
+export type LearnerChatStatus = {
+	kind: LearnerChatRoute['kind'];
+	openai: boolean;
+	openrouter: boolean;
+};
+
+export const operatorChatStatus: LearnerChatStatus = {
+	kind: 'operator',
+	openai: false,
+	openrouter: false,
+};
+
+export function credentialNameForLearnerChat(
+	route: Extract<LearnerChatRoute, { kind: LearnerCredentialName }>,
+): LearnerCredentialName {
+	switch (route.kind) {
+		case 'openai':
+			return 'openai';
+		case 'openrouter':
+			return 'openrouter';
+		default: {
+			const exhaustive: never = route;
+			throw new Error(`Unexpected learner credential route: ${JSON.stringify(exhaustive)}`);
+		}
+	}
+}
+
+export function isLearnerChatStatus(value: unknown): value is LearnerChatStatus {
+	if (typeof value !== 'object' || value === null) return false;
+	if (!('kind' in value) || !('openai' in value) || !('openrouter' in value)) return false;
+	if (value.openai !== true && value.openai !== false) return false;
+	if (value.openrouter !== true && value.openrouter !== false) return false;
+	switch (value.kind) {
+		case 'operator':
+		case 'openai':
+		case 'openrouter':
+			return true;
+		default:
+			return false;
+	}
+}
 
 export type ChatModelEnvironment = {
 	readonly VERCEL?: string;
@@ -110,6 +159,8 @@ export function specifierForLearnerChat(
 			return `${operator.providerId}/${operator.modelId}`;
 		case 'openai':
 			return `${openaiChatProviderId}/${openaiChatModelId}`;
+		case 'openrouter':
+			return `${openrouterChatProviderId}/${openrouterChatModelId}`;
 		default: {
 			const exhaustive: never = route;
 			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);

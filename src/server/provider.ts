@@ -1,20 +1,22 @@
 import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { setProvider } from '@flue/runtime';
 import { appConfig } from '../config/app.config.ts';
-import { chatModel, resolveChatModel } from '../config/chat-model.ts';
+import { chatModel, credentialNameForLearnerChat, resolveChatModel } from '../config/chat-model.ts';
 import { installPresentQuestionTextCapture } from '../agents/present-question.ts';
 import { installChatAutoCapture, wrapStreamsForChatAuto } from './chat-auto.ts';
 import { getCredentialStore } from './credential-runtime.ts';
 import {
 	installLearnerKeyCapture,
-	openaiCredentialName,
-	resolveLearnerChatApiKey,
+	resolveOperatorChatApiKey,
+	resolveStoredLearnerApiKey,
 } from './learner-key.ts';
 import { installModelRouteCapture, wrapStreamsForRouteCapture } from './model-route.ts';
 
 const openai = openaiProvider();
+const openrouter = openrouterProvider();
 const credentialStore = getCredentialStore();
 
 setProvider(
@@ -24,8 +26,8 @@ setProvider(
 			apiKey: {
 				name: 'Chat model API key',
 				resolve: async () =>
-					resolveLearnerChatApiKey({
-						operatorApiKey: resolveChatModel(process.env).apiKey,
+					resolveOperatorChatApiKey({
+						apiKey: resolveChatModel(process.env).apiKey,
 					}),
 			},
 		},
@@ -56,9 +58,22 @@ setProvider({
 		apiKey: {
 			name: 'OpenAI API key',
 			resolve: async () =>
-				resolveLearnerChatApiKey({
+				resolveStoredLearnerApiKey({
 					store: credentialStore,
-					credentialName: openaiCredentialName,
+					name: credentialNameForLearnerChat({ kind: 'openai' }),
+				}),
+		},
+	},
+});
+setProvider({
+	...openrouter,
+	auth: {
+		apiKey: {
+			name: 'OpenRouter API key',
+			resolve: async () =>
+				resolveStoredLearnerApiKey({
+					store: credentialStore,
+					name: credentialNameForLearnerChat({ kind: 'openrouter' }),
 				}),
 		},
 	},

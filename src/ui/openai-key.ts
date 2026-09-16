@@ -1,33 +1,28 @@
 import { appConfig } from '../config/app.config.ts';
+import type { LearnerChatStatus } from '../config/chat-model.ts';
+import { openaiChatStatusCopy } from './chat-route.ts';
 
-const connectedCopy = 'Connected. Chat uses your OpenAI key.';
-const disconnectedCopy = 'Not connected. Chat uses the local Socratink model.';
-
-export function mountOpenaiKey(form?: HTMLFormElement): void {
+export function paintOpenaiKey(status: LearnerChatStatus, form?: HTMLFormElement): void {
 	const root = form ?? requireElement<HTMLFormElement>('#openai-key');
-	const status = requireElement<HTMLElement>('#openai-key-status', root);
+	const statusNode = requireElement<HTMLElement>('#openai-key-status', root);
 	const field = requireElement<HTMLElement>('#openai-key-field', root);
 	const input = requireElement<HTMLInputElement>('#openai-key-input', root);
 	const connect = requireElement<HTMLButtonElement>('#openai-key-connect', root);
 	const disconnect = requireElement<HTMLButtonElement>('#openai-key-disconnect', root);
+	statusNode.textContent = openaiChatStatusCopy(status);
+	field.hidden = status.openai;
+	connect.hidden = status.openai;
+	disconnect.hidden = !status.openai;
+	input.required = !status.openai;
+	if (status.openai) input.value = '';
+}
 
-	function paint(connected: boolean) {
-		status.textContent = connected ? connectedCopy : disconnectedCopy;
-		field.hidden = connected;
-		connect.hidden = connected;
-		disconnect.hidden = !connected;
-		input.required = !connected;
-		if (connected) input.value = '';
-	}
-
-	async function refresh() {
-		const response = await fetch(appConfig.openaiKeyPath, { credentials: 'same-origin' });
-		if (!response.ok) {
-			paint(false);
-			return;
-		}
-		paint(connectedFromUnknown(await response.json()));
-	}
+export function mountOpenaiKey(refresh: () => Promise<void>, form?: HTMLFormElement): void {
+	const root = form ?? requireElement<HTMLFormElement>('#openai-key');
+	const status = requireElement<HTMLElement>('#openai-key-status', root);
+	const input = requireElement<HTMLInputElement>('#openai-key-input', root);
+	const connect = requireElement<HTMLButtonElement>('#openai-key-connect', root);
+	const disconnect = requireElement<HTMLButtonElement>('#openai-key-disconnect', root);
 
 	root.addEventListener('submit', async (event) => {
 		event.preventDefault();
@@ -45,7 +40,7 @@ export function mountOpenaiKey(form?: HTMLFormElement): void {
 				status.textContent = 'Could not store that key. Try again.';
 				return;
 			}
-			paint(true);
+			await refresh();
 		} finally {
 			connect.disabled = false;
 		}
@@ -62,17 +57,11 @@ export function mountOpenaiKey(form?: HTMLFormElement): void {
 				status.textContent = 'Could not disconnect that key. Try again.';
 				return;
 			}
-			paint(false);
+			await refresh();
 		} finally {
 			disconnect.disabled = false;
 		}
 	});
-
-	void refresh();
-}
-
-function connectedFromUnknown(value: unknown): boolean {
-	return typeof value === 'object' && value !== null && 'connected' in value && value.connected === true;
 }
 
 function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {

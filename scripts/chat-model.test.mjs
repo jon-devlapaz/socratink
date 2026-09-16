@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../src/config/app.config.ts';
 import {
 	chatProviderId,
+	credentialNameForLearnerChat,
 	openaiChatModelId,
+	openrouterChatModelId,
 	resolveChatModel,
 	specifierForLearnerChat,
 } from '../src/config/chat-model.ts';
@@ -197,10 +200,19 @@ const localDefaults = {
 		true,
 	);
 	assert.equal(
+		openrouterProvider()
+			.getModels()
+			.some((model) => model.id === openrouterChatModelId),
+		true,
+	);
+	assert.equal(
 		specifierForLearnerChat({ kind: 'operator' }, { providerId: chatProviderId, modelId: 'auto' }),
 		'jon-local/auto',
 	);
 	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
+	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
+	assert.equal(credentialNameForLearnerChat({ kind: 'openai' }), 'openai');
+	assert.equal(credentialNameForLearnerChat({ kind: 'openrouter' }), 'openrouter');
 }
 
 console.log('Chat model routing contract passed.');

@@ -4,13 +4,15 @@ import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
 import { configureBraintrust } from './braintrust.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
-import { chatModel } from './config/chat-model.ts';
+import { chatModel, type LearnerChatRoute } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { requireChatSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
+import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
-import { openaiCredentialName } from './server/learner-key.ts';
+import { learnerChatRouteForUser } from './server/learner-key.ts';
 import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
+import { mountOpenrouterRoutes } from './server/openrouter.ts';
 import {
 	chatRateLimitMax,
 	chatRateLimitWindowMs,
@@ -56,16 +58,26 @@ mountOpenaiKeyRoutes(app, {
 	rateLimiter: chatRateLimiter,
 	store: credentialStore,
 });
+mountOpenrouterRoutes(app, {
+	secret: sessionSecret,
+	rateLimiter: chatRateLimiter,
+	store: credentialStore,
+});
+mountChatRoute(app, {
+	secret: sessionSecret,
+	rateLimiter: chatRateLimiter,
+	store: credentialStore,
+});
 app.use(
 	'/api/agents/chat/*',
 	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter }),
 );
 app.use('/api/agents/chat/*', async (context, next) => {
 	const userId = await readSessionUserId(context, sessionSecret);
-	const connected = userId
-		? await credentialStore.hasUserKey({ userId, name: openaiCredentialName })
-		: false;
-	if (!connected && chatAllowsAutoSelection(chatModel.modelId)) {
+	const route: LearnerChatRoute = userId
+		? await learnerChatRouteForUser({ store: credentialStore, userId })
+		: { kind: 'operator' };
+	if (route.kind === 'operator' && chatAllowsAutoSelection(chatModel.modelId)) {
 		rememberConversationAuto(
 			chatConversationIdFromPath(context.req.path),
 			context.req.header(chatAutoModelHeader),

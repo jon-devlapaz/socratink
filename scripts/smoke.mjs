@@ -270,7 +270,10 @@ try {
 	assert.match(html, /<title>Socratink<\/title>/);
 	assert.match(html, /id="openai-key"/);
 	assert.match(html, /OpenAI platform API key/);
+	assert.match(html, /id="openrouter"/);
+	assert.match(html, /OpenRouter credits/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
+	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);
 	assert.equal(browserRoute.status, 200, 'unknown browser route should receive the SPA');
 	assert.match(await browserRoute.text(), /<title>Socratink<\/title>/);
@@ -302,18 +305,32 @@ try {
 		error: { type: 'unauthorized', message: 'A signed session is required.' },
 	});
 
-	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
-	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
-	assert.deepEqual(await unauthenticatedKey.json(), {
+	const unauthenticatedRoute = await fetch(`${origin}/api/chat-route`);
+	assert.equal(unauthenticatedRoute.status, 401, 'Chat route without a session cookie should return 401');
+	assert.deepEqual(await unauthenticatedRoute.json(), {
 		error: { type: 'unauthorized', message: 'A signed session is required.' },
 	});
 
 	const session = await mintSessionFixture(origin);
-	const disconnectedKey = await fetch(`${origin}/api/openai-key`, {
+	const disconnectedRoute = await fetch(`${origin}/api/chat-route`, {
 		headers: { cookie: session.cookie },
 	});
-	assert.equal(disconnectedKey.status, 200, 'signed session can read OpenAI key status');
-	assert.deepEqual(await disconnectedKey.json(), { connected: false });
+	assert.equal(disconnectedRoute.status, 200, 'signed session can read Chat route status');
+	assert.deepEqual(await disconnectedRoute.json(), {
+		kind: 'operator',
+		openai: false,
+		openrouter: false,
+	});
+
+	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
+	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
+
+	const unauthenticatedOpenrouter = await fetch(`${origin}/api/openrouter`);
+	assert.equal(
+		unauthenticatedOpenrouter.status,
+		401,
+		'OpenRouter route without a session cookie should return 401',
+	);
 
 	const foreignChat = await fetch(
 		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,
