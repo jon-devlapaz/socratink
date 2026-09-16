@@ -11,7 +11,6 @@ import './transcript.css';
 import './chat-markdown.css';
 import './questionnaire.css';
 import './tool-card.css';
-import './chat-auto.css';
 import './dictation.css';
 import './steering.css';
 

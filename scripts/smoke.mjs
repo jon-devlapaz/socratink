@@ -273,6 +273,9 @@ try {
 	assert.match(html, /id="providers-status"/);
 	assert.match(html, /OpenAI platform API key/);
 	assert.match(html, /id="openrouter"/);
+	assert.match(html, /id="openai-models"/);
+	assert.match(html, /id="openrouter-models"/);
+	assert.doesNotMatch(html, /id="auto-model"/);
 	assert.match(html, /OpenRouter credits/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
 	assert.doesNotMatch(html, /Log in with Claude/);

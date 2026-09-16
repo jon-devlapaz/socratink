@@ -455,6 +455,8 @@ test('chat-surface restore begins restore then hydrates and rechecks', async () 
 	assert.match(source, /unsettled = unsettledSubmissionFromHistory\(history\)/);
 	assert.match(source, /requests\.hydrate\(unsettled\.text, unsettled\.submissionId\)/);
 	assert.match(source, /if \(unsettled\) await runRequestCommand\(requests\.recheck\(\)\)/);
+	assert.doesNotMatch(source, /initChatAutoModel/);
+	assert.doesNotMatch(source, /#auto-model/);
 	assert.doesNotMatch(source, /\bsetWorking\b/);
 	assert.doesNotMatch(source, /let working = /);
 });

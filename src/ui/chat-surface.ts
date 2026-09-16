@@ -22,7 +22,6 @@ import {
 	type DisplayedTurn,
 } from './chat-turns.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
-import { initChatAutoModel } from './chat-auto.ts';
 import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
@@ -52,6 +51,7 @@ import { mountMenuSheet } from './menu-sheet.ts';
 import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
 import { mountOpenrouter, paintOpenrouter } from './openrouter.ts';
 import { mountProviders, paintProviders } from './providers.ts';
+import { learnerChatStatusFromStoredPick } from './chat-pick.ts';
 import { loadLearnerChatStatus } from './chat-route.ts';
 import {
 	applyRequestControlState,
@@ -82,7 +82,6 @@ type ChatSurfaceElements = {
 	trailLabel: HTMLElement;
 	appearance: HTMLButtonElement;
 	typeSize: HTMLButtonElement;
-	autoModel: HTMLButtonElement;
 	dictationToggle: HTMLButtonElement;
 	dictationStatus: HTMLElement;
 };
@@ -107,18 +106,16 @@ export function mountChatSurface(options: Readonly<{
 		trailLabel,
 		appearance,
 		typeSize,
-		autoModel,
 		dictationToggle,
 		dictationStatus,
 	} = elements;
-	initChatAutoModel(autoModel);
 	async function refreshLearnerChat() {
-		const status = await loadLearnerChatStatus();
+		const status = learnerChatStatusFromStoredPick(await loadLearnerChatStatus());
 		paintProviders(status);
 		paintOpenaiKey(status);
 		paintOpenrouter(status);
 	}
-	mountProviders();
+	mountProviders(refreshLearnerChat);
 	mountOpenaiKey(refreshLearnerChat);
 	mountOpenrouter(refreshLearnerChat);
 	void refreshLearnerChat();
@@ -493,7 +490,6 @@ function queryChatSurface(): ChatSurfaceElements {
 		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
 		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
 		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
-		autoModel: requireElement<HTMLButtonElement>('#auto-model'),
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};

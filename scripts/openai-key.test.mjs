@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
-import { operatorChatStatus } from '../src/config/chat-model.ts';
+import { learnerChatModelChoices, operatorChatStatus } from '../src/config/chat-model.ts';
 import { openaiChatStatusCopy, openrouterChatStatusCopy, providersChatStatusCopy } from '../src/ui/chat-route.ts';
 import { mountChatRoute } from '../src/server/chat-route.ts';
 import { openCredentialStore } from '../src/server/credential-runtime.ts';
@@ -130,6 +130,11 @@ test('closed Providers copy has one owner from kind', () => {
 	assert.match(openrouterChatStatusCopy(both), /Chat uses your OpenRouter key/);
 	assert.equal(openaiChatStatusCopy(operator), '');
 	assert.equal(openrouterChatStatusCopy(openai), '');
+	for (const choice of learnerChatModelChoices) {
+		assert.doesNotMatch(choice.label, /ChatGPT Plus/);
+		assert.doesNotMatch(choice.label, /Claude/);
+		assert.doesNotMatch(choice.label, /ChatGPT/);
+	}
 });
 
 test('paste-key UI lives on Chat chrome and does not keep the secret in the browser', async () => {
@@ -143,6 +148,9 @@ test('paste-key UI lives on Chat chrome and does not keep the secret in the brow
 	assert.match(html, /id="providers-panel"/);
 	assert.match(html, /<p id="providers-status"[^>]*aria-live="polite"/);
 	assert.match(html, /id="providers-panel"[\s\S]*id="openai-key"[\s\S]*id="openrouter"/);
+	assert.match(html, /id="openai-models"/);
+	assert.match(html, /id="openrouter-models"/);
+	assert.doesNotMatch(html, /id="auto-model"/);
 	assert.ok(html.includes(providersChatStatusCopy(operatorChatStatus)));
 	assert.match(html, /OpenAI platform API key/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
