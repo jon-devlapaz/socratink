@@ -12,6 +12,19 @@ export const openrouterChatProviderId = 'openrouter';
 // Same cheap openai nano, addressed through Pi's openrouterProvider() catalog.
 export const openrouterChatModelId = 'openai/gpt-5-nano';
 
+// OpenRouter reserves requested max_tokens as credit collateral. Pi's catalog
+// sets this model to 128000, which 402s low-credit accounts before a short
+// Chat turn can run. 8192 is enough for a Socratic turn with tools.
+export const openrouterChatMaxTokens = 8192;
+
+export function capOpenrouterChatMaxTokens<T extends { readonly id: string; readonly maxTokens: number }>(
+	models: readonly T[],
+): T[] {
+	return models.map((model) =>
+		model.id === openrouterChatModelId ? { ...model, maxTokens: openrouterChatMaxTokens } : model,
+	);
+}
+
 export type LearnerChatRoute = { kind: 'operator' } | { kind: 'openai' } | { kind: 'openrouter' };
 
 export type LearnerCredentialName = Exclude<LearnerChatRoute['kind'], 'operator'>;

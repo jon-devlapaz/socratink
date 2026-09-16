@@ -4,7 +4,12 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { setProvider } from '@flue/runtime';
 import { appConfig } from '../config/app.config.ts';
-import { chatModel, credentialNameForLearnerChat, resolveChatModel } from '../config/chat-model.ts';
+import {
+	capOpenrouterChatMaxTokens,
+	chatModel,
+	credentialNameForLearnerChat,
+	resolveChatModel,
+} from '../config/chat-model.ts';
 import { installPresentQuestionTextCapture } from '../agents/present-question.ts';
 import { installChatAutoCapture, wrapStreamsForChatAuto } from './chat-auto.ts';
 import { getCredentialStore } from './credential-runtime.ts';
@@ -67,6 +72,7 @@ setProvider({
 });
 setProvider({
 	...openrouter,
+	getModels: () => capOpenrouterChatMaxTokens(openrouter.getModels()),
 	auth: {
 		apiKey: {
 			name: 'OpenRouter API key',
