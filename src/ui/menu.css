@@ -647,6 +647,10 @@ html:has(.menu-layer.is-open) .app-canvas {
 	gap: 0.35rem;
 }
 
+.provider-models[hidden] {
+	display: none;
+}
+
 .provider-model {
 	min-height: 2.1rem;
 	padding: 0.35rem 0.75rem;
