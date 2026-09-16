@@ -1,0 +1,301 @@
+FM-PARETO-CUT cold archive — 2026-09-16T05:54:25Z
+Captain-authorized NOISE cut. Moves only (git-recoverable).
+
+=== MOVED: research/chat-signal/agenteng-runs/ (45 markdown files) ===
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/FM-AGENTENG-01-happy-paths.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/agents-paste-diff.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/brain-pedagogy-stratum.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/canonical-cd-cr-harvest.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/canonical-extract-index.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cloud-dump-cd-extract.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cloud-pr-join-transcript-mine.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cloud-pr-join.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cloud-pr-quality-cards.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cloud-transcript-lane.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/codex-deep-cards.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/codex-recovery-cards.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/codex-strata.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/cross-harness-thin-inventory.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/draft-agents-thrash-tripwire.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/draft-goal-template.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/every-leaf.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/evidence-chains.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/external-frameworks.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/factory-crew-wake-lessons.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/gold-pr-brain-crosslink.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/happy-nuggets.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/happy-smell-pairs.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/harness-skills-table.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/harness-skills-tranche.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/ide-pr-join.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/ide-vs-cloud-ship.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/inventory.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/jev-long-tails.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/learnings-ingest-template.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/nugget-vs-smell.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/phase15-decision-memo.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/phase15-watch-card.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/pr-jev-summary.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/refuse-boot-simulations.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/smell-catalog-dense.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/socratink-30-60-90-primary.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/sprawl-audit.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/start-tomorrow-onepager.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/strata-v3.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/t6-leftovers.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/toolcall-waste-oom.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/transferable-jev-top30.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/transferable-nonsocratink.md
+MOVE research/_cold-archive/PARETO-01/agenteng-runs/working-memory-exemplars.md
+
+=== MOVED: .agents/skills/personas-skillset/ -> skills/personas-skillset/ ===
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/.tink-skillset.json
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/FIDELITY.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/agents/openai.yaml
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/fidelity-answers.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/forward-test-prompts.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/research/07-recent-posts.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2017-08-08-heroes-deep-learning-_au3yw46lcg.en.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2017-08-08-heroes-deep-learning-_au3yw46lcg.en.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2022-10-29-lex-fridman-333-cdiD-9MMpb0.en-US.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2022-10-29-lex-fridman-333-cdiD-9MMpb0.en-US.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2024-03-26-sequoia-ascent-c3b-JASoPi0.en-orig.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2024-03-26-sequoia-ascent-c3b-JASoPi0.en-orig.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2024-07-03-uc-berkeley-hackathon-tsTeEkzO9xc.en.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2024-07-03-uc-berkeley-hackathon-tsTeEkzO9xc.en.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2025-06-19-yc-software-changing-LCEmiRjPEtQ.en-orig.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2025-06-19-yc-software-changing-LCEmiRjPEtQ.en-orig.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2025-10-17-dwarkesh-lXUZvyajciY.en.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2025-10-17-dwarkesh-lXUZvyajciY.en.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2026-03-20-no-priors-kwSVtQ7dziU.en-orig.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2026-03-20-no-priors-kwSVtQ7dziU.en-orig.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2026-04-29-sequoia-ascent-96jN2OCOfLs.en-orig.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrej-karpathy-perspective/references/sources/transcripts/2026-04-29-sequoia-ascent-96jN2OCOfLs.en-orig.vtt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/phase4-validation.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/phase5-agent-a-optimizer.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/phase5-agent-b-skill-creator.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/sources/transcripts/2026-08-silicon-valley-girl-andrew-ng-raw.txt
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/sources/transcripts/2026-08-silicon-valley-girl-andrew-ng-source.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/andrew-ng-perspective/references/synthesis.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/hiring-brief.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/phase4-validation.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/phase5-optimizer.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/phase5-regression.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/phase5-skill-creator.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/sources/articles/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/sources/books/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/sources/transcripts/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/references/synthesis.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/kenneth-koedinger-perspective/scripts/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/FIDELITY.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/scripts/download_subtitles.sh
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/scripts/merge_research.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/scripts/quality_check.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/martin-fowler-perspective/scripts/srt_to_transcript.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/LICENSE
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/agents/openai.yaml
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/matt-pocock-skills.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/references/synthesis.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/matt-pocock-perspective/scripts/quality_check.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/agents/openai.yaml
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/refinement-optimizer.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/refinement-skill-creator.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/sources/articles/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/sources/books/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/sources/transcripts/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/synthesis.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/references/validation.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/scripts/.gitkeep
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/scripts/download_subtitles.sh
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/scripts/merge_research.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/scripts/quality_check.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/sal-khan-perspective/scripts/srt_to_transcript.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/01-writings.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/02-conversations.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/03-expression-dna.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/04-external-views.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/05-decisions.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/06-timeline.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/07-success-taste-cards.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/08-failure-taste-cards.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/research/09-user-evidence-and-translation.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/synthesis.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/references/validation.md
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/scripts/download_subtitles.sh
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/scripts/merge_research.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/scripts/quality_check.py
+MOVE research/_cold-archive/PARETO-01/skills/personas-skillset/steve-jobs-perspective/scripts/srt_to_transcript.py
+
+=== MOVED: .agents/skills/common-skills-skillset/ -> skills/common-skills-skillset/ ===
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/.tink-skillset.json
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/brandalf/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/check-impl-against-spec/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/complain/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/complain/evals/evals.json
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/complain/submit.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/council/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/create-pr/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/cross-critique/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/diagnose-ci-failures/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/fix-errors/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/implement-specs/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/pr-walkthrough/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/pr-walkthrough/scripts/d3_canvas_runtime.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/pr-walkthrough/scripts/validate_d3_canvas.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/assets/code-pane.html
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/assets/template.html
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/references/doc-guide.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/scripts/embed_snippets.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/readout/scripts/update_index.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/reproduce-bug-report/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/research/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/resolve-merge-conflicts/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/resolve-merge-conflicts/scripts/extract_conflict_context.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/respond-to-pr-comments-in-blocklist/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/review-pr/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/review-pr/scripts/resolve_spec_context.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/review-pr/scripts/validate_review_json.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/saga/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/saga/references/continuing-a-saga.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/saga/references/saga-spec-template.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/saga/references/validation-strategies.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/scan-new-specs/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/assets/pierre-diffs.js
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/assets/warp-pixel-icon.svg
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/references/skill-improvements.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/references/supported-harnesses.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scorers/code-quality.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scorers/efficiency.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scripts/collect_sessions.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scripts/render_report.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scripts/test_collect_sessions.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scripts/test_render_report.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/skill-doctor/scripts/warp_decoder.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/spec-driven-implementation/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/suggestion-box/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/suggestion-box/evals/evals.json
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/suggestion-box/submit.py
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/update-skill/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/update-skill/references/best-practices.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/validate-changes-match-specs/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-feature-docs/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-pr-description/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-pr-description/evals/evals.json
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-pr-description/references/plain-language.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-pr-description/references/review-guide.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-product-spec/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/common-skills-skillset/write-tech-spec/SKILL.md
+
+=== MOVED: .agents/skills/variate/ -> skills/variate/ ===
+MOVE research/_cold-archive/PARETO-01/skills/variate/.gitignore
+MOVE research/_cold-archive/PARETO-01/skills/variate/AGENTS.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/LICENSE
+MOVE research/_cold-archive/PARETO-01/skills/variate/README.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/SECURITY.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/SKILL.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/agents/openai.yaml
+MOVE research/_cold-archive/PARETO-01/skills/variate/client/card.js
+MOVE research/_cold-archive/PARETO-01/skills/variate/client/inter/OFL.txt
+MOVE research/_cold-archive/PARETO-01/skills/variate/client/inter/README.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/client/inter/inter.woff2
+MOVE research/_cold-archive/PARETO-01/skills/variate/dev/fixture.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/dev/smoke-card.sh
+MOVE research/_cold-archive/PARETO-01/skills/variate/dev/smoke-cli.sh
+MOVE research/_cold-archive/PARETO-01/skills/variate/dev/smoke-http.sh
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/menu.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/og.png
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/pick.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/refine.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/state-1.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/state-2.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/state-3.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/img/state-4.webp
+MOVE research/_cold-archive/PARETO-01/skills/variate/docs/index.html
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/evals.json
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/mid-session/index.html
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/index.html
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/package.json
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/src/components/Hero.jsx
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/src/components/Pricing.jsx
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/src/main.jsx
+MOVE research/_cold-archive/PARETO-01/skills/variate/evals/files/vite-app/src/tokens.css
+MOVE research/_cold-archive/PARETO-01/skills/variate/fixtures/static/app.html
+MOVE research/_cold-archive/PARETO-01/skills/variate/fixtures/static/index.html
+MOVE research/_cold-archive/PARETO-01/skills/variate/references/craft.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/references/frameworks.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/references/harnesses.md
+MOVE research/_cold-archive/PARETO-01/skills/variate/scripts/await.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/scripts/install.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/src/attach.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/src/check.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/src/core.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/src/queue.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/src/sidecar.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/variate.mjs
+MOVE research/_cold-archive/PARETO-01/skills/variate/vercel.json
+
+=== SKIPPED ===
+SKIP .agents/skills/impeccable/ — absent on main at cut time
+SKIP .variate/ — gitignored local-only (.gitignore); not tracked
+SKIP doc-vault/ — absent on main (N/A)
+SKIP research/pareto/FM-PARETO-01.md — absent on main (scout not landed)
+
+=== KEPT (editor agent shims — point at AGENTS.md, no doctrine duplication) ===
+KEEP .claude/agents/socratink-ai-engineer.md — thin shim to AGENTS.md + ROLE.md
+KEEP .claude/agents/socratink-learning-scientist.md — thin shim to AGENTS.md + ROLE.md
+KEEP .cursor/agents/socratink-ai-engineer.md — thin shim to AGENTS.md + ROLE.md
+KEEP .cursor/agents/socratink-learning-scientist.md — thin shim to AGENTS.md + ROLE.md
+KEEP .codex/agents/andrej.toml — thin shim to AGENTS.md + ROLE.md
+KEEP .codex/agents/socratink-learning-scientist.toml — thin shim to AGENTS.md + ROLE.md
+
+=== HARD FENCES (untouched) ===
+FENCE research/chat-signal/wiki-source/agenteng-distilled/ — kept in hot tree
+FENCE .agents/skills/socratink-brain/ — kept in hot tree
+FENCE src/agents/chat.ts, src/ui/chat-*, questionnaire, provider — no diffs
