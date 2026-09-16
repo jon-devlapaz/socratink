@@ -1,0 +1,2155 @@
+[
+  {
+    "rank": 1,
+    "session_key": "64cfb0da@1fee4c",
+    "session_id": "64cfb0da-d449-44e6-bf35-dfe506cdbd20",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app-orphaned-launch-pad-css/agent-transcripts/64cfb0da-d449-44e6-bf35-dfe506cdbd20/64cfb0da-d449-44e6-bf35-dfe506cdbd20.jsonl",
+    "smell_index": 1.0368,
+    "primary": "hallucinated_state",
+    "severity": 2.76,
+    "recoverability": "fatal",
+    "nouls": {
+      "context_lost": 0.75,
+      "ignored_standing_instructions": 0.85,
+      "tool_thrash": 0.78,
+      "wrong_scope": 0.82,
+      "user_had_to_correct": 0.46,
+      "missing_verification": 0.89
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 21,
+      "repeated_tool_extra": 3,
+      "top_repeated_tools": [
+        {
+          "sig": "Shell|command=python3 /Users/jondev/.agents/skills/subagent-sprawl/scripts/boot.py \\\n  --packet-file /tmp/agent-work-smell-sprawl/packet-path-contract.md \\\n  --packet-file /tmp/agent-work-smell-",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.agents/skills/close-loop/LEDGER.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 24,
+      "prefilter_score": 22.5
+    }
+  },
+  {
+    "rank": 2,
+    "session_key": "e8a25b04@83440b",
+    "session_id": "e8a25b04-6d00-4a10-a155-c50fc2c5cb9c",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c.jsonl",
+    "smell_index": 1.0289333333333333,
+    "primary": "tool_thrash",
+    "severity": 2.8,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.44,
+      "ignored_standing_instructions": 0.43,
+      "tool_thrash": 0.87,
+      "wrong_scope": 0.73,
+      "user_had_to_correct": 0.91,
+      "missing_verification": 0.8
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 7,
+      "repeated_tool_extra": 10,
+      "top_repeated_tools": [
+        {
+          "sig": "Shell|command=python3 /Users/jondev/.agents/skills/subagent-sprawl/scripts/boot.py \\\n  --packet-file /Users/jondev/.agents/runtime/sprawl/fp-skill-2026-07-26/packet-customer-falsifier.md \\\n  --p",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/js/app.js",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/PRODUCT.md",
+          "n": 3
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/index.html",
+          "n": 3
+        }
+      ],
+      "unique_paths": 57,
+      "prefilter_score": 31.5
+    }
+  },
+  {
+    "rank": 3,
+    "session_key": "3f9a6631@747931",
+    "session_id": "3f9a6631-c42e-4f0a-8b5d-93b501ee09af",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/3f9a6631-c42e-4f0a-8b5d-93b501ee09af/3f9a6631-c42e-4f0a-8b5d-93b501ee09af.jsonl",
+    "smell_index": 1.006,
+    "primary": "tool_thrash",
+    "severity": 2.94,
+    "recoverability": "fatal",
+    "nouls": {
+      "context_lost": 0.46,
+      "ignored_standing_instructions": 0.36,
+      "tool_thrash": 0.87,
+      "wrong_scope": 0.54,
+      "user_had_to_correct": 0.9,
+      "missing_verification": 0.73
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 13,
+      "repeated_tool_extra": 128,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 15
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-markdown.ts",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 13
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/turn-view.ts",
+          "n": 10
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/questionnaire-ui.test.mjs",
+          "n": 9
+        }
+      ],
+      "unique_paths": 83,
+      "prefilter_score": 36
+    }
+  },
+  {
+    "rank": 4,
+    "session_key": "e8a25b04@5b3831",
+    "session_id": "e8a25b04-6d00-4a10-a155-c50fc2c5cb9c",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/518c2961-0693-48bb-ae35-c4a166b2116c/subagents/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c.jsonl",
+    "smell_index": 0.9691999999999998,
+    "primary": "tool_thrash",
+    "severity": 2.61,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.41,
+      "ignored_standing_instructions": 0.35,
+      "tool_thrash": 0.84,
+      "wrong_scope": 0.57,
+      "user_had_to_correct": 0.89,
+      "missing_verification": 0.7
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 12,
+      "repeated_tool_extra": 10,
+      "top_repeated_tools": [
+        {
+          "sig": "Shell|command=python3 /Users/jondev/.agents/skills/subagent-sprawl/scripts/boot.py \\\n  --packet-file /Users/jondev/.agents/runtime/sprawl/fp-skill-2026-07-26/packet-customer-falsifier.md \\\n  --p",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/js/app.js",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/PRODUCT.md",
+          "n": 3
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/index.html",
+          "n": 3
+        }
+      ],
+      "unique_paths": 58,
+      "prefilter_score": 39
+    }
+  },
+  {
+    "rank": 5,
+    "session_key": "f4d88dd4@223989",
+    "session_id": "f4d88dd4-2279-40c3-80e2-d438e138f363",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/f4d88dd4-2279-40c3-80e2-d438e138f363/f4d88dd4-2279-40c3-80e2-d438e138f363.jsonl",
+    "smell_index": 0.9671333333333334,
+    "primary": "tool_thrash",
+    "severity": 2.53,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.53,
+      "ignored_standing_instructions": 0.38,
+      "tool_thrash": 0.85,
+      "wrong_scope": 0.79,
+      "user_had_to_correct": 0.48,
+      "missing_verification": 0.7
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 8,
+      "repeated_tool_extra": 45,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/tmp/socratink-prototype/downstream-chat-v6.html",
+          "n": 15
+        },
+        {
+          "sig": "Shell|command=python3 << 'PY'\nfrom playwright.sync_api import sync_playwright\nfrom pathlib import Path\n\nout = Path(\"/tmp/socratink-prototype\")\nchrome = \"/Applications/Google Chrome.app/Contents/",
+          "n": 11
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-prototype/downstream-chat-v7.html",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-prototype/downstream-chat-v5.html",
+          "n": 6
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-prototype/SPEC-v6.md",
+          "n": 5
+        }
+      ],
+      "unique_paths": 75,
+      "prefilter_score": 29
+    }
+  },
+  {
+    "rank": 6,
+    "session_key": "f57a99e7@d082d5",
+    "session_id": "f57a99e7-7502-435b-b366-94f165d9636b",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app-training-sync-due/agent-transcripts/f57a99e7-7502-435b-b366-94f165d9636b/f57a99e7-7502-435b-b366-94f165d9636b.jsonl",
+    "smell_index": 0.9543999999999999,
+    "primary": "tool_thrash",
+    "severity": 2.82,
+    "recoverability": "fatal",
+    "nouls": {
+      "context_lost": 0.6,
+      "ignored_standing_instructions": 0.39,
+      "tool_thrash": 0.91,
+      "wrong_scope": 0.63,
+      "user_had_to_correct": 0.23,
+      "missing_verification": 0.7
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 8,
+      "repeated_tool_extra": 192,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-training-sync-due/public/js/app.js",
+          "n": 36
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-training-sync-due/public/js/app.js",
+          "n": 33
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-training-sync-due/public/index.html",
+          "n": 23
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-training-sync-due/public/antigravity.css",
+          "n": 14
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-training-sync-due/public/antigravity.css",
+          "n": 12
+        }
+      ],
+      "unique_paths": 86,
+      "prefilter_score": 29
+    }
+  },
+  {
+    "rank": 7,
+    "session_key": "f5892573@a3fba8",
+    "session_id": "f5892573-a6d2-4be0-97c8-f7d6f2fea820",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/262573f8-8b59-43db-a3e2-b74ba416a168/subagents/f5892573-a6d2-4be0-97c8-f7d6f2fea820.jsonl",
+    "smell_index": 0.9430666666666667,
+    "primary": "lost_goal",
+    "severity": 2.48,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.84,
+      "ignored_standing_instructions": 0.74,
+      "tool_thrash": 0.82,
+      "wrong_scope": 0.86,
+      "user_had_to_correct": 0.77,
+      "missing_verification": 0.49
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 1,
+      "repeated_tool_extra": 50,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/style.css",
+          "n": 11
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/style.css",
+          "n": 6
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/Experience/Camera.js",
+          "n": 6
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/LOG.md",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/Experience/Gallery.js",
+          "n": 5
+        }
+      ],
+      "unique_paths": 78,
+      "prefilter_score": 18.5
+    }
+  },
+  {
+    "rank": 8,
+    "session_key": "44e8029b@67827e",
+    "session_id": "44e8029b-85ed-44db-99d5-0f22ac1ac0ee",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/44e8029b-85ed-44db-99d5-0f22ac1ac0ee/44e8029b-85ed-44db-99d5-0f22ac1ac0ee.jsonl",
+    "smell_index": 0.9388666666666667,
+    "primary": "tool_thrash",
+    "severity": 2.57,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.59,
+      "ignored_standing_instructions": 0.32,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.73,
+      "user_had_to_correct": 0.29,
+      "missing_verification": 0.74
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 8,
+      "repeated_tool_extra": 52,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/js/app.js",
+          "n": 11
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-student-first-moment/public/js/app.js",
+          "n": 11
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-student-first-moment/public/js/app.js",
+          "n": 9
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-student-first-moment/tests/test_frontend_app_helper_modules.py",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-student-first-moment/public/js/drill-chamber.js",
+          "n": 7
+        }
+      ],
+      "unique_paths": 69,
+      "prefilter_score": 29
+    }
+  },
+  {
+    "rank": 9,
+    "session_key": "73c01e2a@e661bb",
+    "session_id": "73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-landing/agent-transcripts/73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0/73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0.jsonl",
+    "smell_index": 0.9074666666666666,
+    "primary": "tool_thrash",
+    "severity": 2.9,
+    "recoverability": "fatal",
+    "nouls": {
+      "context_lost": 0.29,
+      "ignored_standing_instructions": 0.31,
+      "tool_thrash": 0.84,
+      "wrong_scope": 0.62,
+      "user_had_to_correct": 0.89,
+      "missing_verification": 0.72
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 4,
+      "repeated_tool_extra": 168,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-landing/index.html",
+          "n": 132
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-landing/index.html",
+          "n": 22
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-landing/check-ink-recall.mjs",
+          "n": 10
+        },
+        {
+          "sig": "Shell|command=node check-ink-recall.mjs && npm run lint && npm run build && git diff --check && echo ALL_CHECKS_PASSED",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/tmp/folio-qa/mat-2-travel.png",
+          "n": 4
+        }
+      ],
+      "unique_paths": 105,
+      "prefilter_score": 23
+    }
+  },
+  {
+    "rank": 10,
+    "session_key": "97408866@7cf1e3",
+    "session_id": "97408866-9b03-4af0-8f3a-4e9fa18122ab",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/97408866-9b03-4af0-8f3a-4e9fa18122ab/97408866-9b03-4af0-8f3a-4e9fa18122ab.jsonl",
+    "smell_index": 0.9073333333333333,
+    "primary": "tool_thrash",
+    "severity": 2.62,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.74,
+      "ignored_standing_instructions": 0.5,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.74,
+      "user_had_to_correct": 0.35,
+      "missing_verification": 0.74
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 19,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/index.html",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.cursor/projects/Users-jondev-dev-active-socratink-product-socratink/terminals/608999.txt",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/index.html",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 4
+        }
+      ],
+      "unique_paths": 46,
+      "prefilter_score": 21.5
+    }
+  },
+  {
+    "rank": 11,
+    "session_key": "c7033f65@cc6ad3",
+    "session_id": "c7033f65-280b-475c-bca2-951a9f910a6e",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c7033f65-280b-475c-bca2-951a9f910a6e/c7033f65-280b-475c-bca2-951a9f910a6e.jsonl",
+    "smell_index": 0.8810666666666667,
+    "primary": "tool_thrash",
+    "severity": 2.6,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.33,
+      "ignored_standing_instructions": 0.43,
+      "tool_thrash": 0.86,
+      "wrong_scope": 0.52,
+      "user_had_to_correct": 0.27,
+      "missing_verification": 0.63
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 25,
+      "repeated_tool_extra": 21,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-ui-polish/public/index.html",
+          "n": 9
+        },
+        {
+          "sig": "Shell|command=SOCRATINK_BASE_URL=http://localhost:8011 ./scripts/check-coverage.sh",
+          "n": 6
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-ui-polish/public/css/index.css",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/js/app.js",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/.agents/skills/socratink-design/SKILL.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 62,
+      "prefilter_score": 35
+    }
+  },
+  {
+    "rank": 12,
+    "session_key": "a09316e9@4924e1",
+    "session_id": "a09316e9-6e8b-4e04-a7c9-30b266ec40e2",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/a09316e9-6e8b-4e04-a7c9-30b266ec40e2/a09316e9-6e8b-4e04-a7c9-30b266ec40e2.jsonl",
+    "smell_index": 0.8664000000000001,
+    "primary": "tool_thrash",
+    "severity": 2.22,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.54,
+      "ignored_standing_instructions": 0.21,
+      "tool_thrash": 0.83,
+      "wrong_scope": 0.65,
+      "user_had_to_correct": 0.22,
+      "missing_verification": 0.68
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 15,
+      "repeated_tool_extra": 437,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 57
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 49
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 48
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 25
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/ZEN.md",
+          "n": 16
+        }
+      ],
+      "unique_paths": 155,
+      "prefilter_score": 36
+    }
+  },
+  {
+    "rank": 13,
+    "session_key": "c2a77998@d7fba1",
+    "session_id": "c2a77998-653b-4b18-89ae-fb1936c19a94",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c2a77998-653b-4b18-89ae-fb1936c19a94/c2a77998-653b-4b18-89ae-fb1936c19a94.jsonl",
+    "smell_index": 0.8658,
+    "primary": "lost_goal",
+    "severity": 2.1,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.72,
+      "ignored_standing_instructions": 0.31,
+      "tool_thrash": 0.57,
+      "wrong_scope": 0.78,
+      "user_had_to_correct": 0.26,
+      "missing_verification": 0.74
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 54,
+      "repeated_tool_extra": 4,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/scripts/agent-push.py",
+          "n": 6
+        }
+      ],
+      "unique_paths": 23,
+      "prefilter_score": 24
+    }
+  },
+  {
+    "rank": 14,
+    "session_key": "3667f64d@7337c8",
+    "session_id": "3667f64d-b4bd-4836-ab07-58c3a3d93bee",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/subagents/3667f64d-b4bd-4836-ab07-58c3a3d93bee.jsonl",
+    "smell_index": 0.8557333333333335,
+    "primary": "tool_thrash",
+    "severity": 2.35,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.26,
+      "ignored_standing_instructions": 0.24,
+      "tool_thrash": 0.75,
+      "wrong_scope": 0.37,
+      "user_had_to_correct": 0.87,
+      "missing_verification": 0.56
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 9,
+      "repeated_tool_extra": 6,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/bin/agent-work",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/skills/socratink-agent-flow/SKILL.md",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.codex/skills/tool-sharpening-loop/SKILL.md",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/scripts/agent-work",
+          "n": 3
+        }
+      ],
+      "unique_paths": 41,
+      "prefilter_score": 28.5
+    }
+  },
+  {
+    "rank": 15,
+    "session_key": "fae4006d@5ad6f6",
+    "session_id": "fae4006d-f921-462f-98be-6bc47129dd4d",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/fae4006d-f921-462f-98be-6bc47129dd4d/fae4006d-f921-462f-98be-6bc47129dd4d.jsonl",
+    "smell_index": 0.8380000000000001,
+    "primary": "tool_thrash",
+    "severity": 2.43,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.37,
+      "ignored_standing_instructions": 0.31,
+      "tool_thrash": 0.78,
+      "wrong_scope": 0.57,
+      "user_had_to_correct": 0.39,
+      "missing_verification": 0.62
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 6,
+      "repeated_tool_extra": 59,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/effects/organic-sphere.ts",
+          "n": 16
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/effects/icon-cloud.ts",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/questionnaire-ui.test.mjs",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/voice-reactivity.test.mjs",
+          "n": 7
+        }
+      ],
+      "unique_paths": 54,
+      "prefilter_score": 27
+    }
+  },
+  {
+    "rank": 16,
+    "session_key": "582bef0a@ea9ba6",
+    "session_id": "582bef0a-c6fd-4a76-9fba-7323b0567102",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/582bef0a-c6fd-4a76-9fba-7323b0567102/582bef0a-c6fd-4a76-9fba-7323b0567102.jsonl",
+    "smell_index": 0.8291333333333335,
+    "primary": "tool_thrash",
+    "severity": 2.5,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.35,
+      "ignored_standing_instructions": 0.34,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.46,
+      "user_had_to_correct": 0.28,
+      "missing_verification": 0.45
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 13,
+      "repeated_tool_extra": 12,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/scripts/agent-work",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.codex/skills/launch-agent-work/SKILL.md",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.agents/scripts/agent-work",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/scripts/test-agent-work-short-launch.sh",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/skills/handoff/SKILL.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 31,
+      "prefilter_score": 35
+    }
+  },
+  {
+    "rank": 17,
+    "session_key": "07847e35@a01146",
+    "session_id": "07847e35-01f9-4d1b-b830-1cb34894302b",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/07847e35-01f9-4d1b-b830-1cb34894302b/07847e35-01f9-4d1b-b830-1cb34894302b.jsonl",
+    "smell_index": 0.8275333333333335,
+    "primary": "tool_thrash",
+    "severity": 2.35,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.29,
+      "ignored_standing_instructions": 0.4,
+      "tool_thrash": 0.83,
+      "wrong_scope": 0.57,
+      "user_had_to_correct": 0.15,
+      "missing_verification": 0.51
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 24,
+      "repeated_tool_extra": 33,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-seda-evidence-projection/tests/e2e/test_smoke.py",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app/public/js/app.js",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-seda-evidence-projection/public/js/app.js",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-seda-evidence-projection/public/js/concept-page-view.js",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-seda-evidence-projection/tests/e2e/test_smoke.py",
+          "n": 4
+        }
+      ],
+      "unique_paths": 51,
+      "prefilter_score": 35
+    }
+  },
+  {
+    "rank": 18,
+    "session_key": "4d0e878b@941372",
+    "session_id": "4d0e878b-4b4b-475a-8ff5-19036fa0cf1d",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/4d0e878b-4b4b-475a-8ff5-19036fa0cf1d/4d0e878b-4b4b-475a-8ff5-19036fa0cf1d.jsonl",
+    "smell_index": 0.8222,
+    "primary": "tool_thrash",
+    "severity": 2.64,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.24,
+      "ignored_standing_instructions": 0.32,
+      "tool_thrash": 0.86,
+      "wrong_scope": 0.49,
+      "user_had_to_correct": 0.55,
+      "missing_verification": 0.52
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 5,
+      "repeated_tool_extra": 167,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/smoke.mjs",
+          "n": 23
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/node_modules/@flue/runtime/dist/conversation-stream-store-CXwRWonS.mjs",
+          "n": 16
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/smoke.mjs",
+          "n": 14
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 13
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/node_modules/@flue/runtime/dist/types-CVx9SjIx.d.mts",
+          "n": 13
+        }
+      ],
+      "unique_paths": 138,
+      "prefilter_score": 25.5
+    }
+  },
+  {
+    "rank": 19,
+    "session_key": "316e90d5@4f34d8",
+    "session_id": "316e90d5-9037-43f1-9853-36175d628813",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/316e90d5-9037-43f1-9853-36175d628813/316e90d5-9037-43f1-9853-36175d628813.jsonl",
+    "smell_index": 0.8220000000000001,
+    "primary": "tool_thrash",
+    "severity": 2.76,
+    "recoverability": "fatal",
+    "nouls": {
+      "context_lost": 0.12,
+      "ignored_standing_instructions": 0.17,
+      "tool_thrash": 0.85,
+      "wrong_scope": 0.45,
+      "user_had_to_correct": 0.36,
+      "missing_verification": 0.59
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 27,
+      "repeated_tool_extra": 20,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/AGENTS.md",
+          "n": 9
+        },
+        {
+          "sig": "Shell|command=praxist status --json --run-id run_2026-08-30_05-34-44-478314_praxist_task 2>/dev/null | python3 -c '\nimport json,sys\nd=json.load(sys.stdin)\nrows=d if isinstance(d,list) else [d]\nr",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.agents/skills/praxist-control/SKILL.md",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/praxist_task/task.yaml",
+          "n": 4
+        },
+        {
+          "sig": "Shell|command=python /Users/jondev/.agents/skills/praxist-diagnostic/scripts/run_diagnostic_inventory.py --task-path /Users/jondev/dev/active/socratink/product/socratink/praxist_task --run-dir /",
+          "n": 4
+        }
+      ],
+      "unique_paths": 63,
+      "prefilter_score": 35
+    }
+  },
+  {
+    "rank": 20,
+    "session_key": "29896b44@b477d5",
+    "session_id": "29896b44-5914-47fd-931d-0e13e9987b45",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/29896b44-5914-47fd-931d-0e13e9987b45/29896b44-5914-47fd-931d-0e13e9987b45.jsonl",
+    "smell_index": 0.8033333333333335,
+    "primary": "tool_thrash",
+    "severity": 2.02,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.33,
+      "ignored_standing_instructions": 0.25,
+      "tool_thrash": 0.8,
+      "wrong_scope": 0.5,
+      "user_had_to_correct": 0.2,
+      "missing_verification": 0.7
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 23,
+      "repeated_tool_extra": 97,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/tmp/socratink-cognition-canvas-v2/styles.css",
+          "n": 12
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-cognition-canvas-v2/app.js",
+          "n": 11
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-cognition-canvas-v2/styles.css",
+          "n": 11
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/index.html",
+          "n": 10
+        },
+        {
+          "sig": "StrReplace|path=/tmp/socratink-cognition-canvas/prototype.js",
+          "n": 8
+        }
+      ],
+      "unique_paths": 78,
+      "prefilter_score": 36
+    }
+  },
+  {
+    "rank": 21,
+    "session_key": "b23609bb@59278b",
+    "session_id": "b23609bb-0c9c-42ad-9894-7847b1aae21b",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/b23609bb-0c9c-42ad-9894-7847b1aae21b/b23609bb-0c9c-42ad-9894-7847b1aae21b.jsonl",
+    "smell_index": 0.8015999999999999,
+    "primary": "tool_thrash",
+    "severity": 2.34,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.28,
+      "ignored_standing_instructions": 0.26,
+      "tool_thrash": 0.87,
+      "wrong_scope": 0.42,
+      "user_had_to_correct": 0.24,
+      "missing_verification": 0.52
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 31,
+      "repeated_tool_extra": 745,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 93
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 85
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 84
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 59
+        },
+        {
+          "sig": "Shell|command=node .agents/skills/variate/variate.mjs drain --root /Users/jondev/dev/active/socratink/product/socratink",
+          "n": 35
+        }
+      ],
+      "unique_paths": 283,
+      "prefilter_score": 36
+    }
+  },
+  {
+    "rank": 22,
+    "session_key": "2fb70153@e77a5d",
+    "session_id": "2fb70153-ee0a-4796-8783-58ed7f2160d9",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/2fb70153-ee0a-4796-8783-58ed7f2160d9/2fb70153-ee0a-4796-8783-58ed7f2160d9.jsonl",
+    "smell_index": 0.7919333333333334,
+    "primary": "tool_thrash",
+    "severity": 2.26,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.24,
+      "ignored_standing_instructions": 0.27,
+      "tool_thrash": 0.86,
+      "wrong_scope": 0.5,
+      "user_had_to_correct": 0.32,
+      "missing_verification": 0.61
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 6,
+      "repeated_tool_extra": 163,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 19
+        },
+        {
+          "sig": "Shell|command=node .agents/skills/variate/variate.mjs drain --root /Users/jondev/dev/active/socratink/product/socratink",
+          "n": 18
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 16
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 12
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/conversation-client.test.mjs",
+          "n": 12
+        }
+      ],
+      "unique_paths": 90,
+      "prefilter_score": 27
+    }
+  },
+  {
+    "rank": 23,
+    "session_key": "e1fe36a4@70826f",
+    "session_id": "e1fe36a4-6fff-4854-baf9-42b483e23be2",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/e1fe36a4-6fff-4854-baf9-42b483e23be2/e1fe36a4-6fff-4854-baf9-42b483e23be2.jsonl",
+    "smell_index": 0.7876000000000001,
+    "primary": "tool_thrash",
+    "severity": 2.1,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.13,
+      "ignored_standing_instructions": 0.23,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.38,
+      "user_had_to_correct": 0.59,
+      "missing_verification": 0.6
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 7,
+      "repeated_tool_extra": 215,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/transcript.css",
+          "n": 58
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/transcript.css",
+          "n": 41
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 14
+        },
+        {
+          "sig": "Shell|command=pnpm build:ui",
+          "n": 14
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/ZEN.md",
+          "n": 13
+        }
+      ],
+      "unique_paths": 74,
+      "prefilter_score": 28.5
+    }
+  },
+  {
+    "rank": 24,
+    "session_key": "19c63579@827e0a",
+    "session_id": "19c63579-306c-44ac-be10-1c70dc85ab6c",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/subagents/19c63579-306c-44ac-be10-1c70dc85ab6c.jsonl",
+    "smell_index": 0.7832,
+    "primary": "tool_thrash",
+    "severity": 2.22,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.26,
+      "ignored_standing_instructions": 0.24,
+      "tool_thrash": 0.72,
+      "wrong_scope": 0.46,
+      "user_had_to_correct": 0.85,
+      "missing_verification": 0.48
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 11,
+      "repeated_tool_extra": 3,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/bin/agent-work",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/scripts/agent-work",
+          "n": 3
+        }
+      ],
+      "unique_paths": 39,
+      "prefilter_score": 27
+    }
+  },
+  {
+    "rank": 25,
+    "session_key": "202b533e@d56462",
+    "session_id": "202b533e-a671-491f-94f0-13a3035be0c1",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/202b533e-a671-491f-94f0-13a3035be0c1/202b533e-a671-491f-94f0-13a3035be0c1.jsonl",
+    "smell_index": 0.7583333333333333,
+    "primary": "tool_thrash",
+    "severity": 2.17,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.16,
+      "ignored_standing_instructions": 0.26,
+      "tool_thrash": 0.8,
+      "wrong_scope": 0.38,
+      "user_had_to_correct": 0.28,
+      "missing_verification": 0.48
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 16,
+      "repeated_tool_extra": 34,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/questionnaire-ui.test.mjs",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/questionnaire-ui.test.mjs",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/questionnaire.ts",
+          "n": 5
+        }
+      ],
+      "unique_paths": 41,
+      "prefilter_score": 35
+    }
+  },
+  {
+    "rank": 26,
+    "session_key": "444749b4@b8bb8a",
+    "session_id": "444749b4-7859-491e-a969-97232027315f",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/444749b4-7859-491e-a969-97232027315f/444749b4-7859-491e-a969-97232027315f.jsonl",
+    "smell_index": 0.7460666666666667,
+    "primary": "tool_thrash",
+    "severity": 2.33,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.3,
+      "ignored_standing_instructions": 0.24,
+      "tool_thrash": 0.75,
+      "wrong_scope": 0.6,
+      "user_had_to_correct": 0.37,
+      "missing_verification": 0.76
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 34,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-markdown.ts",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-markdown.ts",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/agents/chat.ts",
+          "n": 4
+        }
+      ],
+      "unique_paths": 37,
+      "prefilter_score": 20
+    }
+  },
+  {
+    "rank": 27,
+    "session_key": "430c4785@4c9986",
+    "session_id": "430c4785-99a5-4355-83d6-c5314041f7f3",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-landing/agent-transcripts/430c4785-99a5-4355-83d6-c5314041f7f3/430c4785-99a5-4355-83d6-c5314041f7f3.jsonl",
+    "smell_index": 0.7410666666666668,
+    "primary": "tool_thrash",
+    "severity": 2.09,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.48,
+      "ignored_standing_instructions": 0.25,
+      "tool_thrash": 0.75,
+      "wrong_scope": 0.62,
+      "user_had_to_correct": 0.41,
+      "missing_verification": 0.58
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 68,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/components/site/Hero.tsx",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/lib/sphere/organic-sphere.ts",
+          "n": 10
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/tink/src/skillsets.rs",
+          "n": 10
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/components/site/Intro.tsx",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/tink/src/skillsets.rs",
+          "n": 7
+        }
+      ],
+      "unique_paths": 138,
+      "prefilter_score": 20
+    }
+  },
+  {
+    "rank": 28,
+    "session_key": "24bb1629@aaa18d",
+    "session_id": "24bb1629-c72d-4efb-af00-858090458780",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/24bb1629-c72d-4efb-af00-858090458780.jsonl",
+    "smell_index": 0.7377333333333334,
+    "primary": "tool_thrash",
+    "severity": 1.99,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.16,
+      "ignored_standing_instructions": 0.23,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.4,
+      "user_had_to_correct": 0.22,
+      "missing_verification": 0.48
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 16,
+      "repeated_tool_extra": 6,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/bin/agent-work",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.codex/skills/close-loop/LEDGER.md",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.codex/skills/socratink-agent-flow/references/taste-and-ui-proof.md",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/scripts/agent-work",
+          "n": 3
+        }
+      ],
+      "unique_paths": 38,
+      "prefilter_score": 29
+    }
+  },
+  {
+    "rank": 29,
+    "session_key": "df80810e@315294",
+    "session_id": "df80810e-a238-4e67-9b3e-9d60874e00fb",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/df80810e-a238-4e67-9b3e-9d60874e00fb/df80810e-a238-4e67-9b3e-9d60874e00fb.jsonl",
+    "smell_index": 0.7372,
+    "primary": "hallucinated_state",
+    "severity": 2.07,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.27,
+      "ignored_standing_instructions": 0.32,
+      "tool_thrash": 0.76,
+      "wrong_scope": 0.6,
+      "user_had_to_correct": 0.22,
+      "missing_verification": 0.76
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 40,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/braintrust.ts",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/api/[...path].ts",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/agents/chat.ts",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/server/provider.ts",
+          "n": 6
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/config/chat-model.ts",
+          "n": 5
+        }
+      ],
+      "unique_paths": 50,
+      "prefilter_score": 21.5
+    }
+  },
+  {
+    "rank": 30,
+    "session_key": "357a2e9e@f833d2",
+    "session_id": "357a2e9e-af77-4411-8da7-6efe95234ea9",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/357a2e9e-af77-4411-8da7-6efe95234ea9/357a2e9e-af77-4411-8da7-6efe95234ea9.jsonl",
+    "smell_index": 0.733,
+    "primary": "tool_thrash",
+    "severity": 2.25,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.39,
+      "ignored_standing_instructions": 0.19,
+      "tool_thrash": 0.85,
+      "wrong_scope": 0.64,
+      "user_had_to_correct": 0.17,
+      "missing_verification": 0.54
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 530,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 126
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/styles.css",
+          "n": 124
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/effects/smooth-cursor.ts",
+          "n": 48
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 41
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 37
+        }
+      ],
+      "unique_paths": 73,
+      "prefilter_score": 22.5
+    }
+  },
+  {
+    "rank": 31,
+    "session_key": "8fc76e07@653084",
+    "session_id": "8fc76e07-e980-4a0e-8e02-73582752584e",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/8fc76e07-e980-4a0e-8e02-73582752584e/8fc76e07-e980-4a0e-8e02-73582752584e.jsonl",
+    "smell_index": 0.7235333333333334,
+    "primary": "tool_thrash",
+    "severity": 2.02,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.26,
+      "ignored_standing_instructions": 0.21,
+      "tool_thrash": 0.75,
+      "wrong_scope": 0.56,
+      "user_had_to_correct": 0.16,
+      "missing_verification": 0.6
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 5,
+      "repeated_tool_extra": 11,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/.cursor/skills-cursor/canvas/sdk/ui-primitives.d.ts",
+          "n": 6
+        },
+        {
+          "sig": "Shell|command=node .agents/skills/variate/variate.mjs drain --root /Users/jondev/dev/active/socratink/product/socratink",
+          "n": 5
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.cursor/projects/Users-jondev-dev-active-socratink-product-socratink/canvases/socratink-mcp-ui-ranking.canvas.tsx",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.cursor/projects/Users-jondev-dev-active-socratink-product-socratink/canvases/socratink-mcp-ui-ranking.canvas.tsx",
+          "n": 3
+        }
+      ],
+      "unique_paths": 26,
+      "prefilter_score": 23.5
+    }
+  },
+  {
+    "rank": 32,
+    "session_key": "b48587b4@9765e2",
+    "session_id": "b48587b4-52c2-4d32-bb8b-e726f7726791",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-research-socratink-research-vault/agent-transcripts/b48587b4-52c2-4d32-bb8b-e726f7726791/b48587b4-52c2-4d32-bb8b-e726f7726791.jsonl",
+    "smell_index": 0.7076666666666667,
+    "primary": "tool_thrash",
+    "severity": 1.88,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.21,
+      "ignored_standing_instructions": 0.23,
+      "tool_thrash": 0.78,
+      "wrong_scope": 0.59,
+      "user_had_to_correct": 0.52,
+      "missing_verification": 0.33
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 4,
+      "repeated_tool_extra": 30,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/skills/evidence-to-agency-brief/scripts/render_brief_view.py",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/.agents/skills/evidence-to-agency-brief/SKILL.md",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.agents/skills/evidence-to-agency-brief/scripts/render_brief_view.py",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.agents/skills/evidence-to-agency-brief/SKILL.md",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.codex/skills/maintain-skills/writing-great-skills/SKILL.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 47,
+      "prefilter_score": 23
+    }
+  },
+  {
+    "rank": 33,
+    "session_key": "c8712dae@305872",
+    "session_id": "c8712dae-0f89-4ee7-99c7-bdf08b5c9785",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c8712dae-0f89-4ee7-99c7-bdf08b5c9785/c8712dae-0f89-4ee7-99c7-bdf08b5c9785.jsonl",
+    "smell_index": 0.6971333333333333,
+    "primary": "tool_thrash",
+    "severity": 2.11,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.21,
+      "ignored_standing_instructions": 0.38,
+      "tool_thrash": 0.81,
+      "wrong_scope": 0.55,
+      "user_had_to_correct": 0.22,
+      "missing_verification": 0.41
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 89,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-concept-stage-ui/public/js/app.js",
+          "n": 18
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-concept-stage-ui/public/js/app.js",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-concept-stage-ui/public/_lab/concept-stage-variants.html",
+          "n": 14
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/socratink/prod/socratink-app-concept-stage-ui/tests/test_frontend_app_helper_modules.py",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/socratink/prod/socratink-app-concept-stage-ui/public/js/concept-stage-view.js",
+          "n": 8
+        }
+      ],
+      "unique_paths": 63,
+      "prefilter_score": 21.5
+    }
+  },
+  {
+    "rank": 34,
+    "session_key": "f500f5ea@fa2885",
+    "session_id": "f500f5ea-ca12-454a-ac76-b093e1f8b020",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product/agent-transcripts/f500f5ea-ca12-454a-ac76-b093e1f8b020/f500f5ea-ca12-454a-ac76-b093e1f8b020.jsonl",
+    "smell_index": 0.6898,
+    "primary": "tool_thrash",
+    "severity": 1.8,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.19,
+      "ignored_standing_instructions": 0.21,
+      "tool_thrash": 0.71,
+      "wrong_scope": 0.41,
+      "user_had_to_correct": 0.35,
+      "missing_verification": 0.56
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 5,
+      "repeated_tool_extra": 23,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.agents/skills/socratink-brain/SKILL.md",
+          "n": 9
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/AGENTS.md",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.agents/skills/socratink-brain/scripts/brain.py",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.gitignore",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/AGENTS.md",
+          "n": 4
+        }
+      ],
+      "unique_paths": 63,
+      "prefilter_score": 24.5
+    }
+  },
+  {
+    "rank": 35,
+    "session_key": "891f9f25@11f175",
+    "session_id": "891f9f25-29b7-4426-9673-10f3aa88539b",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-landing/agent-transcripts/891f9f25-29b7-4426-9673-10f3aa88539b/891f9f25-29b7-4426-9673-10f3aa88539b.jsonl",
+    "smell_index": 0.6821333333333333,
+    "primary": "tool_thrash",
+    "severity": 2.23,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.2,
+      "ignored_standing_instructions": 0.3,
+      "tool_thrash": 0.78,
+      "wrong_scope": 0.57,
+      "user_had_to_correct": 0.21,
+      "missing_verification": 0.5
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 85,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/components/site/LiveDemo.tsx",
+          "n": 13
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/components/site/Hero.tsx",
+          "n": 10
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink-landing/src/components/site/Hero.tsx",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink-landing/src/app/globals.css",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink-landing/src/components/site/LiveDemo.tsx",
+          "n": 7
+        }
+      ],
+      "unique_paths": 93,
+      "prefilter_score": 21
+    }
+  },
+  {
+    "rank": 36,
+    "session_key": "15debbe7@492556",
+    "session_id": "15debbe7-70f8-44cb-a051-40a1e47dc0c4",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/15debbe7-70f8-44cb-a051-40a1e47dc0c4/15debbe7-70f8-44cb-a051-40a1e47dc0c4.jsonl",
+    "smell_index": 0.6635333333333333,
+    "primary": "tool_thrash",
+    "severity": 1.45,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.11,
+      "ignored_standing_instructions": 0.29,
+      "tool_thrash": 0.7,
+      "wrong_scope": 0.34,
+      "user_had_to_correct": 0.16,
+      "missing_verification": 0.42
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 8,
+      "repeated_tool_extra": 11,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/conversation-client.test.mjs",
+          "n": 12
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 3
+        }
+      ],
+      "unique_paths": 62,
+      "prefilter_score": 30
+    }
+  },
+  {
+    "rank": 37,
+    "session_key": "450ca3e7@bb0785",
+    "session_id": "450ca3e7-29dc-4f31-97e7-551ab5af65bf",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-flue-obsidian-wiki/agent-transcripts/450ca3e7-29dc-4f31-97e7-551ab5af65bf/450ca3e7-29dc-4f31-97e7-551ab5af65bf.jsonl",
+    "smell_index": 0.6582666666666668,
+    "primary": "tool_thrash",
+    "severity": 1.55,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.13,
+      "ignored_standing_instructions": 0.18,
+      "tool_thrash": 0.68,
+      "wrong_scope": 0.4,
+      "user_had_to_correct": 0.26,
+      "missing_verification": 0.52
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 6,
+      "repeated_tool_extra": 26,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/flue-obsidian-wiki/.github/workflows/sync-flue.yml",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/flue-obsidian-wiki/src/flue_obsidian_wiki/links.py",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/flue-obsidian-wiki/.obsidian/app.json",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/flue-obsidian-wiki/.obsidian/graph.json",
+          "n": 5
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/flue-obsidian-wiki/.obsidian/graph.json",
+          "n": 5
+        }
+      ],
+      "unique_paths": 64,
+      "prefilter_score": 27
+    }
+  },
+  {
+    "rank": 38,
+    "session_key": "94147ba0@156312",
+    "session_id": "94147ba0-4dd2-47e2-8534-927e2c05dcfc",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/94147ba0-4dd2-47e2-8534-927e2c05dcfc/94147ba0-4dd2-47e2-8534-927e2c05dcfc.jsonl",
+    "smell_index": 0.6206,
+    "primary": "ignored_instructions",
+    "severity": 2.07,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.23,
+      "ignored_standing_instructions": 0.54,
+      "tool_thrash": 0.26,
+      "wrong_scope": 0.65,
+      "user_had_to_correct": 0.26,
+      "missing_verification": 0.48
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 14,
+      "repeated_tool_extra": 0,
+      "top_repeated_tools": [],
+      "unique_paths": 26,
+      "prefilter_score": 19
+    }
+  },
+  {
+    "rank": 39,
+    "session_key": "766e1776@0d2487",
+    "session_id": "766e1776-8b62-4fa8-baad-0bae1c4503a8",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/766e1776-8b62-4fa8-baad-0bae1c4503a8/766e1776-8b62-4fa8-baad-0bae1c4503a8.jsonl",
+    "smell_index": 0.6101333333333333,
+    "primary": "context_stuffing",
+    "severity": 1.45,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.15,
+      "ignored_standing_instructions": 0.32,
+      "tool_thrash": 0.56,
+      "wrong_scope": 0.58,
+      "user_had_to_correct": 0.24,
+      "missing_verification": 0.59
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 13,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/chat-surface.ts",
+          "n": 10
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/questionnaire-ui.test.mjs",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/Dockerfile",
+          "n": 3
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.dockerignore",
+          "n": 3
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/questionnaire.ts",
+          "n": 3
+        }
+      ],
+      "unique_paths": 33,
+      "prefilter_score": 20
+    }
+  },
+  {
+    "rank": 40,
+    "session_key": "41c8cb56@66360e",
+    "session_id": "41c8cb56-1d11-44e7-8bc8-bac60105cbc5",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/262573f8-8b59-43db-a3e2-b74ba416a168/subagents/41c8cb56-1d11-44e7-8bc8-bac60105cbc5.jsonl",
+    "smell_index": 0.6012000000000001,
+    "primary": "tool_thrash",
+    "severity": 1.35,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.26,
+      "ignored_standing_instructions": 0.23,
+      "tool_thrash": 0.67,
+      "wrong_scope": 0.44,
+      "user_had_to_correct": 0.66,
+      "missing_verification": 0.52
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 0,
+      "repeated_tool_extra": 13,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/LOG.md",
+          "n": 4
+        },
+        {
+          "sig": "Shell|command=npm run build 2>&1",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/style.css",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/Experience/Sphere.js",
+          "n": 4
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/organic-sphere/src/Experience/Sphere.js",
+          "n": 4
+        }
+      ],
+      "unique_paths": 61,
+      "prefilter_score": 21
+    }
+  },
+  {
+    "rank": 41,
+    "session_key": "c585e8d6@859893",
+    "session_id": "c585e8d6-1893-4da5-bba8-1a0295583d57",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/c585e8d6-1893-4da5-bba8-1a0295583d57/c585e8d6-1893-4da5-bba8-1a0295583d57.jsonl",
+    "smell_index": 0.5525333333333333,
+    "primary": "tool_thrash",
+    "severity": 1.42,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.17,
+      "ignored_standing_instructions": 0.19,
+      "tool_thrash": 0.76,
+      "wrong_scope": 0.28,
+      "user_had_to_correct": 0.17,
+      "missing_verification": 0.31
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 77,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/braintrust.ts",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/braintrust-config.test.mjs",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/app.ts",
+          "n": 7
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/braintrust-config.test.mjs",
+          "n": 7
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink-brain/50 Active/Current Milestone.md",
+          "n": 7
+        }
+      ],
+      "unique_paths": 104,
+      "prefilter_score": 22.5
+    }
+  },
+  {
+    "rank": 42,
+    "session_key": "64fde956@fadc63",
+    "session_id": "64fde956-4c99-476a-9265-0bedb8845667",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/64fde956-4c99-476a-9265-0bedb8845667/64fde956-4c99-476a-9265-0bedb8845667.jsonl",
+    "smell_index": 0.5505333333333333,
+    "primary": "tool_thrash",
+    "severity": 1.57,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.08,
+      "ignored_standing_instructions": 0.15,
+      "tool_thrash": 0.7,
+      "wrong_scope": 0.24,
+      "user_had_to_correct": 0.17,
+      "missing_verification": 0.46
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 100,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/scripts/steering.test.mjs",
+          "n": 18
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/transcript.css",
+          "n": 12
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/main.ts",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/transcript.css",
+          "n": 8
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/ui/steering.ts",
+          "n": 8
+        }
+      ],
+      "unique_paths": 66,
+      "prefilter_score": 22.5
+    }
+  },
+  {
+    "rank": 43,
+    "session_key": "2ae38cc1@227466",
+    "session_id": "2ae38cc1-7c16-4e2c-bd14-a305ef855078",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/2ae38cc1-7c16-4e2c-bd14-a305ef855078/2ae38cc1-7c16-4e2c-bd14-a305ef855078.jsonl",
+    "smell_index": 0.5456,
+    "primary": "tool_thrash",
+    "severity": 1.23,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.16,
+      "ignored_standing_instructions": 0.18,
+      "tool_thrash": 0.63,
+      "wrong_scope": 0.47,
+      "user_had_to_correct": 0.55,
+      "missing_verification": 0.42
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 1,
+      "error_hits": 0,
+      "repeated_tool_extra": 12,
+      "top_repeated_tools": [
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/LOG.md",
+          "n": 9
+        },
+        {
+          "sig": "Write|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/LOG.md",
+          "n": 3
+        },
+        {
+          "sig": "Write|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/index.html",
+          "n": 3
+        },
+        {
+          "sig": "Write|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/v0.1/styles.css",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/prod/socratink-landing/.scratch/inkwell-vision-landing/map.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 23,
+      "prefilter_score": 19
+    }
+  },
+  {
+    "rank": 44,
+    "session_key": "45147840@a0a1f6",
+    "session_id": "45147840-9cc3-425a-af77-653c89328305",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/45147840-9cc3-425a-af77-653c89328305/45147840-9cc3-425a-af77-653c89328305.jsonl",
+    "smell_index": 0.4894,
+    "primary": "tool_thrash",
+    "severity": 1.38,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.09,
+      "ignored_standing_instructions": 0.16,
+      "tool_thrash": 0.63,
+      "wrong_scope": 0.28,
+      "user_had_to_correct": 0.26,
+      "missing_verification": 0.31
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 1,
+      "repeated_tool_extra": 32,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/node_modules/braintrust/dist/chunk-UPFNQCGB.mjs",
+          "n": 10
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/node_modules/braintrust/dist/index.d.ts",
+          "n": 8
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js",
+          "n": 6
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/braintrust.ts",
+          "n": 5
+        },
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/src/braintrust.ts",
+          "n": 4
+        }
+      ],
+      "unique_paths": 52,
+      "prefilter_score": 19.5
+    }
+  },
+  {
+    "rank": 45,
+    "session_key": "87d7b686@2af730",
+    "session_id": "87d7b686-473a-41a3-b7ab-5ac51586cda6",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/87d7b686-473a-41a3-b7ab-5ac51586cda6/87d7b686-473a-41a3-b7ab-5ac51586cda6.jsonl",
+    "smell_index": 0.38853333333333334,
+    "primary": "tool_thrash",
+    "severity": 0.76,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.15,
+      "ignored_standing_instructions": 0.12,
+      "tool_thrash": 0.33,
+      "wrong_scope": 0.59,
+      "user_had_to_correct": 0.08,
+      "missing_verification": 0.36
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 0,
+      "repeated_tool_extra": 4,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.agents/skills/manage-tink/SKILL.md",
+          "n": 4
+        },
+        {
+          "sig": "Read|path=/Users/jondev/.cursor/skills-cursor/create-skill/SKILL.md",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/.agents/skills/manage-tink/SKILL.md",
+          "n": 3
+        }
+      ],
+      "unique_paths": 31,
+      "prefilter_score": 8
+    }
+  },
+  {
+    "rank": 46,
+    "session_key": "dc77ee62@d3fbea",
+    "session_id": "dc77ee62-8da7-40fb-8f86-8ed4f5c48986",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink/agent-transcripts/dc77ee62-8da7-40fb-8f86-8ed4f5c48986/dc77ee62-8da7-40fb-8f86-8ed4f5c48986.jsonl",
+    "smell_index": 0.38306666666666667,
+    "primary": "context_stuffing",
+    "severity": 1.22,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.25,
+      "ignored_standing_instructions": 0.19,
+      "tool_thrash": 0.17,
+      "wrong_scope": 0.5,
+      "user_had_to_correct": 0.17,
+      "missing_verification": 0.51
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 3,
+      "repeated_tool_extra": 0,
+      "top_repeated_tools": [],
+      "unique_paths": 21,
+      "prefilter_score": 4.5
+    }
+  },
+  {
+    "rank": 47,
+    "session_key": "0d22cb46@a788de",
+    "session_id": "0d22cb46-d23a-4866-945c-8ddf1dd78538",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/0d22cb46-d23a-4866-945c-8ddf1dd78538/0d22cb46-d23a-4866-945c-8ddf1dd78538.jsonl",
+    "smell_index": 0.3760666666666667,
+    "primary": "ignored_instructions",
+    "severity": 1.1,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.23,
+      "ignored_standing_instructions": 0.43,
+      "tool_thrash": 0.12,
+      "wrong_scope": 0.47,
+      "user_had_to_correct": 0.2,
+      "missing_verification": 0.49
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 0,
+      "top_repeated_tools": [],
+      "unique_paths": 4,
+      "prefilter_score": 3
+    }
+  },
+  {
+    "rank": 48,
+    "session_key": "bfe16717@02b123",
+    "session_id": "bfe16717-f9ad-4d23-8c0a-bb65b48fc032",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/bfe16717-f9ad-4d23-8c0a-bb65b48fc032/bfe16717-f9ad-4d23-8c0a-bb65b48fc032.jsonl",
+    "smell_index": 0.3288,
+    "primary": "multiagent_handoff_rot",
+    "severity": 1.47,
+    "recoverability": "recoverable",
+    "nouls": {
+      "context_lost": 0.15,
+      "ignored_standing_instructions": 0.18,
+      "tool_thrash": 0.14,
+      "wrong_scope": 0.38,
+      "user_had_to_correct": 0.19,
+      "missing_verification": 0.35
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 2,
+      "repeated_tool_extra": 0,
+      "top_repeated_tools": [],
+      "unique_paths": 10,
+      "prefilter_score": 3
+    }
+  },
+  {
+    "rank": 49,
+    "session_key": "1def40b7@ace7c0",
+    "session_id": "1def40b7-fa28-4a4c-aebf-6fbdceb396a6",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/1def40b7-fa28-4a4c-aebf-6fbdceb396a6/1def40b7-fa28-4a4c-aebf-6fbdceb396a6.jsonl",
+    "smell_index": 0.32813333333333333,
+    "primary": "hallucinated_state",
+    "severity": 1.03,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.13,
+      "ignored_standing_instructions": 0.16,
+      "tool_thrash": 0.33,
+      "wrong_scope": 0.28,
+      "user_had_to_correct": 0.08,
+      "missing_verification": 0.53
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 0,
+      "repeated_tool_extra": 2,
+      "top_repeated_tools": [
+        {
+          "sig": "Read|path=/Users/jondev/dev/active/socratink/product/socratink/.agents/skills/socratink-brain/SKILL.md",
+          "n": 3
+        },
+        {
+          "sig": "StrReplace|path=/Users/jondev/dev/active/socratink/product/socratink/src/evaluation/trace.ts",
+          "n": 3
+        }
+      ],
+      "unique_paths": 66,
+      "prefilter_score": 5
+    }
+  },
+  {
+    "rank": 50,
+    "session_key": "809dba66@b437be",
+    "session_id": "809dba66-f777-41c2-90ab-b562ee9d57c7",
+    "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-research-socratink-research-vault/agent-transcripts/b48587b4-52c2-4d32-bb8b-e726f7726791/subagents/809dba66-f777-41c2-90ab-b562ee9d57c7.jsonl",
+    "smell_index": 0.166,
+    "primary": "context_stuffing",
+    "severity": 0.36,
+    "recoverability": "clean",
+    "nouls": {
+      "context_lost": 0.09,
+      "ignored_standing_instructions": 0.15,
+      "tool_thrash": 0.11,
+      "wrong_scope": 0.2,
+      "user_had_to_correct": 0.1,
+      "missing_verification": 0.44
+    },
+    "deterministic": {
+      "strict_user_correction_hits": 0,
+      "error_hits": 0,
+      "repeated_tool_extra": 0,
+      "top_repeated_tools": [],
+      "unique_paths": 16,
+      "prefilter_score": 0
+    }
+  }
+]

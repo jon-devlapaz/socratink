@@ -1,0 +1,4672 @@
+{
+  "as_of": "2026-09-16T01:42:32.882Z",
+  "pack": "/workspace/socratink/research/chat-signal/agenteng-runs/codex-strata-pack-v2.json",
+  "n": 80,
+  "n_ok": 80,
+  "n_err": 0,
+  "mean_plate_quality": 1.1249999999999998,
+  "primary_partnership_gap_counts": {
+    "thrash": 4,
+    "none": 44,
+    "missing_verify": 5,
+    "context_bloat": 8,
+    "governance": 17,
+    "over_trust": 1,
+    "handoff_rot": 1
+  },
+  "velocity_quality_band_counts": {
+    "careful_good": 71,
+    "fast_good": 9
+  },
+  "lifecycle_stage_counts": {
+    "plan": 7,
+    "verify": 11,
+    "research": 25,
+    "mixed": 9,
+    "review": 14,
+    "spec": 1,
+    "impl": 13
+  },
+  "results": [
+    {
+      "session_id": "rollout-2026-09-05T09-58-40-01a07214-2d30-7301-84e3-c251ad08f785",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/05/rollout-2026-09-05T09-58-40-01a07214-2d30-7301-84e3-c251ad08f785.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.44
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.01,
+          "confidence": 0.39
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.76,
+          "confidence": 0.65
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.78
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.83
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-05T09-58-40-01a07214-2d30-7301-84e3-c251ad08f785",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/05/rollout-2026-09-05T09-58-40-01a07214-2d30-7301-84e3-c251ad08f785.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.51
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.97,
+          "confidence": 0.42
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.79,
+          "confidence": 0.68
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.77
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.86
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T23-19-06-01a09e23-df46-7bd2-949b-89c3fb5efac0",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/13/rollout-2026-09-13T23-19-06-01a09e23-df46-7bd2-949b-89c3fb5efac0.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.55
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.65,
+          "confidence": 0.46
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.93,
+          "confidence": 0.93
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.52
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.77
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T23-19-06-01a09e23-df46-7bd2-949b-89c3fb5efac0",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/13/rollout-2026-09-13T23-19-06-01a09e23-df46-7bd2-949b-89c3fb5efac0.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.64
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.61,
+          "confidence": 0.46
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.91
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.92,
+          "confidence": 0.92
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.48
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.76
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-09T11-15-41-01a086f4-2002-7880-8702-faa6d5ce3e95",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/09/rollout-2026-09-09T11-15-41-01a086f4-2002-7880-8702-faa6d5ce3e95.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.99
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.91,
+          "confidence": 0.71
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.97,
+          "confidence": 0.45
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.2
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.84
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-09T11-15-41-01a086f4-2002-7880-8702-faa6d5ce3e95",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/09/rollout-2026-09-09T11-15-41-01a086f4-2002-7880-8702-faa6d5ce3e95.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.99
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.9,
+          "confidence": 0.7
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.35
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.19,
+          "confidence": 0.44
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.25
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.84
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-12T09-10-25-019ff64f-640f-7673-807c-94d044149429",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/12/rollout-2026-08-12T09-10-25-019ff64f-640f-7673-807c-94d044149429.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.49
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.62,
+          "confidence": 0.36
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.74,
+          "confidence": 0.74
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.24
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.44
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T01-33-15-01a04223-28bf-71f3-bbb1-890ee5d281c3",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/27/rollout-2026-08-27T01-33-15-01a04223-28bf-71f3-bbb1-890ee5d281c3.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.32
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.84
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.19,
+          "confidence": 0.42
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.94,
+          "confidence": 0.94
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.54
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.82
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T01-33-15-01a04223-28bf-71f3-bbb1-890ee5d281c3",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/27/rollout-2026-08-27T01-33-15-01a04223-28bf-71f3-bbb1-890ee5d281c3.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.31
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.17,
+          "confidence": 0.43
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.94,
+          "confidence": 0.94
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.55
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.79
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T17-34-26-01a04593-271c-7773-8102-214ee050e528",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/27/rollout-2026-08-27T17-34-26-01a04593-271c-7773-8102-214ee050e528.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.98
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.4
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.41,
+          "confidence": 0.37
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.3,
+          "confidence": 0.59
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.19
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.82
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T17-34-26-01a04593-271c-7773-8102-214ee050e528",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/27/rollout-2026-08-27T17-34-26-01a04593-271c-7773-8102-214ee050e528.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.98
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.42
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.47,
+          "confidence": 0.42
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.3,
+          "confidence": 0.57
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.17
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.8
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T15-13-16-01a05356-7d5f-7871-8623-970e02a2c54c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/archived_sessions/rollout-2026-08-30T15-13-16-01a05356-7d5f-7871-8623-970e02a2c54c_01a0544e-0dca-7452-8099-61d4d1473ceb.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.58
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.72,
+          "confidence": 0.28
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.8
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.53,
+          "confidence": 0.53
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.23
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.86
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T15-13-16-01a05356-7d5f-7871-8623-970e02a2c54c",
+      "source_path": "/Users/jondev/.codex/archived_sessions/rollout-2026-08-30T15-13-16-01a05356-7d5f-7871-8623-970e02a2c54c_01a0544e-0dca-7452-8099-61d4d1473ceb.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.64
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.68,
+          "confidence": 0.32
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.57,
+          "confidence": 0.57
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.25
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.87
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T14-56-14-01a04f4f-0981-7fd3-84bd-b8fba659113d",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/archived_sessions/rollout-2026-08-29T14-56-14-01a04f4f-0981-7fd3-84bd-b8fba659113d.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.42
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.39,
+          "confidence": 0.4
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.83
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.16,
+          "confidence": 0.6
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.15
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.82
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T14-56-14-01a04f4f-0981-7fd3-84bd-b8fba659113d",
+      "source_path": "/Users/jondev/.codex/archived_sessions/rollout-2026-08-29T14-56-14-01a04f4f-0981-7fd3-84bd-b8fba659113d.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.42
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.34,
+          "confidence": 0.4
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.83
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.15,
+          "confidence": 0.57
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.16
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.8
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-14T10-28-18-01a000e3-6a1c-7f23-913f-c207b0babf8a",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/14/rollout-2026-08-14T10-28-18-01a000e3-6a1c-7f23-913f-c207b0babf8a.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.58
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.09,
+          "confidence": 0.91
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.09
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.32,
+          "confidence": 0.47
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.44
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.58
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.41
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T13-53-41-01a03555-f8a1-7c71-8a2f-e0551692133b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/24/rollout-2026-08-24T13-53-41-01a03555-f8a1-7c71-8a2f-e0551692133b.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.67
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.41
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.47,
+          "confidence": 0.53
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.79
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.18,
+          "confidence": 0.18
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.59
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.83
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T13-53-41-01a03555-f8a1-7c71-8a2f-e0551692133b",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/24/rollout-2026-08-24T13-53-41-01a03555-f8a1-7c71-8a2f-e0551692133b.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.63
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.38
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.5,
+          "confidence": 0.5
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.12,
+          "confidence": 0.12
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.59
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.84
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T23-16-07-01a06054-d36d-7e71-a321-6105bae161e4",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/01/rollout-2026-09-01T23-16-07-01a06054-d36d-7e71-a321-6105bae161e4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.62
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.28,
+          "confidence": 0.4
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.28,
+          "confidence": 0.28
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.57
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.96
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T23-16-07-01a06054-d36d-7e71-a321-6105bae161e4",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/01/rollout-2026-09-01T23-16-07-01a06054-d36d-7e71-a321-6105bae161e4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.7
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.32,
+          "confidence": 0.36
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.11,
+          "confidence": 0.11
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.5
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.97
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T01-55-34-01a04c84-4f63-7f63-bcdc-c0921e08602a",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/29/rollout-2026-08-29T01-55-34-01a04c84-4f63-7f63-bcdc-c0921e08602a.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 1
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 2.51,
+          "confidence": 0.51
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.71
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.92
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.84,
+          "confidence": 0.84
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.33
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.42
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T01-55-34-01a04c84-4f63-7f63-bcdc-c0921e08602a",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/29/rollout-2026-08-29T01-55-34-01a04c84-4f63-7f63-bcdc-c0921e08602a.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 1
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 2.5,
+          "confidence": 0.5
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.92
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.8,
+          "confidence": 0.8
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.32
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.43
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-16T12-38-15-01a00ba7-1803-7d11-9a66-3e98fb174764",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/16/rollout-2026-08-16T12-38-15-01a00ba7-1803-7d11-9a66-3e98fb174764.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.52
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.36
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.62,
+          "confidence": 0.54
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.37
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.83
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.37,
+          "confidence": 0.37
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.18
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.71
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T09-42-52-01a05356-7d5f-7871-8623-970e02a2c54c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/archived_sessions/rollout-2026-08-30T09-42-52-01a05356-7d5f-7871-8623-970e02a2c54c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.47
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.39
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0.27
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.55,
+          "confidence": 0.55
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.41
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.95
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T09-42-52-01a05356-7d5f-7871-8623-970e02a2c54c",
+      "source_path": "/Users/jondev/.codex/archived_sessions/rollout-2026-08-30T09-42-52-01a05356-7d5f-7871-8623-970e02a2c54c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.41
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.36
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.25
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.89
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.48,
+          "confidence": 0.48
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.76
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.36
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.95
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-12T21-04-44-019ff8dd-5b73-7323-bf15-43d454449f56",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/12/rollout-2026-08-12T21-04-44-019ff8dd-5b73-7323-bf15-43d454449f56.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "spec",
+          "confidence": 0.34
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.54,
+          "confidence": 0.44
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.87
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.82,
+          "confidence": 0.82
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.34
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.91
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-01T11-24-13-019fbe23-ee7c-7451-ac56-885f75b08c91",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/01/rollout-2026-08-01T11-24-13-019fbe23-ee7c-7451-ac56-885f75b08c91.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.84
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.37
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.68,
+          "confidence": 0.63
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.84
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.35,
+          "confidence": 0.47
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.45
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.8
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-12T14-50-20-01a0972b-ba1f-7f10-b3d3-cdac951acc14",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/12/rollout-2026-09-12T14-50-20-01a0972b-ba1f-7f10-b3d3-cdac951acc14.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.47
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.05,
+          "confidence": 0.76
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.49,
+          "confidence": 0.49
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.39
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.7
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-12T14-50-20-01a0972b-ba1f-7f10-b3d3-cdac951acc14",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/12/rollout-2026-09-12T14-50-20-01a0972b-ba1f-7f10-b3d3-cdac951acc14.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.4
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.02,
+          "confidence": 0.73
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.45,
+          "confidence": 0.45
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.38
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.71
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-02T16-09-34-019fc44f-8802-7b83-9fcb-7b4c7c336525",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/02/rollout-2026-08-02T16-09-34-019fc44f-8802-7b83-9fcb-7b4c7c336525.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.3
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.21,
+          "confidence": 0.62
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.87
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.93,
+          "confidence": 0.93
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.44
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.51
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T21-28-35-01a09371-fa97-7633-9969-d9bf00c5fb35",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/11/rollout-2026-09-11T21-28-35-01a09371-fa97-7633-9969-d9bf00c5fb35.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.36
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.2,
+          "confidence": 0.57
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.91
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.73,
+          "confidence": 0.73
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.36
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.95
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T21-28-35-01a09371-fa97-7633-9969-d9bf00c5fb35",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/11/rollout-2026-09-11T21-28-35-01a09371-fa97-7633-9969-d9bf00c5fb35.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.29
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.27,
+          "confidence": 0.53
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.91
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.71,
+          "confidence": 0.71
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.34
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.95
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T10-06-14-01a03485-b99e-7913-abca-acb85ce4cb70",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/24/rollout-2026-08-24T10-06-14-01a03485-b99e-7913-abca-acb85ce4cb70.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.75
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.22,
+          "confidence": 0.54
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.73,
+          "confidence": 0.55
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.55
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.75
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T10-06-14-01a03485-b99e-7913-abca-acb85ce4cb70",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/24/rollout-2026-08-24T10-06-14-01a03485-b99e-7913-abca-acb85ce4cb70.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.74
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.22,
+          "confidence": 0.52
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.26
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.71,
+          "confidence": 0.52
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.5
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.81
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-12T21-12-22-01a09889-7ed8-79a1-ac9b-6e69cec50780",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/12/rollout-2026-09-12T21-12-22-01a09889-7ed8-79a1-ac9b-6e69cec50780.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.71
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.93,
+          "confidence": 0.66
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.59
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.16
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.87
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-12T21-12-22-01a09889-7ed8-79a1-ac9b-6e69cec50780",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/12/rollout-2026-09-12T21-12-22-01a09889-7ed8-79a1-ac9b-6e69cec50780.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.69
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.98,
+          "confidence": 0.67
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2,
+          "confidence": 0.64
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.17
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.86
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T14-17-04-01a05e67-52f8-7c03-bf7c-0f195be2c6f4",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/01/rollout-2026-09-01T14-17-04-01a05e67-52f8-7c03-bf7c-0f195be2c6f4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.67
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.37,
+          "confidence": 0.5
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.83
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.5,
+          "confidence": 0.5
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.12
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.38
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T14-17-04-01a05e67-52f8-7c03-bf7c-0f195be2c6f4",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/01/rollout-2026-09-01T14-17-04-01a05e67-52f8-7c03-bf7c-0f195be2c6f4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "plan",
+          "confidence": 0.67
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.37,
+          "confidence": 0.49
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.83
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.52,
+          "confidence": 0.52
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.11
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.44
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-07T19-17-07-019fdebb-0850-7140-9900-0414963a85f8",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/07/rollout-2026-08-07T19-17-07-019fdebb-0850-7140-9900-0414963a85f8.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.99
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.91,
+          "confidence": 0.57
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.86,
+          "confidence": 0.71
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.39
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.34
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-14T20-00-43-01a002ef-778b-7e73-b1e0-7c1c1255bce3",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/14/rollout-2026-08-14T20-00-43-01a002ef-778b-7e73-b1e0-7c1c1255bce3.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.8
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.19,
+          "confidence": 0.81
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.82
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.73,
+          "confidence": 0.73
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.32
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.94
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T01-30-34-01a05ba9-9170-7e13-9248-9f00cae928e4",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/01/rollout-2026-09-01T01-30-34-01a05ba9-9170-7e13-9248-9f00cae928e4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.41
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.96,
+          "confidence": 0.04
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.33,
+          "confidence": 0.33
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.11
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.43
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T01-30-34-01a05ba9-9170-7e13-9248-9f00cae928e4",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/01/rollout-2026-09-01T01-30-34-01a05ba9-9170-7e13-9248-9f00cae928e4.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.4
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.93,
+          "confidence": 0.07
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.39,
+          "confidence": 0.39
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.1
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.41
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-04T18-30-16-019fcf1d-109a-7532-bae8-c1ccd53cffe0",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/04/rollout-2026-08-04T18-30-16-019fcf1d-109a-7532-bae8-c1ccd53cffe0.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.47
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.08,
+          "confidence": 0.73
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.07
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.04,
+          "confidence": 0.8
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.34
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.51
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-54-18-01a093f7-6356-7192-a0d8-2250fe8704d0",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/11/rollout-2026-09-11T23-54-18-01a093f7-6356-7192-a0d8-2250fe8704d0.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.29
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.14,
+          "confidence": 0.56
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.27,
+          "confidence": 0.65
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.32
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.58
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-54-18-01a093f7-6356-7192-a0d8-2250fe8704d0",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/11/rollout-2026-09-11T23-54-18-01a093f7-6356-7192-a0d8-2250fe8704d0.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.26
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.11,
+          "confidence": 0.56
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.25,
+          "confidence": 0.68
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.31
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.58
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-05T00-26-58-01a07008-c84e-7203-9792-52beeefd468f",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/05/rollout-2026-09-05T00-26-58-01a07008-c84e-7203-9792-52beeefd468f.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.99
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.06,
+          "confidence": 0.59
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.92
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.82,
+          "confidence": 0.82
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.35
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.39
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-05T00-26-58-01a07008-c84e-7203-9792-52beeefd468f",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/05/rollout-2026-09-05T00-26-58-01a07008-c84e-7203-9792-52beeefd468f.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.99
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.97,
+          "confidence": 0.6
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.93
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.81,
+          "confidence": 0.81
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.33
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.41
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-13T18-32-09-019ffd78-0835-70e1-90be-4093975d1e13",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/13/rollout-2026-08-13T18-32-09-019ffd78-0835-70e1-90be-4093975d1e13.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.65
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.4
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.05,
+          "confidence": 0.71
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.1
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.91
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.73,
+          "confidence": 0.73
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.35
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.83
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-25T12-22-03-01a03a28-6ee3-7622-a577-2484959b1e1a",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/25/rollout-2026-08-25T12-22-03-01a03a28-6ee3-7622-a577-2484959b1e1a.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.59
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.32
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.56,
+          "confidence": 0.51
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.15
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.79
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-25T12-22-03-01a03a28-6ee3-7622-a577-2484959b1e1a",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/25/rollout-2026-08-25T12-22-03-01a03a28-6ee3-7622-a577-2484959b1e1a.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.61
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.35
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.25
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.31
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.55,
+          "confidence": 0.5
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.15
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.8
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-14T00-43-36-019ffecc-1797-7190-9fc7-bb07c647e7d3",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/14/rollout-2026-08-14T00-43-36-019ffecc-1797-7190-9fc7-bb07c647e7d3.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.87
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.5,
+          "confidence": 0.5
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.08
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.81
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.4,
+          "confidence": 0.4
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.32
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.31
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T08-28-31-01a09af4-869c-7711-ad83-c59bbf109cf6",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/13/rollout-2026-09-13T08-28-31-01a09af4-869c-7711-ad83-c59bbf109cf6.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.39
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.31,
+          "confidence": 0.45
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.08,
+          "confidence": 0.59
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.18
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.78
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T08-28-31-01a09af4-869c-7711-ad83-c59bbf109cf6",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/13/rollout-2026-09-13T08-28-31-01a09af4-869c-7711-ad83-c59bbf109cf6.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.32
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.39,
+          "confidence": 0.41
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.8
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.09,
+          "confidence": 0.57
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.18
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.8
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-12T13-23-52-019ff737-6d9e-7ba3-b71f-31d293083bbc",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/12/rollout-2026-08-12T13-23-52-019ff737-6d9e-7ba3-b71f-31d293083bbc.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.96
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.07,
+          "confidence": 0.65
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.87
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.46,
+          "confidence": 0.46
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.27
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.6
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-09T01-17-16-019fe52b-1e6a-7e22-9e16-09e1ae1358af",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/09/rollout-2026-08-09T01-17-16-019fe52b-1e6a-7e22-9e16-09e1ae1358af.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.44
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.93,
+          "confidence": 0.52
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.3,
+          "confidence": 0.3
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.7
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.6
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-31T19-37-04-01a05a65-eedb-7ab3-9ca6-e527f1fbda82",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/archived_sessions/rollout-2026-08-31T19-37-04-01a05a65-eedb-7ab3-9ca6-e527f1fbda82.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.74
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.76,
+          "confidence": 0.24
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.63,
+          "confidence": 0.63
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.25
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.92
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-31T19-37-04-01a05a65-eedb-7ab3-9ca6-e527f1fbda82",
+      "source_path": "/Users/jondev/.codex/archived_sessions/rollout-2026-08-31T19-37-04-01a05a65-eedb-7ab3-9ca6-e527f1fbda82.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "verify",
+          "confidence": 0.72
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.74,
+          "confidence": 0.26
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.86
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.66,
+          "confidence": 0.66
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.79
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.26
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.91
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T01-13-50-01a04211-603f-7142-93f2-5742ae250e01",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/27/rollout-2026-08-27T01-13-50-01a04211-603f-7142-93f2-5742ae250e01.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.95
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.05,
+          "confidence": 0.56
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.8
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.53,
+          "confidence": 0.53
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.11
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.81
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-27T01-13-50-01a04211-603f-7142-93f2-5742ae250e01",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/27/rollout-2026-08-27T01-13-50-01a04211-603f-7142-93f2-5742ae250e01.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.96
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.32
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.06,
+          "confidence": 0.57
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.79
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.55,
+          "confidence": 0.55
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.11
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.78
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-12T18-02-56-019ff836-ea28-7f90-a11e-e60700888910",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/12/rollout-2026-08-12T18-02-56-019ff836-ea28-7f90-a11e-e60700888910.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.43
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.19,
+          "confidence": 0.58
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.89
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.8,
+          "confidence": 0.8
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.48
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.85
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-04T18-56-51-01a06eda-8d20-77c3-a8e8-d680ade4b200",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/04/rollout-2026-09-04T18-56-51-01a06eda-8d20-77c3-a8e8-d680ade4b200.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.86
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.48,
+          "confidence": 0.52
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.8
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.13,
+          "confidence": 0.13
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.46
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.21
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.69
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-04T18-56-51-01a06eda-8d20-77c3-a8e8-d680ade4b200",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/04/rollout-2026-09-04T18-56-51-01a06eda-8d20-77c3-a8e8-d680ade4b200.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.83
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.57,
+          "confidence": 0.43
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.8
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.16,
+          "confidence": 0.16
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.21
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.73
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T22-27-23-01a050ec-1013-7b51-a6b1-8055e87b6d36",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/29/rollout-2026-08-29T22-27-23-01a050ec-1013-7b51-a6b1-8055e87b6d36.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.54
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.13,
+          "confidence": 0.87
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.98,
+          "confidence": 0
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "over_trust",
+          "confidence": 0.07
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.77
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-29T22-27-23-01a050ec-1013-7b51-a6b1-8055e87b6d36",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/29/rollout-2026-08-29T22-27-23-01a050ec-1013-7b51-a6b1-8055e87b6d36.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.49
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.15,
+          "confidence": 0.85
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 1.89,
+          "confidence": 0.27
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.54
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "handoff_rot",
+          "confidence": 0.07
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.76
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-35-54-01a093e6-88c2-7c22-9689-f075fb5e36fe",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/11/rollout-2026-09-11T23-35-54-01a093e6-88c2-7c22-9689-f075fb5e36fe.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.66
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.78
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.9,
+          "confidence": 0.52
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.93,
+          "confidence": 0.93
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.47
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.53
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-35-54-01a093e6-88c2-7c22-9689-f075fb5e36fe",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/11/rollout-2026-09-11T23-35-54-01a093e6-88c2-7c22-9689-f075fb5e36fe.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.7
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.76
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0.58
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.9
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.93,
+          "confidence": 0.93
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.49
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.49
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T22-57-14-01a09e0f-d99e-7170-a9fe-5bf3d8edbb5b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/13/rollout-2026-09-13T22-57-14-01a09e0f-d99e-7170-a9fe-5bf3d8edbb5b.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.54
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.04,
+          "confidence": 0.72
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.44,
+          "confidence": 0.44
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.48
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.65
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-13T22-57-14-01a09e0f-d99e-7170-a9fe-5bf3d8edbb5b",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/13/rollout-2026-09-13T22-57-14-01a09e0f-d99e-7170-a9fe-5bf3d8edbb5b.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.51
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.01,
+          "confidence": 0.75
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.55,
+          "confidence": 0.55
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.5
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.63
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-04T18-56-02-01a06ed9-cad4-7b13-aa97-bc236a22f69c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/04/rollout-2026-09-04T18-56-02-01a06ed9-cad4-7b13-aa97-bc236a22f69c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.97
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.38,
+          "confidence": 0
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.37
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.82,
+          "confidence": 0.82
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.33
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.55
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-04T18-56-02-01a06ed9-cad4-7b13-aa97-bc236a22f69c",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/04/rollout-2026-09-04T18-56-02-01a06ed9-cad4-7b13-aa97-bc236a22f69c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.97
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.39,
+          "confidence": 0.06
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.8,
+          "confidence": 0.8
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.34
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.56
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T16-13-51-01a05485-8327-76c0-a537-67c77d7d235c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/archived_sessions/rollout-2026-08-30T16-13-51-01a05485-8327-76c0-a537-67c77d7d235c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.7
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.43
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.79,
+          "confidence": 0.46
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.76
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.1,
+          "confidence": 0.66
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.52
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.25
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.9
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-30T16-13-51-01a05485-8327-76c0-a537-67c77d7d235c",
+      "source_path": "/Users/jondev/.codex/archived_sessions/rollout-2026-08-30T16-13-51-01a05485-8327-76c0-a537-67c77d7d235c.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.7
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.43
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.75,
+          "confidence": 0.43
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.77
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.11,
+          "confidence": 0.63
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.23
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.91
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-11-43-01a093d0-641b-7c50-a387-fb61bb9f4d86",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/11/rollout-2026-09-11T23-11-43-01a093d0-641b-7c50-a387-fb61bb9f4d86.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.65
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.85,
+          "confidence": 0.53
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.54,
+          "confidence": 0.54
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.29
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.91
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-11T23-11-43-01a093d0-641b-7c50-a387-fb61bb9f4d86",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/11/rollout-2026-09-11T23-11-43-01a093d0-641b-7c50-a387-fb61bb9f4d86.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "impl",
+          "confidence": 0.67
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.66
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.86,
+          "confidence": 0.54
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.12
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.85
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.65,
+          "confidence": 0.65
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.29
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.9
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T10-39-57-01a034a4-997c-73a2-993f-638fd2bc600e",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/08/24/rollout-2026-08-24T10-39-57-01a034a4-997c-73a2-993f-638fd2bc600e.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.4
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.46,
+          "confidence": 0.4
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.36,
+          "confidence": 0.57
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.57
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.52
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-24T10-39-57-01a034a4-997c-73a2-993f-638fd2bc600e",
+      "source_path": "/Users/jondev/.codex/sessions/2026/08/24/rollout-2026-08-24T10-39-57-01a034a4-997c-73a2-993f-638fd2bc600e.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.44
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.38,
+          "confidence": 0.42
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.14
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.19
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.88
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.38,
+          "confidence": 0.55
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.53
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.53
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-10T23-32-30-01a08ebd-1231-74d0-9524-57ccd7966c89",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/10/rollout-2026-09-10T23-32-30-01a08ebd-1231-74d0-9524-57ccd7966c89.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.76
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.77,
+          "confidence": 0.72
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.39
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.89
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.74,
+          "confidence": 0.74
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.44
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.72
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-10T23-32-30-01a08ebd-1231-74d0-9524-57ccd7966c89",
+      "source_path": "/Users/jondev/.codex/sessions/2026/09/10/rollout-2026-09-10T23-32-30-01a08ebd-1231-74d0-9524-57ccd7966c89.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "review",
+          "confidence": 0.8
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.8,
+          "confidence": 0.75
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.4
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.15
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.89
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.73,
+          "confidence": 0.73
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.46
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.72
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-08-15T00-33-52-01a003e9-8abc-7602-acc3-96966c220eac",
+      "source_path": "/Users/jondev/.codex/.cleanup-2026-08-31/archived_sessions/15/rollout-2026-08-15T00-33-52-01a003e9-8abc-7602-acc3-96966c220eac.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "unknown",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "research",
+          "confidence": 0.6
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 0.77,
+          "confidence": 0.74
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.11
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.87
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.54,
+          "confidence": 0.54
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.22
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.5
+        }
+      }
+    },
+    {
+      "session_id": "rollout-2026-09-01T14-34-46-01a05e77-86c5-7a31-951b-be73febe91be",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/codex/sessions/2026/09/01/rollout-2026-09-01T14-34-46-01a05e77-86c5-7a31-951b-be73febe91be.jsonl",
+      "stratum": "long_horizon_size",
+      "harness": "codex",
+      "project_slug": "socratink",
+      "answers": {
+        "lifecycle_stage": {
+          "type": "choice",
+          "choice": "mixed",
+          "confidence": 0.36
+        },
+        "happy_path_fit": {
+          "type": "noul",
+          "p": 0.46
+        },
+        "plate_quality": {
+          "type": "score",
+          "score": 1.01,
+          "confidence": 0.55
+        },
+        "thrash": {
+          "type": "noul",
+          "p": 0.26
+        },
+        "verify_ok": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "scope_ok": {
+          "type": "noul",
+          "p": 0.79
+        },
+        "partnership_load": {
+          "type": "score",
+          "score": 2.22,
+          "confidence": 0.45
+        },
+        "brain_jurisdiction_ok": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "would_retry_same_way": {
+          "type": "noul",
+          "p": 0.5
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.52
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.33
+        }
+      }
+    }
+  ]
+}

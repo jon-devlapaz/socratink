@@ -1,0 +1,74 @@
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/moc/Agentic Engineering MOC.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/moc/Evidence Annexes MOC.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/moc/Captain Kit MOC.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/moc/Ops Playbooks MOC.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/moc/Related Scouts MOC.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/annexes/FM-AGENTENG-01-happy-paths.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/annexes/FM-AGENTENG-01-loops.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/annexes/FM-AGENTENG-01-nole.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/annexes/FM-AGENTENG-01-extract.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/related/FM-CHATSIG-PILOT.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/related/FM-CHATSIG-01.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/related/FM-CTXSMELL-01.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/captain/draft-goal-template.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/captain/FM-AGENTENG-01-captain-brief.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/captain/draft-agents-thrash-tripwire.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/captain/start-tomorrow-onepager.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/master/FM-AGENTENG-01 FINAL.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/ops/ide-vs-cloud-ship.md
+/workspace/socratink/research/chat-signal/wiki-source/agenteng/ops/phase15-decision-memo.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/README.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/pyproject.toml
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/.gitignore
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Home.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/AGENTS.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/tests/test_cli.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/_meta/Source Map.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/_meta/upstream-state.json
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/_meta/Sync Log.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/_meta/Validation Report.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/scripts/sync_agenteng_docs.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/moc/Agentic Engineering MOC.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/moc/Evidence Annexes MOC.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/moc/Captain Kit MOC.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/moc/Ops Playbooks MOC.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/moc/Related Scouts MOC.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/annexes/FM-AGENTENG-01-happy-paths.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/annexes/FM-AGENTENG-01-loops.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/annexes/FM-AGENTENG-01-nole.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/annexes/FM-AGENTENG-01-extract.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/related/FM-CHATSIG-PILOT.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/related/FM-CHATSIG-01.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/related/FM-CTXSMELL-01.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/captain/draft-goal-template.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/captain/FM-AGENTENG-01-captain-brief.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/captain/draft-agents-thrash-tripwire.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/captain/start-tomorrow-onepager.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/master/FM-AGENTENG-01 FINAL.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/ops/ide-vs-cloud-ship.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/Docs/ops/phase15-decision-memo.md
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/markdown.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/cli.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__main__.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/mapping.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__init__.py
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__pycache__/mapping.cpython-313.pyc
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__pycache__/__init__.cpython-313.pyc
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__pycache__/markdown.cpython-313.pyc
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/src/agenteng_obsidian_wiki/__pycache__/cli.cpython-313.pyc
+/workspace/socratink/doc-vault/agenteng-obsidian-wiki/.github/workflows/sync-agenteng.yml
+/workspace/socratink/.agents/skills/agenteng-wiki/SKILL.md
+/workspace/socratink/.agents/skills/agenteng-wiki/scripts/agenteng_wiki.py
+/workspace/socratink/.agents/skills/agenteng-wiki/scripts/test_agenteng_wiki.py
+/workspace/socratink/.agents/skills/agenteng-wiki/scripts/__pycache__/agenteng_wiki.cpython-313.pyc
+/workspace/socratink/.agents/skills/make-wiki-from-docs/README.md
+/workspace/socratink/.agents/skills/make-wiki-from-docs/pyproject.toml
+/workspace/socratink/.agents/skills/make-wiki-from-docs/.gitignore
+/workspace/socratink/.agents/skills/make-wiki-from-docs/SKILL.md
+/workspace/socratink/.agents/skills/make-wiki-from-docs/LICENSE
+/workspace/socratink/.agents/skills/make-wiki-from-docs/references/skill-patterns.md
+/workspace/socratink/.agents/skills/make-wiki-from-docs/references/vault-architecture.md
+/workspace/socratink/.agents/skills/make-wiki-from-docs/scripts/make_wiki.py
+/workspace/socratink/.agents/skills/make-wiki-from-docs/scripts/test_make_wiki.py
+/workspace/socratink/research/chat-signal/AGENTS.md
+/workspace/socratink/research/chat-signal/README-agenteng-wiki.md

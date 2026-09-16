@@ -1,0 +1,3034 @@
+{
+  "as_of": "2026-09-16T01:32:47.316Z",
+  "n": 59,
+  "n_ok": 59,
+  "n_err": 0,
+  "primary_partnership_gap_counts": {
+    "thrash": 41,
+    "scope_sub": 5,
+    "over_trust": 1,
+    "missing_verify": 4,
+    "context_bloat": 2,
+    "governance": 3,
+    "handoff_rot": 1,
+    "weak_plate": 1,
+    "none": 1
+  },
+  "velocity_quality_band_counts": {
+    "slow_thrash": 37,
+    "fast_good": 8,
+    "careful_good": 8,
+    "fast_wrong": 6
+  },
+  "results": [
+    {
+      "session_id": "e8a25b04-6d00-4a10-a155-c50fc2c5cb9c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/518c2961-0693-48bb-ae35-c4a166b2116c/subagents/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.49,
+          "confidence": 0.51
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.51,
+          "confidence": 0.24
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.52,
+          "confidence": 0.48
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.7,
+          "confidence": 0.45
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.96
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.83
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 10,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 58
+      }
+    },
+    {
+      "session_id": "b23609bb-0c9c-42ad-9894-7847b1aae21b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/b23609bb-0c9c-42ad-9894-7847b1aae21b/b23609bb-0c9c-42ad-9894-7847b1aae21b.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.51,
+          "confidence": 0.49
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.73,
+          "confidence": 0.61
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.92,
+          "confidence": 0.08
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.35,
+          "confidence": 0.65
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.46
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 1
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.77
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 745,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 283
+      }
+    },
+    {
+      "session_id": "a09316e9-6e8b-4e04-a7c9-30b266ec40e2",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/a09316e9-6e8b-4e04-a7c9-30b266ec40e2/a09316e9-6e8b-4e04-a7c9-30b266ec40e2.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.97,
+          "confidence": 0.46
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0.93
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.25,
+          "confidence": 0.19
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.53,
+          "confidence": 0.47
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.69
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.93
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.49
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 437,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 155
+      }
+    },
+    {
+      "session_id": "29896b44-5914-47fd-931d-0e13e9987b45",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/29896b44-5914-47fd-931d-0e13e9987b45/29896b44-5914-47fd-931d-0e13e9987b45.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.15,
+          "confidence": 0.45
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.93,
+          "confidence": 0.9
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.86,
+          "confidence": 0.14
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.56,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.39
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.87
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 97,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 78
+      }
+    },
+    {
+      "session_id": "3f9a6631-c42e-4f0a-8b5d-93b501ee09af",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/3f9a6631-c42e-4f0a-8b5d-93b501ee09af/3f9a6631-c42e-4f0a-8b5d-93b501ee09af.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.37,
+          "confidence": 0.16
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.23,
+          "confidence": 0.65
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.1,
+          "confidence": 0.9
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.31,
+          "confidence": 0.69
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.87
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 128,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 83
+      }
+    },
+    {
+      "session_id": "c7033f65-280b-475c-bca2-951a9f910a6e",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c7033f65-280b-475c-bca2-951a9f910a6e/c7033f65-280b-475c-bca2-951a9f910a6e.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.33,
+          "confidence": 0.15
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.88,
+          "confidence": 0.86
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.42,
+          "confidence": 0.58
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.75,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.13
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.96
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 21,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 62
+      }
+    },
+    {
+      "session_id": "07847e35-01f9-4d1b-b830-1cb34894302b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/07847e35-01f9-4d1b-b830-1cb34894302b/07847e35-01f9-4d1b-b830-1cb34894302b.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.11,
+          "confidence": 0.66
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.08,
+          "confidence": 0
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.81,
+          "confidence": 0.19
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.7,
+          "confidence": 0.3
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.94
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 33,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 51
+      }
+    },
+    {
+      "session_id": "202b533e-a671-491f-94f0-13a3035be0c1",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/202b533e-a671-491f-94f0-13a3035be0c1/202b533e-a671-491f-94f0-13a3035be0c1.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.04,
+          "confidence": 0.54
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.85,
+          "confidence": 0.83
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.12,
+          "confidence": 0.1
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.03,
+          "confidence": 0.43
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.75
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 34,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 41
+      }
+    },
+    {
+      "session_id": "582bef0a-c6fd-4a76-9fba-7323b0567102",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/582bef0a-c6fd-4a76-9fba-7323b0567102/582bef0a-c6fd-4a76-9fba-7323b0567102.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.44,
+          "confidence": 0.56
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.76,
+          "confidence": 0.7
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.55,
+          "confidence": 0.45
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.55,
+          "confidence": 0.45
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.18
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.82
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 12,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 31
+      }
+    },
+    {
+      "session_id": "316e90d5-9037-43f1-9853-36175d628813",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/316e90d5-9037-43f1-9853-36175d628813/316e90d5-9037-43f1-9853-36175d628813.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.79,
+          "confidence": 0.53
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.92,
+          "confidence": 0.85
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.21,
+          "confidence": 0.18
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.06,
+          "confidence": 0.43
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.81
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.8
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 20,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 63
+      }
+    },
+    {
+      "session_id": "e8a25b04-6d00-4a10-a155-c50fc2c5cb9c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c/e8a25b04-6d00-4a10-a155-c50fc2c5cb9c.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.42,
+          "confidence": 0.58
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.73,
+          "confidence": 0.04
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.49,
+          "confidence": 0.51
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.53,
+          "confidence": 0.47
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.17
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.92
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.77
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 10,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 57
+      }
+    },
+    {
+      "session_id": "15debbe7-70f8-44cb-a051-40a1e47dc0c4",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/15debbe7-70f8-44cb-a051-40a1e47dc0c4/15debbe7-70f8-44cb-a051-40a1e47dc0c4.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.74,
+          "confidence": 0.36
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.01,
+          "confidence": 0.94
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.04,
+          "confidence": 0.44
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.92,
+          "confidence": 0.08
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.94
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.2
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 11,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 62
+      }
+    },
+    {
+      "session_id": "f57a99e7-7502-435b-b366-94f165d9636b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app-training-sync-due/agent-transcripts/f57a99e7-7502-435b-b366-94f165d9636b/f57a99e7-7502-435b-b366-94f165d9636b.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app-training-sync-due",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.16,
+          "confidence": 0.84
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.84,
+          "confidence": 0.84
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.3,
+          "confidence": 0.7
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.18,
+          "confidence": 0.82
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.4
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 1
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.96
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 192,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 86
+      }
+    },
+    {
+      "session_id": "44e8029b-85ed-44db-99d5-0f22ac1ac0ee",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/44e8029b-85ed-44db-99d5-0f22ac1ac0ee/44e8029b-85ed-44db-99d5-0f22ac1ac0ee.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.68,
+          "confidence": 0.32
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.69,
+          "confidence": 0.69
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.72,
+          "confidence": 0.28
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.57,
+          "confidence": 0.43
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.27
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.39
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.94
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.75
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 52,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 69
+      }
+    },
+    {
+      "session_id": "f4d88dd4-2279-40c3-80e2-d438e138f363",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/f4d88dd4-2279-40c3-80e2-d438e138f363/f4d88dd4-2279-40c3-80e2-d438e138f363.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.76,
+          "confidence": 0.54
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.89,
+          "confidence": 0.88
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.53,
+          "confidence": 0.47
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.23,
+          "confidence": 0.77
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.24
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.48
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.84
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 45,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 75
+      }
+    },
+    {
+      "session_id": "24bb1629-c72d-4efb-af00-858090458780",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/24bb1629-c72d-4efb-af00-858090458780.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.65,
+          "confidence": 0.16
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.93,
+          "confidence": 0.74
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.22,
+          "confidence": 0.2
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.26,
+          "confidence": 0.41
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.97
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.47
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 6,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 38
+      }
+    },
+    {
+      "session_id": "e1fe36a4-6fff-4854-baf9-42b483e23be2",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/e1fe36a4-6fff-4854-baf9-42b483e23be2/e1fe36a4-6fff-4854-baf9-42b483e23be2.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.91,
+          "confidence": 0.57
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.83,
+          "confidence": 0.79
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.28,
+          "confidence": 0.24
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.79,
+          "confidence": 0.21
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.44
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 215,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 74
+      }
+    },
+    {
+      "session_id": "3667f64d-b4bd-4836-ab07-58c3a3d93bee",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/subagents/3667f64d-b4bd-4836-ab07-58c3a3d93bee.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.9,
+          "confidence": 0.43
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.74,
+          "confidence": 0.54
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.8,
+          "confidence": 0.41
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.92,
+          "confidence": 0.45
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.76
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 6,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 41
+      }
+    },
+    {
+      "session_id": "2fb70153-ee0a-4796-8783-58ed7f2160d9",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/2fb70153-ee0a-4796-8783-58ed7f2160d9/2fb70153-ee0a-4796-8783-58ed7f2160d9.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.13,
+          "confidence": 0.53
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.87
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.9,
+          "confidence": 0.1
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.5,
+          "confidence": 0.5
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.43
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.88
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 163,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 90
+      }
+    },
+    {
+      "session_id": "fae4006d-f921-462f-98be-6bc47129dd4d",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/fae4006d-f921-462f-98be-6bc47129dd4d/fae4006d-f921-462f-98be-6bc47129dd4d.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.51,
+          "confidence": 0.32
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.01,
+          "confidence": 0.9
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.77,
+          "confidence": 0.23
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.71,
+          "confidence": 0.29
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.44
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.51
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.74
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 59,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 54
+      }
+    },
+    {
+      "session_id": "450ca3e7-29dc-4f31-97e7-551ab5af65bf",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-flue-obsidian-wiki/agent-transcripts/450ca3e7-29dc-4f31-97e7-551ab5af65bf/450ca3e7-29dc-4f31-97e7-551ab5af65bf.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-flue-obsidian-wiki",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.56,
+          "confidence": 0.36
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.98,
+          "confidence": 0.95
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.9,
+          "confidence": 0.58
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.89,
+          "confidence": 0.43
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.97
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.26
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 26,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 64
+      }
+    },
+    {
+      "session_id": "19c63579-306c-44ac-be10-1c70dc85ab6c",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/24bb1629-c72d-4efb-af00-858090458780/subagents/19c63579-306c-44ac-be10-1c70dc85ab6c.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.31,
+          "confidence": 0.08
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.87,
+          "confidence": 0.48
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.84,
+          "confidence": 0.49
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.16,
+          "confidence": 0.38
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.4
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.7
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 3,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 39
+      }
+    },
+    {
+      "session_id": "4d0e878b-4b4b-475a-8ff5-19036fa0cf1d",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/4d0e878b-4b4b-475a-8ff5-19036fa0cf1d/4d0e878b-4b4b-475a-8ff5-19036fa0cf1d.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.82,
+          "confidence": 0.55
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.93,
+          "confidence": 0.83
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.74,
+          "confidence": 0.26
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.67,
+          "confidence": 0.33
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.34
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.91
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 167,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 138
+      }
+    },
+    {
+      "session_id": "f500f5ea-ca12-454a-ac76-b093e1f8b020",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product/agent-transcripts/f500f5ea-ca12-454a-ac76-b093e1f8b020/f500f5ea-ca12-454a-ac76-b093e1f8b020.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.46,
+          "confidence": 0.46
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.97,
+          "confidence": 0.9
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.53,
+          "confidence": 0.51
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.11,
+          "confidence": 0.42
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.43
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.95
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.58
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 23,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 63
+      }
+    },
+    {
+      "session_id": "c2a77998-653b-4b18-89ae-fb1936c19a94",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c2a77998-653b-4b18-89ae-fb1936c19a94/c2a77998-653b-4b18-89ae-fb1936c19a94.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.85,
+          "confidence": 0.38
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.74,
+          "confidence": 0.32
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.2,
+          "confidence": 0.6
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.18,
+          "confidence": 0.54
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.57
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "scope_sub",
+          "confidence": 0.4
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.18
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 4,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 23
+      }
+    },
+    {
+      "session_id": "8fc76e07-e980-4a0e-8e02-73582752584e",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/8fc76e07-e980-4a0e-8e02-73582752584e/8fc76e07-e980-4a0e-8e02-73582752584e.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.37,
+          "confidence": 0.63
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.91,
+          "confidence": 0.85
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.91,
+          "confidence": 0.09
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.82,
+          "confidence": 0.48
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.28
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 1
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.75
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 11,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 26
+      }
+    },
+    {
+      "session_id": "73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-landing/agent-transcripts/73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0/73c01e2a-cf30-4ff6-a4b3-f85ff43fc9a0.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.35,
+          "confidence": 0.39
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.87,
+          "confidence": 0.86
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.48,
+          "confidence": 0.52
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.51,
+          "confidence": 0.49
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.25
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.81
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 168,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 105
+      }
+    },
+    {
+      "session_id": "b48587b4-52c2-4d32-bb8b-e726f7726791",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-research-socratink-research-vault/agent-transcripts/b48587b4-52c2-4d32-bb8b-e726f7726791/b48587b4-52c2-4d32-bb8b-e726f7726791.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-research-socratink-research-vault",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.4,
+          "confidence": 0.29
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.97,
+          "confidence": 0.93
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.23,
+          "confidence": 0.2
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.96,
+          "confidence": 0.45
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.58
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.7
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 30,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 47
+      }
+    },
+    {
+      "session_id": "357a2e9e-af77-4411-8da7-6efe95234ea9",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/357a2e9e-af77-4411-8da7-6efe95234ea9/357a2e9e-af77-4411-8da7-6efe95234ea9.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.36,
+          "confidence": 0.64
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.83,
+          "confidence": 0.82
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.23,
+          "confidence": 0.13
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.46,
+          "confidence": 0.54
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.29
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.83
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 530,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 73
+      }
+    },
+    {
+      "session_id": "c585e8d6-1893-4da5-bba8-1a0295583d57",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/c585e8d6-1893-4da5-bba8-1a0295583d57/c585e8d6-1893-4da5-bba8-1a0295583d57.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.23,
+          "confidence": 0
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.31,
+          "confidence": 0.47
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.83,
+          "confidence": 0.45
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.87,
+          "confidence": 0.13
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.67
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.82
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.37
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 77,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 104
+      }
+    },
+    {
+      "session_id": "64fde956-4c99-476a-9265-0bedb8845667",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/64fde956-4c99-476a-9265-0bedb8845667/64fde956-4c99-476a-9265-0bedb8845667.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.83,
+          "confidence": 0.53
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.99,
+          "confidence": 0.94
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.8,
+          "confidence": 0.52
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.81,
+          "confidence": 0.19
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.47
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.76
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.96
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.35
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 100,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 66
+      }
+    },
+    {
+      "session_id": "64cfb0da-d449-44e6-bf35-dfe506cdbd20",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app-orphaned-launch-pad-css/agent-transcripts/64cfb0da-d449-44e6-bf35-dfe506cdbd20/64cfb0da-d449-44e6-bf35-dfe506cdbd20.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app-orphaned-launch-pad-css",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.26,
+          "confidence": 0.26
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 0.83,
+          "confidence": 0.17
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.27,
+          "confidence": 0.73
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.38,
+          "confidence": 0.62
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.1
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.36
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "over_trust",
+          "confidence": 0.66
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.74
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 3,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 24
+      }
+    },
+    {
+      "session_id": "c8712dae-0f89-4ee7-99c7-bdf08b5c9785",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/c8712dae-0f89-4ee7-99c7-bdf08b5c9785/c8712dae-0f89-4ee7-99c7-bdf08b5c9785.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.92,
+          "confidence": 0.08
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.94
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.2,
+          "confidence": 0.12
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.66,
+          "confidence": 0.34
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 1
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.48
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 89,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 63
+      }
+    },
+    {
+      "session_id": "97408866-9b03-4af0-8f3a-4e9fa18122ab",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/97408866-9b03-4af0-8f3a-4e9fa18122ab/97408866-9b03-4af0-8f3a-4e9fa18122ab.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.46,
+          "confidence": 0.54
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.72,
+          "confidence": 0.69
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.62,
+          "confidence": 0.38
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.65,
+          "confidence": 0.35
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.21
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.96
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 19,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 46
+      }
+    },
+    {
+      "session_id": "df80810e-a238-4e67-9b3e-9d60874e00fb",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/df80810e-a238-4e67-9b3e-9d60874e00fb/df80810e-a238-4e67-9b3e-9d60874e00fb.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.58,
+          "confidence": 0.42
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.42,
+          "confidence": 0.39
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.36,
+          "confidence": 0.38
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.94,
+          "confidence": 0.46
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.32
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.75
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 40,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 50
+      }
+    },
+    {
+      "session_id": "891f9f25-29b7-4426-9673-10f3aa88539b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-landing/agent-transcripts/891f9f25-29b7-4426-9673-10f3aa88539b/891f9f25-29b7-4426-9673-10f3aa88539b.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.85,
+          "confidence": 0.44
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.97,
+          "confidence": 0.38
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.26,
+          "confidence": 0.16
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.83,
+          "confidence": 0.17
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.53
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.58
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 85,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 93
+      }
+    },
+    {
+      "session_id": "41c8cb56-1d11-44e7-8bc8-bac60105cbc5",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/262573f8-8b59-43db-a3e2-b74ba416a168/subagents/41c8cb56-1d11-44e7-8bc8-bac60105cbc5.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.32,
+          "confidence": 0.32
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.04,
+          "confidence": 0.63
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.72,
+          "confidence": 0.45
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.96,
+          "confidence": 0.39
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.33
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.96
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.22
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 13,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 61
+      }
+    },
+    {
+      "session_id": "430c4785-99a5-4355-83d6-c5314041f7f3",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-landing/agent-transcripts/430c4785-99a5-4355-83d6-c5314041f7f3/430c4785-99a5-4355-83d6-c5314041f7f3.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.61,
+          "confidence": 0.39
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.94
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.2,
+          "confidence": 0.44
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.76,
+          "confidence": 0.24
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.49
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.44
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.98
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.78
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 68,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 138
+      }
+    },
+    {
+      "session_id": "444749b4-7859-491e-a969-97232027315f",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/444749b4-7859-491e-a969-97232027315f/444749b4-7859-491e-a969-97232027315f.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.84,
+          "confidence": 0.51
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.92,
+          "confidence": 0.89
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.02,
+          "confidence": 0.48
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.67,
+          "confidence": 0.33
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.23
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.62
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.95
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.62
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 34,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 37
+      }
+    },
+    {
+      "session_id": "766e1776-8b62-4fa8-baad-0bae1c4503a8",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/766e1776-8b62-4fa8-baad-0bae1c4503a8/766e1776-8b62-4fa8-baad-0bae1c4503a8.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.55,
+          "confidence": 0.42
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.9,
+          "confidence": 0.87
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.36,
+          "confidence": 0.57
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.35,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.56
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.59
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.86
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.35
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 13,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 33
+      }
+    },
+    {
+      "session_id": "45147840-9cc3-425a-af77-653c89328305",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/45147840-9cc3-425a-af77-653c89328305/45147840-9cc3-425a-af77-653c89328305.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.53,
+          "confidence": 0.31
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.91,
+          "confidence": 0.86
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.09,
+          "confidence": 0.6
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.07,
+          "confidence": 0.41
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.7
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.99
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.49
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 32,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 52
+      }
+    },
+    {
+      "session_id": "2ae38cc1-7c16-4e2c-bd14-a305ef855078",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/2ae38cc1-7c16-4e2c-bd14-a305ef855078/2ae38cc1-7c16-4e2c-bd14-a305ef855078.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.19,
+          "confidence": 0.59
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.07,
+          "confidence": 0.79
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.58,
+          "confidence": 0.51
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.04,
+          "confidence": 0.41
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.31
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.97
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.45
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 12,
+        "strict_user_correction_hits": 1,
+        "unique_paths": 23
+      }
+    },
+    {
+      "session_id": "94147ba0-4dd2-47e2-8534-927e2c05dcfc",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/94147ba0-4dd2-47e2-8534-927e2c05dcfc/94147ba0-4dd2-47e2-8534-927e2c05dcfc.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.69,
+          "confidence": 0.61
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0.87
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.15,
+          "confidence": 0.56
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.85,
+          "confidence": 0.15
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.2
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.24
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.46
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 0,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 26
+      }
+    },
+    {
+      "session_id": "f5892573-a6d2-4be0-97c8-f7d6f2fea820",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/262573f8-8b59-43db-a3e2-b74ba416a168/subagents/f5892573-a6d2-4be0-97c8-f7d6f2fea820.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.26,
+          "confidence": 0.26
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.93,
+          "confidence": 0.77
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.06,
+          "confidence": 0.6
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 0.56,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.65
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "scope_sub",
+          "confidence": 0.68
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "slow_thrash",
+          "confidence": 0.14
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 50,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 78
+      }
+    },
+    {
+      "session_id": "809dba66-f777-41c2-90ab-b562ee9d57c7",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-research-socratink-research-vault/agent-transcripts/b48587b4-52c2-4d32-bb8b-e726f7726791/subagents/809dba66-f777-41c2-90ab-b562ee9d57c7.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-socratink-research-socratink-research-vault",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.85,
+          "confidence": 0.39
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.21,
+          "confidence": 0.68
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.84,
+          "confidence": 0.84
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.07,
+          "confidence": 0.62
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "context_bloat",
+          "confidence": 0.91
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.54
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 0,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 16
+      }
+    },
+    {
+      "session_id": "0d22cb46-d23a-4866-945c-8ddf1dd78538",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-app/agent-transcripts/0d22cb46-d23a-4866-945c-8ddf1dd78538/0d22cb46-d23a-4866-945c-8ddf1dd78538.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-app",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.72,
+          "confidence": 0.21
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.01,
+          "confidence": 0.87
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.24,
+          "confidence": 0.43
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.92,
+          "confidence": 0.41
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.63
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.27
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.61
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 0,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 4
+      }
+    },
+    {
+      "session_id": "bfe16717-f9ad-4d23-8c0a-bb65b48fc032",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/bfe16717-f9ad-4d23-8c0a-bb65b48fc032/bfe16717-f9ad-4d23-8c0a-bb65b48fc032.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.98,
+          "confidence": 0.46
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 0.6,
+          "confidence": 0.4
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.9,
+          "confidence": 0.51
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.93,
+          "confidence": 0.46
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.44
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "handoff_rot",
+          "confidence": 0.96
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.44
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 0,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 10
+      }
+    },
+    {
+      "session_id": "dc77ee62-8da7-40fb-8f86-8ed4f5c48986",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink/agent-transcripts/dc77ee62-8da7-40fb-8f86-8ed4f5c48986/dc77ee62-8da7-40fb-8f86-8ed4f5c48986.jsonl",
+      "stratum": "smell_rich",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.64,
+          "confidence": 0.61
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.94,
+          "confidence": 0.88
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.13,
+          "confidence": 0.75
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.7,
+          "confidence": 0.46
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.22
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.64
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "weak_plate",
+          "confidence": 0.29
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.29
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 0,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 21
+      }
+    },
+    {
+      "session_id": "1def40b7-fa28-4a4c-aebf-6fbdceb396a6",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/1def40b7-fa28-4a4c-aebf-6fbdceb396a6/1def40b7-fa28-4a4c-aebf-6fbdceb396a6.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.37,
+          "confidence": 0.46
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.03,
+          "confidence": 0.9
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.5,
+          "confidence": 0.5
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.92,
+          "confidence": 0.35
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.75
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.27
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.45
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 2,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 66
+      }
+    },
+    {
+      "session_id": "87d7b686-473a-41a3-b7ab-5ac51586cda6",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/87d7b686-473a-41a3-b7ab-5ac51586cda6/87d7b686-473a-41a3-b7ab-5ac51586cda6.jsonl",
+      "stratum": "overlap",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.33,
+          "confidence": 0.52
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.95,
+          "confidence": 0.89
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.1,
+          "confidence": 0.7
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.2,
+          "confidence": 0.47
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.6
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.97
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.47
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": 4,
+        "strict_user_correction_hits": 0,
+        "unique_paths": 31
+      }
+    },
+    {
+      "session_id": "f5892573-a6d2-4be0-97c8-f7d6f2fea820",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/f5892573-a6d2-4be0-97c8-f7d6f2fea820/f5892573-a6d2-4be0-97c8-f7d6f2fea820.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.73,
+          "confidence": 0
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.7,
+          "confidence": 0.58
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.56,
+          "confidence": 0.01
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.01,
+          "confidence": 0
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.36
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.45
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "scope_sub",
+          "confidence": 0.86
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.32
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "b2f082d5-23b0-485a-95f1-e3dbb2a0dcc3",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/b2f082d5-23b0-485a-95f1-e3dbb2a0dcc3/b2f082d5-23b0-485a-95f1-e3dbb2a0dcc3.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.96,
+          "confidence": 0.43
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.02,
+          "confidence": 0.96
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.05,
+          "confidence": 0.75
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.08,
+          "confidence": 0.49
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.3
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "missing_verify",
+          "confidence": 0.7
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.4
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "262573f8-8b59-43db-a3e2-b74ba416a168",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-prod-socratink-landing/agent-transcripts/262573f8-8b59-43db-a3e2-b74ba416a168/262573f8-8b59-43db-a3e2-b74ba416a168.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.49,
+          "confidence": 0.49
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.35,
+          "confidence": 0.31
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.67,
+          "confidence": 0.24
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.39,
+          "confidence": 0.16
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.16
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.46
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "scope_sub",
+          "confidence": 0.33
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.22
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "01f95165-6b6e-4f57-af0e-74e2a13115d9",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/01f95165-6b6e-4f57-af0e-74e2a13115d9/01f95165-6b6e-4f57-af0e-74e2a13115d9.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 0.9,
+          "confidence": 0.55
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.99,
+          "confidence": 0.99
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.81,
+          "confidence": 0.67
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.07,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.36
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "scope_sub",
+          "confidence": 0.34
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.34
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "b06e3da7-48bc-402e-b015-5632e0be88da",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/b06e3da7-48bc-402e-b015-5632e0be88da/b06e3da7-48bc-402e-b015-5632e0be88da.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.36,
+          "confidence": 0.36
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.02,
+          "confidence": 0.81
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.59,
+          "confidence": 0.59
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.32,
+          "confidence": 0.44
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.74
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.68
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.71
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.37
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "16a29d67-2ed3-4f3c-874d-ff5b890ba729",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-landing/agent-transcripts/16a29d67-2ed3-4f3c-874d-ff5b890ba729/16a29d67-2ed3-4f3c-874d-ff5b890ba729.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.26,
+          "confidence": 0.41
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.13,
+          "confidence": 0.86
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.27,
+          "confidence": 0.66
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.97,
+          "confidence": 0.62
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.73
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.82
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.43
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.48
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "ca5e4f51-586f-46b6-8bc5-7993f3f1b99b",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-socratink-prod-socratink-landing/agent-transcripts/ca5e4f51-586f-46b6-8bc5-7993f3f1b99b/ca5e4f51-586f-46b6-8bc5-7993f3f1b99b.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-socratink-prod-socratink-landing",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.01,
+          "confidence": 0.34
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 1.82,
+          "confidence": 0.8
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 0.96,
+          "confidence": 0.57
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 1.48,
+          "confidence": 0.17
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.41
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.55
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "thrash",
+          "confidence": 0.21
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_wrong",
+          "confidence": 0.33
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "84579c75-306d-4dfb-8a57-715be3c57202",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-socratink/agent-transcripts/84579c75-306d-4dfb-8a57-715be3c57202/84579c75-306d-4dfb-8a57-715be3c57202.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-product-socratink",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 1.66,
+          "confidence": 0.32
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.03,
+          "confidence": 0.86
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 1.77,
+          "confidence": 0.57
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.71,
+          "confidence": 0.71
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.32
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.77
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "governance",
+          "confidence": 0.36
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "careful_good",
+          "confidence": 0.89
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    },
+    {
+      "session_id": "aa4a33cf-dd92-4c7c-b5d4-7245ec32e480",
+      "source_path": "/Users/jondev/dev/active/socratink/chat-histories/captures/current-home-live/cursor/projects/Users-jondev-dev-active-socratink-product-flue-obsidian-wiki/agent-transcripts/450ca3e7-29dc-4f31-97e7-551ab5af65bf/subagents/aa4a33cf-dd92-4c7c-b5d4-7245ec32e480.jsonl",
+      "stratum": "pilot_only",
+      "project_slug": "Users-jondev-dev-active-socratink-product-flue-obsidian-wiki",
+      "answers": {
+        "plate_quality": {
+          "type": "score",
+          "score": 2.06,
+          "confidence": 0.43
+        },
+        "handoff_quality": {
+          "type": "score",
+          "score": 2.07,
+          "confidence": 0.88
+        },
+        "partnership_efficiency": {
+          "type": "score",
+          "score": 2.75,
+          "confidence": 0.75
+        },
+        "context_discipline": {
+          "type": "score",
+          "score": 2.14,
+          "confidence": 0.67
+        },
+        "verification_discipline": {
+          "type": "noul",
+          "p": 0.61
+        },
+        "socratink_fit": {
+          "type": "noul",
+          "p": 0.72
+        },
+        "primary_partnership_gap": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.45
+        },
+        "velocity_quality_band": {
+          "type": "choice",
+          "choice": "fast_good",
+          "confidence": 0.56
+        }
+      },
+      "deterministic": {
+        "repeated_tool_extra": null,
+        "strict_user_correction_hits": null,
+        "unique_paths": null
+      }
+    }
+  ]
+}

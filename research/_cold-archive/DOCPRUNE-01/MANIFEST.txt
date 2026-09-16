@@ -1,0 +1,26 @@
+FM-DOCPRUNE-01 cold archive — 2026-09-16T05:04:59Z
+Captain chose B. Moves only (git-recoverable).
+
+MOVE research/chat-signal/wiki-source/agenteng -> research/_cold-archive/DOCPRUNE-01/wiki-source-agenteng/agenteng
+MOVE doc-vault/agenteng-obsidian-wiki -> research/_cold-archive/DOCPRUNE-01/doc-vault-agenteng-obsidian-wiki/agenteng-obsidian-wiki
+MOVE research/chat-signal/agenteng-runs/codex-strata-pack-v2.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/codex-strata-pack-v2.json
+MOVE research/chat-signal/agenteng-runs/codex-strata-scores.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/codex-strata-scores.json
+MOVE research/chat-signal/agenteng-runs/inventory.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/inventory.json
+MOVE research/chat-signal/agenteng-runs/loops-v2-session-mine.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/loops-v2-session-mine.json
+MOVE research/chat-signal/agenteng-runs/strata-pack-v3.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/strata-pack-v3.json
+MOVE research/chat-signal/agenteng-runs/strata-scores-v3.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/strata-scores-v3.json
+MOVE research/chat-signal/agenteng-runs/strata-scores.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/strata-scores.json
+MOVE research/chat-signal/agenteng-runs/working-memory-exemplars.json -> research/_cold-archive/DOCPRUNE-01/agenteng-runs-json/working-memory-exemplars.json
+MOVE research/chat-signal/smell-runs -> research/_cold-archive/DOCPRUNE-01/smell-runs/smell-runs
+MOVE research/chat-signal/pilot-runs -> research/_cold-archive/DOCPRUNE-01/pilot-runs/pilot-runs
+MOVE research/2026-09-15-agenteng-socratink-30-60-90-primary.md -> research/_cold-archive/DOCPRUNE-01/duplicates/2026-09-15-agenteng-socratink-30-60-90-primary.md
+
+=== cold archive size 2026-09-16T05:05:05Z ===
+4.5M	research/_cold-archive/DOCPRUNE-01
+4.0K	research/_cold-archive/DOCPRUNE-01/MANIFEST.txt
+1.3M	research/_cold-archive/DOCPRUNE-01/agenteng-runs-json
+372K	research/_cold-archive/DOCPRUNE-01/doc-vault-agenteng-obsidian-wiki
+ 20K	research/_cold-archive/DOCPRUNE-01/duplicates
+1.1M	research/_cold-archive/DOCPRUNE-01/pilot-runs
+1.5M	research/_cold-archive/DOCPRUNE-01/smell-runs
+280K	research/_cold-archive/DOCPRUNE-01/wiki-source-agenteng
