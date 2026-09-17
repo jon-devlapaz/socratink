@@ -479,6 +479,33 @@ test('openChatConversation namespaces and reuses the stored conversation id', ()
 	}
 });
 
+test('openChatConversation keeps a stored conversation id owned by an alias', () => {
+	const store = new Map([[appConfig.chatConversationStorageKey, 'guest-a:old']]);
+	const originalStorage = globalThis.localStorage;
+	const originalLocation = globalThis.location;
+	globalThis.localStorage = {
+		getItem(key) {
+			return store.has(key) ? store.get(key) : null;
+		},
+		setItem(key, value) {
+			store.set(key, String(value));
+		},
+		removeItem(key) {
+			store.delete(key);
+		},
+	};
+	globalThis.location = { origin: 'http://localhost' };
+	try {
+		openChatConversation('durable-b', ['guest-a']);
+		assert.equal(store.get(appConfig.chatConversationStorageKey), 'guest-a:old');
+	} finally {
+		if (originalStorage === undefined) delete globalThis.localStorage;
+		else globalThis.localStorage = originalStorage;
+		if (originalLocation === undefined) delete globalThis.location;
+		else globalThis.location = originalLocation;
+	}
+});
+
 test('oversized reject keeps the composer draft for editing', async () => {
 	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
 	assert.doesNotMatch(
@@ -587,6 +614,27 @@ test('a confirmed failed settlement can retry once', async () => {
 	const retried = await coordinator.retry();
 	assert.equal(retried.kind, 'completed');
 	assert.equal(sends, 2);
+});
+
+test('not-admitted terminal state carries the envelope error code', async () => {
+	const conversation = {
+		async send() {
+			throw new FlueApiError(403, {
+				error: { type: 'guest_turn_limit', message: 'Sign in to continue this conversation.' },
+			});
+		},
+		async read() {
+			throw new Error('not-admitted sends must not read');
+		},
+		async abort() {
+			return { aborted: false };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
+	const state = await coordinator.start('hello');
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'not-admitted');
+	assert.equal(state.code, 'guest_turn_limit');
 });
 
 test('a confirmed not-admitted send can retry once', async () => {

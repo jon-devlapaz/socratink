@@ -1,4 +1,4 @@
-import { createSession } from './session.ts';
+import { createSession, loadAuthProviders } from './session.ts';
 import './login.css';
 
 function requireElement<T extends Element>(selector: string): T {
@@ -92,8 +92,17 @@ useOtherEmail.addEventListener('click', () => showForm());
 
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
 	button.addEventListener('click', () => {
-		void enterNotebook();
+		const provider = button.dataset.provider;
+		if (provider) location.assign(`/api/auth/${provider}/login`);
 	});
 }
+
+void loadAuthProviders().then((providers) => {
+	for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
+		const provider = button.dataset.provider;
+		if (provider !== 'google' && provider !== 'github') continue;
+		if (!providers[provider]) button.remove();
+	}
+});
 
 emailInput.focus();

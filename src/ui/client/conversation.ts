@@ -43,6 +43,7 @@ export type ChatRequestState =
 			text: string;
 			outcome: 'aborted' | 'failed' | 'not-admitted';
 			detail: string;
+			code?: string;
 	  }
 	| { kind: 'completed'; text: string; reply: AgentReadResult };
 
@@ -86,10 +87,10 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
-export function openChatConversation(userId: string) {
+export function openChatConversation(userId: string, aliases: readonly string[] = []) {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
-		stored && conversationBelongsToUser(stored, userId)
+		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
 			: namespacedConversationId(userId, crypto.randomUUID());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
@@ -342,7 +343,12 @@ export class ChatRequestCoordinator {
 			if (pending.canceling) return pending.cancelResult.promise;
 			if (pending.admission) return this.errorAfterAdmission(pending, error);
 			if (error instanceof FlueApiError) {
-				return this.terminalState(pending, 'not-admitted', chatTurnErrorMessage(error));
+				return this.terminalState(
+					pending,
+					'not-admitted',
+					chatTurnErrorMessage(error),
+					envelopeType(error),
+				);
 			}
 			return this.recoveryState(
 				pending,
@@ -411,8 +417,11 @@ export class ChatRequestCoordinator {
 		pending: PendingRequest,
 		outcome: 'aborted' | 'failed' | 'not-admitted',
 		detail: string,
+		code?: string,
 	): ChatRequestState {
-		this.state = { kind: 'terminal', text: pending.text, outcome, detail };
+		this.state = code === undefined
+			? { kind: 'terminal', text: pending.text, outcome, detail }
+			: { kind: 'terminal', text: pending.text, outcome, detail, code };
 		return this.state;
 	}
 

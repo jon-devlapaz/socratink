@@ -2,6 +2,9 @@ import {
 	FlueApiError,
 	type AgentReadResult,
 } from '@flue/sdk';
+import { createAuthGateCard, hasAuthProvider } from './chat-gate.ts';
+import './chat-gate.css';
+import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
@@ -100,6 +103,7 @@ export function mountChatSurface(options: Readonly<{
 	elements?: ChatSurfaceElements;
 	voiceActivity?: DictationVoiceActivity;
 	userId: string;
+	aliases: readonly string[];
 	onInkExpression?: (expression: InkExpression) => void;
 }>): void {
 	const elements = options.elements ?? queryChatSurface();
@@ -135,7 +139,7 @@ export function mountChatSurface(options: Readonly<{
 		voiceActivity: options.voiceActivity,
 		onSendRequested: () => form.requestSubmit(),
 	});
-	const conversation = openChatConversation(options.userId);
+	const conversation = openChatConversation(options.userId, options.aliases);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	const liveReasoning = createLiveReasoning();
@@ -188,6 +192,22 @@ export function mountChatSurface(options: Readonly<{
 	function releasePending() {
 		pendingSession?.dispose();
 		pendingSession = undefined;
+	}
+
+	let cachedProviders: AuthProviders | undefined;
+	async function gateProviders(): Promise<AuthProviders> {
+		cachedProviders ??= await loadAuthProviders();
+		return cachedProviders;
+	}
+
+	async function requestStateElement(
+		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
+	): Promise<HTMLElement> {
+		if (isGuestTurnLimitError(state)) {
+			const providers = await gateProviders();
+			if (hasAuthProvider(providers)) return createAuthGateCard(providers);
+		}
+		return createRequestStateTurn(state);
 	}
 
 	function createRequestStateTurn(
@@ -291,7 +311,7 @@ export function mountChatSurface(options: Readonly<{
 				releasePending();
 			}
 			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
-				activeTurn.append(createRequestStateTurn(requestState));
+				activeTurn.append(await requestStateElement(requestState));
 			}
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
@@ -532,4 +552,12 @@ function queryChatSurface(): ChatSurfaceElements {
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};
+}
+
+function isGuestTurnLimitError(state: ChatRequestState): boolean {
+	return (
+		state.kind === 'terminal'
+		&& state.outcome === 'not-admitted'
+		&& state.code === 'guest_turn_limit'
+	);
 }

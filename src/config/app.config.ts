@@ -6,6 +6,7 @@ export const appConfig = {
 	openrouterPath: '/api/openrouter',
 	openrouterConnectPath: '/api/openrouter/connect',
 	openrouterCallbackPath: '/api/openrouter/callback',
+	authProvidersPath: '/api/auth/providers',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatConversationResetKey: 'socratink-chat-conversation-reset',
 	chatModelStorageKey: 'socratink-chat-model',

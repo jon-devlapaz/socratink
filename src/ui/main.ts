@@ -1,4 +1,4 @@
-import { readSession } from './session.ts';
+import { readOrCreateSession } from './session.ts';
 import { mountChatSurface } from './chat-surface.ts';
 import inkPoster from './effects/living-ink/poster.png';
 import type { InkExpression } from '../ink-cue.ts';
@@ -17,7 +17,7 @@ import './dictation.css';
 import './steering.css';
 
 void (async () => {
-	const session = await readSession();
+	const session = await readOrCreateSession();
 	if (!session) {
 		location.replace('/login.html');
 		return;
@@ -47,6 +47,7 @@ void (async () => {
 	mountChatSurface({
 		voiceActivity,
 		userId: session.userId,
+		aliases: session.aliases,
 		onInkExpression(next) {
 			expression = next;
 			ink?.setExpression(next);

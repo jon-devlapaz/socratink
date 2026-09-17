@@ -1,0 +1,67 @@
+.chat-gate-card {
+	margin-block-start: 1rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: 0.75rem;
+	background: var(--surface-2, hsl(0 0% 12%));
+	border: 1px solid var(--border, hsl(0 0% 18%));
+	text-align: center;
+}
+
+.chat-gate-message {
+	margin: 0 0 1rem;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: var(--text-2, hsl(0 0% 72%));
+}
+
+.chat-gate-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	align-items: stretch;
+}
+
+.chat-gate-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1rem;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	text-decoration: none;
+	transition: background-color 120ms ease;
+	cursor: pointer;
+}
+
+.chat-gate-google {
+	background: hsl(0 0% 100%);
+	color: hsl(0 0% 12%);
+}
+
+.chat-gate-google:hover {
+	background: hsl(0 0% 92%);
+}
+
+.chat-gate-github {
+	background: hsl(0 0% 20%);
+	color: hsl(0 0% 92%);
+	border: 1px solid var(--border, hsl(0 0% 28%));
+}
+
+.chat-gate-github:hover {
+	background: hsl(0 0% 26%);
+}
+
+@media (min-width: 28rem) {
+	.chat-gate-actions {
+		flex-direction: row;
+		justify-content: center;
+	}
+
+	.chat-gate-btn {
+		flex: 0 1 auto;
+		min-width: 12rem;
+	}
+}
