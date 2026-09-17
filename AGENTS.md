@@ -285,12 +285,6 @@ Load `research/pareto/` and thin `research/chat-signal/` contracts only when the
 task needs them. Cold-archive recovery: see **Cold archive and freezes** above
 and [`research/README.md`](research/README.md).
 
-## `.agents/evals` and `.agents/roles`
-
-Keep these trees. Load on demand only — do not preload eval packs or role
-adapters into every coding session. Canonical product contract remains this
-root `AGENTS.md`; role files under `.agents/roles/` are identity adapters.
-
 ## Coding-agent portability
 
 This root `AGENTS.md` is the project-wide contract for coding agents. It is not

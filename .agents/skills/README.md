@@ -17,8 +17,6 @@ Portable `SKILL.md` packages for coding agents. Load on demand — do not preloa
 
 ## Sibling `.agents` trees (not skills)
 
-- `.agents/evals/` — load on demand only; do not preload
-- `.agents/roles/` — identity adapters; load on demand; root `AGENTS.md` stays canonical
 - `.agents/learnings/` — dated postmortems; read matching files before repeating a failure
 
 ## Archive-only (removed from hot tree)
