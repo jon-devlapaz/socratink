@@ -34,6 +34,7 @@ export type CredentialStore = {
 	getUserKeyByRef(params: { userId: string; credentialRef: string }): Promise<string>;
 	hasUserKey(params: { userId: string; name: string }): Promise<boolean>;
 	deleteUserKey(params: { userId: string; name: string }): Promise<void>;
+	rekeyUser(params: { fromUserId: string; toUserId: string }): Promise<void>;
 	close(): Promise<void>;
 };
 
@@ -87,6 +88,13 @@ export function createCredentialStore(options: {
 			const userId = requireUserId(params.userId);
 			const name = requireName(params.name);
 			await db.deleteByName({ userId, name });
+		},
+
+		async rekeyUser(params) {
+			const fromUserId = requireUserId(params.fromUserId);
+			const toUserId = requireUserId(params.toUserId);
+			if (fromUserId === toUserId) return;
+			await db.rekeyUser({ fromUserId, toUserId });
 		},
 
 		close: () => db.close(),

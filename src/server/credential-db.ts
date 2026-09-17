@@ -16,6 +16,7 @@ export type CredentialDb = {
 	getByName(lookup: { userId: string; name: string }): Promise<CredentialRow | undefined>;
 	getByRef(credentialRef: string): Promise<CredentialRow | undefined>;
 	deleteByName(lookup: { userId: string; name: string }): Promise<void>;
+	rekeyUser(lookup: { fromUserId: string; toUserId: string }): Promise<void>;
 	close(): Promise<void>;
 };
 
@@ -46,6 +47,8 @@ const POSTGRES_SELECT_BY_REF_SQL =
 	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE credential_ref = $1';
 const POSTGRES_DELETE_SQL =
 	'DELETE FROM socratink_credentials WHERE user_id = $1 AND name = $2';
+const POSTGRES_REKEY_SQL = `UPDATE socratink_credentials SET user_id = $1
+WHERE user_id = $2 AND name NOT IN (SELECT name FROM socratink_credentials WHERE user_id = $1)`;
 
 const SQLITE_UPSERT_SQL = `INSERT INTO socratink_credentials (user_id, name, credential_ref, ciphertext, updated_at)
 VALUES (?, ?, ?, ?, ?)
@@ -59,6 +62,8 @@ const SQLITE_SELECT_BY_NAME_SQL =
 const SQLITE_SELECT_BY_REF_SQL =
 	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE credential_ref = ?';
 const SQLITE_DELETE_SQL = 'DELETE FROM socratink_credentials WHERE user_id = ? AND name = ?';
+const SQLITE_REKEY_SQL = `UPDATE socratink_credentials SET user_id = ?
+WHERE user_id = ? AND name NOT IN (SELECT name FROM socratink_credentials WHERE user_id = ?)`;
 
 export function createCredentialDb(target: DatabaseTarget): CredentialDb {
 	switch (target.kind) {
@@ -107,6 +112,10 @@ export function createPostgresCredentialDb(client: CredentialPgClient): Credenti
 			await ensure();
 			await client.query(POSTGRES_DELETE_SQL, [lookup.userId, lookup.name]);
 		},
+		async rekeyUser(lookup) {
+			await ensure();
+			await client.query(POSTGRES_REKEY_SQL, [lookup.toUserId, lookup.fromUserId]);
+		},
 		close: () => client.end(),
 	};
 }
@@ -131,6 +140,9 @@ export function createSqliteCredentialDb(filename: string): CredentialDb {
 		},
 		async deleteByName(lookup) {
 			database.prepare(SQLITE_DELETE_SQL).run(lookup.userId, lookup.name);
+		},
+		async rekeyUser(lookup) {
+			database.prepare(SQLITE_REKEY_SQL).run(lookup.toUserId, lookup.fromUserId, lookup.toUserId);
 		},
 		async close() {
 			database.close();

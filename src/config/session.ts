@@ -40,10 +40,17 @@ export function namespacedConversationId(userId: string, nonce: string): string 
 	return `${userId}:${nonce}`;
 }
 
-export function conversationBelongsToUser(conversationId: string, userId: string): boolean {
+export function conversationBelongsToUser(
+	conversationId: string,
+	userId: string,
+	aliases: readonly string[] = [],
+): boolean {
 	if (!isSessionUserId(userId)) return false;
-	const prefix = `${userId}:`;
-	return conversationId.startsWith(prefix) && conversationId.length > prefix.length;
+	const ids = [userId, ...aliases.filter((alias) => isSessionUserId(alias))];
+	return ids.some((id) => {
+		const prefix = `${id}:`;
+		return conversationId.startsWith(prefix) && conversationId.length > prefix.length;
+	});
 }
 
 export function userIdFromConversationId(conversationId: string | undefined): string | undefined {

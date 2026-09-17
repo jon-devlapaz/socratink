@@ -110,6 +110,59 @@ test('owner can get a stored key by name and by credentialRef', async () => {
 	});
 });
 
+test('rekeyUser moves guest keys to the durable user without re-encryption', async () => {
+	await withStore(async (store) => {
+		await store.updateUserKey({ userId: 'guest-a', name: 'openai', value: plaintext });
+		await store.updateUserKey({ userId: 'guest-a', name: 'openrouter', value: 'guest-router-key' });
+		await store.rekeyUser({ fromUserId: 'guest-a', toUserId: 'durable-b' });
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openai' }), plaintext);
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openrouter' }), 'guest-router-key');
+		assert.equal(await store.hasUserKey({ userId: 'guest-a', name: 'openai' }), false);
+		assert.equal(await store.hasUserKey({ userId: 'guest-a', name: 'openrouter' }), false);
+	});
+});
+
+test('rekeyUser keeps the durable user key on name conflict and migrates the rest', async () => {
+	await withStore(async (store) => {
+		await store.updateUserKey({ userId: 'durable-b', name: keyName, value: 'durable-key' });
+		await store.updateUserKey({ userId: 'guest-a', name: keyName, value: 'guest-key' });
+		await store.updateUserKey({ userId: 'guest-a', name: 'openrouter', value: 'guest-router-key' });
+		await store.rekeyUser({ fromUserId: 'guest-a', toUserId: 'durable-b' });
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: keyName }), 'durable-key');
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openrouter' }), 'guest-router-key');
+		assert.equal(await store.getUserKey({ userId: 'guest-a', name: keyName }), 'guest-key');
+	});
+});
+
+test('rekeyUser is a no-op for identical ids and rejects malformed ids', async () => {
+	await withStore(async (store) => {
+		await store.updateUserKey({ userId: ownerId, name: keyName, value: plaintext });
+		await store.rekeyUser({ fromUserId: ownerId, toUserId: ownerId });
+		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), plaintext);
+		await assert.rejects(store.rekeyUser({ fromUserId: 'user:a', toUserId: foreignId }));
+		await assert.rejects(store.rekeyUser({ fromUserId: ownerId, toUserId: '' }));
+	});
+});
+
+test('postgres rekeyUser writes $1 SQL with durable id first', async () => {
+	/** @type {{ text: string, values: unknown[] }[]} */
+	const calls = [];
+	const db = createPostgresCredentialDb({
+		async query(text, values = []) {
+			calls.push({ text, values });
+			return { rows: [] };
+		},
+		async end() {},
+	});
+	await db.rekeyUser({ fromUserId: 'guest-a', toUserId: 'durable-b' });
+	const update = calls.find((call) => call.text.startsWith('UPDATE'));
+	assert.ok(update);
+	assert.match(update.text, /\$1/);
+	assert.doesNotMatch(update.text, /\?/);
+	assert.deepEqual(update.values, ['durable-b', 'guest-a']);
+	await db.close();
+});
+
 test('foreign user cannot read by name or credentialRef', async () => {
 	await withStore(async (store) => {
 		const { credentialRef } = await store.updateUserKey({

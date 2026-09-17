@@ -95,6 +95,15 @@ test('conversation ids are userId:nonce and reject foreign prefixes', () => {
 	assert.equal(chatConversationIdFromPath(`${appConfig.chatAgentPath}/`), undefined);
 });
 
+test('conversation ids honor aliases and ignore malformed alias entries', () => {
+	assert.equal(conversationBelongsToUser('guest-a:nonce-1', 'durable-b', ['guest-a']), true);
+	assert.equal(conversationBelongsToUser('durable-b:nonce-1', 'durable-b', ['guest-a']), true);
+	assert.equal(conversationBelongsToUser('guest-a:nonce-1', 'durable-b', ['other-guest']), false);
+	assert.equal(conversationBelongsToUser('guest-a:nonce-1', 'durable-b', []), false);
+	assert.equal(conversationBelongsToUser('a:b:c', 'user-x', ['a:b']), false);
+	assert.equal(conversationBelongsToUser(':x', 'user-x', ['']), false);
+});
+
 test('rate limiter uses the injected clock and counter', () => {
 	let now = 0;
 	const limiter = createRateLimiter({

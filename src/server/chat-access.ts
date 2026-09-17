@@ -3,6 +3,7 @@ import {
 	chatConversationIdFromPath,
 	conversationBelongsToUser,
 } from '../config/session.ts';
+import type { AuthDb } from './auth-db.ts';
 import type { RateLimiter } from './rate-limit.ts';
 import { readSessionUserId } from './session.ts';
 
@@ -43,6 +44,7 @@ export function requireSignedSession(options: {
 export function requireChatSession(options: {
 	secret: string;
 	rateLimiter: RateLimiter;
+	authDb?: AuthDb;
 }): MiddlewareHandler {
 	return async (context, next) => {
 		const userId = await readSessionUserId(context, options.secret);
@@ -56,7 +58,8 @@ export function requireChatSession(options: {
 		}
 
 		const conversationId = chatConversationIdFromPath(context.req.path);
-		if (!conversationId || !conversationBelongsToUser(conversationId, userId)) {
+		const aliases = options.authDb ? await options.authDb.findAliases(userId) : [];
+		if (!conversationId || !conversationBelongsToUser(conversationId, userId, aliases)) {
 			return jsonError(context, 403, forbiddenChatError);
 		}
 
