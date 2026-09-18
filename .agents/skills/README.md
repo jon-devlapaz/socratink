@@ -14,6 +14,7 @@ Portable `SKILL.md` packages for coding agents. Load on demand — do not preloa
 ## Also present
 
 - `braintrust-docent`, `braintrust-wiki`, `docent-wiki` — observability docs (load on demand)
+- `jev-me` — Jev-weighted grilling interview for design decisions (load on demand)
 - `thermo-nuclear-code-quality-review` — strict maintainability / code-judo review (load on demand)
 
 ## Sibling `.agents` trees (not skills)
