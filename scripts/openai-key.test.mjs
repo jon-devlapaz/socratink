@@ -7,10 +7,12 @@ import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
 import { learnerChatModelChoices, operatorChatStatus } from '../src/config/chat-model.ts';
 import { openaiChatStatusCopy, openrouterChatStatusCopy, providersChatStatusCopy } from '../src/ui/chat-route.ts';
+import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import { mountChatRoute } from '../src/server/chat-route.ts';
 import { openCredentialStore } from '../src/server/credential-runtime.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
 import { createCredentialStore } from '../src/server/credentials.ts';
+import { requireSignedSession } from '../src/server/chat-access.ts';
 import { invalidOpenaiKeyError, mountOpenaiKeyRoutes } from '../src/server/openai-key.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
 import { mintSessionUserId } from '../src/server/session.ts';
@@ -25,26 +27,21 @@ async function withApp(run) {
 		secret: 'test-openai-key-credentials-secret',
 		db: createSqliteCredentialDb(join(directory, 'credentials.db')),
 	});
+	const authDb = createSqliteAuthDb(':memory:');
 	const app = new Hono();
 	const rateLimiter = createRateLimiter({ windowMs: 1_000, max: 120 });
 	app.post(appConfig.sessionPath, async (context) => {
-		const userId = await mintSessionUserId(context, testSecret);
+		const userId = await mintSessionUserId(context, testSecret, {}, authDb);
 		return context.json({ userId });
 	});
-	mountOpenaiKeyRoutes(app, {
-		secret: testSecret,
-		rateLimiter,
-		store,
-	});
-	mountChatRoute(app, {
-		secret: testSecret,
-		rateLimiter,
-		store,
-	});
+	const signed = requireSignedSession({ secret: testSecret, rateLimiter, authDb });
+	mountOpenaiKeyRoutes(app, { signed, store });
+	mountChatRoute(app, { signed, store });
 	try {
 		return await run(app, store);
 	} finally {
 		await store.close();
+		await authDb.close();
 		await rm(directory, { recursive: true, force: true });
 	}
 }

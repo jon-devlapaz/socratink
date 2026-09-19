@@ -16,7 +16,7 @@ import {
 	incrementGuestTurns,
 	readGuestTurnCount,
 } from '../src/server/guest-turns.ts';
-import { mintSessionUserId } from '../src/server/session.ts';
+import { mintSessionUserId, writeSessionCookie } from '../src/server/session.ts';
 import { cookiePairFromResponse, mergeCookies } from './session-fixture.mjs';
 
 const testSecret = 'test-session-secret-for-hmac-sha256';
@@ -37,7 +37,13 @@ test('guest turn gate allows registered users without turn cap', async () => {
 	await withAuthDb(async (authDb) => {
 		const app = new Hono();
 		app.post(appConfig.sessionPath, async (context) => {
-			const userId = await mintSessionUserId(context, testSecret);
+			const userId = await mintSessionUserId(context, testSecret, {}, authDb);
+			return context.json({ userId });
+		});
+		// Test-only stand-in for the OAuth callback rotation.
+		app.post('/test/register', async (context) => {
+			const { userId } = await context.req.json();
+			await writeSessionCookie(context, userId, testSecret, {}, 'registered');
 			return context.json({ userId });
 		});
 		app.use(
@@ -49,9 +55,15 @@ test('guest turn gate allows registered users without turn cap', async () => {
 		// Mint session for a user and register them in authDb
 		const sessionRes = await app.request(appConfig.sessionPath, { method: 'POST' });
 		const { userId } = await sessionRes.json();
-		const sessionCookie = cookiePairFromResponse(sessionRes);
 
 		await authDb.createUser(userId, 'registered@example.com');
+		const registeredRes = await app.request('/test/register', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ userId }),
+		});
+		assert.equal(registeredRes.status, 200);
+		const sessionCookie = cookiePairFromResponse(registeredRes);
 
 		// Registered user can make more than 3 turns
 		for (let i = 0; i < 5; i++) {
@@ -69,7 +81,7 @@ test('guest turn gate enforces 3-turn limit for guests and increments counter', 
 	await withAuthDb(async (authDb) => {
 		const app = new Hono();
 		app.post(appConfig.sessionPath, async (context) => {
-			const userId = await mintSessionUserId(context, testSecret);
+			const userId = await mintSessionUserId(context, testSecret, {}, authDb);
 			return context.json({ userId });
 		});
 		app.use(
@@ -109,7 +121,7 @@ test('guest turn gate bypasses non-POST requests and abort paths', async () => {
 	await withAuthDb(async (authDb) => {
 		const app = new Hono();
 		app.post(appConfig.sessionPath, async (context) => {
-			const userId = await mintSessionUserId(context, testSecret);
+			const userId = await mintSessionUserId(context, testSecret, {}, authDb);
 			return context.json({ userId });
 		});
 		app.use(

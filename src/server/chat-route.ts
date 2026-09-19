@@ -1,39 +1,28 @@
-import type { Context, Hono } from 'hono';
+import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
 import type { CredentialStore } from './credentials.ts';
 import { learnerChatStatusForUser } from './learner-key.ts';
-import {
-	requireSignedSession,
-	unauthorizedChatError,
-} from './chat-access.ts';
-import type { RateLimiter } from './rate-limit.ts';
-import { readSessionUserId } from './session.ts';
+import { unauthorizedChatError } from './chat-access.ts';
+import { sessionFromContext } from './session.ts';
 
 type ChatRouteStore = Pick<CredentialStore, 'hasUserKey'>;
 
 export function mountChatRoute(
 	app: Hono,
 	options: {
-		secret: string;
-		rateLimiter: RateLimiter;
+		signed: MiddlewareHandler;
 		store: ChatRouteStore;
 	},
 ): void {
-	app.use(
-		appConfig.chatRoutePath,
-		requireSignedSession({
-			secret: options.secret,
-			rateLimiter: options.rateLimiter,
-		}),
-	);
+	app.use(appConfig.chatRoutePath, options.signed);
 	app.get(appConfig.chatRoutePath, (context) => learnerChatStatusResponse(context, options));
 }
 
 export async function learnerChatStatusResponse(
 	context: Context,
-	options: { secret: string; store: ChatRouteStore },
+	options: { store: ChatRouteStore },
 ) {
-	const userId = await readSessionUserId(context, options.secret);
+	const userId = sessionFromContext(context)?.userId;
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	return context.json(await learnerChatStatusForUser({ store: options.store, userId }));
 }

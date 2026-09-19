@@ -1,14 +1,10 @@
-import type { Context, Hono } from 'hono';
+import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
-import {
-	requireSignedSession,
-	unauthorizedChatError,
-} from './chat-access.ts';
+import { unauthorizedChatError } from './chat-access.ts';
 import { learnerChatStatusResponse } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
 import { openaiCredentialName } from './learner-key.ts';
-import type { RateLimiter } from './rate-limit.ts';
-import { readSessionUserId } from './session.ts';
+import { sessionFromContext } from './session.ts';
 
 export const invalidOpenaiKeyError = {
 	type: 'invalid_openai_key',
@@ -22,27 +18,17 @@ type OpenaiKeyStore = Pick<CredentialStore, 'hasUserKey' | 'updateUserKey' | 'de
 export function mountOpenaiKeyRoutes(
 	app: Hono,
 	options: {
-		secret: string;
-		rateLimiter: RateLimiter;
+		signed: MiddlewareHandler;
 		store: OpenaiKeyStore;
 	},
 ): void {
-	app.use(
-		appConfig.openaiKeyPath,
-		requireSignedSession({
-			secret: options.secret,
-			rateLimiter: options.rateLimiter,
-		}),
-	);
+	app.use(appConfig.openaiKeyPath, options.signed);
 	app.put(appConfig.openaiKeyPath, (context) => writeOpenaiKey(context, options));
 	app.delete(appConfig.openaiKeyPath, (context) => clearOpenaiKey(context, options));
 }
 
-async function writeOpenaiKey(
-	context: Context,
-	options: { secret: string; store: OpenaiKeyStore },
-) {
-	const userId = await readSessionUserId(context, options.secret);
+async function writeOpenaiKey(context: Context, options: { store: OpenaiKeyStore }) {
+	const userId = sessionFromContext(context)?.userId;
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	const apiKey = await readPastedKey(context);
 	if (!apiKey) return context.json({ error: invalidOpenaiKeyError }, 400);
@@ -54,11 +40,8 @@ async function writeOpenaiKey(
 	return learnerChatStatusResponse(context, options);
 }
 
-async function clearOpenaiKey(
-	context: Context,
-	options: { secret: string; store: OpenaiKeyStore },
-) {
-	const userId = await readSessionUserId(context, options.secret);
+async function clearOpenaiKey(context: Context, options: { store: OpenaiKeyStore }) {
+	const userId = sessionFromContext(context)?.userId;
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
 	await options.store.deleteUserKey({ userId, name: openaiCredentialName });
 	return learnerChatStatusResponse(context, options);

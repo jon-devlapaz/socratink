@@ -4,7 +4,7 @@ import type { AuthConfig } from '../config/auth.ts';
 import { sessionUsesSecureCookie } from '../config/session.ts';
 import type { AuthDb } from './auth-db.ts';
 import { clearGuestTurns } from './guest-turns.ts';
-import { readSessionUserId, writeSessionCookie } from './session.ts';
+import { readSession, writeSessionCookie } from './session.ts';
 
 const oauthStateCookieName = 'socratink-oauth-state';
 
@@ -196,7 +196,7 @@ async function handleCallback(
 		const identity = await identityResolvers[provider](accessToken);
 		if (!identity) return context.redirect('/login.html?error=unverified_email');
 
-		const guestUserId = await readSessionUserId(context, options.secret);
+		const guestUserId = (await readSession(context, options.secret, options.authDb))?.userId;
 		const durableUserId = await resolveDurableUserId(options.authDb, {
 			provider,
 			providerUserId: identity.providerUserId,
@@ -207,7 +207,7 @@ async function handleCallback(
 			await options.authDb.createAlias(guestUserId, durableUserId);
 			await options.onRekey(guestUserId, durableUserId);
 		}
-		await writeSessionCookie(context, durableUserId, options.secret, process.env);
+		await writeSessionCookie(context, durableUserId, options.secret, process.env, 'registered');
 
 		clearOAuthState(context);
 		clearGuestTurns(context, process.env);

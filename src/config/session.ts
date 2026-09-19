@@ -36,6 +36,46 @@ export function isSessionUserId(value: unknown): value is string {
 	return typeof value === 'string' && value.length > 0 && !value.includes(':');
 }
 
+// Signed session cookie payload. The cookie nonce is per-cookie randomness and
+// is unrelated to the nonce in `${userId}:${nonce}` conversation ids.
+export type SessionCookieKind = 'guest' | 'registered';
+
+export type SessionCookie = Readonly<{
+	userId: string;
+	kind: SessionCookieKind;
+	nonce: string;
+}>;
+
+const sessionCookieVersion = '1';
+const sessionNonceBytes = 16;
+const sessionNoncePattern = /^[0-9a-f]{32}$/;
+
+export function generateSessionNonce(): string {
+	const bytes = new Uint8Array(sessionNonceBytes);
+	crypto.getRandomValues(bytes);
+	return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export function encodeSessionCookieValue(cookie: SessionCookie): string {
+	const kind = cookie.kind === 'registered' ? 'r' : 'g';
+	return `${sessionCookieVersion}.${kind}.${cookie.userId}.${cookie.nonce}`;
+}
+
+export function parseSessionCookieValue(value: unknown): SessionCookie | undefined {
+	if (typeof value !== 'string' || value.length === 0) return undefined;
+	const versionEnd = value.indexOf('.');
+	const kindEnd = versionEnd < 0 ? -1 : value.indexOf('.', versionEnd + 1);
+	const nonceStart = value.lastIndexOf('.');
+	if (versionEnd <= 0 || kindEnd <= versionEnd + 1 || nonceStart <= kindEnd + 1) return undefined;
+	if (value.slice(0, versionEnd) !== sessionCookieVersion) return undefined;
+	const kindSegment = value.slice(versionEnd + 1, kindEnd);
+	if (kindSegment !== 'g' && kindSegment !== 'r') return undefined;
+	const userId = value.slice(kindEnd + 1, nonceStart);
+	const nonce = value.slice(nonceStart + 1);
+	if (!isSessionUserId(userId) || !sessionNoncePattern.test(nonce)) return undefined;
+	return { userId, kind: kindSegment === 'r' ? 'registered' : 'guest', nonce };
+}
+
 export function namespacedConversationId(userId: string, nonce: string): string {
 	return `${userId}:${nonce}`;
 }
