@@ -106,5 +106,10 @@ test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 
 		const noAliases = await db.findAliases('user-unknown');
 		assert.deepEqual(noAliases, []);
+
+		assert.equal(await db.findAliasOwner('guest-uuid-1'), 'user-1');
+		assert.equal(await db.findAliasOwner('guest-uuid-2'), 'user-1');
+		assert.equal(await db.findAliasOwner('guest-unknown'), undefined);
+		assert.equal(await db.findAliasOwner('user-1'), undefined);
 	});
 });

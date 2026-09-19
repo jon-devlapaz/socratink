@@ -28,6 +28,7 @@ export interface AuthDb {
 	findOAuthAccount(provider: string, providerUserId: string): Promise<OAuthAccountRow | undefined>;
 	createAlias(guestUserId: string, durableUserId: string): Promise<void>;
 	findAliases(durableUserId: string): Promise<string[]>;
+	findAliasOwner(guestUserId: string): Promise<string | undefined>;
 	close(): Promise<void>;
 }
 
@@ -75,6 +76,8 @@ VALUES ($1, $2, $3)
 ON CONFLICT (guest_user_id) DO UPDATE SET durable_user_id = EXCLUDED.durable_user_id`;
 const POSTGRES_FIND_ALIASES_SQL =
 	'SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = $1';
+const POSTGRES_FIND_ALIAS_OWNER_SQL =
+	'SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = $1';
 
 // SQLITE SQL
 const SQLITE_FIND_USER_BY_EMAIL_SQL =
@@ -96,6 +99,8 @@ VALUES (?, ?, ?)
 ON CONFLICT (guest_user_id) DO UPDATE SET durable_user_id = excluded.durable_user_id`;
 const SQLITE_FIND_ALIASES_SQL =
 	'SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = ?';
+const SQLITE_FIND_ALIAS_OWNER_SQL =
+	'SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = ?';
 
 export function createAuthDb(target: DatabaseTarget): AuthDb {
 	switch (target.kind) {
@@ -175,6 +180,11 @@ export function createPostgresAuthDb(client: AuthPgClient): AuthDb {
 			const result = await client.query(POSTGRES_FIND_ALIASES_SQL, [durableUserId]);
 			return result.rows.map(readGuestUserId);
 		},
+		async findAliasOwner(guestUserId) {
+			await ensure();
+			const result = await client.query(POSTGRES_FIND_ALIAS_OWNER_SQL, [guestUserId]);
+			return readOptionalDurableUserId(result.rows[0]);
+		},
 		close: () => client.end(),
 	};
 }
@@ -215,6 +225,11 @@ export function createSqliteAuthDb(filename: string): AuthDb {
 		async findAliases(durableUserId) {
 			const rows = database.prepare(SQLITE_FIND_ALIASES_SQL).all(durableUserId);
 			return rows.map(readGuestUserId);
+		},
+		async findAliasOwner(guestUserId) {
+			return readOptionalDurableUserId(
+				database.prepare(SQLITE_FIND_ALIAS_OWNER_SQL).get(guestUserId),
+			);
 		},
 		async close() {
 			database.close();
@@ -282,4 +297,13 @@ function readGuestUserId(row: object): string {
 		throw new Error('Malformed user alias row.');
 	}
 	return record.guest_user_id;
+}
+
+function readOptionalDurableUserId(row: object | undefined): string | undefined {
+	if (row === undefined) return undefined;
+	const record = row as { durable_user_id?: unknown };
+	if (typeof record.durable_user_id !== 'string') {
+		throw new Error('Malformed user alias row.');
+	}
+	return record.durable_user_id;
 }
