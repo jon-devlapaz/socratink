@@ -27,61 +27,6 @@
 				</header>
 
 				<div class="login-body" id="login-body">
-					<form class="login-form" id="login-form" novalidate>
-						<div class="login-field">
-							<div class="login-field-head">
-								<label for="auth-email">Email address</label>
-								<span class="login-error" id="email-error" role="alert" hidden></span>
-							</div>
-							<div class="login-input-shell" id="email-shell">
-								<span class="login-input-icon" aria-hidden="true">
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-										<rect width="20" height="16" x="2" y="4" rx="2" />
-										<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-									</svg>
-								</span>
-								<input
-									id="auth-email"
-									name="email"
-									type="email"
-									required
-									placeholder="name@example.com"
-									autocomplete="email"
-									inputmode="email"
-									spellcheck="false"
-									autocapitalize="none"
-									autocorrect="off"
-									aria-required="true"
-									aria-invalid="false"
-								/>
-							</div>
-						</div>
-						<button class="login-primary" type="submit" id="email-submit">
-							Continue with email
-						</button>
-					</form>
-
-					<div class="login-sent" id="login-sent" role="status" aria-live="polite" hidden>
-						<div class="login-sent-icon" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-								<path d="M20 6 9 17l-5-5" />
-							</svg>
-						</div>
-						<p class="login-sent-title">Sign-in link sent</p>
-						<p class="login-sent-copy">
-							Demo only — nothing was emailed to
-							<span class="login-sent-email" id="sent-email"></span>.
-						</p>
-						<button class="login-primary" type="button" id="enter-demo">
-							Continue
-						</button>
-						<button class="login-text" type="button" id="use-other-email">
-							Use a different email
-						</button>
-					</div>
-
-					<div class="login-divider" aria-hidden="true"><span>or</span></div>
-
 					<div class="login-oauth">
 						<button class="login-oauth-btn" type="button" data-provider="google">
 							<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
