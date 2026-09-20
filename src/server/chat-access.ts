@@ -5,7 +5,7 @@ import {
 } from '../config/session.ts';
 import type { AuthDb } from './auth-db.ts';
 import type { RateLimiter } from './rate-limit.ts';
-import { readSessionUserId } from './session.ts';
+import { readSession } from './session.ts';
 
 export const unauthorizedChatError = {
 	type: 'unauthorized',
@@ -25,12 +25,13 @@ export const rateLimitedChatError = {
 export function requireSignedSession(options: {
 	secret: string;
 	rateLimiter: RateLimiter;
+	authDb: AuthDb;
 }): MiddlewareHandler {
 	return async (context, next) => {
-		const userId = await readSessionUserId(context, options.secret);
-		if (!userId) return jsonError(context, 401, unauthorizedChatError);
+		const session = await readSession(context, options.secret, options.authDb);
+		if (!session) return jsonError(context, 401, unauthorizedChatError);
 
-		const limited = options.rateLimiter.consume(userId);
+		const limited = options.rateLimiter.consume(session.userId);
 		if (!limited.ok) {
 			const retryAfterSeconds = Math.max(1, Math.ceil(limited.retryAfterMs / 1000));
 			context.header('Retry-After', String(retryAfterSeconds));
@@ -44,13 +45,13 @@ export function requireSignedSession(options: {
 export function requireChatSession(options: {
 	secret: string;
 	rateLimiter: RateLimiter;
-	authDb?: AuthDb;
+	authDb: AuthDb;
 }): MiddlewareHandler {
 	return async (context, next) => {
-		const userId = await readSessionUserId(context, options.secret);
-		if (!userId) return jsonError(context, 401, unauthorizedChatError);
+		const session = await readSession(context, options.secret, options.authDb);
+		if (!session) return jsonError(context, 401, unauthorizedChatError);
 
-		const limited = options.rateLimiter.consume(userId);
+		const limited = options.rateLimiter.consume(session.userId);
 		if (!limited.ok) {
 			const retryAfterSeconds = Math.max(1, Math.ceil(limited.retryAfterMs / 1000));
 			context.header('Retry-After', String(retryAfterSeconds));
@@ -58,8 +59,8 @@ export function requireChatSession(options: {
 		}
 
 		const conversationId = chatConversationIdFromPath(context.req.path);
-		const aliases = options.authDb ? await options.authDb.findAliases(userId) : [];
-		if (!conversationId || !conversationBelongsToUser(conversationId, userId, aliases)) {
+		const aliases = await options.authDb.findAliases(session.userId);
+		if (!conversationId || !conversationBelongsToUser(conversationId, session.userId, aliases)) {
 			return jsonError(context, 403, forbiddenChatError);
 		}
 

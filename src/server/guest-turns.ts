@@ -4,7 +4,7 @@ import {
 	sessionUsesSecureCookie,
 	type SessionEnvironment,
 } from '../config/session.ts';
-import { readSessionUserId } from './session.ts';
+import { readSession } from './session.ts';
 import type { AuthDb } from './auth-db.ts';
 
 export const guestTurnsCookieName = 'socratink-guest-turns';
@@ -52,15 +52,6 @@ export function clearGuestTurns(
 	});
 }
 
-// Checks whether the user is a registered (authenticated) user.
-async function isRegisteredUser(
-	authDb: AuthDb,
-	userId: string,
-): Promise<boolean> {
-	const user = await authDb.findUserById(userId);
-	return user !== undefined;
-}
-
 export function guestTurnGateMiddleware(options: {
 	secret: string;
 	authDb: AuthDb;
@@ -70,11 +61,8 @@ export function guestTurnGateMiddleware(options: {
 		if (context.req.method !== 'POST') return next();
 		if (context.req.path.endsWith('/abort')) return next();
 
-		const userId = await readSessionUserId(context, options.secret);
-		if (!userId) return next();
-
-		// Registered users have no turn cap.
-		if (await isRegisteredUser(options.authDb, userId)) return next();
+		const session = await readSession(context, options.secret, options.authDb);
+		if (!session || session.kind === 'registered') return next();
 
 		const count = await readGuestTurnCount(context, options.secret);
 		if (count >= guestTurnLimit) {

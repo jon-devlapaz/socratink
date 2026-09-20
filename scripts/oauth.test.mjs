@@ -5,8 +5,11 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
+import { parseSessionCookieValue, sessionCookieName } from '../src/config/session.ts';
 import { createSqliteAuthDb } from '../src/server/auth-db.ts';
+import { requireChatSession } from '../src/server/chat-access.ts';
 import { mountOAuthRoutes, selectVerifiedGitHubEmail } from '../src/server/oauth.ts';
+import { createRateLimiter } from '../src/server/rate-limit.ts';
 import { mountSessionRoutes } from '../src/server/session.ts';
 import { cookiePairFromResponse, mergeCookies } from './session-fixture.mjs';
 
@@ -134,7 +137,29 @@ function createCallbackApp(authDb, hooks = {}) {
 		authDb,
 		onRekey: hooks.onRekey ?? (async () => {}),
 	});
+	app.use(
+		`${appConfig.chatAgentPath}/*`,
+		requireChatSession({
+			secret: testSecret,
+			rateLimiter: createRateLimiter({ windowMs: 60_000, max: 1000 }),
+			authDb,
+		}),
+	);
+	app.all(`${appConfig.chatAgentPath}/*`, (context) => context.json({ ok: true }));
 	return app;
+}
+
+function sessionPair(cookies) {
+	return cookies
+		.split(';')
+		.map((entry) => entry.trim())
+		.find((entry) => entry.startsWith(`${sessionCookieName}=`));
+}
+
+// The Set-Cookie pair is `name=payload.signature`; Hono signs at the last dot.
+function decodedPayload(cookiePair) {
+	const encoded = cookiePair.slice(cookiePair.indexOf('=') + 1);
+	return parseSessionCookieValue(encoded.slice(0, encoded.lastIndexOf('.')));
 }
 
 async function mintGuest(app) {
@@ -215,6 +240,23 @@ test('Google callback creates a new user from the guest session and keeps the se
 					res.headers.getSetCookie().some((entry) => entry.startsWith('socratink-guest-turns=')),
 					'callback should clear the guest turn counter',
 				);
+
+				// New signup rotates to a registered payload; the guest bytes die.
+				const previousPair = sessionPair(guest.cookies);
+				const rotatedPair = sessionPair(cookies);
+				assert.ok(previousPair);
+				assert.ok(rotatedPair);
+				assert.notEqual(rotatedPair, previousPair);
+				const previousPayload = decodedPayload(previousPair);
+				const rotatedPayload = decodedPayload(rotatedPair);
+				assert.equal(previousPayload.kind, 'guest');
+				assert.equal(rotatedPayload.kind, 'registered');
+				assert.equal(rotatedPayload.userId, guest.userId);
+				assert.notEqual(rotatedPayload.nonce, previousPayload.nonce);
+
+				const owned = `${appConfig.chatAgentPath}/${guest.userId}:pre-login-turn`;
+				assert.equal((await app.request(owned, { headers: { Cookie: previousPair } })).status, 401);
+				assert.equal((await app.request(owned, { headers: { Cookie: rotatedPair } })).status, 200);
 			},
 		);
 		const user = await authDb.findUserById(guest.userId);
@@ -260,6 +302,25 @@ test('Google callback links a returning guest to an existing account via alias',
 					userId: durableUserId,
 					aliases: [guest.userId],
 				});
+
+				// Returning users rotate to the durable id; the planted guest bytes
+				// die even though the alias maps that UUID, while the durable
+				// session still reaches the pre-login conversation via the alias.
+				const previousPair = sessionPair(guest.cookies);
+				const rotatedPair = sessionPair(cookies);
+				assert.ok(previousPair);
+				assert.ok(rotatedPair);
+				assert.notEqual(rotatedPair, previousPair);
+				const previousPayload = decodedPayload(previousPair);
+				const rotatedPayload = decodedPayload(rotatedPair);
+				assert.equal(previousPayload.kind, 'guest');
+				assert.equal(rotatedPayload.kind, 'registered');
+				assert.equal(rotatedPayload.userId, durableUserId);
+				assert.notEqual(rotatedPayload.nonce, previousPayload.nonce);
+
+				const preLogin = `${appConfig.chatAgentPath}/${guest.userId}:pre-login-turn`;
+				assert.equal((await app.request(preLogin, { headers: { Cookie: previousPair } })).status, 401);
+				assert.equal((await app.request(preLogin, { headers: { Cookie: rotatedPair } })).status, 200);
 			},
 		);
 		assert.deepEqual(await authDb.findAliases(durableUserId), [guest.userId]);

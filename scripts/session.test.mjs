@@ -5,12 +5,16 @@ import { appConfig } from '../src/config/app.config.ts';
 import {
 	chatConversationIdFromPath,
 	conversationBelongsToUser,
+	encodeSessionCookieValue,
+	generateSessionNonce,
 	isSessionUserId,
 	namespacedConversationId,
+	parseSessionCookieValue,
 	resolveSessionSecret,
 	sessionCookieName,
 	userIdFromConversationId,
 } from '../src/config/session.ts';
+import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import {
 	forbiddenChatError,
 	rateLimitedChatError,
@@ -18,12 +22,17 @@ import {
 	unauthorizedChatError,
 } from '../src/server/chat-access.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
-import { mintSessionUserId } from '../src/server/session.ts';
+import {
+	mintSessionUserId,
+	readSession,
+	writeSessionCookie,
+} from '../src/server/session.ts';
 import { cookiePairFromResponse } from './session-fixture.mjs';
 
 const testSecret = 'test-session-secret-for-hmac-sha256';
 
 function createTestApp(options = {}) {
+	const authDb = options.authDb ?? createSqliteAuthDb(':memory:');
 	const limiter = createRateLimiter({
 		windowMs: options.windowMs ?? 1_000,
 		max: options.max ?? 120,
@@ -31,15 +40,24 @@ function createTestApp(options = {}) {
 	});
 	const app = new Hono();
 	app.post(appConfig.sessionPath, async (context) => {
-		const userId = await mintSessionUserId(context, testSecret);
+		const userId = await mintSessionUserId(context, testSecret, {}, authDb);
 		return context.json({ userId });
 	});
 	app.use(
 		`${appConfig.chatAgentPath}/*`,
-		requireChatSession({ secret: testSecret, rateLimiter: limiter }),
+		requireChatSession({ secret: testSecret, rateLimiter: limiter, authDb }),
 	);
 	app.all(`${appConfig.chatAgentPath}/*`, (context) => context.json({ ok: true }));
 	return app;
+}
+
+async function withAuthDb(run) {
+	const authDb = createSqliteAuthDb(':memory:');
+	try {
+		return await run(authDb);
+	} finally {
+		await authDb.close();
+	}
 }
 
 async function mintCookie(app) {
@@ -47,6 +65,12 @@ async function mintCookie(app) {
 	assert.equal(response.status, 200);
 	const body = await response.json();
 	return { userId: body.userId, cookie: cookiePairFromResponse(response) };
+}
+
+// The Set-Cookie pair is `name=payload.signature`; Hono signs at the last dot.
+function decodedPayload(cookiePair) {
+	const encoded = cookiePair.slice(cookiePair.indexOf('=') + 1);
+	return parseSessionCookieValue(encoded.slice(0, encoded.lastIndexOf('.')));
 }
 
 test('fails closed in production, Northflank, or Vercel when SESSION_SECRET is missing', () => {
@@ -181,4 +205,99 @@ test('signed session cookie is HttpOnly and named socratink-session', async () =
 	assert.match(header, new RegExp(`^${sessionCookieName}=`));
 	assert.match(header, /HttpOnly/i);
 	assert.doesNotMatch(header, /Secure/i);
+});
+
+test('session cookie payload is a versioned userId plus random nonce', () => {
+	const nonce = generateSessionNonce();
+	assert.match(nonce, /^[0-9a-f]{32}$/);
+	assert.notEqual(generateSessionNonce(), nonce);
+
+	const guest = { userId: 'user-a', kind: 'guest', nonce };
+	assert.deepEqual(parseSessionCookieValue(encodeSessionCookieValue(guest)), guest);
+	const registered = { userId: 'user-a', kind: 'registered', nonce };
+	assert.deepEqual(parseSessionCookieValue(encodeSessionCookieValue(registered)), registered);
+
+	// User ids with dots survive the last-dot nonce split.
+	const dotted = { userId: 'a.b', kind: 'guest', nonce };
+	assert.deepEqual(parseSessionCookieValue(encodeSessionCookieValue(dotted)), dotted);
+
+	// Malformed payloads never authenticate.
+	assert.equal(parseSessionCookieValue(undefined), undefined);
+	assert.equal(parseSessionCookieValue(false), undefined);
+	assert.equal(parseSessionCookieValue(''), undefined);
+	assert.equal(parseSessionCookieValue('user-a'), undefined);
+	assert.equal(parseSessionCookieValue('1.g.user-a'), undefined);
+	assert.equal(parseSessionCookieValue('2.g.user-a.' + nonce), undefined);
+	assert.equal(parseSessionCookieValue('1.x.user-a.' + nonce), undefined);
+	assert.equal(parseSessionCookieValue('1.g.user-a:nonce.' + nonce), undefined);
+	assert.equal(parseSessionCookieValue('1.g.user-a.short'), undefined);
+	assert.equal(parseSessionCookieValue('1.g..' + nonce), undefined);
+});
+
+test('minted guest cookie carries a guest payload and reuses the session id', async () => {
+	await withAuthDb(async (authDb) => {
+		const app = createTestApp({ authDb });
+		const first = await mintCookie(app);
+		assert.deepEqual(decodedPayload(first.cookie), {
+			userId: first.userId,
+			kind: 'guest',
+			nonce: decodedPayload(first.cookie).nonce,
+		});
+		assert.match(decodedPayload(first.cookie).nonce, /^[0-9a-f]{32}$/);
+
+		const second = await app.request(appConfig.sessionPath, {
+			method: 'POST',
+			headers: { cookie: first.cookie },
+		});
+		assert.equal(second.status, 200);
+		assert.equal((await second.json()).userId, first.userId);
+	});
+});
+
+test('privilege change kills the previous cookie bytes and keeps the owned id', async () => {
+	await withAuthDb(async (authDb) => {
+		const app = createTestApp({ authDb });
+		// Test-only stand-in for the OAuth callback's new-signup path: the guest
+		// UUID becomes users.id and the cookie is rewritten as registered.
+		app.post('/test/privilege-change', async (context) => {
+			const guestUserId = (await readSession(context, testSecret, authDb))?.userId;
+			if (!guestUserId) return context.json({ error: unauthorizedChatError }, 401);
+			await authDb.createUser(guestUserId, `${guestUserId}@example.com`);
+			await writeSessionCookie(context, guestUserId, testSecret, {}, 'registered');
+			return context.json({ userId: guestUserId });
+		});
+
+		const guest = await mintCookie(app);
+		const guestPayload = decodedPayload(guest.cookie);
+		assert.equal(guestPayload.kind, 'guest');
+		const owned = `${appConfig.chatAgentPath}/${guest.userId}:nonce`;
+		assert.equal((await app.request(owned, { headers: { cookie: guest.cookie } })).status, 200);
+
+		const rotated = await app.request('/test/privilege-change', {
+			method: 'POST',
+			headers: { cookie: guest.cookie },
+		});
+		assert.equal(rotated.status, 200);
+		const rotatedCookie = cookiePairFromResponse(rotated);
+		assert.notEqual(rotatedCookie, guest.cookie);
+		const rotatedPayload = decodedPayload(rotatedCookie);
+		assert.equal(rotatedPayload.userId, guest.userId);
+		assert.equal(rotatedPayload.kind, 'registered');
+		assert.notEqual(rotatedPayload.nonce, guestPayload.nonce);
+
+		const stale = await app.request(owned, { headers: { cookie: guest.cookie } });
+		assert.equal(stale.status, 401);
+		assert.deepEqual(await stale.json(), { error: unauthorizedChatError });
+
+		const fresh = await app.request(owned, { headers: { cookie: rotatedCookie } });
+		assert.equal(fresh.status, 200);
+
+		// A stale guest cookie never mints its dead id back.
+		const remint = await app.request(appConfig.sessionPath, {
+			method: 'POST',
+			headers: { cookie: guest.cookie },
+		});
+		assert.equal(remint.status, 200);
+		assert.notEqual((await remint.json()).userId, guest.userId);
+	});
 });

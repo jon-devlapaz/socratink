@@ -16,7 +16,7 @@ test('session helpers mint a server cookie instead of localStorage', async () =>
 	assert.doesNotMatch(source, /localStorage\.setItem/);
 });
 
-test('login page is a built entry that posts a session cookie', async () => {
+test('login page is OAuth-only with no demo email-send lie', async () => {
 	const html = await readFile(new URL('../src/ui/login.html', import.meta.url), 'utf8');
 	const script = await readFile(new URL('../src/ui/login.ts', import.meta.url), 'utf8');
 	const vite = await readFile(new URL('../vite.config.ui.ts', import.meta.url), 'utf8');
@@ -25,15 +25,27 @@ test('login page is a built entry that posts a session cookie', async () => {
 	const sessionServer = await readFile(new URL('../src/server/session.ts', import.meta.url), 'utf8');
 	const menu = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
 
-	assert.match(html, /id="login-form"/);
-	assert.match(html, /Continue with email/);
+	assert.doesNotMatch(html, /coming soon/i);
+	assert.doesNotMatch(html, /id="email-coming-soon"/);
 	assert.match(html, /data-provider="google"/);
 	assert.match(html, /data-provider="github"/);
-	assert.match(script, /createSession/);
+	for (const lie of ['Sending link', 'Sign-in link sent', 'Demo only', 'nothing was emailed']) {
+		assert.doesNotMatch(html, new RegExp(lie.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+		assert.doesNotMatch(script, new RegExp(lie.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+	}
+	assert.doesNotMatch(html, /id="login-form"/);
+	assert.doesNotMatch(html, /Continue with email/);
+	assert.doesNotMatch(html, /id="login-sent"/);
+	assert.doesNotMatch(html, /id="enter-demo"/);
+	const css = await readFile(new URL('../src/ui/login.css', import.meta.url), 'utf8');
+	assert.doesNotMatch(css, /\.login-form\b/);
+	assert.doesNotMatch(css, /\.login-sent\b/);
+	assert.doesNotMatch(script, /createSession/);
+	assert.doesNotMatch(script, /isPlausibleEmail/);
+	assert.doesNotMatch(script, /location\.assign\('\/'\)/);
 	assert.match(script, /loadAuthProviders/);
 	assert.match(script, /button\.remove\(\)/);
-	assert.match(script, /function isPlausibleEmail/);
-	assert.match(script, /location\.assign\('\/'\)/);
+	assert.match(script, /\/api\/auth\/\$\{provider\}\/login/);
 	assert.doesNotMatch(script, /signout/);
 	assert.doesNotMatch(script, /async \(\) => \{/);
 	assert.match(vite, /login\.html/);

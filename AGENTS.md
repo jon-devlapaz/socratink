@@ -52,17 +52,15 @@ pnpm audit --prod
 Prefer the narrowest relevant check while iterating:
 
 ```sh
+# Types and builds
 pnpm check:types
-pnpm test:braintrust
-pnpm test:chat-model
-pnpm test:model-route
-pnpm test:chat-auto
-pnpm test:database-config
-pnpm test:questionnaire
-pnpm test:conversation
-pnpm test:chat-turns
 pnpm build
 pnpm build:ui
+
+# Targeted contract suites (see package.json "test:*")
+pnpm test:chat-model     # or test:chat-turns, test:chat-auto, test:model-route
+pnpm test:session        # or test:auth-db, test:oauth, test:credentials
+pnpm test:questionnaire  # or test:present-question, test:reveal, test:thinking
 ```
 
 ## Testing and proof
@@ -70,9 +68,9 @@ pnpm build:ui
 Before handing off a code change, run `pnpm check` and `pnpm smoke` unless the
 user narrowed the proof boundary or the environment prevents a check. Report
 exactly what ran, what passed, and what remains unverified. GitHub CI installs
-with the frozen lockfile, checks types, runs the Braintrust and Chat-model
-contracts, builds, and runs the deterministic smoke test; the full local gate
-also covers the database, questionnaire, conversation, and Chat-turn contracts.
+with the frozen lockfile, runs the full `pnpm check` quality gate across all
+contracts, builds, and runs the deterministic `pnpm smoke` test in full parity
+with the local gate.
 
 `pnpm smoke:braintrust-live` is an explicit live integration check, not a CI
 step. It requires a completed `pnpm build` and an available Braintrust API key.
@@ -80,37 +78,14 @@ Use only synthetic prompts because traces may contain inputs and outputs.
 
 ## Product and stack
 
-Socratink is a focused, model-backed learning conversation. It is a Node.js
-22.19+ ESM application managed with pnpm 11. The declared stack includes
-strict TypeScript 7, Vite 8, Hono 4, exact published Flue 2.0.3 packages,
-Valibot 1, Braintrust 3, PostgreSQL, and a vanilla TypeScript/CSS learner UI.
-Do not introduce a frontend framework to solve a local UI change.
+Socratink is a focused, model-backed learning conversation. Do not introduce
+a frontend framework to solve a local UI change; keep UI in vanilla TypeScript
+and CSS.
 
-The product owns `src/` and the learner-facing behavior. Flue framework
-behavior comes from published `@flue/*` dependencies; its source is not
-vendored here. Keep Flue attribution, Apache licensing, and `@flue/*` package
-names intact. A product change must not become a framework rewrite.
-
-## Project map
-
-- `src/agents/` — Socratink agent instructions, hooks, and tools
-- `src/server/` — model-provider and runtime setup
-- `src/ui/` — learner-facing TypeScript, HTML, CSS, and visual effects
-- `src/ui/client/` — browser-side conversation transport and recovery
-- `src/config/` — environment parsing and application constants
-- `src/app.ts` — Hono routes, agent mounting, health checks, and static UI
-- `src/db.ts` — application database connection setup
-- `src/questionnaire.ts` — shared questionnaire data contract
-- `src/braintrust.ts` — optional observability for Chat and Flue runs
-- `api/` — Vercel server entry point
-- `scripts/` — deterministic contract tests and smoke checks
-- `vite.config.ts` — Node application build
-- `vite.config.ui.ts` — browser application build
-- `Dockerfile` and `vercel.json` — deployment configuration
-- `README.md` — supported setup, hosting, and observability behavior
-- `ZEN.md` — required maintainability agreements and design heuristics
-- `.agents/learnings/` — dated postmortems; read matching files before repeating a campaign or operator failure
-- Host cold archives — `/Users/jondev/dev/archives/socratink-cold-archive/` (never preload; see `research/README.md`)
+The product owns `src/` and learner-facing behavior. Flue framework behavior
+comes from published `@flue/*` dependencies; its source is not vendored here.
+Keep Flue attribution, Apache licensing, and `@flue/*` package names intact.
+A product change must not become a framework rewrite.
 
 Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
 `.vercel/`, logs, artifacts, and environment files are not source.
@@ -144,35 +119,10 @@ decisions, explicit failure for unsafe hosted states, and tests that exercise
 the public contract. Keep UI behavior in the existing TypeScript/CSS modules
 and keep environment access behind `src/config/` or the server boundary.
 
-This existing resolver is representative of the preferred style:
-
-```ts
-export type DatabaseTarget =
-	| { kind: 'postgres'; connectionString: string }
-	| { kind: 'sqlite'; filename: string };
-
-type DatabaseEnvironment = Readonly<{
-	DATABASE_URL?: string;
-	NF_PROJECT_ID?: string;
-	NODE_ENV?: string;
-	VERCEL?: string;
-}>;
-
-export function resolveDatabaseTarget(environment: DatabaseEnvironment): DatabaseTarget {
-	const connectionString = environment.DATABASE_URL?.trim();
-	if (connectionString) return { kind: 'postgres', connectionString };
-
-	if (
-		environment.NODE_ENV === 'production' ||
-		environment.NF_PROJECT_ID ||
-		environment.VERCEL === '1'
-	) {
-		throw new Error('DATABASE_URL is required for durable hosted conversations.');
-	}
-
-	return { kind: 'sqlite', filename: '.cache/flue/local.db' };
-}
-```
+Hosted or production environments (`NODE_ENV=production`, `VERCEL=1`) require
+explicit configuration (`DATABASE_URL`, `SESSION_SECRET`, `CREDENTIALS_SECRET`,
+and `AI_GATEWAY_API_KEY`); fail fast if missing. Local development falls back
+to SQLite automatically.
 
 Use comments for rationale, constraints, or non-obvious tradeoffs—not to
 restate code. Do not add abstraction, generality, or a dependency until a
@@ -188,6 +138,10 @@ Routing is explicit in `src/app.ts`: mount an HTTP-reachable agent with
 `createAgentRouter`. Registration comes from the `'use agent'` scan, not from
 mounting. The model layer uses Pi's provider protocol through the published
 Flue runtime.
+
+When posing diagnostics or multiple choices to the learner, the agent MUST
+call `present_question`. Never output raw text or markdown bullet choice lists;
+only `present_question` produces structured evidence.
 
 Before changing Flue agents, hooks, skills, tools, routing, or harness behavior,
 use `.agents/skills/flue-wiki` and read the relevant generated notes from the

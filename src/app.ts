@@ -8,7 +8,7 @@ import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto
 import { chatModel, chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
-import { requireChatSession } from './server/chat-access.ts';
+import { requireChatSession, requireSignedSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
 import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
@@ -22,7 +22,7 @@ import {
 	chatRateLimitWindowMs,
 	createRateLimiter,
 } from './server/rate-limit.ts';
-import { mountSessionRoutes, readSessionUserId } from './server/session.ts';
+import { mountSessionRoutes, sessionFromContext } from './server/session.ts';
 import './server/provider.ts';
 
 configureBraintrust(process.env);
@@ -35,24 +35,27 @@ const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
 	max: chatRateLimitMax,
 });
+const signedSession = requireSignedSession({
+	secret: sessionSecret,
+	rateLimiter: chatRateLimiter,
+	authDb,
+});
 
 const app = new Hono();
 
 app.get('/healthz', (context) => context.json({ status: 'ok' }));
 mountSessionRoutes(app, { secret: sessionSecret, authDb });
 mountOpenaiKeyRoutes(app, {
-	secret: sessionSecret,
-	rateLimiter: chatRateLimiter,
+	signed: signedSession,
 	store: credentialStore,
 });
 mountOpenrouterRoutes(app, {
+	signed: signedSession,
 	secret: sessionSecret,
-	rateLimiter: chatRateLimiter,
 	store: credentialStore,
 });
 mountChatRoute(app, {
-	secret: sessionSecret,
-	rateLimiter: chatRateLimiter,
+	signed: signedSession,
 	store: credentialStore,
 });
 if (authConfig) {
@@ -73,7 +76,7 @@ app.use(
 	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
 );
 app.use('/api/agents/chat/*', async (context, next) => {
-	const userId = await readSessionUserId(context, sessionSecret);
+	const userId = sessionFromContext(context)?.userId;
 	const route: LearnerChatRoute = userId
 		? await learnerChatRouteForUser({ store: credentialStore, userId })
 		: { kind: 'operator' };

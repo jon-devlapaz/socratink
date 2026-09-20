@@ -13,7 +13,7 @@
    initiates PKCE OAuth with the provider
 5. On successful callback, the server resolves the account (new signup or
    returning user), sets the session cookie, and redirects to `/`
-6. `/login.html` remains for explicit sign-in (email form is still a demo stub)
+6. `/login.html` remains for explicit OAuth sign-in (no email field until magic-link ships)
 7. Menu **Sign out** goes to `/api/session/logout`, which clears the cookie
 
 ## Session Re-keying
