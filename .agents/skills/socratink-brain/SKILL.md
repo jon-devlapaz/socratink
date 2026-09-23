@@ -7,7 +7,7 @@ description: >
   validates the repository. Use for Socratink product implementation,
   learning/evidence work, research reconciliation, founder/product reasoning,
   provenance inspection, or conversation/history archaeology.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Socratink Brain Interface
@@ -25,13 +25,24 @@ current meaning rather than reconstructing doctrine from this skill.
 ```text
 Brain       epistemic truth
 codebase    executable/current implementation truth
-Praxist     experimental execution truth
 harness     process/orchestration truth
 ```
 
-Never use Brain to infer current implementation, current experiment execution,
-or current project state. Inspect the application repository, Praxist, or the
-harness respectively.
+Never use Brain to infer current implementation or current project state.
+Inspect the application repository or the harness respectively. There is no
+`CURRENT STATE.md` and no Praxist execution authority: Praxist agent roles
+were excised from the product (SRC-0130). Treat `EXP-*` as hypothesis/contract
+only and verify any run state explicitly.
+
+## Product reality anchor
+
+The running product is the Yohaku Dialogue Studio recorded in
+`SRC-0130 Live repo Yohaku Dialogue Studio 2026-09`: single Flue `Chat` agent
+(`src/agents/chat.ts`), tools `present_question` / `mark_reveal` / `ink_express`,
+living-ink 3D sumi droplet, voice dictation with energy metering, 3-turn guest
+gate with signed cookies, and AES-256-GCM BYOK vault. `40 Views/Agent/` is
+aspirational architecture, not the running app. Never claim the product sells,
+prices, or checks out anything it does not sell; verify commerce in code.
 
 Brain epistemic authority is:
 
@@ -148,7 +159,8 @@ or provenance, but the live Procedure layer is retired: never create a new Brain
 Procedure. Do not create a new prefix because a new noun appears.
 
 Brain `EXP-*` objects preserve durable hypotheses and evidence contracts, not run
-state. Praxist owns evaluator execution, budgets, runs, and execution artifacts:
+state. No separate experiment runner is authoritative. Verify execution and
+results explicitly in the application repository or harness:
 
 ```text
 experiment hypothesis/contract ≠ experiment execution/result state
@@ -163,8 +175,13 @@ git -C <brain-root> status --short
 git -C <brain-root> diff
 ```
 
-The helper delegates to the Brain's validator; it does not recreate validation.
-Show the proposed diff and never claim validation succeeded unless it ran.
+The helper delegates to the Brain's `scripts/validate_brain.py`; it does not
+recreate validation. That validator checks vault-wide ID shape and uniqueness,
+required Canon frontmatter (`id`, `type`, `status`, `truth_class`), type-prefix
+alignment, status/truth_class enums, and wikilink resolution by filename stem
+outside `80 Templates/` and `90 Archive/`. Wikilinks must resolve; do not link
+into Archive from active notes. Show the proposed diff and never claim validation
+succeeded unless it ran.
 
 ## Examples
 
@@ -172,7 +189,7 @@ Show the proposed diff and never claim validation succeeded unless it ran.
   and tests, then implement consistently with both. Brain does not say what UI or
   API currently exists.
 - **Work from `EXP-0001`:** treat it as a candidate epistemic contract; inspect the
-  application and Praxist independently. Its body is not a live run report.
+  application independently. Its body is not a live run report.
 - **Reconcile research/history:** preserve provenance, compare under Governance,
   and default to a candidate or contested proposal. Record only genuine unresolved
   contradictions; do not follow archived workflows or append receipts.

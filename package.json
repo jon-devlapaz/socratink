@@ -12,6 +12,8 @@
 		"dev": "vite build --config vite.config.ui.ts && vite dev",
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
+		"audit:trellis": "trellis audit .",
+		"audit:trellis:baseline": "mkdir -p .audit && trellis audit . --json --out .audit/baseline.json",
 		"smoke:braintrust-live": "node scripts/braintrust-live-smoke.mjs",
 		"check": "pnpm check:types && pnpm test:braintrust && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:credentials && pnpm test:auth-db && pnpm test:guest-turns && pnpm test:oauth && pnpm test:learner-key && pnpm test:openai-key && pnpm test:openrouter && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:voice-reactivity && pnpm test:icon-cloud && pnpm test:steering && pnpm test:login && pnpm test:ink && pnpm build",
 		"check:types": "tsc --noEmit",

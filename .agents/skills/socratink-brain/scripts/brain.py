@@ -42,7 +42,6 @@ CONTRACT = (
 JURISDICTION = {
     "brain": "epistemic truth",
     "application": "executable truth",
-    "praxist": "experimental execution truth",
     "harness": "operational/process truth",
 }
 

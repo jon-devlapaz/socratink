@@ -1,0 +1,905 @@
+A deep dive into Jev, TypeSafe's System One model
+
+# A deep dive into Jev, TypeSafe's System One model
+
+By Flavio Copes
+
+Sep 17, 2026
+
+Learn how Jev turns text into typed choices, scores, and probabilities, with JavaScript examples, practical patterns, limits, and real use cases.
+
+Jev is an AI model that does not generate prose. You send it some data and a list of typed questions, and it sends back one answer per question: a yes/no probability, one option picked from a list you defined, or a position on a scale you defined. Every answer comes with probabilities. TypeSafe says most calls complete in about 100 milliseconds. Input tokens cost $0.042 per million, with output tokens free.
+
+It comes from TypeSafe AI, a San Francisco lab that came out of stealth on September 15, 2026 with $40M in seed funding and Jev as its first public model. TypeSafe calls it a System One model, a new class of model built to make fast decisions inside software rather than to chat with people.
+
+This post is the long version of what Jev is, why it exists, how you call it, how you should think about the questions you ask it, where it fails, and where I would put it in my own projects.
+
+## What Jev is in one sentence
+
+The simplest way to describe it: Jev is a smart `if` statement.
+
+Ordinary code branches on values it can compute. `if (order.total > 100)`. That works when the condition is something a computer can check. It falls apart when the condition is a judgment. Is this support message angry? Is this email about billing? Which of these 12 buttons should I click to continue the checkout?
+
+Traditional classifiers already handle narrow judgments when you have training data and fixed labels. In an LLM-powered application, the common shortcut is to ask a general model for structured output. Jev gives you another option: define the possible answers up front, receive a probability for each one, and branch on the result.
+
+Here is a request built from a hypothetical sponsor-form submission. The state contains the relevant form fields. The questions are what I want to know about it.
+
+```
+{
+  "model": "jev-latest",
+  "state": {
+    "opportunity": "link",
+    "name": "Managed Postgres",
+    "description": "We make a managed PostgreSQL hosting product and would like to sponsor the newsletter in October."
+  },
+  "questions": {
+    "is_sponsor_inquiry": {
+      "type": "noul",
+      "instructions": "Does `description` ask to sponsor the site or newsletter?"
+    },
+    "product_category": {
+      "type": "choice",
+      "instructions": "What kind of product is described by `name` and `description`?",
+      "criteria": {
+        "dev_tool": "Developer tools, hosting, APIs, SaaS for developers",
+        "course": "Courses, books, or training",
+        "unrelated": "Anything not aimed at developers"
+      }
+    },
+    "message_quality": {
+      "type": "score",
+      "instructions": "How specific is the request?",
+      "criteria": [
+        "Generic template, no reference to this site",
+        "Mentions the site but no concrete ask",
+        "Concrete ask with a timeframe or product named"
+      ]
+    }
+  }
+}
+```
+
+And here is the shape of what comes back:
+
+```
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "is_sponsor_inquiry": { "type": "noul", "noul": 0.99 },
+    "product_category": {
+      "type": "choice",
+      "choice": "dev_tool",
+      "probabilities": { "dev_tool": 0.97, "course": 0.01, "unrelated": 0.02 },
+      "confidence": 0.95
+    },
+    "message_quality": {
+      "type": "score",
+      "score": 1.9,
+      "legend": {
+        "0": "Generic template, no reference to this site",
+        "1": "Mentions the site but no concrete ask",
+        "2": "Concrete ask with a timeframe or product named"
+      },
+      "probabilities": { "0": 0.0, "1": 0.1, "2": 0.9 },
+      "confidence": 0.86
+    }
+  },
+  "usage": { "input_tokens": 210, "output_tokens": 31 }
+}
+```
+
+The numbers above are illustrative. The shape is exact. Three things to notice:
+
+- There is no generated prose to interpret. The API returns structured JSON directly.
+- Every answer is constrained to the options I supplied. `product_category` can only be `dev_tool`, `course` or `unrelated`. The model cannot invent a fourth category.
+- The three questions were answered in the same call, at the same time. Adding a fourth question barely changes the response time.
+
+Your code then does the boring part:
+
+```
+const { answers } = response
+
+if (answers.is_sponsor_inquiry.noul > 0.9 && answers.product_category.choice === 'dev_tool') {
+  sendRateCard(email)
+} else {
+  queueForManualReply(email)
+}
+```
+
+That’s the whole idea: the model supplies the judgment, and the code stays in control of what happens next.
+
+## Why not just use an LLM with structured outputs?
+
+Structured outputs already exist and they work. Most major model providers offer them directly or through tool calling. The current Vercel AI SDK standardizes them with `generateText()` and `Output.object()`, then validates the result against your schema.
+
+The difference is in how the answer is produced and what it costs.
+
+An LLM generates its answer one token at a time. To return `{"category": "billing", "urgent": true}` it has to generate every output token in sequence, each one conditioned on the previous ones. A schema constrains and validates the result, but generation can still fail or stop before producing a valid object. The AI SDK reports those cases as structured-output errors. If you ask an LLM to estimate a probability, that estimate is not guaranteed to be calibrated.
+
+Jev doesn’t generate a free-form string. TypeSafe says its architecture samples all the answers in parallel. Each question in the request is evaluated independently against the same state, and the output is a probability distribution over the options you defined. The API still sends JSON over the network, but your application does not need to recover a decision from generated prose.
+
+This is what makes it fast and cheap. TypeSafe quotes end-to-end response times of 70 to 500 milliseconds, against 3 to 329 seconds for frontier LLMs on the same kind of question. On price, $0.042 per million input tokens is somewhere between 5 and 240 times lower than LLM input prices, which run from $0.20 to $10 per million depending on the model, and output is free because there is almost none to meter. The company’s headline numbers, “193.6x faster, 444.6x cheaper”, come from its own workflow evaluations, and it says those sit at the high end of what you’d see in the real world, so treat them as a ceiling rather than what you’ll measure.
+
+The other difference is in how the model was trained. Many chat models use RLHF or related preference-optimization methods, which reward answers humans prefer. TypeSafe trained Jev with what it calls Reinforcement Learning for Calibrated Decisions (RLCD), which optimizes for probabilities that match outcomes. Calibrated means that across many predictions, the answers it gives 90% probability to should be right about 90% of the time. That says nothing about any single answer, which can still be wrong. A successful Jev response cannot contain a value outside the schema you gave it, so schema errors and wrong decisions become separate problems.
+
+There’s also a thing Jev gives up on purpose. It cannot write a reply, produce code, summarize a document or explain its reasoning. If you need text, you still need an LLM. The interesting architecture is the two together: Jev decides, the LLM writes when writing is needed.
+
+## Where the name comes from
+
+Two small facts that help the mental model.
+
+System One is a reference to Thinking, Fast and Slow by Daniel Kahneman. System 1 is the fast, intuitive judgment your brain makes without effort. System 2 is slow, deliberate reasoning. In TypeSafe’s framing, Jev handles the first kind of task while reasoning models handle the second.
+
+Jev is named after William Stanley Jevons, the economist behind the Jevons paradox: when steam engines got more efficient, coal consumption went up, not down, because cheaper power created new uses for it. TypeSafe’s bet is that intelligence follows the same curve. Make a decision cost far less than one cent and you’ll put decisions in places you would never have called an LLM.
+
+## How Jev works under the hood
+
+I’ll keep this short because the company hasn’t published the architecture in detail, and the parts that matter for you as a user are these.
+
+Every question in a request uses the same state. TypeSafe says it evaluates those questions independently and in parallel, so one answer does not become context for another. Its tests found no batching effect beyond the model’s normal run-to-run sampling noise.
+
+Because the model produces a distribution over your options rather than free-form text, a successful answer cannot contain a malformed value. TypeSafe plots this as a 0% type-error rate and says the number is structural rather than empirical. This guarantee covers the shape of an answer, not whether the selected answer is correct.
+
+There are limits on size. The state and all the questions together share a budget of about 64,000 tokens, and the state plus the longest single question must fit in about 32,000 tokens, roughly 150,000 characters of English text. A Choice question can have up to 255 options. A Score can have between 2 and 10 levels.
+
+Jev reads text only. The state can be a string, a JSON object or a JSON array of text. Images, audio and video are not supported yet.
+
+The current model is `jev-1.13.0`. Two aliases point at it: `jev-latest`, the stable release and the SDK default, and `jev-preview`, which moves ahead when a preview build exists. The response always reports the versioned ID that answered, so log it. If you tune confidence thresholds against a version, pin that version’s ID instead of the alias.
+
+## The three question types
+
+Everything you ask Jev is one of three primitives. TypeSafe calls them Noul, Choice and Score. Each is a question you define, and each returns a differently shaped answer.
+
+| Type | The question | What comes back |
+| --- | --- | --- |
+| Noul | Is this true? | `noul`, a probability from 0 to 1 |
+| Choice | Which of these options? | `choice`, `probabilities`, `confidence` |
+| Score | Where on this scale? | `score`, `legend`, `probabilities`, `confidence` |
+
+Every question has an ID you choose, a `type`, and `instructions`. Choice and Score also need `criteria`. Noul accepts `criteria` as an optional clarification.
+
+The ID is for your code. It is not sent to the model. So write the full question in `instructions` even when the ID looks self-explanatory. `refund_requested` as a key tells the model nothing.
+
+### Noul: a yes/no question
+
+Use a Noul when the answer is yes or no: does this message ask for a refund, does this resume mention Kubernetes, is there an email address in this comment.
+
+```
+{
+  "refund_requested": {
+    "type": "noul",
+    "instructions": "Does the customer ask for money back?"
+  }
+}
+```
+
+The answer is a single number:
+
+```
+{ "refund_requested": { "type": "noul", "noul": 0.93 } }
+```
+
+`noul` is the probability that the answer is yes. Near 1 is a strong yes, near 0 a strong no, near 0.5 means the model gives both similar probability.
+
+Phrase the question so that a high value means yes. “Is the customer calm?” and “Is the customer angry?” both work, but a Noul where `true` maps to “no” will confuse both the model and whoever reads your code six months from now.
+
+When the boundary between yes and no is subtle, add criteria describing what each side means:
+
+```
+{
+  "is_urgent": {
+    "type": "noul",
+    "instructions": "Does the message convey urgency?",
+    "criteria": {
+      "true": "The sender asks for action today or mentions losing money or customers",
+      "false": "No deadline and no consequence is mentioned"
+    }
+  }
+}
+```
+
+A Noul at 0.5 does not mean “medium”. Ask “Is this candidate strong in Python?” and get 0.5, and what you learned is that the model can’t tell, not that the candidate is average. To measure a degree, use a Score. To get a yes/no, define the condition so it has a clear answer: “Does the resume state the candidate used Python at work?”
+
+Noul answers have no separate `confidence` field. The probability of `true` is the only uncertainty signal returned for that question.
+
+### Choice: pick one option
+
+Use a Choice when the answer is one of a fixed set of options with no order between them: which team handles this ticket, what language this file is written in, or which of these 40 links leads to the pricing page.
+
+```
+{
+  "department": {
+    "type": "choice",
+    "instructions": "Which team should handle this message?",
+    "criteria": {
+      "billing": "Charges, invoices, refunds, subscriptions",
+      "technical": "Bugs, outages, integration problems",
+      "sales": "Pricing questions, upgrades, new accounts",
+      "other": "None of the above"
+    }
+  }
+}
+```
+
+The answer has the selected option plus the full distribution:
+
+```
+{
+  "department": {
+    "type": "choice",
+    "choice": "billing",
+    "probabilities": { "billing": 0.84, "technical": 0.15, "sales": 0.0, "other": 0.01 },
+    "confidence": 0.6
+  }
+}
+```
+
+`choice` is the option with the highest probability. `probabilities` contains the distribution across every option you defined. `confidence` collapses its shape into one number: high when one option dominates, low when probability is spread out. In this illustrative response, billing wins but some probability remains on technical.
+
+The docs recommend adding an `other` or `none_of_the_above` option whenever your list might not cover every input, because the model has to pick something if you don’t give it an escape. Describe each option with what belongs to it, and clarify how it differs from a neighboring option when the boundary is subtle. Then test those descriptions against labeled examples.
+
+### Score: a position on a scale you describe
+
+Use a Score when the answer sits on a spectrum and you can describe what each point on it means. Bug severity. Customer frustration. How much experience a candidate has with a technology.
+
+```
+{
+  "bug_severity": {
+    "type": "score",
+    "instructions": "How severe is the reported issue?",
+    "criteria": [
+      "Cosmetic; no impact on functionality",
+      "Broken or degraded feature, but a workaround exists",
+      "Blocking issue; no workaround exists"
+    ]
+  }
+}
+```
+
+The `criteria` array is ordered from low to high, and each entry’s position in the array is its level number, starting at 0. The answer looks like this:
+
+```
+{
+  "bug_severity": {
+    "type": "score",
+    "score": 1.3,
+    "confidence": 0.54,
+    "legend": {
+      "0": "Cosmetic; no impact on functionality",
+      "1": "Broken or degraded feature, but a workaround exists",
+      "2": "Blocking issue; no workaround exists"
+    },
+    "probabilities": { "0": 0.0, "1": 0.7, "2": 0.3 }
+  }
+}
+```
+
+`score` is the probability-weighted mean of the level numbers: `0 × 0.0 + 1 × 0.7 + 2 × 0.3 = 1.3`. It can land between levels. A 1.3 here means “mostly a broken feature with a workaround, with some weight on blocking”, which is a fair reading of a bug that only affects Safari users.
+
+Read `probabilities` alongside the score. A score of 1.0 can mean all the weight is on level 1, or half on level 0 and half on level 2. Those are very different situations with the same number. `confidence` tells them apart: the first case is confident, the second is not.
+
+The most important rule for Scores: describe situations, not degrees. “Broken feature, workaround exists” gives the model something to match the state against. “Moderately severe” does not. The docs show that bare numbers leave the model with nothing useful to match against, so it spreads probability across levels.
+
+Each level is judged independently. The model doesn’t see the level number or its neighbors, so “worse than the previous level” means nothing to it.
+
+Keep each Score to one dimension. If a level says “punctual and smart and experienced”, an input that is high on one and low on another can’t be placed, and the confidence collapses. Split it into three Scores and combine them in code. We’ll do exactly that below.
+
+## State: what you give Jev to look at
+
+The state is the content the questions are about. It can be a plain string:
+
+```
+"My card was charged twice for order A-104."
+```
+
+Or an object with named fields:
+
+```
+{
+  "message": "My card was charged twice for order A-104.",
+  "order": { "id": "A-104", "charges": [49, 49] },
+  "refund_policy": "Duplicate charges are refunded in full."
+}
+```
+
+Or an array, for a conversation or a list of records.
+
+Use an object for most requests. It lets you point a question at a specific part of the state with a backticked path:
+
+```
+{
+  "policy_supports_refund": {
+    "type": "noul",
+    "instructions": "Does `refund_policy` cover the situation described in `message`, given `order.charges`?"
+  }
+}
+```
+
+The backticks and the dot-and-index notation are how the docs recommend naming fields. They remove ambiguity about which part of the state a question refers to.
+
+The other rule about state: send only what the questions need. Accuracy falls as the state fills with content unrelated to the decision. Filter in code first. If you’re scoring one support ticket, don’t send the customer’s whole history. If you’re classifying a paragraph, don’t send the whole document. TypeSafe describes the model as suffering from context rot like any other, and the fix is on your side.
+
+## Confidence: when to act and when to ask
+
+Confidence is one of Jev’s most useful outputs. A probability written by a general LLM is not automatically calibrated in the same way.
+
+Every Choice and Score answer carries a `confidence` from 0 to 1, computed from the shape of the `probabilities`. Concentrated on one option means high confidence. Spread out means low. You are not locked into TypeSafe’s definition: the full distribution is in the response, so you can compute your own statistic if your domain needs one.
+
+The pattern the docs suggest, and the one I would start with, splits confidence into three ranges:
+
+- High: act automatically. The model has a clear read.
+- Medium: act with caution. Ask the user to confirm, flag for review, or gather more data first.
+- Low: don’t act. Route to a person, ask for clarification, or fall back to a slower system.
+
+Where the boundaries sit depends on what a wrong answer costs. The TypeSafe docs use 0.5 as an example review floor and 0.9 before confirming a destructive action, but those are example values rather than defaults. Here is that pattern using the JavaScript SDK:
+
+```
+const { answers } = await client.systemOne({
+  state: userMessage,
+  questions: {
+    action: choice('What is the user trying to do?', {
+      check_balance: 'View the account balance',
+      approve_transfer: 'Approve the pending withdrawal',
+      support: 'Get help with a problem',
+    }),
+  },
+})
+
+const action = answers.action
+
+if (action.confidence < 0.5) {
+  routeToHuman(userMessage)
+} else if (action.choice === 'check_balance') {
+  showBalance(accountId)
+} else if (action.choice === 'approve_transfer') {
+  if (action.confidence > 0.9) {
+    confirmThenExecute(accountId)
+  } else {
+    askUserToConfirm(accountId)
+  }
+}
+```
+
+In this example, the 0.5 floor catches answers the model reports as genuinely unsure. Above it, the bar for acting without confirmation rises with the stakes. The risk tolerance lives in your code, in numbers you can read and change.
+
+Start conservative, run the thing on your own data, plot confidence against accuracy, and move the thresholds from there. The right values depend on your domain and on how the model behaves on your inputs.
+
+## Getting access
+
+Jev is in early access. You join the waitlist at typesafe.ai and get an email when you’re in. From what people reported in the first days, access came within a day or two of signing up.
+
+Once you’re in, the console at console.typesafe.ai greets you with a short page on what Jev is and, to its credit, what it is not good at: System 2 tasks, specialized domains, and anything generative.
+
+The console home links the cookbooks, the demos, and a one-paragraph prompt you can paste into your coding agent to install the TypeSafe skill.
+
+The Playground is where I’d spend the first hour. You paste a state on the left, add questions of the three types, and run them against `jev-latest`. The right side has three walkthrough lessons, one per primitive, and three realistic use cases: resume screening, auditing a support agent’s chat, and routing a helpdesk ticket.
+
+API keys live in the console too, under API Keys. Usage shows your token consumption.
+
+If you don’t want to wait on the list, Jev is also available through Vercel’s AI Gateway under the model ID `typesafe-ai/jev`, at the same $0.042 per million input tokens. That path uses the AI SDK rather than TypeSafe’s own SDK, and I’ll cover it below.
+
+## Your first call with curl
+
+Evaluations go through one endpoint:
+
+```
+POST https://api.typesafe.ai/v1/systemone
+Authorization: Bearer <API_KEY>
+Content-Type: application/json
+```
+
+Set your key in the environment and send the sponsor-form example from the top of this post:
+
+```
+export TYPESAFE_API_KEY=your_key_here
+
+curl -s https://api.typesafe.ai/v1/systemone \
+  -H "Authorization: Bearer $TYPESAFE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "jev-latest",
+    "state": {
+      "opportunity": "link",
+      "name": "Managed Postgres",
+      "description": "We make a managed PostgreSQL hosting product and would like to sponsor the newsletter in October."
+    },
+    "questions": {
+      "is_sponsor_inquiry": {
+        "type": "noul",
+        "instructions": "Does `description` ask to sponsor the site or newsletter?"
+      }
+    }
+  }'
+```
+
+You get back the `answers` object, the versioned `model` that answered, and `usage` with input and output token counts.
+
+The error codes are the ones you’d expect: `401` for a missing or wrong key, `422` when the request body fails validation (the body tells you which field), `429` when you hit a rate limit and `529` when the service is overloaded. For the last two, retry with exponential backoff. The SDKs do this for you.
+
+Rate limits at the time of writing are 250,000 tokens per second and 1,200 requests per minute, and TypeSafe says they’re adjusting dynamically while it brings people off the waitlist and lands more GPU capacity.
+
+There’s also `GET /v1/models`, which currently lists the aliases your account can send in the `model` field. Versioned IDs such as `jev-1.13.0` still work even when they are not in that list.
+
+## Using Jev from Node.js
+
+The JavaScript SDK is `@typesafe-ai/sdk`. It needs Node.js 20 or newer and ships ESM, CommonJS and TypeScript types.
+
+```
+npm install @typesafe-ai/sdk
+```
+
+The client reads `TYPESAFE_API_KEY` from the environment. Three helper functions, `noul`, `choice` and `score`, build the questions, and the answer types are inferred from them:
+
+```
+import { choice, noul, score, TypeSafeClient } from '@typesafe-ai/sdk'
+
+const client = new TypeSafeClient()
+
+const ticket = 'The export button crashes the settings page in Safari. Works in Chrome, but some of our customers only use Safari.'
+
+const { answers, model, usage } = await client.systemOne({
+  state: { ticket },
+  questions: {
+    category: choice('What kind of ticket is `ticket`?', {
+      bug_report: 'Something is broken or behaving wrong',
+      feature_request: 'Asks for something that does not exist yet',
+      billing: 'Charges, invoices, refunds',
+      other: null,
+    }),
+    severity: score('How severe is the issue in `ticket`?', [
+      'Cosmetic; no impact on functionality',
+      'Broken or degraded feature, but a workaround exists',
+      'Blocking issue; no workaround exists',
+    ]),
+    has_repro_steps: noul('Does `ticket` say how to reproduce the problem?'),
+  },
+})
+
+console.log(answers.category.choice)
+console.log(answers.severity.score)
+console.log(answers.has_repro_steps.noul)
+console.log(model)
+console.log(usage.input_tokens)
+```
+
+A `null` description on a Choice option means “no extra detail”, which is fine for an `other` bucket.
+
+In TypeScript, `answers.category.choice` is typed as `'bug_report' | 'feature_request' | 'billing' | 'other'`. You get autocomplete for those labels, unknown labels fail type checking, and you can add a `never` assertion if you want TypeScript to enforce an exhaustive `switch`.
+
+You can pass `model: 'jev-1.13.0'` in the request to pin a version, and per-call `timeout`, `retry` and `signal` options as a second argument to `systemOne()`.
+
+## Python in a few lines
+
+The Python SDK is `typesafe-sdk` and needs Python 3.10 or newer:
+
+```
+pip install typesafe-sdk
+```
+
+Same shape, with `Choice`, `Noul` and `Score` classes:
+
+```
+from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+client = TypeSafeClient()
+
+response = client.system_one(
+    state="I was charged twice for order A-104. Please refund the duplicate.",
+    questions={
+        "department": Choice(
+            instructions="Which team should handle this?",
+            criteria={
+                "billing": "Charges, invoices, refunds",
+                "technical": "Bugs and integration problems",
+                "other": None,
+            },
+        ),
+        "refund_requested": Noul(
+            instructions="Does the customer ask for money back?",
+        ),
+    },
+)
+
+print(response.answers["department"].choice)
+print(response.answers["refund_requested"].noul)
+```
+
+There’s an `AsyncTypeSafeClient` too, and a configurable retry policy.
+
+## Using Jev through the Vercel AI SDK
+
+If your app already uses the Vercel AI SDK, you don’t need a second client. AI SDK 7 (from 7.0.105) has an `experimental_evaluate` function built for exactly this kind of model, and TypeSafe is its native provider. OpenAI, Anthropic and Google models can answer the same questions through an adapter that prompts them for structured output.
+
+The current AI SDK 7 and TypeSafe provider packages require Node.js 22 or newer. Install them and set `TYPESAFE_AI_API_KEY` for the direct provider:
+
+```
+npm install ai @ai-sdk/typesafe-ai
+export TYPESAFE_AI_API_KEY=your_key_here
+```
+
+The vocabulary is slightly different from TypeSafe’s own: the yes/no type is called `boolean` and its answer field is `probability`. Choice and Score keep their names.
+
+```
+import { experimental_evaluate as evaluate } from 'ai'
+import { typeSafeAi } from '@ai-sdk/typesafe-ai'
+
+const result = await evaluate({
+  model: typeSafeAi.evaluationModel('jev-latest'),
+  state: { message: 'I was charged twice. Please refund the extra charge.' },
+  questions: {
+    department: {
+      type: 'choice',
+      instructions: 'Which team should handle `message`?',
+      criteria: {
+        billing: 'Payments and refunds',
+        support: 'Everything else',
+      },
+    },
+    requests_refund: {
+      type: 'boolean',
+      instructions: 'Is the customer asking for money back?',
+    },
+  },
+})
+
+console.log(result.answers.department.choice)
+console.log(result.answers.requests_refund.probability)
+```
+
+Through the AI Gateway you skip the provider package and pass a string model ID. Strings resolve through the Gateway by default once `AI_GATEWAY_API_KEY` is set:
+
+```
+const result = await evaluate({
+  model: 'typesafe-ai/jev',
+  state: 'The support agent issued a full refund to the customer.',
+  questions: {
+    refunded: {
+      type: 'boolean',
+      instructions: 'Was a refund issued?',
+    },
+  },
+  providerOptions: {
+    gateway: { zeroDataRetention: true },
+  },
+})
+```
+
+The `zeroDataRetention` flag is a Gateway option available on Vercel Pro and Enterprise plans. It prevents Vercel and the selected provider from retaining the prompt and output after processing, and it also disallows prompt training. The request still travels to Vercel and TypeSafe. TypeSafe’s direct service only advertises ZDR for enterprise customers, so do not assume the same option exists in its direct SDK.
+
+Two details about this path. TypeSafe’s separate `confidence` statistic is not in `result.answers`; it lives at `result.providerMetadata.typesafe.confidence`, keyed by question ID. And `experimental_evaluate` also works with OpenAI, Anthropic and Google models through an adapter that prompts them for structured output, which is handy for comparing Jev against an LLM on your own labeled data. Those adapters don’t return probability distributions and the SDK doesn’t promise their boolean probabilities are calibrated, so the comparison is on accuracy, cost and latency, not on confidence.
+
+Run both integrations on the server. The direct TypeSafe SDK blocks browser use by default because putting an API key in client-side JavaScript would expose it.
+
+## Ask everything at once
+
+This is the habit that changes how you design with Jev, and the one coding agents get wrong most often.
+
+Compared with Jev, a general LLM call is usually slower and more expensive, so workflows often ask one question and then decide what to ask next. With Jev, every question in a request runs in parallel against the same state, and each extra question costs only its own tokens. Ask every independent question you might need in one call, including questions whose answer only matters for some inputs, and let your code decide which answers to use.
+
+TypeSafe calls this speculative fan-out. In one cookbook, batching 13 questions into one call was 12.2x cheaper and 10x faster than 13 sequential calls. The test used `jev-1.12` and a 53,777-character document, so most of the saving came from sending that long state once. Running the separate calls concurrently would reduce the latency gap, but not the extra input cost. Repeated tests found no batching effect on the answers beyond normal sampling noise.
+
+Here is a support triage in one request. Bug severity only matters if the ticket is a bug. The refund question only matters if it’s about billing. I ask all of them anyway:
+
+```
+import { choice, noul, score, TypeSafeClient } from '@typesafe-ai/sdk'
+
+const client = new TypeSafeClient()
+
+const TRIAGE = {
+  category: choice('What kind of ticket is `ticket`?', {
+    bug_report: 'Something is broken or behaving wrong',
+    billing: 'Charges, invoices, refunds, subscriptions',
+    feature_request: 'Asks for something that does not exist yet',
+    other: null,
+  }),
+  bug_severity: score('If `ticket` reports a bug, how severe is it?', [
+    'Cosmetic; no impact on functionality',
+    'Broken or degraded feature, but a workaround exists',
+    'Blocking issue; no workaround exists',
+  ]),
+  has_repro_steps: noul('Does `ticket` include steps to reproduce a problem?'),
+  refund_requested: noul('Does `ticket` ask for money back?'),
+  frustration: score('How frustrated is the author of `ticket`?', [
+    'Calm, just stating facts',
+    'Frustrated but civil',
+    'Very angry, strong language, or threatening to leave',
+  ]),
+}
+
+export async function triage(ticket) {
+  const { answers } = await client.systemOne({
+    state: { ticket },
+    questions: TRIAGE,
+  })
+
+  const { category, bug_severity, has_repro_steps, refund_requested, frustration } = answers
+
+  if (category.confidence < 0.6) {
+    return { route: 'human', reason: 'unclear category' }
+  }
+
+  if (category.choice === 'bug_report') {
+    if (bug_severity.score > 1.5 && has_repro_steps.noul > 0.6) {
+      return { route: 'engineering', priority: 'high' }
+    }
+    return { route: 'bug_backlog' }
+  }
+
+  if (category.choice === 'billing') {
+    return { route: 'billing', refundLikely: refund_requested.noul > 0.7 }
+  }
+
+  if (category.choice === 'feature_request') {
+    return { route: 'product' }
+  }
+
+  return { route: 'human', flag: frustration.score > 1.5 }
+}
+```
+
+One call gives the code everything needed for this decision tree. When the ticket is a feature request, `bug_severity` is ignored. It still used input tokens, but the shared state was sent only once.
+
+Notice that the questions live in one constant. The thresholds are visible in the same file. When you review this code, the questions and those numbers are what you need to read.
+
+When do you need a second request? Only when your code can’t build it until it has the first answer: because it needs to fetch more data for the state, or because the first answer decides which options the next question offers. TypeSafe’s skill-suggestion cookbook is a good example: one request ranks 182 skills, then a second request looks at the full text of the top three and can reject all of them. If the second request’s questions could have been asked against the original state, ask them in the first one.
+
+## Compose decisions in code
+
+The second habit: when a judgment depends on several things, don’t ask one big question. Ask one question per thing and combine the answers with weights you own.
+
+Ticket priority is a good example. It depends on how bad the bug is, how upset the customer is, and how much the report gives an engineer to work with. Three Scores, one request:
+
+```
+const PRIORITY_QUESTIONS = {
+  severity: score('How severe is the issue in `ticket`?', [
+    'Cosmetic; no impact on functionality',
+    'Broken or degraded feature, but a workaround exists',
+    'Blocking issue; no workaround exists',
+  ]),
+  frustration: score('How frustrated is the author of `ticket`?', [
+    'Calm, just stating facts',
+    'Frustrated but civil',
+    'Very angry or threatening to leave',
+  ]),
+  report_quality: score('How much does `ticket` give an engineer to work with?', [
+    'No detail; just says something is broken',
+    'Names the feature but no steps or environment',
+    'Steps to reproduce or environment, but not both',
+    'Steps to reproduce and environment',
+  ]),
+}
+
+function normalized(answers, id) {
+  const topLevel = PRIORITY_QUESTIONS[id].criteria.length - 1
+  return answers[id].score / topLevel
+}
+
+export async function priority(ticket) {
+  const { answers } = await client.systemOne({
+    state: { ticket },
+    questions: PRIORITY_QUESTIONS,
+  })
+
+  return (
+    0.6 * normalized(answers, 'severity') +
+    0.3 * normalized(answers, 'frustration') +
+    0.1 * normalized(answers, 'report_quality')
+  )
+}
+```
+
+The scales have different lengths (three levels return 0 to 2, four levels return 0 to 3), so each score is divided by its top level number before weighting. After that, 0.6 on severity really means severity counts twice as much as frustration.
+
+When the ranking doesn’t match what your team would decide, you change a coefficient and rerun. You don’t rewrite a prompt. That’s the whole appeal of this pattern, which TypeSafe calls composite scoring.
+
+The third pattern is intent routing, and it’s the one most early experiments land on. Requests don’t all need the same handler: a database lookup answers some, others need an LLM with the right context loaded, a few need a person. Jev sits in front as the cheap, fast classifier that decides which:
+
+```
+const { answers } = await client.systemOne({
+  state: { message },
+  questions: {
+    intent: choice('What does the author of `message` want?', {
+      order_status: 'Where is my order, has it shipped, tracking',
+      product_question: 'How a product works, compatibility, specs',
+      return_exchange: 'Return, exchange, or replace an item',
+      complaint: 'Unhappy with service or product, wants a resolution',
+    }),
+    needs_reasoning: score('How much thought does a good answer to `message` need?', [
+      'A lookup or a one-line fact',
+      'A short explanation using product knowledge',
+      'A judgment call with trade-offs or an unhappy customer',
+    ]),
+  },
+})
+
+if (answers.intent.confidence < 0.5) {
+  return routeToHuman(message)
+}
+
+switch (answers.intent.choice) {
+  case 'order_status':
+    return lookupOrder(message) // no LLM involved
+  case 'product_question':
+    return answerWithLLM(message, PRODUCT_CONTEXT)
+  case 'return_exchange':
+    return answerWithLLM(message, RETURNS_CONTEXT)
+  case 'complaint':
+    return answers.needs_reasoning.score > 1 ? routeToHuman(message) : answerWithLLM(message, COMPLAINT_CONTEXT)
+}
+```
+
+The order lookup never touches an LLM, two intents go to an LLM with different context, and complaints use the second score to choose between an LLM and a human. The expensive resources only run for the requests that need them.
+
+The same shape works as a model router inside an agent: ask Jev how much reasoning a message needs and which profile it fits, then pick the cheap model or the expensive one. One proposed migration reduced an existing routing prompt to those two Jev questions.
+
+## Writing questions Jev answers well
+
+Most of the skill in using Jev is in the questions. Everything below comes from the docs, the console’s own lessons, and the mistakes people reported in the first days.
+
+Ask for one judgment per question. “Does this message convey urgency?” is a good question. “Analyze this message and decide the best course of action” is not, because it hides several judgments behind one answer. If a question needs extended reasoning or weighs several independent factors, split it.
+
+Write the exact condition. Jev answers the question you wrote, not the one you meant, and scoping words, negations and implied conditions are read literally. When you look at a wrong answer and find yourself explaining what you really meant, that explanation is the missing half of the instruction.
+
+In criteria, describe situations rather than degrees. For a Choice option, say what belongs to it and what belongs to a neighboring option instead. For a Score level, describe a concrete state of the world. When the model keeps landing between two neighboring levels on inputs you consider clear, give each level an object with a description and a few example situations, using the same field names on every level so the model can compare like with like:
+
+```
+{
+  "what": "Broken or degraded feature, but a workaround exists",
+  "examples": ["export fails in one browser but works in another"]
+}
+```
+
+The docs measured this on a Safari export bug: plain string levels gave a score of 1.30 at 0.54 confidence, and the same levels with one relevant example gave 1.07 at 0.90. An unrelated example changed almost nothing. Examples help when they look like your real inputs.
+
+Give the model an exit: an `other` option on every Choice whose list might not cover every input, and a “not stated” option when you’re extracting something that may be missing. Keep instructions and criteria saying the same thing, in plain language a colleague would understand on first read, because when the instruction asks one thing and the criteria describe another the answer degrades.
+
+Numbers, dates and counting stay in code. The next section explains why.
+
+Then two habits about the code around the questions. Put every question and every threshold in one file, because they are the part of the integration a human needs to review. And test against labeled examples before you trust a threshold: higher confidence should correlate with accuracy across many predictions, but it does not guarantee that one answer is correct. Take a set of inputs you know the answer for, run them, and look at where confidence and accuracy diverge. One early test got 11 invoice cases out of 11 right after its rubric was written down. That order, rubric first, matches everything in the docs.
+
+## Where Jev breaks
+
+TypeSafe publishes a page it calls “jaggedness” for each model version, listing what `jev-1.13` does badly. Here is what’s on it, with the fix for each.
+
+The literal reading I covered above: the model reads your words, not your intent, so be explicit or split the interpretation into two literal questions.
+
+Then there’s math. Jev is not a calculator. It does not count reliably, whether characters in a word, occurrences of a term, or items in a list. Given hex color values it can’t tell whether two are close. Questions about named colors work; questions about `#FF4B0A` don’t. Do the arithmetic in code and pass in the result or a named bucket.
+
+If you need to count items that match a semantic condition, ask one Noul per item and sum in code:
+
+```
+const items = ['typesafe', 'apple', 'california', 'banana', 'orange']
+
+const questions = Object.fromEntries(
+  items.map((_, i) => [`item_${i}`, noul(`Is \`items[${i}]\` the name of a fruit?`)])
+)
+
+const { answers } = await client.systemOne({ state: { items }, questions })
+
+const fruits = items.filter((_, i) => answers[`item_${i}`].noul > 0.5)
+console.log(fruits.length) // 3
+```
+
+A Score is not a measurement either. Don’t use a score of 1.4 to reconstruct “the customer is 40% of the way from frustrated to angry”, because the levels are weak in numerical calibration between each other. Use the score to pass a threshold or to rank, not to interpolate a magnitude.
+
+Dates and times have the same problem. Jev reads a date as text, so which of two dates comes first, how far apart they are, whether one falls inside a window, all of it is unreliable, and worse with mixed formats or relative references. Split the work: extraction is a judgment, so give it to the model as a Choice over months, days and years with a “not stated” option, then build a real date in code and compare there.
+
+Indirection costs accuracy. Double negatives, a property of a property, anything that needs multiple hops. Point directly at the relevant part of the state and ask about it.
+
+A large state full of irrelevant detail costs accuracy too. Filter first. When you can’t filter deterministically, use a Noul per chunk to ask “is this relevant to the question?” and drop the rest before the real questions.
+
+State is treated as data, and text written to steer the model can move the answer. TypeSafe says it expects to improve on adversarial content. For now, precise criteria, and test with hostile inputs before you put it in front of the public.
+
+Contradictions between instructions and criteria, like a Noul where `true` means “no”, make the answers worse. Keep the two aligned.
+
+And it can’t write. You can technically force text out of it by chaining Choices over characters, and the docs are blunt that this works badly and slowly. If you need to extract a value, find the candidates with a regex or an LLM and let Jev pick the right one.
+
+That last idea gives us a useful rule: with Jev you pick a card from the deck, you don’t ask it to name a card. Whenever your instinct says “extract X”, rephrase it as “here are the candidates for X, which one is it?”
+
+## What people are building with it
+
+Jev has been out for a few days as I write this, so these are early experiments, not production case studies. They still show the range of tasks people are testing.
+
+### Labeling data
+
+This is the obvious one and the one people reached for first. One early demo classified 1,018 summarized AI research papers across 24 topics for $0.08, with median latency of 256 milliseconds per paper. Generating the summaries with an LLM cost another $3.99. Another early test ran 98,000 listing classifications in ten minutes. A third reported half a million input tokens for about two cents, which matches the published price. Anything shaped like “label every row” fits.
+
+Resume screening is the same shape with a rubric: is this resume a good fit for this job posting, as a Score. An early comparison from a hiring site reported about one tenth of the cost of small LLMs for that job. The console ships resume screening as one of its built-in examples.
+
+So is inbox triage: priority, spam or not, needs a reply or not, one call per email, fast enough that you can watch it classify a whole mailbox as it goes.
+
+### Routing and verification
+
+Intent routing and model routing were among the most commonly suggested uses: one Jev call in front of a support flow or an agent, deciding which handler or which model gets the message.
+
+Verification is the other side of that. One proposed workflow starts with a podcast site that already generates episode summaries with an LLM, then checks each claim against the transcript with a Noul and flags low-probability answers. The LLM would write and Jev would check, with code deciding which claims need review.
+
+Code review fits the same mold. For each modified file in a PR, a handful of Scores and Nouls on security risk, complexity, bad practices and the quality of the commit message, combined into a risk matrix in code.
+
+TypeSafe’s own cookbooks push into retrieval: re-ranking BM25 shortlists with one Noul per query-passage pair, scoring retrieved passages for relevance and for hidden prompt injections before they reach the answering model, and checking whether a quoted citation supports the claim it’s attached to.
+
+### Real-time interfaces
+
+Because a call takes a few hundred milliseconds, Jev can run on every keystroke pause. One editor demo scored tone, conviction, urgency and “reads as AI-written” while the user typed, using criteria defined by the developer rather than a fixed detector.
+
+A browser extension asks Jev, per post in a social feed, whether it’s rage bait, crypto promotion or political argument, and hides the ones that score high. Unlike a fixed platform filter, this version lets its user define the categories.
+
+Games showed up early too. A Tetris demo repeatedly used Jev to choose between rotate, move and drop. A driving simulator passed structured observations and asked whether to accelerate, brake or turn. TypeSafe’s launch demos include a Doom bot on structured game state at about ten queries a second, which the team costed at roughly $7 an hour, and a Wikiracing bot choosing among hundreds of links per step without ever picking a link that doesn’t exist.
+
+### Agents and tools
+
+A chatbot demo used no generative LLM. It passed the available tools to Jev, asked “which tool answers the user’s last message?” as a Choice, and included the argument questions in the same call: which city, which time frame, which unit, each as a Choice over candidates found in the conversation. Code then called the selected tool. The demo turned a smart-home light off from a plain-language sentence in about 300 milliseconds end to end. It also answered “how tall is Mount Rainier?” by fetching Wikipedia and having Jev point at the sentence that contained the answer.
+
+Browser automation uses a similar split: a planner LLM decides the goal, Jev picks which element on the live page to click next, as a Choice over the interactive elements. One demo booked a flight in about seven seconds. If you’ve watched a Playwright-driven agent think for ten seconds between clicks, you understand why that number matters.
+
+Guardrails for coding agents are the first use case I’d test. A shell command the agent wants to run gets classified as read-only, reversible or irreversible before it runs. In one early shadow test, an ambiguous `rm -rf` came back as “irreversible” at 0.56 with confidence 0.33. That 0.33 tells the surrounding code to ask a human instead of trusting the selected label.
+
+And one for fun: a startup idea judge. Describe an idea, and ten questions evaluate its problem, demand, monetization, distribution and differentiation in about half a second. Code combines the answers into kill, fix or ship. The quality of the result depends on those questions and their rubrics.
+
+### Feature engineering
+
+Turn free text into numeric features for a classical model. TypeSafe’s feature-discovery cookbook starts with 18 questions and ends with 38 after five rounds. Those answers become 67 numeric columns for a CatBoost regressor.
+
+### The skeptical notes
+
+The useful metric is cost per solved task, not cost per token. If the cheap path adds retries or human review, the savings shrink at the workflow level. Many early use-case lists will turn into two or three integrations that carry real traffic. For decisions that deterministic code already handles correctly, code is still the first thing to reach for.
+
+## Jev and coding agents
+
+TypeSafe published an agent skill. Install it before you ask an agent to integrate Jev, because agents trained on LLM APIs make the same two mistakes: they ask one question per call, and they invent request fields.
+
+For Claude Code:
+
+```
+claude plugin marketplace add typesafe-ai/skills
+claude plugin install typesafe@typesafe-ai
+```
+
+For Cursor, Codex and everything else:
+
+```
+npx skills add typesafe-ai/skills --skill typesafe-ai
+```
+
+The skill points the agent at the live docs (Mintlify serves any docs page as Markdown by appending `.md` to the URL, which agents love), lists the primitives, and explains fan-out and confidence gating.
+
+The prompt TypeSafe suggests as a first step is the one I’d use too:
+
+```
+Using the TypeSafe skill, explore the project and find opportunities for using
+intelligent judgement to stand in for complex parsing or other fragile code.
+```
+
+Review what it proposes before it writes anything. Then make it put every question and threshold in a single file. Agents aren’t great at writing questions, and you’ll be editing them together.
+
+## How I would use Jev
+
+I have console access, but I haven’t put Jev in anything I run yet, so this section is about where I would put it, grounded in projects that exist.
+
+The first place is the sponsor form. This site has a sponsor page with a public review policy: developer-relevant products only, no gambling, no crypto schemes, no unrelated consumer products. Inquiries arrive through a Cloudflare Pages Function that emails me. I’d put one Jev call in that function: a Noul for “is this a real sponsorship inquiry”, a Choice for the product category with the prohibited categories as explicit options, and a Score for how specific the ask is. High-confidence dev-tool inquiries would get the rate card automatically, and everything else would keep landing in my inbox as it does today. The state is one short form submission, so it’s a good fit, and the cost is a fraction of a cent per submission.
+
+The second is Events Logger, which collects events from my apps into one dashboard. Each event has a project, category and title, plus an optional description and tags. The category is whatever the sending app decided. I’d add a Score for severity and a Noul for “does this event describe a failure a user would notice” at ingest time, then use those answers alongside the chronological feed and category filters. A short JSON object is exactly the kind of state Jev reads well.
+
+The third is auditing old posts, and it’s a good example of splitting a job correctly. This blog has more than 2,000 posts and a chunk of them state version numbers and prices that go stale. The tempting question is “is this version number outdated?” and Jev would be the wrong tool for that, because comparing `18.17.1` against `24.15.0` is a numeric judgment and the jaggedness page says exactly not to. The right split is a Noul per paragraph, “does this paragraph state a specific software version or a price?”, which is a semantic question Jev handles, and then code or an LLM only on the paragraphs that came back above 0.8. That would turn a job that spends real LLM tokens on more than 2,000 full posts into one that only sends the relevant paragraphs.
+
+Newsletter replies are a smaller version of the sponsor form. Replies can include thanks, a broken link, a question or a sponsorship lead. One Choice with those four options and an `other` bucket, run on the way in, would sort them before I open the mailbox.
+
+Where I wouldn’t use it: writing or rewriting anything, summarizing a transcript, anything where the answer is a number I need to be precise about, anything where the input is an image, since Jev doesn’t read them yet. And any decision that plain code already makes correctly, because an `if` that costs nothing beats an `if` that costs a hundredth of a cent and can be wrong.
+
+## What it costs, and how fast it is
+
+The price is simple: $0.042 per million input tokens, output free. TypeSafe’s homepage states it as $42 per billion tokens, which is the same number in a form that makes the point.
+
+Some arithmetic. A support ticket with its questions runs around 300 tokens in TypeSafe’s examples. That’s about $0.0000126 per call, or $1.26 for 100,000 tickets of the same size. The cost of classifying 98,000 listings depends on how many tokens each listing and its questions contain. If you want to compare against an LLM on your own workload, the token cost calculator and the inference cost tool on this site take the same per-million inputs.
+
+Through Vercel’s AI Gateway the listed rate is the same $0.042 per million input tokens, billed like any other Gateway model.
+
+On speed, TypeSafe quotes 70 to 500 milliseconds end to end and says most queries land around 100 milliseconds. Those figures are measured from the US West Coast, where the service runs. From Italy I’d expect network latency on top, and I’d measure before promising anything to a user interface. Whether the claimed 40x to 200x speedup over an LLM holds depends on which LLM and which task; the company itself calls its headline multiples the high end.
+
+Rate limits, as of this writing: 250,000 tokens per second and 1,200 requests per minute, adjusting dynamically during early access.
+
+## Where to start
+
+Sign up for the waitlist at typesafe.ai, or use the Gateway path if you have a Vercel account and don’t want to wait.
+
+Spend the first hour in the Playground with your own data, not the examples. Paste a real support message, a real log line, a real form submission.

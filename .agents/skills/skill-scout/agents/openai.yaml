@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Scout"
+  short_description: "Find the best-supported skill for the current workflow"
+  default_prompt: "Use $skill-scout to find and defend the best-supported existing skill for my current need."

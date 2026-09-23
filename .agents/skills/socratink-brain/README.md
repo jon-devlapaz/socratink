@@ -4,8 +4,9 @@ A portable, project-local interface for agents that need task-scoped epistemic
 context from Socratink Brain or need to propose a governed Brain change.
 
 Brain provides epistemic truth. The application repository provides current
-implementation truth, Praxist provides experiment-execution truth, and the
-engineering harness provides process/project truth.
+implementation truth, and the engineering harness provides process/project truth.
+There is no `CURRENT STATE.md` and no Praxist execution authority; `EXP-*` objects
+are hypothesis/contracts only.
 
 ## Contents
 
@@ -59,8 +60,8 @@ explicitly `historical: true` and `current_authority: false`.
 
 The helper is lexical discovery only. It creates no database, embeddings,
 synchronization registry, status file, or duplicate validator. Read the returned
-Brain documents to determine meaning and inspect the application repository,
-Praxist, or harness for their respective external truth.
+Brain documents to determine meaning and inspect the application repository or
+harness for their respective external truth.
 
 ## Smoke test
 

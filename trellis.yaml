@@ -1,0 +1,15 @@
+source:
+  exclude:
+    - "research/**"
+    - "agent-tools/**"
+    - "specs/**"
+    - "vite.config*.ts"
+  classify:
+    "scripts/**": "test"
+
+policy:
+  maxIndex: 45
+  regression:
+    maxIncrease: 2
+  failOnNew:
+    - "import-cycle"

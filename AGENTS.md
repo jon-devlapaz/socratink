@@ -47,6 +47,9 @@ pnpm smoke
 
 # Audit production dependencies
 pnpm audit --prod
+
+# Measure structural debt and regressions with Trellis
+pnpm audit:trellis
 ```
 
 Prefer the narrowest relevant check while iterating:
@@ -56,6 +59,10 @@ Prefer the narrowest relevant check while iterating:
 pnpm check:types
 pnpm build
 pnpm build:ui
+
+# Structural debt and baseline regression
+pnpm audit:trellis
+trellis audit . --baseline .audit/baseline.json
 
 # Targeted contract suites (see package.json "test:*")
 pnpm test:chat-model     # or test:chat-turns, test:chat-auto, test:model-route
@@ -75,6 +82,15 @@ with the local gate.
 `pnpm smoke:braintrust-live` is an explicit live integration check, not a CI
 step. It requires a completed `pnpm build` and an available Braintrust API key.
 Use only synthetic prompts because traces may contain inputs and outputs.
+
+Measure and protect structural maintainability with Trellis (`pnpm audit:trellis`).
+Trellis computes an offline 0–100 sloppiness index (lower is better) across
+cyclomatic complexity, function erosion, duplication, and import cycles. Before
+a refactor, capture a baseline (`pnpm audit:trellis:baseline` or
+`trellis audit . --json --out .audit/baseline.json`). During review or before
+handoff, verify with `trellis audit . --baseline .audit/baseline.json`. A change
+must never introduce circular imports (`failOnNew: [import-cycle]`) or exceed
+the regression tolerance in `trellis.yaml`.
 
 ## Product and stack
 
@@ -127,6 +143,11 @@ to SQLite automatically.
 Use comments for rationale, constraints, or non-obvious tradeoffs—not to
 restate code. Do not add abstraction, generality, or a dependency until a
 demonstrated need makes the resulting module simpler to use or safer to change.
+Keep function complexity bounded. Do not pile branching or nested logic onto
+hotspot functions identified by `pnpm audit:trellis` (e.g. in
+`src/ui/chat-markdown-parse.ts`, `src/ui/chat-surface.ts`, or
+`src/ui/effects/living-ink/renderer.ts`); extract focused pure helpers instead
+of expanding existing hotspots.
 
 ## Flue harness rules
 
@@ -208,6 +229,7 @@ mastery.
   external-service checks.
 - Add proof at the same boundary as the behavior and report any unverified
   assumptions.
+- Verify structural health does not regress during refactors or feature additions (`pnpm audit:trellis`).
 - Follow repository-owned skills only when their documented trigger applies.
 
 ### Ask first
@@ -230,6 +252,7 @@ Unless the user already requested the exact action, ask before:
 - Vendor, rename, or silently replace published Flue framework behavior.
 - Claim learning effectiveness, mastery, or production readiness from code,
   synthetic runs, configuration, or passing tests alone.
+- Introduce circular dependency import cycles across TypeScript modules.
 - Duplicate project doctrine in `CLAUDE.md`, `.cursor/rules/`, `.cursorrules`,
   `.github/copilot-instructions.md`, `.cursor/skills/`, or `.claude/skills/`.
 
