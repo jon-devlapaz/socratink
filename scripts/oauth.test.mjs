@@ -301,6 +301,7 @@ test('Google callback links a returning guest to an existing account via alias',
 				assert.deepEqual(await sessionPayload(app, cookies), {
 					userId: durableUserId,
 					aliases: [guest.userId],
+					kind: 'registered',
 				});
 
 				// Returning users rotate to the durable id; the planted guest bytes

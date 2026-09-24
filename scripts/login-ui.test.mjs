@@ -58,7 +58,10 @@ test('login page is OAuth-only with no demo email-send lie', async () => {
 	assert.match(app, /requireChatSession/);
 	assert.match(app, /createAgentRouter\(Chat\)/);
 	assert.doesNotMatch(app, /app\.delete\('\/api\/session'/);
-	assert.match(menu, /href="\/api\/session\/logout"/);
+	assert.match(menu, /id="auth-link" class="menu-orb-link" href="\/login\.html"/);
+	assert.match(menu, /id="auth-link-label">Sign in</);
+	assert.match(main, /session\.kind === 'registered'/);
+	assert.match(main, /authLink\.href = '\/api\/session\/logout'/);
 	assert.doesNotMatch(script, /socratink-demo-auth/);
 	assert.doesNotMatch(main, /socratink-demo-auth/);
 });

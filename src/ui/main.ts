@@ -22,6 +22,12 @@ void (async () => {
 		location.replace('/login.html');
 		return;
 	}
+	const authLink = document.querySelector<HTMLAnchorElement>('#auth-link');
+	const authLinkLabel = document.querySelector<HTMLElement>('#auth-link-label');
+	if (authLink && authLinkLabel && session.kind === 'registered') {
+		authLink.href = '/api/session/logout';
+		authLinkLabel.textContent = 'Sign out';
+	}
 
 	const core = document.querySelector<HTMLElement>('.alive-core');
 	if (!core) throw new Error('Socratink chat markup is missing the alive-core node.');
