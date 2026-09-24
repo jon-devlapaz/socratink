@@ -77,10 +77,10 @@ test('readOrCreateSession mints a guest session when none exists', async () => {
 		async (url, init) => {
 			calls.push(init?.method ?? 'GET');
 			if (calls.length === 1) return new Response('unauthorized', { status: 401 });
-			return Response.json({ userId: 'guest-a', aliases: [] });
+			return Response.json({ userId: 'guest-a', aliases: [], kind: 'guest' });
 		},
 		async () => {
-			assert.deepEqual(await readOrCreateSession(), { userId: 'guest-a', aliases: [] });
+			assert.deepEqual(await readOrCreateSession(), { userId: 'guest-a', aliases: [], kind: 'guest' });
 		},
 	);
 	assert.deepEqual(calls, ['GET', 'POST']);
