@@ -53,6 +53,27 @@ test('resolveAuthConfig resolves google and github providers and redirectBaseUrl
 	assert.equal(trailingSlash.redirectBaseUrl, 'https://socratink.example.com');
 });
 
+test('resolveAuthConfig rejects production redirectBaseUrl in local development', () => {
+	assert.throws(
+		() =>
+			resolveAuthConfig({
+				GOOGLE_CLIENT_ID: 'google-client-id',
+				GOOGLE_CLIENT_SECRET: 'google-client-secret',
+				AUTH_REDIRECT_BASE_URL: 'https://app.socratink.ai',
+			}),
+		/AUTH_REDIRECT_BASE_URL cannot point to the production app in local development/i,
+	);
+
+	assert.doesNotThrow(() =>
+		resolveAuthConfig({
+			GOOGLE_CLIENT_ID: 'google-client-id',
+			GOOGLE_CLIENT_SECRET: 'google-client-secret',
+			AUTH_REDIRECT_BASE_URL: 'https://app.socratink.ai',
+			VERCEL: '1',
+		}),
+	);
+});
+
 test('resolveAuthStoreTarget uses postgres when DATABASE_URL is set, sqlite otherwise', () => {
 	const postgresTarget = resolveAuthStoreTarget({
 		DATABASE_URL: 'postgres://user:pass@localhost:5432/db',

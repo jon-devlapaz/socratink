@@ -25,6 +25,18 @@ export type AuthEnvironment = Readonly<{
 	VERCEL?: string;
 }>;
 
+function isHostedEnvironment(environment: AuthEnvironment): boolean {
+	return (
+		environment.NODE_ENV === 'production' ||
+		environment.NF_PROJECT_ID ||
+		environment.VERCEL === '1'
+	);
+}
+
+function isProductionRedirectHost(hostname: string): boolean {
+	return hostname === 'app.socratink.ai' || hostname === 'www.socratink.ai' || hostname === 'socratink.ai';
+}
+
 export function resolveAuthConfig(environment: AuthEnvironment): AuthConfig | undefined {
 	const googleId = environment.GOOGLE_CLIENT_ID?.trim();
 	const googleSecret = environment.GOOGLE_CLIENT_SECRET?.trim();
@@ -36,9 +48,17 @@ export function resolveAuthConfig(environment: AuthEnvironment): AuthConfig | un
 	
 	if (!google && !github) return undefined;
 	
-	const redirectBaseUrl = (
-		environment.AUTH_REDIRECT_BASE_URL?.trim() || 'http://localhost:5173'
-	).replace(/\/+$/, '');
+	const configuredRedirectBaseUrl = environment.AUTH_REDIRECT_BASE_URL?.trim();
+	const redirectBaseUrl = (configuredRedirectBaseUrl || 'http://localhost:5173').replace(/\/+$/, '');
+
+	if (!isHostedEnvironment(environment) && configuredRedirectBaseUrl) {
+		const redirectUrl = new URL(redirectBaseUrl);
+		if (isProductionRedirectHost(redirectUrl.hostname)) {
+			throw new Error(
+				'AUTH_REDIRECT_BASE_URL cannot point to the production app in local development.',
+			);
+		}
+	}
 
 	return {
 		google,
