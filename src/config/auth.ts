@@ -28,7 +28,7 @@ export type AuthEnvironment = Readonly<{
 function isHostedEnvironment(environment: AuthEnvironment): boolean {
 	return (
 		environment.NODE_ENV === 'production' ||
-		environment.NF_PROJECT_ID ||
+		Boolean(environment.NF_PROJECT_ID) ||
 		environment.VERCEL === '1'
 	);
 }
