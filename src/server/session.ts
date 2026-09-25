@@ -26,12 +26,16 @@ export function mountSessionRoutes(app: Hono, options: { secret: string; authDb:
 			return context.json({ error: unauthorizedSessionError }, 401);
 		}
 		const aliases = await options.authDb.findAliases(session.userId);
-		return context.json({ userId: session.userId, aliases });
+		return context.json({ userId: session.userId, aliases, kind: session.kind });
 	});
 	app.post('/api/session', async (context) => {
 		const userId = await mintSessionUserId(context, options.secret, process.env, options.authDb);
 		const aliases = await options.authDb.findAliases(userId);
-		return context.json({ userId, aliases });
+		const session = sessionFromContext(context);
+		if (!session) {
+			return context.json({ error: unauthorizedSessionError }, 401);
+		}
+		return context.json({ userId, aliases, kind: session.kind });
 	});
 	app.get('/api/session/logout', (context) => {
 		clearSessionCookie(context, process.env);

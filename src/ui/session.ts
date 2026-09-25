@@ -4,6 +4,7 @@ import { isSessionUserId } from '../config/session.ts';
 export type SessionUser = {
 	userId: string;
 	aliases: string[];
+	kind: 'guest' | 'registered';
 };
 
 export async function readSession(): Promise<SessionUser | undefined> {
@@ -65,6 +66,12 @@ function sessionUserFromUnknown(value: unknown): SessionUser | undefined {
 	if (typeof value !== 'object' || value === null || !('userId' in value) || !('aliases' in value)) {
 		return undefined;
 	}
-	if (!isSessionUserId(value.userId) || !Array.isArray(value.aliases)) return undefined;
-	return { userId: value.userId, aliases: value.aliases.filter(isSessionUserId) };
+	const record = value as { userId: unknown; aliases: unknown; kind?: unknown };
+	if (!isSessionUserId(record.userId) || !Array.isArray(record.aliases)) return undefined;
+	if (record.kind !== 'guest' && record.kind !== 'registered') return undefined;
+	return {
+		userId: record.userId,
+		aliases: record.aliases.filter(isSessionUserId),
+		kind: record.kind,
+	};
 }
