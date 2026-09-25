@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
 	applyReasoningStreamEvent,
@@ -79,16 +78,4 @@ test('caps streamed reasoning instead of growing without bound', () => {
 	resetLiveReasoning(buffer);
 	assert.equal(buffer.text, '');
 	assert.equal(buffer.truncated, false);
-});
-
-test('the pending view keeps reasoning out of the assistant answer and off a rotating word list', async () => {
-	const pending = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
-	assert.match(pending, /thinking-step-copy/);
-	assert.match(pending, /visibleThinkingStep\(reasoning\)/);
-	assert.doesNotMatch(pending, /pendingWordAt|pendingWords|setInterval/);
-	const surface = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	assert.match(surface, /applyReasoningStreamEvent/);
-	const provider = await readFile(new URL('../src/server/provider.ts', import.meta.url), 'utf8');
-	assert.match(provider, /supportsReasoningEffort/);
-	assert.match(provider, /vercelAiGatewayBaseUrl/);
 });

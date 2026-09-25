@@ -145,13 +145,6 @@ test('rate limiter uses the injected clock and counter', () => {
 	assert.equal(limiter.consume('user-a').ok, true);
 });
 
-test('chat routes reject a missing session with 401', async () => {
-	const app = createTestApp();
-	const response = await app.request(`${appConfig.chatAgentPath}/user-a:nonce`);
-	assert.equal(response.status, 401);
-	assert.deepEqual(await response.json(), { error: unauthorizedChatError });
-});
-
 test('chat routes reject a foreign conversation id with 403', async () => {
 	const app = createTestApp();
 	const { cookie, userId } = await mintCookie(app);

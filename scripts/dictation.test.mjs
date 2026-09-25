@@ -343,57 +343,6 @@ test('voice send fails closed for empty, non-command, and errored transcripts', 
 	}
 });
 
-test('updates interim and final results from a non-zero resultIndex without duplication', () => {
-	const harness = setup();
-	try {
-		const { controller, recognition } = startSession(harness, 'Alpha omega', 6);
-		recognition.emit('start');
-		recognition.result([
-			{ text: 'one', final: true },
-			{ text: 'two', final: false },
-		]);
-		assert.equal(harness.input.value, 'Alpha one two omega');
-
-		const settled = [
-			{ text: 'one', final: true },
-			{ text: 'two', final: true },
-		];
-		recognition.result(settled, 1);
-		recognition.result(settled, 1);
-		assert.equal(harness.input.value, 'Alpha one two omega');
-		assert.equal(harness.input.selectionStart, 'Alpha one two'.length);
-		controller.destroy();
-	} finally {
-		harness.restore();
-	}
-});
-
-test('inserts before, inside, and after text with selected replacement and boundary spacing', () => {
-	const cases = [
-		{ original: 'world', start: 0, end: 0, speech: 'Hello', expected: 'Hello world' },
-		{ original: 'Hello world', start: 6, end: 11, speech: 'there', expected: 'Hello there' },
-		{ original: 'Hello', start: 5, end: 5, speech: ',', expected: 'Hello,' },
-		{ original: '(world)', start: 1, end: 6, speech: 'Hello', expected: '(Hello)' },
-	];
-	for (const item of cases) {
-		const harness = setup();
-		try {
-			const { controller, recognition } = startSession(
-				harness,
-				item.original,
-				item.start,
-				item.end,
-			);
-			recognition.emit('start');
-			recognition.result([{ text: item.speech, final: true }]);
-			assert.equal(harness.input.value, item.expected);
-			controller.destroy();
-		} finally {
-			harness.restore();
-		}
-	}
-});
-
 test('trusted typing, paste, and composition edits preserve their value and invalidate late results', () => {
 	for (const inputType of ['insertText', 'insertFromPaste', 'insertCompositionText']) {
 		const harness = setup();

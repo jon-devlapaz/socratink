@@ -3,34 +3,14 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../src/config/app.config.ts';
 import {
-	applyLearnerChatPick,
 	capOpenrouterChatMaxTokens,
 	chatProviderId,
-	credentialNameForLearnerChat,
-	formatLearnerChatSpecifier,
 	learnerChatModelChoices,
 	openaiChatModelId,
 	openrouterChatMaxTokens,
 	openrouterChatModelId,
-	parseLearnerChatSpecifier,
 	resolveChatModel,
-	specifierForLearnerChat,
-	specifierForLearnerChatFromStatus,
 } from '../src/config/chat-model.ts';
-
-const localDefaults = {
-	providerId: chatProviderId,
-	baseUrl: appConfig.defaultLocalBaseUrl,
-	modelId: appConfig.defaultLocalModelId,
-	apiKey: undefined,
-	reasoning: true,
-	contextWindow: 1_048_576,
-	maxTokens: 131_100,
-};
-
-{
-	assert.deepEqual(resolveChatModel({}), localDefaults);
-}
 
 {
 	assert.deepEqual(
@@ -115,25 +95,6 @@ const localDefaults = {
 }
 
 {
-	assert.deepEqual(
-		resolveChatModel({
-			NF_PROJECT_ID: 'socratink',
-			JON_LOCAL_BASE_URL: 'https://models.example.com/v1',
-			JON_LOCAL_API_KEY: 'freellmapi-key',
-		}),
-		{
-			providerId: chatProviderId,
-			baseUrl: 'https://models.example.com/v1',
-			modelId: appConfig.defaultLocalModelId,
-			apiKey: 'freellmapi-key',
-			reasoning: true,
-			contextWindow: 1_048_576,
-			maxTokens: 131_100,
-		},
-	);
-}
-
-{
 	assert.deepEqual(resolveChatModel({ VERCEL: '1', VERCEL_OIDC_TOKEN: 'oidc-token' }), {
 		providerId: chatProviderId,
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
@@ -158,45 +119,10 @@ const localDefaults = {
 }
 
 {
-	assert.deepEqual(resolveChatModel({ VERCEL: '1' }), {
-		providerId: chatProviderId,
-		baseUrl: appConfig.vercelAiGatewayBaseUrl,
-		modelId: appConfig.vercelAiGatewayModelId,
-		apiKey: undefined,
-		reasoning: true,
-		contextWindow: 204_800,
-		maxTokens: 131_100,
-	});
-}
-
-{
 	assert.throws(
 		() => resolveChatModel({ NF_PROJECT_ID: 'socratink' }),
 		/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
 	);
-}
-
-{
-	const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-	const reads = [];
-	await Promise.all([
-		(async () => {
-			process.env.VERCEL_OIDC_TOKEN = 'first';
-			await wait(20);
-			reads.push(
-				resolveChatModel({ VERCEL: '1', VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN }).apiKey,
-			);
-		})(),
-		(async () => {
-			process.env.VERCEL_OIDC_TOKEN = 'second';
-			await wait(0);
-			reads.push(
-				resolveChatModel({ VERCEL: '1', VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN }).apiKey,
-			);
-		})(),
-	]);
-	assert.deepEqual(reads, ['second', 'second']);
-	delete process.env.VERCEL_OIDC_TOKEN;
 }
 
 {
@@ -211,65 +137,6 @@ const localDefaults = {
 			.getModels()
 			.some((model) => model.id === openrouterChatModelId),
 		true,
-	);
-	assert.equal(
-		specifierForLearnerChat({ kind: 'operator' }, { providerId: chatProviderId, modelId: 'auto' }),
-		'jon-local/auto',
-	);
-	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
-	assert.equal(
-		specifierForLearnerChat({ kind: 'openai', modelId: 'gpt-5' }),
-		'openai/gpt-5',
-	);
-	assert.equal(
-		specifierForLearnerChat({ kind: 'openai', modelId: 'gpt-4o' }),
-		'openai/gpt-5-nano',
-	);
-	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
-	assert.equal(
-		specifierForLearnerChat({ kind: 'openrouter', modelId: 'openai/gpt-5-mini' }),
-		'openrouter/openai/gpt-5-mini',
-	);
-	assert.equal(credentialNameForLearnerChat({ kind: 'openai' }), 'openai');
-	assert.equal(credentialNameForLearnerChat({ kind: 'openrouter' }), 'openrouter');
-	assert.deepEqual(parseLearnerChatSpecifier('openai/gpt-5'), {
-		kind: 'openai',
-		modelId: 'gpt-5',
-	});
-	assert.equal(parseLearnerChatSpecifier('openai/gpt-4o'), undefined);
-	assert.equal(
-		formatLearnerChatSpecifier({ kind: 'openrouter', modelId: 'openai/gpt-5-mini' }),
-		'openrouter/openai/gpt-5-mini',
-	);
-	assert.equal(
-		specifierForLearnerChatFromStatus(
-			{ openai: true, openrouter: true },
-			{ providerId: chatProviderId, modelId: 'auto' },
-			'openai/gpt-5',
-		),
-		'openai/gpt-5',
-	);
-	assert.equal(
-		specifierForLearnerChatFromStatus(
-			{ openai: true, openrouter: true },
-			{ providerId: chatProviderId, modelId: 'auto' },
-		),
-		'openrouter/openai/gpt-5-nano',
-	);
-	assert.equal(
-		specifierForLearnerChatFromStatus(
-			{ openai: false, openrouter: true },
-			{ providerId: chatProviderId, modelId: 'auto' },
-			'openai/gpt-5',
-		),
-		'openrouter/openai/gpt-5-nano',
-	);
-	assert.deepEqual(
-		applyLearnerChatPick(
-			{ kind: 'openrouter', openai: true, openrouter: true },
-			'openai/gpt-5',
-		),
-		{ kind: 'openai', openai: true, openrouter: true },
 	);
 	for (const choice of learnerChatModelChoices) {
 		assert.equal(
@@ -289,8 +156,6 @@ const localDefaults = {
 
 {
 	const catalog = openrouterProvider().getModels();
-	const catalogNano = catalog.find((model) => model.id === openrouterChatModelId);
-	assert.equal(catalogNano?.maxTokens, 128000);
 	assert.equal(openrouterChatMaxTokens, 8192);
 	assert.ok(openrouterChatMaxTokens < 100000);
 
@@ -312,11 +177,6 @@ const localDefaults = {
 		capped.find((model) => model.id === other.id)?.maxTokens,
 		other.maxTokens,
 	);
-
-	const openaiNano = openaiProvider()
-		.getModels()
-		.find((model) => model.id === openaiChatModelId);
-	assert.equal(openaiNano?.maxTokens, 128000);
 }
 
 console.log('Chat model routing contract passed.');

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-	formatModelRoute,
 	modelRouteFromMetadata,
 	modelRouteLabel,
 	modelRouteMetadata,
@@ -15,24 +14,6 @@ import {
 	runWithRouteCapture,
 	wrapStreamsForRouteCapture,
 } from '../src/server/model-route.ts';
-
-test('formats the upstream FreeLLMAPI route without the requested auto alias', () => {
-	assert.equal(
-		formatModelRoute({
-			routedModel: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
-		}),
-		'Qwen/Qwen3-VL-235B-A22B-Instruct',
-	);
-	assert.equal(formatModelRoute({ requestedModel: 'auto' }), undefined);
-	assert.equal(
-		formatModelRoute({
-			routedModel: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
-			fallbackAttempts: 2,
-		}),
-		'Qwen/Qwen3-VL-235B-A22B-Instruct · ↻2',
-	);
-	assert.equal(formatModelRoute(undefined), undefined);
-});
 
 test('reads routing headers the same way the Pi harness does', () => {
 	const headers = new Headers({

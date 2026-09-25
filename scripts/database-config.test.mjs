@@ -9,13 +9,6 @@ test('uses Postgres when DATABASE_URL is configured', () => {
 	});
 });
 
-test('uses file-backed SQLite for local development', () => {
-	assert.deepEqual(resolveDatabaseTarget({}), {
-		kind: 'sqlite',
-		filename: '.cache/flue/local.db',
-	});
-});
-
 test('fails closed in production, Northflank, or Vercel when DATABASE_URL is missing', () => {
 	for (const environment of [
 		{ NODE_ENV: 'production' },

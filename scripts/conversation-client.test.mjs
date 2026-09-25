@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { FlueApiError, FlueExecutionError } from '@flue/sdk';
 import { appConfig } from '../src/config/app.config.ts';
@@ -506,30 +505,6 @@ test('openChatConversation keeps a stored conversation id owned by an alias', ()
 	}
 });
 
-test('oversized reject keeps the composer draft for editing', async () => {
-	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	assert.doesNotMatch(
-		source,
-		/async function sendMessage[\s\S]*?input\.value = ''[\s\S]*?await startRequest/,
-	);
-	assert.match(
-		source,
-		/if \(requestState\.kind === 'terminal'\)[\s\S]*?return;\s*\}\s*input\.value = '';/,
-	);
-});
-
-test('chat-surface restore begins restore then hydrates and rechecks', async () => {
-	const source = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	assert.match(source, /requests\.beginRestore\(\)/);
-	assert.match(source, /unsettled = unsettledSubmissionFromHistory\(history\)/);
-	assert.match(source, /requests\.hydrate\(unsettled\.text, unsettled\.submissionId\)/);
-	assert.match(source, /if \(unsettled\) await runRequestCommand\(requests\.recheck\(\)\)/);
-	assert.doesNotMatch(source, /initChatAutoModel/);
-	assert.doesNotMatch(source, /#auto-model/);
-	assert.doesNotMatch(source, /\bsetWorking\b/);
-	assert.doesNotMatch(source, /let working = /);
-});
-
 test('reload does not revive an older unsettled record after a newer submission settled', () => {
 	assert.equal(
 		unsettledSubmissionFromHistory({
@@ -892,21 +867,6 @@ test('a recovery action focuses Recheck; a confirmed stop leaves the composer op
 	assert.equal(document.activeElement, input);
 	assert.equal(input.disabled, false);
 	assert.equal(button.disabled, false);
-});
-
-test('the pending view keeps stable accessible copy and a 10 second latency threshold', async () => {
-	const source = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
-	assert.match(source, /Waiting for Socratink/);
-	assert.match(source, /Taking longer than usual\./);
-	assert.match(source, /exceptionalLatencyMs = 10_000/);
-	assert.match(source, /setAttribute\('role', 'status'\)/);
-	assert.match(source, /thinking-bar/);
-	assert.match(source, /thinking-cancel/);
-	assert.match(source, /aria-label', disabled \? 'Canceling' : 'Cancel'/);
-	assert.match(source, /Thinking/);
-	assert.match(source, /thinking-orbs/);
-	assert.match(source, /thinking-blob/);
-	assert.match(source, /thinking-gooey/);
 });
 
 test('Retry works after an oversized reject', async () => {

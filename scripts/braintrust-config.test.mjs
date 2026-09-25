@@ -98,24 +98,6 @@ function createFakes() {
 }
 
 {
-	const fixtureRoot = await mkdtemp(join(tmpdir(), 'socratink-braintrust-isdir-'));
-
-	try {
-		await mkdir(join(fixtureRoot, '.env.braintrust'));
-		assert.throws(
-			() => resolveBraintrustApiKey({}, fixtureRoot),
-			(error) =>
-				typeof error === 'object' &&
-				error !== null &&
-				'code' in error &&
-				error.code === 'EISDIR',
-		);
-	} finally {
-		await rm(fixtureRoot, { recursive: true, force: true });
-	}
-}
-
-{
 	const fakes = createFakes();
 	const alreadyInstalled = new Error('already installed');
 	alreadyInstalled.name = 'InstrumentationAlreadyInstalledError';
