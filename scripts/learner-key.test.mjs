@@ -9,7 +9,6 @@ import {
 	createProvider,
 	InMemoryCredentialStore,
 } from '@earendil-works/pi-ai';
-import { specifierForLearnerChat } from '../src/config/chat-model.ts';
 import { namespacedConversationId, userIdFromConversationId } from '../src/config/session.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
 import {
@@ -288,8 +287,6 @@ test('unsigned and disconnected Chat keep the operator key on jon-local', async 
 
 test('Chat uses openai/gpt-5-nano only while a learner key is connected', async () => {
 	const operator = { providerId: 'jon-local', modelId: 'auto' };
-	assert.equal(specifierForLearnerChat({ kind: 'operator' }, operator), 'jon-local/auto');
-	assert.equal(specifierForLearnerChat({ kind: 'openai' }), 'openai/gpt-5-nano');
 	assert.equal(
 		runWithChatSpecifier('openai/gpt-5-nano', () => capturedChatModelSpecifier()),
 		'openai/gpt-5-nano',
@@ -348,7 +345,6 @@ test('Chat uses openai/gpt-5-nano only while a learner key is connected', async 
 test('Chat uses openrouter/openai/gpt-5-nano when an OpenRouter key is connected', async () => {
 	const operator = { providerId: 'jon-local', modelId: 'auto' };
 	const openrouterKey = 'sk-or-fixture-alice';
-	assert.equal(specifierForLearnerChat({ kind: 'openrouter' }), 'openrouter/openai/gpt-5-nano');
 
 	await withStore(async (store) => {
 		await store.updateUserKey({

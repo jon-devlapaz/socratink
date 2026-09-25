@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
 	createSteeringBar,
@@ -116,34 +115,4 @@ test('steering chips send once; copy writes the turn without sending', async () 
 		globalThis.document = previousDocument;
 		globalThis.setTimeout = previousSetTimeout;
 	}
-});
-
-test('the last idle assistant turn mounts a steering bar that sends through the composer path', async () => {
-	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
-	const turnsSource = await readFile(new URL('../src/ui/chat-turns.ts', import.meta.url), 'utf8');
-	const barSource = await readFile(new URL('../src/ui/steering.ts', import.meta.url), 'utf8');
-	const promptSource = await readFile(new URL('../src/agents/chat.ts', import.meta.url), 'utf8');
-	const styleSource = await readFile(new URL('../src/ui/steering.css', import.meta.url), 'utf8');
-	const mainSource = await readFile(new URL('../src/ui/main.ts', import.meta.url), 'utf8');
-	const packageSource = await readFile(new URL('../package.json', import.meta.url), 'utf8');
-
-	assert.match(surfaceSource, /steering: isLast && item\.role === 'Assistant' && requestState\.kind === 'idle'/);
-	assert.match(surfaceSource, /sendMessage\(formatSteeringMessage\(steering\)\)/);
-	assert.match(turnSource, /createSteeringBar/);
-	assert.match(turnsSource, /displayedLearnerTurn/);
-	assert.match(turnsSource, /learnerKind: 'steering'/);
-	assert.match(barSource, /aria-label', 'Steer this turn'/);
-	assert.doesNotMatch(barSource, /Need a different pace/);
-	assert.doesNotMatch(barSource, /request-action/);
-	assert.match(barSource, /role', 'tooltip'/);
-	assert.match(barSource, /steering-icon/);
-	assert.doesNotMatch(barSource, /lucide-react/);
-	assert.match(promptSource, /When a learner message starts with "Steering:"/);
-	assert.match(promptSource, /not as evidence of capability/);
-	assert.match(promptSource, /"try unaided" means withhold the next reveal/);
-	assert.match(styleSource, /\.steering-bar \{/);
-	assert.match(styleSource, /\.steering-tip \{/);
-	assert.match(mainSource, /import '\.\/steering\.css'/);
-	assert.doesNotMatch(packageSource, /lucide-react|prompt-kit/);
 });

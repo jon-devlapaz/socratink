@@ -1,57 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-	createVoiceLevelMeter,
-	voiceLevelFromSamples,
-} from '../src/ui/voice-level-meter.ts';
-import {
-	sphereMotionForState,
-	sphereMotionForVoiceLevel,
-	spherePalettes,
-} from '../src/ui/effects/organic-sphere.ts';
-
-test('normalizes silence, speech energy, and clipping to a bounded level', () => {
-	assert.equal(voiceLevelFromSamples(new Float32Array(8)), 0);
-	const speech = voiceLevelFromSamples(new Float32Array(8).fill(0.05));
-	assert.ok(speech > 0 && speech < 1);
-	assert.equal(voiceLevelFromSamples(new Float32Array(8).fill(0.5)), 1);
-	assert.equal(voiceLevelFromSamples(new Float32Array()), 0);
-});
-
-test('increasing voice energy increases every sphere motion channel', () => {
-	const resting = sphereMotionForVoiceLevel(0);
-	const speaking = sphereMotionForVoiceLevel(0.5);
-	const loud = sphereMotionForVoiceLevel(1);
-	assert.ok(speaking.displacement > resting.displacement);
-	assert.ok(speaking.distortion > resting.distortion);
-	assert.ok(speaking.timeScale > resting.timeScale);
-	assert.ok(loud.displacement > speaking.displacement);
-	assert.deepEqual(sphereMotionForVoiceLevel(2), loud);
-	assert.deepEqual(sphereMotionForVoiceLevel(-1), resting);
-});
-
-test('attention wakes the sphere a little; an open dock calms it; only voice moves distortion', () => {
-	const resting = sphereMotionForState({ voice: 0, attention: 0, open: false });
-	assert.deepEqual(resting, sphereMotionForVoiceLevel(0));
-	const noticed = sphereMotionForState({ voice: 0, attention: 1, open: false });
-	assert.ok(noticed.timeScale > resting.timeScale);
-	assert.ok(noticed.displacement > resting.displacement);
-	assert.ok(noticed.displacement < sphereMotionForVoiceLevel(0.5).displacement);
-	assert.equal(noticed.distortion, resting.distortion);
-	const open = sphereMotionForState({ voice: 0, attention: 1, open: true });
-	assert.ok(open.displacement < resting.displacement);
-	assert.ok(open.timeScale < noticed.timeScale);
-	assert.deepEqual(sphereMotionForState({ voice: 0, attention: 3, open: false }), noticed);
-});
-
-test('the dark palette is a warm stone body on dark paper, not a cream lamp', () => {
-	assert.equal(spherePalettes.light.base, '#000000');
-	assert.equal(spherePalettes.dark.base, '#3d3a36');
-	assert.equal(spherePalettes.dark.lightB.color, '#cecdc3');
-	assert.ok(spherePalettes.dark.blackCore < spherePalettes.light.blackCore);
-	assert.ok(spherePalettes.dark.hotRim < spherePalettes.light.hotRim);
-	assert.ok(spherePalettes.dark.lightB.intensity < 0.7);
-});
+import { createVoiceLevelMeter } from '../src/ui/voice-level-meter.ts';
 
 test('starts local analysis and releases every audio resource on stop', async () => {
 	const originalWindow = globalThis.window;

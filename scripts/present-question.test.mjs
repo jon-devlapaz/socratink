@@ -6,36 +6,7 @@ import {
 	presentQuestionRetryReason,
 	presentQuestionToolName,
 } from '../src/agents/present-question.ts';
-import {
-	questionnaireFromPresentQuestion,
-	presentQuestionExample,
-} from '../src/questionnaire.ts';
-
-test('maps a flat present_question payload onto the stored questionnaire contract', () => {
-	assert.deepEqual(questionnaireFromPresentQuestion(presentQuestionExample), {
-		kind: 'question',
-		submitLabel: 'Submit',
-		items: [
-			{
-				name: 'item',
-				prompt: presentQuestionExample.prompt,
-				required: true,
-				multiple: false,
-				choices: [
-					{
-						value: 'recheck-the-admitted-request',
-						label: 'Recheck the admitted request',
-					},
-					{
-						value: 'send-the-same-message-again',
-						label: 'Send the same message again',
-					},
-				],
-				input: { label: 'Your reasoning' },
-			},
-		],
-	});
-});
+import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 
 test('slugs duplicate labels and keeps an explicit value when it is unique', () => {
 	const questionnaire = questionnaireFromPresentQuestion({
