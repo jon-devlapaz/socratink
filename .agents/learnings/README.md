@@ -35,3 +35,14 @@ Current kind: `postmortem`. Keep one lesson per file. Use YAML frontmatter.
 - Never put secrets, API keys, `.env*` contents, learner wording, or trace
   payloads in these files.
 - Never present synthetic or evaluator output as learner evidence or mastery.
+
+## S* vs N* (operator catalogs)
+
+- **S* costly fails** (thrash, waste campaigns, refuse-boot misses): write a
+  dated `postmortem-YYYY-MM-DD-<slug>.md` **the same day**, with stop rules the
+  next agent can execute.
+- **N* happy / catalog notes**: leave in research or Loops paste unless they are
+  the recovery twin of an S* fail.
+- Never copy Brain EVT / Docent rows into learnings as prose. Pointer + stop rule
+  only. Never promote learnings into Brain Canon or dump catalogs into
+  `AGENTS.md`.

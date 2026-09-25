@@ -1,6 +1,10 @@
-# Host archive pointer
+# Archived
 
-`FM-DOCPRUNE-01.md`, `FM-DOCPRUNE-01-EXECUTE.md`, and `CAPTURE-home-live.md`
-were moved off the hot tree in FM-PARETO-CUT-03.
+Drained into `~/agentic-engineering` earlier (fm-chatsig-*, fm-agenteng-*, chat-moat-*) and moved off the live research shelf on 2026-09-23.
 
-Recovery: `/Users/jondev/dev/archives/socratink-cold-archive/2026-09-16-from-main/chat-signal-audit/`
+## Where it went
+- Live tree: `/Users/jondev/dev/archives/socratink-research-chat-signal-archived-2026-09-23/chat-signal`
+- Vault SoR: `~/agentic-engineering/10-sources/` (fm-chatsig-01, fm-chatsig-pilot, fm-agenteng-01*, chat-moat-*) + related syntheses
+- Older partial prune pointer target (still valid for docprune crumbs): `/Users/jondev/dev/archives/socratink-cold-archive/2026-09-16-from-main/chat-signal-audit/`
+
+Do not recreate a live sync here unless you intentionally un-archive.

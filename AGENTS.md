@@ -26,7 +26,44 @@ restores them to `.agents/skills/`.
 Praxist-as-progress and extra WebGL scope freezes live in host
 `…/PARETO-01/FREEZE.md` (same archives folder). That file does not authorize
 deleting `living-ink` / `src/ui/effects/living-ink*` or any Chat knee code.
-WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete).
+WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete). Do not
+start new work on `organic-sphere`, `icon-cloud`, heavy/smooth-cursor, or other
+WebGL experiments beyond living-ink unless Captain explicitly requests that
+capability (bugfixes that preserve behavior are OK).
+
+
+## Operator tripwires (S010 / S030)
+
+These are operator STOP rules for Ship and long IDE sessions. They do not replace
+`ZEN.md` or product scope tripwires.
+
+### Boot gate (S010)
+
+Before tool loops: state Outcome (`/goal`), repo, cwd, proof, stop condition, and
+Not-in-this-PR. **Refuse boot** if Outcome is missing. Do not substitute a
+skill-path hunt for Outcome + proof.
+
+### Thrash tripwire (S030)
+
+| # | Tripwire | Action |
+| ---: | --- | --- |
+| 1 | ≥3 identical tool signatures without a green gate | Change one variable → retry once; else rewrite `/goal` |
+| 2 | ≥5 same-file edit cycles without a green gate | **STOP.** Replate. No “one more polish.” |
+| 3 | Extreme thrash ∩ low happy ∩ low verify | Park; do not ship |
+
+**OOM budget:** IDE thrash leaders historically ran ~10× unique tool-roles vs
+median gold cloud PRs (~160). Treat climbing toward that multiple as a cost
+brake — stop, replate, or force Ship-cloud. High Axis-A ship score alone does
+not mean a healthy loop (S065).
+
+### Learnings after costly fails
+
+Same day as a costly repeatable negative operator path (S*-class thrash, waste
+campaigns), add
+`.agents/learnings/postmortem-YYYY-MM-DD-<slug>.md` with `read_when` and stop
+rules. Keep N* catalogs in research/Loops paste unless they are the recovery
+twin. Never duplicate Brain EVT rows as prose learnings; never promote learnings
+into Canon or dump full catalogs into this file.
 
 ## Commands
 
@@ -258,9 +295,9 @@ Unless the user already requested the exact action, ask before:
 
 ## Research preload
 
-Load `research/pareto/` and thin `research/chat-signal/` contracts only when the
-task needs them. Cold-archive recovery: see **Cold archive and freezes** above
-and [`research/README.md`](research/README.md).
+`research/chat-signal/`, `research/pareto/`, and other FM crumb shelves are
+**host-archived** (pointer-only in-tree). See [`research/README.md`](research/README.md).
+Do not preload archived research. Cold packs: **Cold archive and freezes** above.
 
 ## Coding-agent portability
 
