@@ -112,3 +112,6 @@ research/_cold-archive/
 
 # Agent-local skills/config — never commit
 .agents/
+
+# Nested private doctrine vault — separate repository
+socratink-brain/
