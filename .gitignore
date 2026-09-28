@@ -109,3 +109,6 @@ praxist_task/tests/test_contract.py
 
 # Cold archives live outside the product repo (see research/README.md)
 research/_cold-archive/
+
+# Agent-local skills/config — never commit
+.agents/

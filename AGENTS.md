@@ -153,7 +153,7 @@ Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
    words do not authorize broader features.
 4. Change the narrowest stable owner and add or update the closest test.
 5. Run targeted checks while iterating, then the full applicable handoff gate.
-6. Review the diff, remove incidental artifacts, and stop when the stated
+6. Parse the diff, remove incidental artifacts, and stop when the stated
    outcome is proven.
 7. After a costly negative campaign or operator path, add a dated postmortem
    under `.agents/learnings/` so the next agent can find the stop rule.
