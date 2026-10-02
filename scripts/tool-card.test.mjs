@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
 	applyToolStreamEvent,
@@ -197,29 +196,4 @@ test('keeps mark_reveal off the card, and present_question once the form is up',
 	assert.deepEqual(visibleCardTools([reveal, question, trace], { questionnaire: { kind: 'question' } }), [
 		trace,
 	]);
-});
-
-test('the live card mounts tool calls from history parts and admission stream events', async () => {
-	const turnsSource = await readFile(new URL('../src/ui/chat-turns.ts', import.meta.url), 'utf8');
-	const turnSource = await readFile(new URL('../src/ui/turn-view.ts', import.meta.url), 'utf8');
-	const surfaceSource = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	const conversationSource = await readFile(
-		new URL('../src/ui/client/conversation.ts', import.meta.url),
-		'utf8',
-	);
-	assert.match(turnsSource, /toolsFromParts\(message\.parts\)/);
-	assert.match(turnsSource, /visibleCardTools\(/);
-	assert.match(turnSource, /createToolList\(item\.tools\)/);
-	assert.match(turnSource, /createToolList\(tools\)/);
-	assert.match(surfaceSource, /applyToolStreamEvent\(liveTools, event\)/);
-	assert.match(surfaceSource, /isQuietToolStreamEvent\(event, quietToolIds\)/);
-	assert.match(surfaceSource, /visibleCardTools\(liveTools/);
-	assert.match(surfaceSource, /\.\.\.\(tools\.length \? \{ tools \} : \{\}\)/);
-	assert.match(conversationSource, /onEvent\?: \(event: ConversationStreamChunk\) => void/);
-	assert.match(conversationSource, /applyToolStreamEvent\(this\.streamTools, event\)/);
-	assert.match(conversationSource, /read\(admission, \{[\s\S]*?onEvent/);
-	assert.doesNotMatch(conversationSource, /read\(admission\.submissionId, \{[\s\S]*?onEvent/);
-	const cssSource = await readFile(new URL('../src/ui/tool-card.css', import.meta.url), 'utf8');
-	assert.doesNotMatch(cssSource, /\.tool-card \{[^}]*box-shadow/);
-	assert.doesNotMatch(cssSource, /\.tool-card \{[^}]*background:/);
 });

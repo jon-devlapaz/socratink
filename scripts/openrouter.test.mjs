@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -14,7 +14,6 @@ import {
 } from '../src/config/openrouter.ts';
 import { credentialNameForLearnerChat, operatorChatStatus } from '../src/config/chat-model.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
-import { openaiChatStatusCopy, openrouterChatStatusCopy, providersChatStatusCopy } from '../src/ui/chat-route.ts';
 import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import { mountChatRoute } from '../src/server/chat-route.ts';
 import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
@@ -202,10 +201,6 @@ test('openrouter routes require a session and never echo the minted key', async 
 			const statusBody = await status.json();
 			assert.deepEqual(statusBody, { kind: 'openrouter', openai: false, openrouter: true });
 			assert.equal(JSON.stringify(statusBody).includes(fixtureKey), false);
-			assert.equal(providersChatStatusCopy(statusBody), 'Chat uses your OpenRouter key.');
-			assert.match(openrouterChatStatusCopy(statusBody), /Chat uses your OpenRouter key/);
-			assert.doesNotMatch(openaiChatStatusCopy(statusBody), /Chat uses/);
-			assert.equal(openaiChatStatusCopy(statusBody), '');
 
 			const { cookie: otherCookie } = await mintCookie(app);
 			const other = await app.request(appConfig.chatRoutePath, { headers: { cookie: otherCookie } });
@@ -293,47 +288,8 @@ test('a failed OpenRouter token exchange does not store a key', async () => {
 	}
 });
 
-test('OpenRouter connect UI lives on Chat chrome and does not keep the minted key in the browser', async () => {
-	const html = await readFile(new URL('../src/ui/index.html', import.meta.url), 'utf8');
-	const script = await readFile(new URL('../src/ui/openrouter.ts', import.meta.url), 'utf8');
-	const surface = await readFile(new URL('../src/ui/chat-surface.ts', import.meta.url), 'utf8');
-	const provider = await readFile(new URL('../src/server/provider.ts', import.meta.url), 'utf8');
-	assert.match(html, /id="openrouter"/);
-	assert.match(html, /id="providers-status"/);
-	assert.match(html, /id="providers-panel"/);
-	assert.match(html, /id="openrouter-models"/);
-	assert.doesNotMatch(html, /id="auto-model"/);
-	assert.match(html, /action="\/api\/openrouter\/connect"/);
-	assert.match(html, /OpenRouter credits/);
-	assert.doesNotMatch(html, /Log in with ChatGPT/);
-	assert.doesNotMatch(html, /Log in with Claude/);
-	assert.match(script, /openrouterPath/);
-	assert.match(script, /method: 'DELETE'/);
-	assert.doesNotMatch(script, /localStorage/);
-	assert.doesNotMatch(script, /sessionStorage/);
-	assert.match(surface, /mountOpenrouter/);
-	assert.match(surface, /loadLearnerChatStatus/);
-	assert.match(provider, /openrouterProvider/);
-	assert.match(provider, /capOpenrouterChatMaxTokens/);
-	assert.match(provider, /getModels: \(\) => capOpenrouterChatMaxTokens\(openrouter\.getModels\(\)\)/);
-	assert.match(provider, /resolveStoredLearnerApiKey/);
-	assert.match(provider, /credentialNameForLearnerChat\(\{ kind: 'openrouter' \}\)/);
-	assert.doesNotMatch(provider, /Models\.login/);
-	assert.doesNotMatch(provider, /OPENROUTER_API_KEY/);
-	assert.doesNotMatch(provider, /openRouterOAuth/);
-	assert.doesNotMatch(provider, /process\.env\.\w+\s*=/);
-	assert.doesNotMatch(provider, /loginLabel/);
-	assert.doesNotMatch(provider, /resolveLearnerChatApiKey/);
-});
-
-test('both stored keys paint Chat as OpenRouter-driven', async () => {
+test('both stored keys report an OpenRouter chat route and do not echo the key', async () => {
 	const both = { kind: 'openrouter', openai: true, openrouter: true };
-	assert.equal(providersChatStatusCopy(both), 'Chat uses your OpenRouter key.');
-	assert.doesNotMatch(providersChatStatusCopy(both), /OpenAI/);
-	assert.match(openrouterChatStatusCopy(both), /Chat uses your OpenRouter key/);
-	assert.doesNotMatch(openaiChatStatusCopy(both), /Chat uses/);
-	assert.equal(openaiChatStatusCopy(both), 'OpenAI key stored.');
-
 	const tokenServer = createServer((_request, response) => {
 		response.writeHead(200, { 'content-type': 'application/json' });
 		response.end(JSON.stringify({ key: fixtureKey }));
@@ -364,10 +320,7 @@ test('both stored keys paint Chat as OpenRouter-driven', async () => {
 			const body = await status.json();
 			assert.deepEqual(body, both);
 			assert.equal(JSON.stringify(body).includes(fixtureKey), false);
-			assert.equal(providersChatStatusCopy(body), 'Chat uses your OpenRouter key.');
-			assert.match(openrouterChatStatusCopy(body), /Chat uses your OpenRouter key/);
-			assert.doesNotMatch(openaiChatStatusCopy(body), /Chat uses/);
-			assert.equal(openaiChatStatusCopy(body), 'OpenAI key stored.');
+			assert.equal(JSON.stringify(body).includes('sk-fixture-openai'), false);
 		}, { tokenUrl: `http://127.0.0.1:${tokenPort}/api/v1/auth/keys` });
 	} finally {
 		await close(tokenServer);

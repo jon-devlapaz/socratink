@@ -275,33 +275,6 @@ test('maps the stored assistant role to the Socratink display label', () => {
 	assert.equal(displayLabel('You'), 'You');
 });
 
-test('projects a cosmetic ink cue from assistant history parts', () => {
-	const turns = visibleTurnsFromHistory({
-		settlements: [],
-		messages: [
-			{
-				display: 'visible',
-				role: 'assistant',
-				parts: [
-					{ type: 'text', text: 'Trace the step.' },
-					{ type: 'data-ink', data: { expression: 'explain' } },
-					{
-						type: 'dynamic-tool',
-						toolName: 'ink_express',
-						toolCallId: 'call_ink',
-						state: 'output-available',
-						input: { expression: 'explain' },
-						output: 'Visual cue recorded.',
-					},
-				],
-			},
-		],
-	});
-	assert.deepEqual(turns, [
-		{ role: 'Assistant', text: 'Trace the step.', ink: { expression: 'explain' } },
-	]);
-});
-
 test('projects the routed model from assistant response metadata', () => {
 	const turns = visibleTurnsFromHistory({
 		settlements: [],

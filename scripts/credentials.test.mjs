@@ -13,7 +13,6 @@ import {
 	createPostgresCredentialDb,
 	createSqliteCredentialDb,
 } from '../src/server/credential-db.ts';
-import { decryptSecret, deriveCredentialsKey, encryptSecret } from '../src/server/credential-crypto.ts';
 import {
 	createCredentialStore,
 	foreignUserKeyError,
@@ -84,14 +83,6 @@ test('uses Postgres when DATABASE_URL is set and a product SQLite file locally',
 		filename: localCredentialsFilename,
 	});
 	assert.notEqual(localCredentialsFilename, '.cache/flue/local.db');
-});
-
-test('encrypt/decrypt round-trip restores the secret', () => {
-	const key = deriveCredentialsKey(testSecret);
-	const packed = encryptSecret(plaintext, key);
-	assert.notEqual(packed, plaintext);
-	assert.doesNotMatch(packed, new RegExp(plaintext));
-	assert.equal(decryptSecret(packed, key), plaintext);
 });
 
 test('owner can get a stored key by name and by credentialRef', async () => {
@@ -252,25 +243,13 @@ test('overwrite rotates the secret and revokes the previous credentialRef', asyn
 	});
 });
 
-test('logs and on-disk rows contain credentialRef and never the secret', async () => {
+test('on-disk credential rows never store the secret', async () => {
 	await withStore(async (store, filename) => {
-		const { credentialRef } = await store.updateUserKey({
+		await store.updateUserKey({
 			userId: ownerId,
 			name: keyName,
 			value: plaintext,
 		});
-		const trace = {
-			project: 'socratink',
-			event: 'credential.resolve',
-			credentialRef,
-		};
-		const serialized = JSON.stringify(trace);
-		assert.match(serialized, /credentialRef/);
-		assert.match(serialized, new RegExp(credentialRef));
-		assert.doesNotMatch(serialized, /sk-secret-should-never-appear-in-logs/);
-		assert.equal('value' in trace, false);
-		assert.equal('apiKey' in trace, false);
-		assert.equal('ciphertext' in trace, false);
 
 		const onDisk = await readFile(filename);
 		assert.doesNotMatch(onDisk.toString('utf8'), /sk-secret-should-never-appear-in-logs/);

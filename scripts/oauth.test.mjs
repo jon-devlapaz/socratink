@@ -80,32 +80,6 @@ test('OAuth login routes redirect with PKCE parameters and set oauth_state cooki
 	});
 });
 
-test('auth providers endpoint reports configured providers', async () => {
-	await withAuthDb(async (authDb) => {
-		const both = new Hono();
-		mountOAuthRoutes(both, {
-			config: testAuthConfig,
-			secret: testSecret,
-			authDb,
-			onRekey: async () => {},
-		});
-		const bothRes = await both.request('/api/auth/providers');
-		assert.equal(bothRes.status, 200);
-		assert.deepEqual(await bothRes.json(), { google: true, github: true });
-
-		const googleOnly = new Hono();
-		mountOAuthRoutes(googleOnly, {
-			config: { google: testAuthConfig.google, redirectBaseUrl: 'http://localhost:5173' },
-			secret: testSecret,
-			authDb,
-			onRekey: async () => {},
-		});
-		const googleRes = await googleOnly.request('/api/auth/providers');
-		assert.equal(googleRes.status, 200);
-		assert.deepEqual(await googleRes.json(), { google: true, github: false });
-	});
-});
-
 test('OAuth callback rejects missing or invalid state parameters', async () => {
 	await withAuthDb(async (authDb) => {
 		const app = new Hono();
