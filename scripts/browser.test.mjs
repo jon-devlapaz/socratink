@@ -54,8 +54,8 @@ after(async () => {
 	if (server?.pid) assert.equal(code, 0, 'the disposable server must shut down cleanly');
 });
 
-async function withPage(t, width, run, { signedIn = true } = {}) {
-	const context = await browser.newContext({
+async function withPage(t, width, run, { signedIn = true, browserInstance = browser } = {}) {
+	const context = await browserInstance.newContext({
 		viewport: { width, height: 900 }, isMobile: width < 600, hasTouch: width < 600,
 	});
 	t.after(() => context.close());
@@ -182,6 +182,32 @@ test('cancellation settles one card and never erases an already admitted learner
 		await page.waitForFunction(() => !document.querySelector('#message').disabled);
 		assert.deepEqual(await page.locator(learnerSelector).allTextContents(), expected);
 	});
+});
+
+test('software WebGL uses the poster without blocking chat or the menu', { timeout: 60_000 }, async (t) => {
+	const softwareBrowser = await chromium.launch({
+		args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+	});
+	t.after(() => softwareBrowser.close());
+	await withPage(t, 1280, async (page) => {
+		const driver = await page.evaluate(() => {
+			const gl = document.createElement('canvas').getContext('webgl2');
+			const info = gl?.getExtension('WEBGL_debug_renderer_info');
+			const renderer = info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
+			gl?.getExtension('WEBGL_lose_context')?.loseContext();
+			return renderer;
+		});
+		assert.match(driver, /SwiftShader/i, 'exercise software WebGL, not an unavailable graphics API');
+		await page.waitForFunction(() => document.querySelector('.alive-core')?.dataset.inkUnavailable === 'true');
+		assert.equal(await page.locator('.living-ink-poster').isVisible(), true);
+		assert.equal(await page.locator('.living-ink-render canvas').count(), 0);
+		await send(page, 'Synthetic software-renderer message.');
+		assert.deepEqual(await page.locator(learnerSelector).allTextContents(), ['Synthetic software-renderer message.']);
+		await page.locator('#peek-handle').click();
+		await page.waitForFunction(() => document.querySelector('#menu-layer').getAttribute('aria-hidden') === 'false');
+		await page.keyboard.press('Escape');
+		assert.equal(await page.locator('#peek-handle').getAttribute('aria-expanded'), 'false');
+	}, { browserInstance: softwareBrowser });
 });
 
 test('hosted guests see the existing sign-in card, not provider setup', { timeout: 60_000 }, async (t) => {

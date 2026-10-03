@@ -17,6 +17,17 @@ const rotation = (v: number[]) =>
 		),
 	);
 
+function requireAcceleratedRenderer(renderer: THREE.WebGLRenderer) {
+	const gl = renderer.getContext();
+	const info = gl.getExtension('WEBGL_debug_renderer_info');
+	const driver = info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
+	// Software raymarching can block chat input for seconds; keep the poster instead.
+	if (typeof driver === 'string' && /SwiftShader|llvmpipe|softpipe|Software Rasterizer/i.test(driver)) {
+		renderer.dispose();
+		throw new Error('Living ink requires hardware-accelerated WebGL.');
+	}
+}
+
 // A dim room, one small window, a wide faint sky, a rim catch from behind:
 // a wet pool, not a product under softboxes.
 function createEnvironment(renderer: THREE.WebGLRenderer) {
@@ -80,7 +91,9 @@ export function mountInk(
 		alpha: true,
 		antialias: true,
 		preserveDrawingBuffer: true,
+		failIfMajorPerformanceCaveat: true,
 	});
+	requireAcceleratedRenderer(renderer);
 	renderer.setClearColor(0, 0);
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 	renderer.domElement.setAttribute('aria-hidden', 'true');
