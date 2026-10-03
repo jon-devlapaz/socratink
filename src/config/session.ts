@@ -42,9 +42,8 @@ export type SessionCookieKind = 'guest' | 'registered';
 
 export type SessionCookie = Readonly<{
 	userId: string;
-	kind: SessionCookieKind;
 	nonce: string;
-}>;
+} & ({ kind: 'guest' } | { kind: 'registered' })>;
 
 const sessionCookieVersion = '1';
 const sessionNonceBytes = 16;

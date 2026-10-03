@@ -9,6 +9,7 @@ import {
 	type FlueConversationSnapshot,
 } from '@flue/sdk';
 import { appConfig } from '../../config/app.config.ts';
+import { betaAccessErrorMessage } from '../../config/beta-access.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
 import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
@@ -482,13 +483,29 @@ function awaitWithSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T
 }
 
 export function chatTurnErrorMessage(error: unknown): string {
+	const betaMessage = betaAccessErrorMessage(envelopeType(error)) ?? betaExecutionMessage(error);
+	if (betaMessage) return betaMessage;
 	if (isLostConversationStream(error)) {
 		return 'This conversation was interrupted before a reply arrived. Send again or start over.';
 	}
+	if (envelopeType(error) === 'quota_for_entity_exceeded'
+		|| /quota_for_entity_exceeded|quota limit exceeded|(?:project|team|api key|user) budget exceeded/i.test(collectedErrorText(error))) {
+		return 'The beta model budget is exhausted. You can still read earlier messages. Contact the beta organizer to continue.';
+	}
 	if (isOpenRouterCreditLimitError(error)) {
-		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.';
+		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the Socratink model.';
 	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
+}
+
+function betaExecutionMessage(error: unknown): string | undefined {
+	if (!(error instanceof FlueExecutionError) || typeof error.error !== 'object' || error.error === null) return undefined;
+	const failure = error.error as { type?: unknown; name?: unknown; message?: unknown; meta?: unknown };
+	const meta = typeof failure.meta === 'object' && failure.meta !== null
+		? failure.meta as { reason?: unknown } : undefined;
+	// Flue wraps model-guard errors as operation_failed, preserving the reason.
+	return betaAccessErrorMessage(failure.type ?? failure.name,
+		failure.type === 'operation_failed' ? meta?.reason : failure.message);
 }
 
 export function isOpenRouterCreditLimitError(error: unknown): boolean {
@@ -503,6 +520,7 @@ function collectedErrorText(error: unknown): string {
 	if (typeof error !== 'object' || error === null) return '';
 	const parts: string[] = [];
 	if ('message' in error && typeof error.message === 'string') parts.push(error.message);
+	if ('type' in error && typeof error.type === 'string') parts.push(error.type);
 	if ('error' in error && error.error !== error) parts.push(collectedErrorText(error.error));
 	return parts.join('\n');
 }

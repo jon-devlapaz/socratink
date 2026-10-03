@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { Pool } from 'pg';
 import type { DatabaseTarget } from '../config/database.ts';
+import { createPostgresInitializer } from './postgres-initialization.ts';
 
 export type CredentialRow = Readonly<{
 	userId: string;
@@ -87,8 +88,7 @@ function openPostgresCredentialDb(connectionString: string): CredentialDb {
 }
 
 export function createPostgresCredentialDb(client: CredentialPgClient): CredentialDb {
-	let ready: Promise<void> | undefined;
-	const ensure = () => (ready ??= client.query(CREATE_TABLE_SQL).then(() => undefined));
+	const ensure = createPostgresInitializer(client, CREATE_TABLE_SQL);
 
 	return {
 		async upsert(row) {

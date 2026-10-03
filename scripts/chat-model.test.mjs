@@ -50,79 +50,29 @@ import {
 	);
 }
 
-{
-	assert.deepEqual(
-		resolveChatModel({
-			VERCEL: '1',
-			JON_LOCAL_BASE_URL: 'http://127.0.0.1:3001/v1',
+for (const hosted of [{ NODE_ENV: 'production' }, { VERCEL: '1' }, { NF_PROJECT_ID: 'socratink' }]) {
+	assert.throws(
+		() => resolveChatModel({ ...hosted, VERCEL_OIDC_TOKEN: 'oidc-token' }),
+		/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
+	);
+	for (const baseUrl of ['http://127.0.0.1:3001/v1', 'https://models.example.com/v1']) {
+		assert.deepEqual(resolveChatModel({
+			...hosted,
+			JON_LOCAL_BASE_URL: baseUrl,
 			JON_LOCAL_MODEL_ID: 'auto',
 			JON_LOCAL_API_KEY: 'local-key',
-			AI_GATEWAY_API_KEY: 'gateway-key',
+			AI_GATEWAY_API_KEY: ' gateway-key ',
 			VERCEL_OIDC_TOKEN: 'oidc-token',
-		}),
-		{
+		}), {
 			providerId: chatProviderId,
 			baseUrl: appConfig.vercelAiGatewayBaseUrl,
 			modelId: appConfig.vercelAiGatewayModelId,
 			apiKey: 'gateway-key',
 			reasoning: true,
 			contextWindow: 204_800,
-			maxTokens: 131_100,
-		},
-	);
-}
-
-{
-	assert.deepEqual(
-		resolveChatModel({
-			VERCEL: '1',
-			JON_LOCAL_BASE_URL: 'https://models.example.com/v1',
-			JON_LOCAL_MODEL_ID: 'auto',
-			JON_LOCAL_API_KEY: 'freellmapi-key',
-			AI_GATEWAY_API_KEY: 'gateway-key',
-			VERCEL_OIDC_TOKEN: 'oidc-token',
-		}),
-		{
-			providerId: chatProviderId,
-			baseUrl: 'https://models.example.com/v1',
-			modelId: 'auto',
-			apiKey: 'freellmapi-key',
-			reasoning: true,
-			contextWindow: 1_048_576,
-			maxTokens: 131_100,
-		},
-	);
-}
-
-{
-	assert.deepEqual(resolveChatModel({ VERCEL: '1', VERCEL_OIDC_TOKEN: 'oidc-token' }), {
-		providerId: chatProviderId,
-		baseUrl: appConfig.vercelAiGatewayBaseUrl,
-		modelId: appConfig.vercelAiGatewayModelId,
-		apiKey: 'oidc-token',
-		reasoning: true,
-		contextWindow: 204_800,
-		maxTokens: 131_100,
-	});
-}
-
-{
-	assert.deepEqual(resolveChatModel({ NF_PROJECT_ID: 'socratink', AI_GATEWAY_API_KEY: 'gateway-key' }), {
-		providerId: chatProviderId,
-		baseUrl: appConfig.vercelAiGatewayBaseUrl,
-		modelId: appConfig.vercelAiGatewayModelId,
-		apiKey: 'gateway-key',
-		reasoning: true,
-		contextWindow: 204_800,
-		maxTokens: 131_100,
-	});
-}
-
-{
-	assert.throws(
-		() => resolveChatModel({ NF_PROJECT_ID: 'socratink' }),
-		/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
-	);
+			maxTokens: 8192,
+		});
+	}
 }
 
 {

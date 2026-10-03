@@ -74,6 +74,28 @@ test('resolveAuthConfig rejects production redirectBaseUrl in local development'
 	);
 });
 
+test('hosted sign-in requires an explicit HTTPS callback base', () => {
+	for (const hosted of [{ NODE_ENV: 'production' }, { VERCEL: '1' }, { NF_PROJECT_ID: 'fixture' }]) {
+		const environment = {
+			...hosted,
+			GOOGLE_CLIENT_ID: 'fixture-client',
+			GOOGLE_CLIENT_SECRET: 'fixture-secret',
+		};
+		assert.throws(() => resolveAuthConfig(environment), /AUTH_REDIRECT_BASE_URL is required/);
+		for (const url of [
+			'http://localhost:5173',
+			'https://name:password@example.com',
+			'https://example.com?callback=other',
+			'https://example.com#callback',
+		]) {
+			assert.throws(() => resolveAuthConfig({ ...environment, AUTH_REDIRECT_BASE_URL: url }), /must be an HTTPS URL/);
+		}
+		assert.equal(resolveAuthConfig({
+			...environment, AUTH_REDIRECT_BASE_URL: 'https://beta.example.com/',
+		}).redirectBaseUrl, 'https://beta.example.com');
+	}
+});
+
 test('resolveAuthStoreTarget uses postgres when DATABASE_URL is set, sqlite otherwise', () => {
 	const postgresTarget = resolveAuthStoreTarget({
 		DATABASE_URL: 'postgres://user:pass@localhost:5432/db',

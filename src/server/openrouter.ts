@@ -13,7 +13,7 @@ import {
 } from '../config/openrouter.ts';
 import { sessionUsesSecureCookie } from '../config/session.ts';
 import { unauthorizedChatError } from './chat-access.ts';
-import { learnerChatStatusResponse } from './chat-route.ts';
+import { learnerChatStatusResponse, requireLearnerKeyConnection } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
 import { openrouterCredentialName } from './learner-key.ts';
 import { sessionFromContext } from './session.ts';
@@ -53,19 +53,21 @@ export function mountOpenrouterRoutes(
 		signed: MiddlewareHandler;
 		secret: string;
 		store: OpenRouterStore;
+		operatorOnly?: boolean;
 		oauth?: OpenRouterOAuthEndpoints;
 	},
 ): void {
 	app.use(`${appConfig.openrouterPath}/*`, options.signed);
 	app.use(appConfig.openrouterPath, options.signed);
 	app.delete(appConfig.openrouterPath, (context) => clearOpenrouter(context, options));
-	app.post(appConfig.openrouterConnectPath, (context) => startOpenrouter(context, options));
-	app.get(appConfig.openrouterCallbackPath, (context) => finishOpenrouter(context, options));
+	const connection = requireLearnerKeyConnection(options.operatorOnly);
+	app.post(appConfig.openrouterConnectPath, connection, (context) => startOpenrouter(context, options));
+	app.get(appConfig.openrouterCallbackPath, connection, (context) => finishOpenrouter(context, options));
 }
 
 async function clearOpenrouter(
 	context: Context,
-	options: { store: OpenRouterStore },
+	options: { store: OpenRouterStore; operatorOnly?: boolean },
 ) {
 	const userId = sessionFromContext(context)?.userId;
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);

@@ -1,7 +1,7 @@
 import type { Context, Hono } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import type { AuthConfig } from '../config/auth.ts';
-import { sessionUsesSecureCookie } from '../config/session.ts';
+import { sessionUsesSecureCookie, type SessionCookie } from '../config/session.ts';
 import type { AuthDb } from './auth-db.ts';
 import { clearGuestTurns } from './guest-turns.ts';
 import { readSession, writeSessionCookie } from './session.ts';
@@ -196,16 +196,17 @@ async function handleCallback(
 		const identity = await identityResolvers[provider](accessToken);
 		if (!identity) return context.redirect('/login.html?error=unverified_email');
 
-		const guestUserId = (await readSession(context, options.secret, options.authDb))?.userId;
+		const session = await readSession(context, options.secret, options.authDb);
+		const guestSession = session?.kind === 'guest' ? session : undefined;
 		const durableUserId = await resolveDurableUserId(options.authDb, {
 			provider,
 			providerUserId: identity.providerUserId,
 			email: identity.email,
-			guestUserId,
+			guestSession,
 		});
-		if (guestUserId && guestUserId !== durableUserId) {
-			await options.authDb.createAlias(guestUserId, durableUserId);
-			await options.onRekey(guestUserId, durableUserId);
+		if (guestSession && guestSession.userId !== durableUserId) {
+			await options.authDb.createAlias(guestSession.userId, durableUserId);
+			await options.onRekey(guestSession.userId, durableUserId);
 		}
 		await writeSessionCookie(context, durableUserId, options.secret, process.env, 'registered');
 
@@ -318,7 +319,7 @@ async function resolveDurableUserId(
 		provider: OAuthProvider;
 		providerUserId: string;
 		email: string;
-		guestUserId: string | undefined;
+		guestSession: Extract<SessionCookie, { kind: 'guest' }> | undefined;
 	},
 ): Promise<string> {
 	const existingAccount = await authDb.findOAuthAccount(identity.provider, identity.providerUserId);
@@ -335,7 +336,7 @@ async function resolveDurableUserId(
 		return existingUser.id;
 	}
 
-	const durableUserId = identity.guestUserId ?? crypto.randomUUID();
+	const durableUserId = identity.guestSession?.userId ?? crypto.randomUUID();
 	await authDb.createUser(durableUserId, identity.email);
 	await authDb.upsertOAuthAccount(
 		identity.provider,

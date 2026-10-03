@@ -1,12 +1,20 @@
-// Inline auth gate card shown after the guest turn limit is reached.
-// Rendered into the conversation transcript, not as a modal or redirect.
+import { betaSignInError } from '../config/beta-access.ts';
+import type { ChatRequestState } from './client/conversation.ts';
 import type { AuthProviders } from './session.ts';
+
+const guestSignInMessage = 'You\u2019ve had 3 turns. Sign in to save your conversation and keep learning.';
+
+export function authGateMessage(state: ChatRequestState): string | undefined {
+	if (state.kind !== 'terminal' || state.outcome !== 'not-admitted') return undefined;
+	if (state.code === betaSignInError.type) return betaSignInError.message;
+	return state.code === 'guest_turn_limit' ? guestSignInMessage : undefined;
+}
 
 export function hasAuthProvider(providers: AuthProviders): boolean {
 	return providers.google || providers.github;
 }
 
-export function createAuthGateCard(providers: AuthProviders): HTMLElement {
+export function createAuthGateCard(providers: AuthProviders, messageText = guestSignInMessage): HTMLElement {
 	const card = document.createElement('div');
 	card.className = 'chat-gate-card';
 	card.setAttribute('role', 'status');
@@ -14,8 +22,7 @@ export function createAuthGateCard(providers: AuthProviders): HTMLElement {
 
 	const message = document.createElement('p');
 	message.className = 'chat-gate-message';
-	message.textContent =
-		'You\u2019ve had 3 turns. Sign in to save your conversation and keep learning.';
+	message.textContent = messageText;
 	card.append(message);
 
 	const actions = document.createElement('div');

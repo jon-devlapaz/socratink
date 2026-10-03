@@ -24,11 +24,11 @@ The app reads these local environment settings without committing their values:
   `http://127.0.0.1:3001/v1`
 - `JON_LOCAL_API_KEY` — the endpoint's API key when required
 
-On Vercel (`VERCEL=1`) and Northflank, Chat uses `JON_LOCAL_BASE_URL` and
-`JON_LOCAL_API_KEY` when both are set to a public `https` OpenAI-compatible
-endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
-routing. Otherwise Chat uses AI Gateway. Northflank still requires
-`AI_GATEWAY_API_KEY` when that fallback is used.
+Hosted Chat (`NODE_ENV=production`, `VERCEL=1`, or Northflank) uses AI Gateway
+with the fixed model in `src/config/app.config.ts` and an 8,192-token output
+limit. `AI_GATEWAY_API_KEY` is mandatory. Hosted routing ignores `JON_LOCAL_*`,
+OIDC credentials, learner keys, and browser model selections: they cannot bypass
+the operator key's budget. Local development retains its existing routing.
 
 Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
 refuses to start without durable conversation storage or a session signing
@@ -37,7 +37,7 @@ a local session secret when `SESSION_SECRET` is unset.
 
 Opening the credential store requires `CREDENTIALS_SECRET` on hosted
 environments and uses `socratink-local-credentials-secret` when that env is
-unset locally. The store is keyed by session `userId` plus name. Authenticated
+unset locally. The store is keyed by session `userId` plus name. Local
 Chat uses one exclusive learner route: an OpenRouter PKCE row drives
 `openrouter/openai/gpt-5-nano`; otherwise an OpenAI paste row drives
 `openai/gpt-5-nano`. Unsigned local Chat and smoke stay on operator
@@ -52,10 +52,42 @@ Chat requires a signed HttpOnly session cookie. Conversation ids are
 rate-limited by that user id. OpenRouter connect is PKCE that mints a user API
 key; it is not Socratink identity and not a ChatGPT or Claude login.
 
+## Invited beta controls
+
+Hosted replies are **paused by default**. Before enabling them:
+
+1. Create a dedicated AI Gateway API key with a **$10 total budget and no
+   refresh**, used only by this beta. With the Vercel CLI:
+   `vercel ai-gateway api-keys create --name socratink-beta --limit 10 --refresh-period none`.
+   Store the returned key as `AI_GATEWAY_API_KEY`, never in source or chat.
+2. Inspect the key's budget and usage in the gateway. Allow time for enforcement
+   to activate and verify that no BYOK route bypasses the budget. Gateway budgets
+   are [soft caps](https://vercel.com/docs/ai-gateway/observability-and-spend/budgets):
+   in-flight requests can exceed $10 and reporting is delayed. This is an accepted
+   beta tradeoff, **not an app-enforced hard dollar limit**. The application does
+   not provision or verify the remote budget configuration.
+3. Configure an existing Google or GitHub OAuth integration and an explicit
+   HTTPS `AUTH_REDIRECT_BASE_URL` for this deployment.
+4. Set `SOCRATINK_BETA_INVITED_EMAILS` to exact comma-separated verified account
+   emails, for example `learner@example.com`. Wildcards are rejected. Only
+   registered invited accounts may start paid replies.
+5. After verifying the above, set `SOCRATINK_BETA_PAUSED=0` and restart/redeploy.
+   Set it back to `1` and restart/redeploy to pause new paid work. No reset or
+   budget increase is automatic; either requires operator approval.
+
+Ownership checks still protect history and cancellation while replies are
+paused. Each model call also checks invited ownership, including queued work,
+retries, tool-loop continuations, and restored guest conversations. Calls already
+sent upstream cannot be recalled by changing configuration. The learner menu has
+no provider settings, model picker, or key forms. Existing credentials do not
+select the hosted model. Backend credential deletion remains available to the
+owning signed session; hosted mode refuses new provider connections.
+
 ## Verify the app
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm exec playwright install chromium
 pnpm check
 pnpm smoke
 pnpm audit --prod
@@ -65,6 +97,14 @@ The product source lives in `src/`. The default Vite build generates the
 Node application in `dist/`, and the UI build writes its static assets to
 `dist/client/`. The smoke test starts only local processes and uses a fake
 OpenAI-compatible provider; it never requires external credentials.
+
+`pnpm check` includes `pnpm test:browser`. To run just the browser regressions,
+use `pnpm test:browser`; it rebuilds the UI first, launches isolated Chromium
+contexts against a disposable local fixture, and checks cancellation, Retry,
+history reload, sign-in prompts, and the desktop/mobile menu. The fixture uses
+synthetic identities and model responses, blocks live network calls, and removes
+its temporary storage on exit. CI installs Chromium with its system dependencies.
+These tests do not verify live OAuth, Postgres, or gateway billing.
 
 ## Demonstrate the current interaction
 
@@ -84,11 +124,10 @@ For an operator walkthrough:
 This demonstrates a persisted, observable interaction and its software
 reliability boundaries. It does not establish agentic-engineering mastery,
 durable learning, transfer, learning effectiveness, or production readiness.
-Hosted Chat now requires a signed session cookie, conversation ownership, and
-per-user rate limits. Authenticated learners can paste an OpenAI platform key
-or connect OpenRouter PKCE; the minted or pasted secret stays in the encrypted
-store. Keep the public domain off until that hosted path is verified for the
-learners who will use it.
+Hosted Chat requires a signed session cookie, conversation ownership, invited
+account access, and per-user rate limits. Keep the public domain off until live
+sign-in, the dedicated gateway budget, browser recovery, and hosted persistence
+are verified for the invited learners.
 
 ## Northflank staging
 
@@ -110,9 +149,9 @@ live owner for a conversation, including during replacement.
 
 Keep the PostgreSQL addon private. The current Northflank deployment is a
 private staging target. Do not expose its port or attach the production domain
-until an identity vendor and learner BYOK are implemented and verified. Session
-cookies, conversation ownership, rate limits, and the encrypted credential
-store are necessary but not sufficient for a public BYOK URL.
+until the invited beta controls and real hosted learner journey above are
+configured and verified. Passing local checks alone does not establish that
+this deployment is ready for learners.
 
 ## Braintrust observability
 
