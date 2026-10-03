@@ -4,10 +4,12 @@ import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
 import { configureBraintrust } from './braintrust.ts';
 import { resolveAuthConfig } from './config/auth.ts';
+import { resolveBetaAccess } from './config/beta-access.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
 import { chatModel, chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
+import { requireBetaAdmission } from './server/beta-access.ts';
 import { requireChatSession, requireSignedSession } from './server/chat-access.ts';
 import { rememberConversationAuto } from './server/chat-auto.ts';
 import { mountChatRoute } from './server/chat-route.ts';
@@ -31,6 +33,10 @@ const sessionSecret = resolveSessionSecret(process.env);
 const credentialStore = getCredentialStore();
 const authDb = getAuthDb();
 const authConfig = resolveAuthConfig(process.env);
+const betaAccess = resolveBetaAccess(process.env);
+if (betaAccess && !betaAccess.paused && !authConfig) {
+	throw new Error('An OAuth provider is required before unpausing hosted replies.');
+}
 const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
 	max: chatRateLimitMax,
@@ -48,15 +54,18 @@ mountSessionRoutes(app, { secret: sessionSecret, authDb });
 mountOpenaiKeyRoutes(app, {
 	signed: signedSession,
 	store: credentialStore,
+	operatorOnly: Boolean(betaAccess),
 });
 mountOpenrouterRoutes(app, {
 	signed: signedSession,
 	secret: sessionSecret,
 	store: credentialStore,
+	operatorOnly: Boolean(betaAccess),
 });
 mountChatRoute(app, {
 	signed: signedSession,
 	store: credentialStore,
+	operatorOnly: Boolean(betaAccess),
 });
 if (authConfig) {
 	mountOAuthRoutes(app, {
@@ -69,13 +78,16 @@ if (authConfig) {
 }
 app.use(
 	'/api/agents/chat/*',
-	guestTurnGateMiddleware({ secret: sessionSecret, authDb }),
+	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
 );
 app.use(
 	'/api/agents/chat/*',
-	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
+	betaAccess
+		? requireBetaAdmission({ policy: betaAccess, authDb })
+		: guestTurnGateMiddleware({ secret: sessionSecret, authDb }),
 );
 app.use('/api/agents/chat/*', async (context, next) => {
+	if (betaAccess) return next();
 	const userId = sessionFromContext(context)?.userId;
 	const route: LearnerChatRoute = userId
 		? await learnerChatRouteForUser({ store: credentialStore, userId })

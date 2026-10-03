@@ -8,6 +8,8 @@ import { appConfig } from '../src/config/app.config.ts';
 import { parseSessionCookieValue, sessionCookieName } from '../src/config/session.ts';
 import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import { requireChatSession } from '../src/server/chat-access.ts';
+import { createSqliteCredentialDb } from '../src/server/credential-db.ts';
+import { createCredentialStore } from '../src/server/credentials.ts';
 import { mountOAuthRoutes, selectVerifiedGitHubEmail } from '../src/server/oauth.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
 import { mountSessionRoutes } from '../src/server/session.ts';
@@ -181,6 +183,78 @@ async function withMockFetch(routes, run) {
 }
 
 const googleTokenRoute = () => ({ access_token: 'test-access-token' });
+
+async function signInAs(app, provider, { id, email }, cookies = '') {
+	const login = await startLogin(app, provider, cookies);
+	return withMockFetch({
+		'https://oauth2.googleapis.com/token': googleTokenRoute,
+		'https://openidconnect.googleapis.com/v1/userinfo': () => ({
+			sub: String(id), email, email_verified: true,
+		}),
+		'https://github.com/login/oauth/access_token': googleTokenRoute,
+		'https://api.github.com/user': () => ({ id }),
+		'https://api.github.com/user/emails': () => [{ email, primary: true, verified: true }],
+	}, async () => {
+		const response = await app.request(`/api/auth/${provider}/callback?code=test-code&state=${login.state}`, {
+			headers: { Cookie: login.cookies },
+		});
+		assert.equal(response.status, 302);
+		assert.equal(response.headers.get('location'), '/');
+		return mergeCookies(response, login.cookies);
+	});
+}
+
+for (const provider of ['google', 'github']) {
+	for (const destination of ['existing OAuth account', 'existing email account', 'new account']) {
+		test(`${provider} registered-account switch to ${destination} preserves both owners`, async () => {
+			await withAuthDb(async (authDb) => {
+				const store = createCredentialStore({ secret: testSecret, db: createSqliteCredentialDb(':memory:') });
+				const rekeys = [];
+				const app = createCallbackApp(authDb, { onRekey: async (fromUserId, toUserId) => {
+					rekeys.push([fromUserId, toUserId]);
+					await store.rekeyUser({ fromUserId, toUserId });
+				} });
+				try {
+					const original = { id: 101, email: 'original@example.invalid' };
+					const next = { id: 202, email: 'next@example.invalid' };
+					const originalCookies = await signInAs(app, provider, original);
+					const originalId = await sessionUserId(app, originalCookies);
+					const { credentialRef } = await store.updateUserKey({
+						userId: originalId, name: 'openai', value: 'synthetic-account-isolation-key',
+					});
+					if (destination !== 'new account') await authDb.createUser('next-user', next.email);
+					if (destination === 'existing OAuth account') {
+						await authDb.upsertOAuthAccount(provider, String(next.id), 'next-user', next.email);
+					}
+
+					const nextCookies = await signInAs(app, provider, next, originalCookies);
+					const nextId = await sessionUserId(app, nextCookies);
+					assert.notEqual(nextId, originalId);
+					if (destination !== 'new account') assert.equal(nextId, 'next-user');
+					for (const [cookies, owner, status] of [
+						[nextCookies, originalId, 403], [originalCookies, nextId, 403],
+						[originalCookies, originalId, 200], [nextCookies, nextId, 200],
+					]) {
+						const response = await app.request(`${appConfig.chatAgentPath}/${owner}:private`, {
+							headers: { Cookie: cookies },
+						});
+						assert.equal(response.status, status, 'sign-in must not transfer conversation ownership');
+					}
+					assert.deepEqual(await authDb.findAliases(originalId), []);
+					assert.deepEqual(await authDb.findAliases(nextId), []);
+					assert.deepEqual(rekeys, []);
+					assert.equal(await store.hasUserKey({ userId: nextId, name: 'openai' }), false);
+					assert.equal(await store.getUserKeyByRef({ userId: originalId, credentialRef }), 'synthetic-account-isolation-key');
+					assert.equal((await authDb.findUserById(originalId)).email, original.email);
+					assert.equal((await authDb.findUserById(nextId)).email, next.email);
+					assert.equal((await authDb.findOAuthAccount(provider, String(original.id))).userId, originalId);
+				} finally {
+					await store.close();
+				}
+			});
+		});
+	}
+}
 
 test('Google callback creates a new user from the guest session and keeps the session id', async () => {
 	await withAuthDb(async (authDb) => {

@@ -2,7 +2,10 @@ import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
-import { setProvider } from '@flue/runtime';
+import { instrument, setProvider } from '@flue/runtime';
+import { resolveBetaAccess } from '../config/beta-access.ts';
+import { getAuthDb } from './auth-runtime.ts';
+import { createBetaModelGuard } from './beta-access.ts';
 import { appConfig } from '../config/app.config.ts';
 import {
 	capOpenrouterChatMaxTokens,
@@ -23,6 +26,7 @@ import { installModelRouteCapture, wrapStreamsForRouteCapture } from './model-ro
 const openai = openaiProvider();
 const openrouter = openrouterProvider();
 const credentialStore = getCredentialStore();
+const betaAccess = resolveBetaAccess(process.env);
 
 setProvider(
 	createProvider({
@@ -89,5 +93,14 @@ installChatAutoCapture();
 installLearnerKeyCapture({
 	store: credentialStore,
 	operator: chatModel,
+	operatorOnly: Boolean(betaAccess),
 });
+if (betaAccess) {
+	instrument({
+		key: Symbol.for('socratink.beta-access'),
+		observe() {},
+		interceptor: createBetaModelGuard({ policy: betaAccess, authDb: getAuthDb() }),
+		dispose() {},
+	});
+}
 installPresentQuestionTextCapture();

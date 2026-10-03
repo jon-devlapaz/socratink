@@ -14,6 +14,9 @@ export function applyRequestControlState(
 	elements: RequestControlElements,
 ): void {
 	const controls = chatRequestControls(state);
+	if (state.kind === 'terminal' && state.outcome === 'not-admitted' && elements.input.disabled) {
+		elements.input.value = state.text;
+	}
 	elements.input.disabled = controls.composerLocked;
 	elements.button.disabled = controls.composerLocked;
 	elements.startOver.disabled = controls.startOverDisabled;

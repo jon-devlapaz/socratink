@@ -275,15 +275,11 @@ try {
 	assert.equal(root.status, 200);
 	const html = await root.text();
 	assert.match(html, /<title>Socratink<\/title>/);
-	assert.match(html, /id="openai-key"/);
-	assert.match(html, /id="providers-toggle"/);
-	assert.match(html, /id="providers-status"/);
-	assert.match(html, /OpenAI platform API key/);
-	assert.match(html, /id="openrouter"/);
-	assert.match(html, /id="openai-models"/);
-	assert.match(html, /id="openrouter-models"/);
-	assert.doesNotMatch(html, /id="auto-model"/);
-	assert.match(html, /OpenRouter credits/);
+	assert.doesNotMatch(html, /id="(?:openai-key|openrouter|providers-toggle|providers-panel|providers-status|openai-models|openrouter-models|auto-model)"/);
+	assert.doesNotMatch(html, /OpenAI platform API key|OpenRouter credits/);
+	for (const id of ['type-size-toggle', 'appearance-toggle', 'start-over', 'auth-link']) {
+		assert.ok(html.includes(`id="${id}"`), `${id} remains in the learner menu`);
+	}
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
 	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);

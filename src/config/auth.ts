@@ -1,4 +1,5 @@
 import { resolveDatabaseTarget, type DatabaseTarget } from './database.ts';
+import { isHostedEnvironment } from './hosted.ts';
 
 export const localAuthFilename = '.cache/socratink/auth.db';
 
@@ -25,12 +26,12 @@ export type AuthEnvironment = Readonly<{
 	VERCEL?: string;
 }>;
 
-function isHostedEnvironment(environment: AuthEnvironment): boolean {
-	return (
-		environment.NODE_ENV === 'production' ||
-		Boolean(environment.NF_PROJECT_ID) ||
-		environment.VERCEL === '1'
-	);
+function validateHostedRedirectBaseUrl(value: string | undefined): void {
+	if (!value) throw new Error('AUTH_REDIRECT_BASE_URL is required for hosted sign-in.');
+	const url = new URL(value);
+	if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
+		throw new Error('AUTH_REDIRECT_BASE_URL must be an HTTPS URL without credentials, query, or fragment.');
+	}
 }
 
 function isProductionRedirectHost(hostname: string): boolean {
@@ -49,6 +50,7 @@ export function resolveAuthConfig(environment: AuthEnvironment): AuthConfig | un
 	if (!google && !github) return undefined;
 	
 	const configuredRedirectBaseUrl = environment.AUTH_REDIRECT_BASE_URL?.trim();
+	if (isHostedEnvironment(environment)) validateHostedRedirectBaseUrl(configuredRedirectBaseUrl);
 	const redirectBaseUrl = (configuredRedirectBaseUrl || 'http://localhost:5173').replace(/\/+$/, '');
 
 	if (!isHostedEnvironment(environment) && configuredRedirectBaseUrl) {

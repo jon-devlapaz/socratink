@@ -148,7 +148,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 		}
 		if (event.key !== 'Tab') return;
 		const items = [...menuLayer.querySelectorAll<HTMLElement>(
-			'.menu-orbs a, .menu-orbs button, .menu-key input, .menu-key button',
+			'.menu-orbs a, .menu-orbs button',
 		)].filter((item) => {
 			if (item.hidden || item.closest('[hidden]')) return false;
 			if (item.closest('[inert]')) return false;

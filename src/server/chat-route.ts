@@ -1,5 +1,6 @@
 import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
+import { learnerKeysUnavailableError } from '../config/beta-access.ts';
 import type { CredentialStore } from './credentials.ts';
 import { learnerChatStatusForUser } from './learner-key.ts';
 import { unauthorizedChatError } from './chat-access.ts';
@@ -12,17 +13,27 @@ export function mountChatRoute(
 	options: {
 		signed: MiddlewareHandler;
 		store: ChatRouteStore;
+		operatorOnly?: boolean;
 	},
 ): void {
 	app.use(appConfig.chatRoutePath, options.signed);
 	app.get(appConfig.chatRoutePath, (context) => learnerChatStatusResponse(context, options));
 }
 
+export function requireLearnerKeyConnection(operatorOnly = false): MiddlewareHandler {
+	return async (context, next) => operatorOnly
+		? context.json({ error: learnerKeysUnavailableError }, 403)
+		: next();
+}
+
 export async function learnerChatStatusResponse(
 	context: Context,
-	options: { store: ChatRouteStore },
+	options: { store: ChatRouteStore; operatorOnly?: boolean },
 ) {
 	const userId = sessionFromContext(context)?.userId;
 	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
-	return context.json(await learnerChatStatusForUser({ store: options.store, userId }));
+	const status = await learnerChatStatusForUser({ store: options.store, userId });
+	return context.json(options.operatorOnly
+		? { ...status, kind: 'operator', operatorOnly: true }
+		: status);
 }

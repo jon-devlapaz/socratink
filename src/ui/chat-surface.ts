@@ -2,7 +2,7 @@ import {
 	FlueApiError,
 	type AgentReadResult,
 } from '@flue/sdk';
-import { createAuthGateCard, hasAuthProvider } from './chat-gate.ts';
+import { authGateMessage, createAuthGateCard, hasAuthProvider } from './chat-gate.ts';
 import './chat-gate.css';
 import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
@@ -59,11 +59,6 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
-import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
-import { mountOpenrouter, paintOpenrouter } from './openrouter.ts';
-import { mountProviders, paintProviders } from './providers.ts';
-import { learnerChatStatusFromStoredPick } from './chat-pick.ts';
-import { loadLearnerChatStatus } from './chat-route.ts';
 import {
 	applyRequestControlState,
 	buildRequestStateTurn,
@@ -122,16 +117,6 @@ export function mountChatSurface(options: Readonly<{
 		dictationToggle,
 		dictationStatus,
 	} = elements;
-	async function refreshLearnerChat() {
-		const status = learnerChatStatusFromStoredPick(await loadLearnerChatStatus());
-		paintProviders(status);
-		paintOpenaiKey(status);
-		paintOpenrouter(status);
-	}
-	mountProviders(refreshLearnerChat);
-	mountOpenaiKey(refreshLearnerChat);
-	mountOpenrouter(refreshLearnerChat);
-	void refreshLearnerChat();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,
@@ -158,6 +143,7 @@ export function mountChatSurface(options: Readonly<{
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
+	let optimisticTurn: DisplayedTurn | undefined;
 	let requestState: ChatRequestState = requests.state;
 	const transcript = attachTranscriptScroll(card);
 	const markdownRenderers: MarkdownRenderer[] = [];
@@ -200,12 +186,12 @@ export function mountChatSurface(options: Readonly<{
 		return cachedProviders;
 	}
 
-	async function requestStateElement(
-		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
-	): Promise<HTMLElement> {
-		if (isGuestTurnLimitError(state)) {
+	async function requestStateElement(state: ChatRequestState): Promise<HTMLElement | undefined> {
+		if (state.kind !== 'recovery' && state.kind !== 'terminal') return;
+		const signInMessage = authGateMessage(state);
+		if (signInMessage) {
 			const providers = await gateProviders();
-			if (hasAuthProvider(providers)) return createAuthGateCard(providers);
+			if (hasAuthProvider(providers)) return createAuthGateCard(providers, signInMessage);
 		}
 		return createRequestStateTurn(state);
 	}
@@ -254,20 +240,23 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	async function paint(kind: PaintKind) {
+		const state = requestState;
 		const render = async () => {
+			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
+				activeTurn.classList.add('is-exiting');
+				await wait(150);
+			}
+
+			const stateElement = await requestStateElement(state);
+			if (state !== requestState) return;
+			// Commit without yielding: send and cancel can settle the same state together.
+			activeTurn.classList.remove('is-exiting');
 			clearStream();
 			const { earlier, current } = splitCurrentTurns(turns);
 			messages.replaceChildren(
 				...groupEarlierSteps(earlier).map((step, index) => createHistoryStep(step, index)),
 			);
 			syncTrail();
-
-			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
-				activeTurn.classList.add('is-exiting');
-				await wait(150);
-				activeTurn.classList.remove('is-exiting');
-			}
-
 			activeTurn.replaceChildren(
 				...current.map((item, index) => {
 					const isLast = index === current.length - 1;
@@ -310,9 +299,7 @@ export function mountChatSurface(options: Readonly<{
 			} else {
 				releasePending();
 			}
-			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
-				activeTurn.append(await requestStateElement(requestState));
-			}
+			if (stateElement) activeTurn.append(stateElement);
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
@@ -374,11 +361,13 @@ export function mountChatSurface(options: Readonly<{
 	});
 
 	async function sendMessage(text: string) {
-		if (chatRequestControls(requests.state).composerLocked) return;
+		if (!text.trim() || chatRequestControls(requests.state).composerLocked) return;
 		await startRequest(text);
 	}
 
 	async function startRequest(text: string) {
+		turns = turns.filter((turn) => turn !== optimisticTurn);
+		optimisticTurn = undefined;
 		liveTools.length = 0;
 		quietToolIds.clear();
 		resetLiveReasoning(liveReasoning);
@@ -393,7 +382,8 @@ export function mountChatSurface(options: Readonly<{
 			return;
 		}
 		input.value = '';
-		turns = [...turns, displayedLearnerTurn(text)];
+		optimisticTurn = displayedLearnerTurn(text);
+		turns = [...turns, optimisticTurn];
 		await paint('new-turn');
 		await applyRequestState(await result);
 	}
@@ -432,6 +422,8 @@ export function mountChatSurface(options: Readonly<{
 	async function applyRequestState(state: ChatRequestState) {
 		if (requests.state !== state) return;
 		requestState = state;
+		// Only a confirmed admission rejection leaves its optimistic turn replaceable.
+		if (state.kind !== 'terminal' || state.outcome !== 'not-admitted') optimisticTurn = undefined;
 		if (state.kind === 'completed') {
 			requests.acknowledgeCompleted();
 			requestState = requests.state;
@@ -552,12 +544,4 @@ function queryChatSurface(): ChatSurfaceElements {
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};
-}
-
-function isGuestTurnLimitError(state: ChatRequestState): boolean {
-	return (
-		state.kind === 'terminal'
-		&& state.outcome === 'not-admitted'
-		&& state.code === 'guest_turn_limit'
-	);
 }

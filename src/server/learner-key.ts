@@ -4,6 +4,7 @@ import {
 	credentialNameForLearnerChat,
 	formatLearnerChatSpecifier,
 	parseLearnerChatSpecifier,
+	specifierForLearnerChat,
 	specifierForLearnerChatFromStatus,
 	type ChatModel,
 	type LearnerChatRoute,
@@ -105,7 +106,9 @@ export async function specifierForStoredLearner(options: {
 	userId: string;
 	operator: Pick<ChatModel, 'providerId' | 'modelId'>;
 	requested?: string | null;
+	operatorOnly?: boolean;
 }): Promise<string> {
+	if (options.operatorOnly) return specifierForLearnerChat({ kind: 'operator' }, options.operator);
 	const status = await learnerChatStatusForUser({
 		store: options.store,
 		userId: options.userId,
@@ -146,7 +149,11 @@ function learnerChatKind(rows: { openai: boolean; openrouter: boolean }): Learne
 	return 'operator';
 }
 
-export function installLearnerKeyCapture(options: { store: LearnerKeyStore; operator: ChatModel }): void {
+export function installLearnerKeyCapture(options: {
+	store: LearnerKeyStore;
+	operator: ChatModel;
+	operatorOnly?: boolean;
+}): void {
 	try {
 		instrument({
 			key: instrumentationKey,
@@ -159,6 +166,7 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 						store: options.store,
 						userId,
 						operator: options.operator,
+						operatorOnly: options.operatorOnly,
 						requested: consumeConversationChatPick(ctx.conversationId),
 					});
 					return runWithChatSpecifier(specifier, next);

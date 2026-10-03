@@ -1,4 +1,5 @@
 import { appConfig } from './app.config.ts';
+import { isHostedEnvironment, type HostedEnvironment } from './hosted.ts';
 
 export const chatProviderId = 'jon-local';
 
@@ -53,6 +54,7 @@ export type LearnerChatStatus = {
 	kind: LearnerChatRoute['kind'];
 	openai: boolean;
 	openrouter: boolean;
+	operatorOnly?: boolean;
 };
 
 export const operatorChatStatus: LearnerChatStatus = {
@@ -76,24 +78,7 @@ export function credentialNameForLearnerChat(
 	}
 }
 
-export function isLearnerChatStatus(value: unknown): value is LearnerChatStatus {
-	if (typeof value !== 'object' || value === null) return false;
-	if (!('kind' in value) || !('openai' in value) || !('openrouter' in value)) return false;
-	if (value.openai !== true && value.openai !== false) return false;
-	if (value.openrouter !== true && value.openrouter !== false) return false;
-	switch (value.kind) {
-		case 'operator':
-		case 'openai':
-		case 'openrouter':
-			return true;
-		default:
-			return false;
-	}
-}
-
-export type ChatModelEnvironment = {
-	readonly VERCEL?: string;
-	readonly NF_PROJECT_ID?: string;
+export type ChatModelEnvironment = HostedEnvironment & {
 	readonly JON_LOCAL_API_KEY?: string;
 	readonly JON_LOCAL_BASE_URL?: string;
 	readonly JON_LOCAL_MODEL_ID?: string;
@@ -121,46 +106,15 @@ const localChatModelLimits = {
 const hostedGatewayLimits = {
 	reasoning: true,
 	contextWindow: 204_800,
-	maxTokens: 131_100,
+	maxTokens: 8192,
 } as const;
 
-function isPublicHttpsUrl(value: string): boolean {
-	try {
-		const url = new URL(value);
-		if (url.protocol !== 'https:') return false;
-		const host = url.hostname.toLowerCase();
-		if (!host.includes('.')) return false;
-		if (host === 'localhost' || host.endsWith('.local')) return false;
-		if (/^(127\.|10\.|192\.168\.|169\.254\.|100\.)/.test(host)) return false;
-		if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return false;
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-function hostedLocalOverride(environment: ChatModelEnvironment): ChatModel | undefined {
-	const baseUrl = environment.JON_LOCAL_BASE_URL?.trim();
-	const apiKey = environment.JON_LOCAL_API_KEY?.trim();
-	// Vercel cannot reach Tailscale CGNAT or loopback, so those stay on AI Gateway.
-	if (!baseUrl || !apiKey || !isPublicHttpsUrl(baseUrl)) return undefined;
-	const modelId = environment.JON_LOCAL_MODEL_ID?.trim() || appConfig.defaultLocalModelId;
-	return {
-		providerId: chatProviderId,
-		baseUrl,
-		modelId,
-		apiKey,
-		...localChatModelLimits,
-	};
-}
-
 export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
-	if (environment.VERCEL === '1' || environment.NF_PROJECT_ID) {
-		const override = hostedLocalOverride(environment);
-		if (override) return override;
-
-		const apiKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
-		if (!apiKey && environment.NF_PROJECT_ID) {
+	if (isHostedEnvironment(environment)) {
+		// A dedicated gateway key owns the beta budget. OIDC and local overrides
+		// must not silently route around that key's non-resetting spending limit.
+		const apiKey = environment.AI_GATEWAY_API_KEY?.trim();
+		if (!apiKey) {
 			throw new Error('AI_GATEWAY_API_KEY is required for hosted Socratink conversations.');
 		}
 		return {
@@ -211,20 +165,6 @@ export function formatLearnerChatSpecifier(pick: LearnerChatSpecifier): string {
 			throw new Error(`Unexpected chat specifier: ${JSON.stringify(exhaustive)}`);
 		}
 	}
-}
-
-export function applyLearnerChatPick(
-	status: LearnerChatStatus,
-	requested: string | undefined | null,
-): LearnerChatStatus {
-	const pick = parseLearnerChatSpecifier(requested);
-	if (pick?.kind === 'openrouter' && status.openrouter) {
-		return { ...status, kind: 'openrouter' };
-	}
-	if (pick?.kind === 'openai' && status.openai) {
-		return { ...status, kind: 'openai' };
-	}
-	return status;
 }
 
 export function specifierForLearnerChatFromStatus(
