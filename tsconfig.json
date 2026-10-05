@@ -11,6 +11,8 @@
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"types": ["node", "vite/client"],
 		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"skipLibCheck": true,
 		"noUncheckedIndexedAccess": true,
 		"isolatedModules": true,
