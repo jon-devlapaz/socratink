@@ -169,6 +169,8 @@ inferences, and unknowns.
 
 ## Code conventions
 
+Reviewers apply [`CODING_STANDARDS.md`](CODING_STANDARDS.md) and the area checklists it links. Read it before writing or reviewing code.
+
 Match adjacent code before inventing a new pattern. Use strict types, `.ts`
 extensions in local imports, single quotes, semicolons, and the repository's
 tab indentation. Prefer small pure functions for environment or policy
