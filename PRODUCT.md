@@ -15,7 +15,7 @@ Subtypes:
 - Certification and professional candidates (medical boards, legal outlines, cloud/security certifications).
 - Practicing engineers and scientists acquiring hard, unfamiliar bodies of knowledge.
 
-Job to be done: Build and verify durable mental models through unassisted cognitive effort. The learner needs a partner that refuses to autocomplete the answer, forces effortful retrieval, and diagnoses the exact conceptual gap.
+Job to be done: Work through a hard problem with unassisted effort and see exactly where the understanding breaks. The learner needs a partner that refuses to autocomplete the answer, asks for an attempt first, and diagnoses the exact conceptual gap.
 
 ## Product Purpose
 
@@ -23,7 +23,6 @@ Socratink is a model-backed Socratic dialogue application that refuses to do the
 
 Epistemic Invariants:
 - Exposure is not evidence.
-- Immediate performance is not durable learning.
 - Learner-authored work is the sole evidence of understanding.
 
 ## Positioning
@@ -31,11 +30,9 @@ Epistemic Invariants:
 The learning engine that refuses to autocomplete your thinking:
 - **Refusal to autocomplete:** Asks the learner to formulate axioms, trace steps, and defend solutions before revealing content.
 - **Voice-first deliberation:** Low-latency conversational dialogue tuned to listen for genuine understanding vs. regurgitated jargon.
-- **Desirable difficulty:** Grounded in cognitive science (Bjork framework); difficulty during retrieval cements long-term consolidation.
 - **Privacy & Sovereignty:** Zero tracking cookies, sovereign session records, and zero model training on learner sessions.
 
 Tagline: "The learning engine that refuses to do the thinking for you."
-Cadence: "You think · One teacher · It stays."
 
 ## Operating Context
 
