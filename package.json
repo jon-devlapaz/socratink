@@ -10,6 +10,7 @@
 	},
 	"scripts": {
 		"dev": "vite build --config vite.config.ui.ts && vite dev",
+		"dev:phone": "vite build --config vite.config.ui.ts && vite dev --host",
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"audit:trellis": "trellis audit .",
