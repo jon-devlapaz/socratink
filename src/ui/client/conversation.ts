@@ -18,6 +18,7 @@ import {
 	conversationBelongsToUser,
 	namespacedConversationId,
 } from '../../config/session.ts';
+import { randomId } from './random-id.ts';
 
 type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
@@ -87,23 +88,12 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
-// Phones on a LAN address load the app over plain http, an insecure context
-// where browsers omit crypto.randomUUID but keep crypto.getRandomValues.
-function conversationNonce(): string {
-	if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-	const bytes = crypto.getRandomValues(new Uint8Array(16));
-	bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-	bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
 export function openChatConversation(userId: string, aliases: readonly string[] = []) {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
-			: namespacedConversationId(userId, conversationNonce());
+			: namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
@@ -115,7 +105,7 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 }
 
 export function startNewChatConversation(userId: string) {
-	const conversationId = namespacedConversationId(userId, conversationNonce());
+	const conversationId = namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();
