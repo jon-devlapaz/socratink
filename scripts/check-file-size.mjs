@@ -2,7 +2,7 @@
 // Files already over the limit are listed in ALLOWED with their current size: they may shrink, not grow.
 // Usage: node scripts/check-file-size.mjs
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const LIMIT = 1000;
 const SOURCE = /\.(ts|tsx|mjs|js|css|html)$/;
@@ -10,7 +10,7 @@ const ALLOWED = {
 	'scripts/conversation-client.test.mjs': 1118,
 };
 
-const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter((f) => SOURCE.test(f));
+const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter((f) => SOURCE.test(f) && existsSync(f));
 const problems = [];
 for (const file of files) {
 	const text = readFileSync(file, 'utf8');

@@ -41,19 +41,17 @@ a local session secret when `SESSION_SECRET` is unset.
 Opening the credential store requires `CREDENTIALS_SECRET` on hosted
 environments and uses `socratink-local-credentials-secret` when that env is
 unset locally. The store is keyed by session `userId` plus name. Authenticated
-Chat uses one exclusive learner route: an OpenRouter PKCE row drives
-`openrouter/openai/gpt-5-nano`; otherwise an OpenAI paste row drives
-`openai/gpt-5-nano`. Unsigned local Chat and smoke stay on operator
-`jon-local`. Rows live in the product table `socratink_credentials`
-(Postgres when `DATABASE_URL` is set;
-otherwise `.cache/socratink/credentials.db`). That file is not Flue's
-conversation database, and secrets are not stored in `flue_*` tables. Profiles
-hold a `credentialRef`, never a raw key.
+Authenticated Chat uses an OpenAI key when one is connected; otherwise it uses
+operator `jon-local`. Existing stored OpenRouter credentials and model routing
+remain supported. Credential rows live in the product table
+`socratink_credentials` (Postgres when `DATABASE_URL` is set; otherwise
+`.cache/socratink/credentials.db`). That file is not Flue's conversation
+database, and secrets are not stored in `flue_*` tables. Profiles hold a
+`credentialRef`, never a raw key.
 
 Chat requires a signed HttpOnly session cookie. Conversation ids are
 `${userId}:${nonce}` so one session cannot resume another. Agent routes are
-rate-limited by that user id. OpenRouter connect is PKCE that mints a user API
-key; it is not Socratink identity and not a ChatGPT or Claude login.
+rate-limited by that user id.
 
 ## Verify the app
 
@@ -81,17 +79,16 @@ For an operator walkthrough:
 1. Complete at least one conversational turn and one questionnaire turn.
 2. Inspect the earlier-step trail, then reload to verify that the conversation
    is restored.
-3. With synthetic inputs and Braintrust configured, inspect the request, model
-   spans, `present_question` tool calls, timing, token use, and errors.
+3. Inspect the structured `present_question` card and response in the
+   conversation trail.
 
 This demonstrates a persisted, observable interaction and its software
 reliability boundaries. It does not establish agentic-engineering mastery,
 durable learning, transfer, learning effectiveness, or production readiness.
 Hosted Chat now requires a signed session cookie, conversation ownership, and
-per-user rate limits. Authenticated learners can paste an OpenAI platform key
-or connect OpenRouter PKCE; the minted or pasted secret stays in the encrypted
-store. Keep the public domain off until that hosted path is verified for the
-learners who will use it.
+per-user rate limits. Authenticated learners can paste an OpenAI platform key, which stays in the
+encrypted store. Keep the public domain off until that hosted path is verified
+for the learners who will use it.
 
 ## Northflank staging
 
@@ -116,28 +113,6 @@ private staging target. Do not expose its port or attach the production domain
 until an identity vendor and learner BYOK are implemented and verified. Session
 cookies, conversation ownership, rate limits, and the encrypted credential
 store are necessary but not sufficient for a public BYOK URL.
-
-## Braintrust observability
-
-Braintrust tracing is optional. Save the key once in the Git-ignored
-`.env.braintrust` file:
-
-```dotenv
-BRAINTRUST_API_KEY=your-api-key
-```
-
-After that, `pnpm dev` automatically traces normal Socratink chat runs to the
-`socratink` project. Open that project in Braintrust to inspect the request,
-nested model calls, output, timing, token usage, and errors. Without an exported
-key or a `.env.braintrust` file, Socratink runs normally and sends no traces.
-
-Treat traces as development logs: they may contain prompts and responses. Use
-synthetic inputs until access, retention, and masking are configured for real
-learner data.
-
-`pnpm test:braintrust` verifies the opt-in configuration locally without making
-a network call. `pnpm smoke:braintrust-live` verifies live delivery and requires
-an explicit API key. Traces go to the same `socratink` project as Chat.
 
 ## Foundation and attribution
 

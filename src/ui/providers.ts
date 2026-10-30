@@ -7,7 +7,7 @@ import {
 import { storedLearnerChatSpecifier, writeLearnerChatSpecifier } from './chat-pick.ts';
 import { providersChatStatusCopy } from './chat-route.ts';
 
-const providerKinds = ['operator', 'openai', 'openrouter'] as const;
+const providerKinds = ['operator', 'openai'] as const;
 
 export function paintProviders(status: LearnerChatStatus): void {
 	const toggle = requireElement<HTMLButtonElement>('#providers-toggle');
@@ -15,7 +15,6 @@ export function paintProviders(status: LearnerChatStatus): void {
 	const statusNode = requireElement<HTMLElement>('#providers-status');
 	const clip = requireElement<HTMLElement>('.providers-panel-clip', panel);
 	const openai = requireElement<HTMLFormElement>('#openai-key', clip);
-	const openrouter = requireElement<HTMLFormElement>('#openrouter', clip);
 
 	toggle.dataset.kind = status.kind;
 	panel.dataset.kind = status.kind;
@@ -29,16 +28,14 @@ export function paintProviders(status: LearnerChatStatus): void {
 		line.toggleAttribute('aria-hidden', !live);
 	}
 
-	if (status.kind === 'openrouter') clip.append(openrouter, openai);
-	else clip.append(openai, openrouter);
+	clip.append(openai);
 	paintProviderModels(status);
 }
 
 export function mountProviders(refresh: () => Promise<void>): void {
 	const toggle = requireElement<HTMLButtonElement>('#providers-toggle');
 	const panel = requireElement<HTMLElement>('#providers-panel');
-	fillProviderModels('#openai-models', 'openai');
-	fillProviderModels('#openrouter-models', 'openrouter');
+	fillProviderModels('#openai-models');
 	panel.addEventListener('click', (event) => {
 		const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>(
 			'button.provider-model',
@@ -56,7 +53,7 @@ export function mountProviders(refresh: () => Promise<void>): void {
 	setProvidersExpanded(toggle, panel, false);
 }
 
-function fillProviderModels(selector: string, kind: 'openai' | 'openrouter'): void {
+function fillProviderModels(selector: string): void {
 	const list = requireElement<HTMLElement>(selector);
 	if (list.childElementCount > 0) return;
 	for (const choice of learnerChatModelChoices) {
@@ -64,11 +61,10 @@ function fillProviderModels(selector: string, kind: 'openai' | 'openrouter'): vo
 		button.type = 'button';
 		button.className = 'provider-model';
 		button.setAttribute('role', 'option');
-		button.dataset.specifier = formatLearnerChatSpecifier(
-			kind === 'openai'
-				? { kind: 'openai', modelId: choice.openaiModelId }
-				: { kind: 'openrouter', modelId: choice.openrouterModelId },
-		);
+		button.dataset.specifier = formatLearnerChatSpecifier({
+			kind: 'openai',
+			modelId: choice.openaiModelId,
+		});
 		button.textContent = choice.label;
 		list.append(button);
 	}
@@ -80,13 +76,6 @@ function paintProviderModels(status: LearnerChatStatus): void {
 		'#openai-models',
 		status.openai,
 		status.kind === 'openai' ? (stored ?? specifierForLearnerChat({ kind: 'openai' })) : undefined,
-	);
-	paintProviderModelList(
-		'#openrouter-models',
-		status.openrouter,
-		status.kind === 'openrouter'
-			? (stored ?? specifierForLearnerChat({ kind: 'openrouter' }))
-			: undefined,
 	);
 }
 

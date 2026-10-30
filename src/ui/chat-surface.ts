@@ -60,7 +60,6 @@ import {
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
 import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
-import { mountOpenrouter, paintOpenrouter } from './openrouter.ts';
 import { mountProviders, paintProviders } from './providers.ts';
 import { learnerChatStatusFromStoredPick } from './chat-pick.ts';
 import { loadLearnerChatStatus } from './chat-route.ts';
@@ -126,11 +125,9 @@ export function mountChatSurface(options: Readonly<{
 		const status = learnerChatStatusFromStoredPick(await loadLearnerChatStatus());
 		paintProviders(status);
 		paintOpenaiKey(status);
-		paintOpenrouter(status);
 	}
 	mountProviders(refreshLearnerChat);
 	mountOpenaiKey(refreshLearnerChat);
-	mountOpenrouter(refreshLearnerChat);
 	void refreshLearnerChat();
 	const dictation = mountDictation({
 		input,

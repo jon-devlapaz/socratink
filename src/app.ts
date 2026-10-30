@@ -2,7 +2,6 @@ import { createAgentRouter } from '@flue/runtime/routing';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
-import { configureBraintrust } from './braintrust.ts';
 import { resolveAuthConfig } from './config/auth.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
 import { chatModel, chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
@@ -16,7 +15,6 @@ import { guestTurnGateMiddleware } from './server/guest-turns.ts';
 import { learnerChatRouteForUser, rememberConversationChatPick } from './server/learner-key.ts';
 import { mountOAuthRoutes } from './server/oauth.ts';
 import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
-import { mountOpenrouterRoutes } from './server/openrouter.ts';
 import {
 	chatRateLimitMax,
 	chatRateLimitWindowMs,
@@ -24,8 +22,6 @@ import {
 } from './server/rate-limit.ts';
 import { mountSessionRoutes, sessionFromContext } from './server/session.ts';
 import './server/provider.ts';
-
-configureBraintrust(process.env);
 
 const sessionSecret = resolveSessionSecret(process.env);
 const credentialStore = getCredentialStore();
@@ -47,11 +43,6 @@ app.get('/healthz', (context) => context.json({ status: 'ok' }));
 mountSessionRoutes(app, { secret: sessionSecret, authDb });
 mountOpenaiKeyRoutes(app, {
 	signed: signedSession,
-	store: credentialStore,
-});
-mountOpenrouterRoutes(app, {
-	signed: signedSession,
-	secret: sessionSecret,
 	store: credentialStore,
 });
 mountChatRoute(app, {
