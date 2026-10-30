@@ -31,7 +31,7 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
 } from './questionnaire.ts';
-import { isRevealTool } from '../reveal.ts';
+import { isRevealTool, revealFromReply } from '../reveal.ts';
 import { formatSteeringMessage } from './steering.ts';
 import {
 	expressionForInteraction,
@@ -398,6 +398,7 @@ export function mountChatSurface(options: Readonly<{
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
 		const ink = inkCueFromReply(reply.data);
+		const reveal = revealFromReply(reply.data);
 		const route = modelRouteLabel(reply.metadata);
 		const tools = visibleCardTools(liveTools, { questionnaire });
 		liveTools.length = 0;
@@ -408,6 +409,7 @@ export function mountChatSurface(options: Readonly<{
 			{
 				role: 'Assistant',
 				...(ink ? { ink } : {}),
+				...(reveal ? { reveal } : {}),
 				text: learnerVisibleAssistantText(reply.text),
 				...(questionnaire ? { questionnaire } : {}),
 				...(route ? { modelRoute: route } : {}),

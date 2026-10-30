@@ -10,6 +10,7 @@ import './cursor.css';
 import './dock.css';
 import './menu.css';
 import './transcript.css';
+import './reveal-mark.css';
 import './chat-markdown.css';
 import './questionnaire.css';
 import './tool-card.css';

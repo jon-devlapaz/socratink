@@ -1,4 +1,5 @@
 import { inkCueFromParts, type InkCue } from '../ink-cue.ts';
+import { revealFromParts, type RevealDefinition } from '../reveal.ts';
 import type { FlueConversationSnapshot } from '@flue/sdk';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
@@ -16,6 +17,7 @@ export type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
 
 export type DisplayedTurn = {
 	ink?: InkCue;
+	reveal?: RevealDefinition;
 	role: ChatMessageRole;
 	text: string;
 	learnerKind?: LearnerTurnKind;
@@ -84,11 +86,13 @@ export function visibleTurnsFromHistory(
 			visible.push(displayedLearnerTurn(text));
 			continue;
 		}
+		const reveal = revealFromParts(message.parts);
 		const assistantText = learnerVisibleAssistantText(text);
 		if (!assistantTurnHasVisibleContent({ text, questionnaire, tools })) continue;
 		visible.push({
 			role: 'Assistant',
 			...(ink ? { ink } : {}),
+			...(reveal ? { reveal } : {}),
 			text: assistantText,
 			...(questionnaire ? { questionnaire } : {}),
 			...(modelRoute ? { modelRoute } : {}),

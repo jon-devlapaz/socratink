@@ -1,0 +1,25 @@
+.reveal-copy {
+	--ink: var(--muted);
+	--accent: var(--muted);
+	position: relative;
+	padding-left: 4.25rem;
+	color: var(--muted);
+}
+
+.reveal-copy > .reveal-mark {
+	position: absolute;
+	margin: 0;
+	top: 0.15em;
+	left: 0;
+	width: 3.75rem;
+	color: var(--muted);
+	font-size: calc(0.72rem * var(--type-scale, 1));
+	font-weight: 400;
+	line-height: 1.55;
+	letter-spacing: 0;
+	text-transform: lowercase;
+}
+
+.history-turn p.reveal-copy {
+	color: var(--quiet);
+}

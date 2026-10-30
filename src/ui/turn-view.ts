@@ -1,3 +1,4 @@
+import { markSuppliedCopy } from './reveal-mark.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
@@ -58,6 +59,9 @@ export function createHistoryStep(step: readonly DisplayedTurn[], index: number)
 		role.textContent = displayLabel(item.role);
 		const copy = document.createElement('p');
 		copy.textContent = historyBodyText(item);
+		if (item.role === 'Assistant' && item.text.trim() && item.reveal) {
+			markSuppliedCopy(copy, item.reveal);
+		}
 		turn.append(role, copy);
 		body.append(turn);
 	}
@@ -305,6 +309,7 @@ function appendTurnCopy(
 		const renderer = createMarkdownRenderer();
 		sinks.trackRenderer(renderer);
 		renderer.update(item.text, { stream, streamGapMs });
+		if (item.text.trim() && item.reveal) markSuppliedCopy(renderer.element, item.reveal);
 		parent.append(renderer.element);
 		return;
 	}
