@@ -18,6 +18,7 @@ import {
 	conversationBelongsToUser,
 	namespacedConversationId,
 } from '../../config/session.ts';
+import { randomId } from './random-id.ts';
 
 type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
@@ -92,7 +93,7 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
-			: namespacedConversationId(userId, crypto.randomUUID());
+			: namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
@@ -104,7 +105,7 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 }
 
 export function startNewChatConversation(userId: string) {
-	const conversationId = namespacedConversationId(userId, crypto.randomUUID());
+	const conversationId = namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();

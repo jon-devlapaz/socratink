@@ -18,6 +18,9 @@ pnpm install
 pnpm dev
 ```
 
+To try it on a phone on the same Wi-Fi, run `pnpm dev:phone` and open the
+`Network:` URL it prints.
+
 The app reads these local environment settings without committing their values:
 
 - `JON_LOCAL_BASE_URL` — the model endpoint; defaults to
