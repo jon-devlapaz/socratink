@@ -338,8 +338,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 .menu-orbs .theme-icon.is-moon,
 .menu-orbs .type-icon.is-small,
 .menu-orbs .type-icon.is-big,
-.menu-orbs .providers-icon.is-openai,
-.menu-orbs .providers-icon.is-openrouter {
+.menu-orbs .providers-icon.is-openai {
 	position: absolute;
 	inset: 0.85rem;
 	opacity: 0;
@@ -350,8 +349,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 #appearance-toggle.is-night .theme-icon.is-sun,
 #type-size-toggle[data-size='small'] .type-icon.is-medium,
 #type-size-toggle[data-size='big'] .type-icon.is-medium,
-#providers-toggle[data-kind='openai'] .providers-icon.is-operator,
-#providers-toggle[data-kind='openrouter'] .providers-icon.is-operator {
+#providers-toggle[data-kind='openai'] .providers-icon.is-operator {
 	opacity: 0;
 	filter: blur(4px);
 	scale: 0.25;
@@ -360,18 +358,13 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 #appearance-toggle.is-night .theme-icon.is-moon,
 #type-size-toggle[data-size='small'] .type-icon.is-small,
 #type-size-toggle[data-size='big'] .type-icon.is-big,
-#providers-toggle[data-kind='openai'] .providers-icon.is-openai,
-#providers-toggle[data-kind='openrouter'] .providers-icon.is-openrouter {
+#providers-toggle[data-kind='openai'] .providers-icon.is-openai {
 	opacity: 1;
 	filter: blur(0);
 	scale: 1;
 }
 
 #providers-toggle[data-kind='openai'] .providers-icon.is-openai svg {
-	fill: currentColor;
-}
-
-#providers-toggle[data-kind='openrouter'] .providers-icon.is-openrouter circle {
 	fill: currentColor;
 }
 
@@ -489,8 +482,7 @@ html:has(.menu-layer.is-open) .app-canvas {
 	#appearance-toggle.is-night .theme-icon.is-sun,
 	#type-size-toggle[data-size='small'] .type-icon.is-medium,
 	#type-size-toggle[data-size='big'] .type-icon.is-medium,
-	#providers-toggle[data-kind='openai'] .providers-icon.is-operator,
-	#providers-toggle[data-kind='openrouter'] .providers-icon.is-operator {
+	#providers-toggle[data-kind='openai'] .providers-icon.is-operator {
 		opacity: 0;
 		filter: none;
 		scale: none;
@@ -502,8 +494,7 @@ html:has(.menu-layer.is-open) .app-canvas {
 	#type-size-toggle[data-size='medium'] .type-icon.is-medium,
 	#type-size-toggle[data-size='big'] .type-icon.is-big,
 	#providers-toggle[data-kind='operator'] .providers-icon.is-operator,
-	#providers-toggle[data-kind='openai'] .providers-icon.is-openai,
-	#providers-toggle[data-kind='openrouter'] .providers-icon.is-openrouter {
+	#providers-toggle[data-kind='openai'] .providers-icon.is-openai {
 		opacity: 1;
 		filter: none;
 		scale: none;
@@ -515,9 +506,7 @@ html:has(.menu-layer.is-open) .app-canvas {
 	#type-size-toggle[data-size='small'] .type-icon.is-big,
 	#type-size-toggle[data-size='big'] .type-icon.is-small,
 	#providers-toggle[data-kind='operator'] .providers-icon.is-openai,
-	#providers-toggle[data-kind='operator'] .providers-icon.is-openrouter,
-	#providers-toggle[data-kind='openai'] .providers-icon.is-openrouter,
-	#providers-toggle[data-kind='openrouter'] .providers-icon.is-openai {
+	#providers-toggle[data-kind='openai'] .providers-icon.is-operator {
 		opacity: 0;
 	}
 

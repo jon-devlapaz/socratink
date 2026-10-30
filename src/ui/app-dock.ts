@@ -11,12 +11,19 @@ export function mountAppDock(core: HTMLButtonElement) {
 	}
 	const dock = found;
 	const cluster = core.closest('.alive-cluster');
-	const items = [...dock.querySelectorAll<HTMLButtonElement>('.app-dock-item')];
 	const cloud = mountIconCloud(dock);
+	// With no tools in the dock, the orb stays as living ink but offers no control.
+	if (dock.children.length === 0) {
+		core.disabled = true;
+		core.removeAttribute('aria-controls');
+		core.removeAttribute('aria-expanded');
+		core.removeAttribute('aria-label');
+		core.setAttribute('aria-hidden', 'true');
+		return { close() {} };
+	}
 	let open = false;
 	let hideTimer = 0;
 	let pulseTimer = 0;
-	let current = 0;
 
 	function pulse() {
 		if (reduceMotion) return;
@@ -25,31 +32,6 @@ export function mountAppDock(core: HTMLButtonElement) {
 		pulseTimer = window.setTimeout(() => {
 			core.classList.remove('is-dock-pulse');
 		}, dockPulseMs);
-	}
-
-	function tabStops() {
-		const available = availableIndexes();
-		const focusable = available.includes(current) ? current : available[0];
-		for (const [index, item] of items.entries()) {
-			item.tabIndex = open && index === focusable ? 0 : -1;
-		}
-	}
-
-	function availableIndexes() {
-		return items.flatMap((item, index) => (itemAvailable(item) ? [index] : []));
-	}
-
-	function select(index: number, focus: boolean) {
-		const available = availableIndexes();
-		if (available.length === 0) return;
-		const wrapped = ((index % items.length) + items.length) % items.length;
-		const exact = available.indexOf(wrapped);
-		current = exact >= 0
-			? wrapped
-			: available.find((itemIndex) => itemIndex >= wrapped) ?? available[0]!;
-		tabStops();
-		cloud.turnTo(current);
-		if (focus) items[current]?.focus();
 	}
 
 	function setOpen(next: boolean) {
@@ -64,11 +46,9 @@ export function mountAppDock(core: HTMLButtonElement) {
 		pulse();
 		if (next) {
 			dock.classList.add('is-open', 'is-emerged');
-			select(current, false);
 			cloud.sync();
 			return;
 		}
-		tabStops();
 		dock.classList.remove('is-emerged');
 		cloud.sync();
 		if (reduceMotion) {
@@ -85,48 +65,7 @@ export function mountAppDock(core: HTMLButtonElement) {
 		return document.querySelector('.menu-layer')?.classList.contains('is-open') === true;
 	}
 
-	function itemAvailable(item: Element) {
-		return item.getAttribute('aria-disabled') !== 'true';
-	}
-
 	core.addEventListener('click', () => setOpen(!open));
-	core.addEventListener('keydown', (event) => {
-		if (!open) return;
-		if (event.key !== 'ArrowDown' && event.key !== 'ArrowRight') return;
-		event.preventDefault();
-		select(current, true);
-	});
-	dock.addEventListener('click', (event) => {
-		const item = event.target instanceof Element ? event.target.closest('.app-dock-item') : null;
-		if (!item) return;
-		if (!itemAvailable(item)) {
-			event.preventDefault();
-			return;
-		}
-		setOpen(false);
-	});
-	dock.addEventListener('keydown', (event) => {
-		if (!open) return;
-		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-			event.preventDefault();
-			select(current + 1, true);
-			return;
-		}
-		if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-			event.preventDefault();
-			select(current - 1, true);
-			return;
-		}
-		if (event.key === 'Home') {
-			event.preventDefault();
-			select(0, true);
-			return;
-		}
-		if (event.key === 'End') {
-			event.preventDefault();
-			select(items.length - 1, true);
-		}
-	});
 	document.addEventListener('pointerdown', (event) => {
 		if (!open || menuIsOpen()) return;
 		if (!(event.target instanceof Node)) return;
@@ -139,7 +78,6 @@ export function mountAppDock(core: HTMLButtonElement) {
 		setOpen(false);
 		core.focus();
 	});
-	tabStops();
 
 	return {
 		close() {

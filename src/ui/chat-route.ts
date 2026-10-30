@@ -42,17 +42,3 @@ export function openaiChatStatusCopy(status: LearnerChatStatus): string {
 	}
 }
 
-export function openrouterChatStatusCopy(status: LearnerChatStatus): string {
-	if (!status.openrouter) return '';
-	switch (status.kind) {
-		case 'openrouter':
-			return 'Connected. Chat uses your OpenRouter key.';
-		case 'openai':
-		case 'operator':
-			return 'OpenRouter key stored.';
-		default: {
-			const exhaustive: never = status.kind;
-			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);
-		}
-	}
-}

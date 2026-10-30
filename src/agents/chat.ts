@@ -9,7 +9,6 @@ import {
 	useTool,
 	type AgentProps,
 } from '@flue/runtime';
-import { currentSpan } from 'braintrust';
 import { chatModel } from '../config/chat-model.ts';
 import { capturedChatModelSpecifier } from '../server/learner-key.ts';
 import { modelRouteMetadata } from '../config/model-route.ts';
@@ -74,14 +73,6 @@ export function Chat({ id }: AgentProps) {
 		input: PresentQuestionInputSchema,
 		async run({ data }) {
 			const questionnaire = questionnaireFromPresentQuestion(data);
-			currentSpan().log({
-				metadata: {
-					'socratink.interaction': 'questionnaire',
-					'socratink.questionnaire_kind': questionnaire.kind,
-					'socratink.questionnaire_choice_count': questionnaire.items[0]?.choices.length ?? 0,
-				},
-				tags: ['questionnaire'],
-			});
 			writeQuestionnaireData(questionnaire);
 			writeInkData({ expression: 'question' });
 			return { output: 'Question presented on the card.', terminate: true };
@@ -92,13 +83,6 @@ export function Chat({ id }: AgentProps) {
 		description: revealToolDescription,
 		input: RevealSchema,
 		async run({ data }) {
-			currentSpan().log({
-				metadata: {
-					'socratink.interaction': 'reveal',
-					'socratink.reveal_kind': data.kind,
-				},
-				tags: ['reveal'],
-			});
 			writeRevealData(data);
 			return { output: 'Reveal recorded.' };
 		},

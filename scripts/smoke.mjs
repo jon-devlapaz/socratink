@@ -279,11 +279,8 @@ try {
 	assert.match(html, /id="providers-toggle"/);
 	assert.match(html, /id="providers-status"/);
 	assert.match(html, /OpenAI platform API key/);
-	assert.match(html, /id="openrouter"/);
 	assert.match(html, /id="openai-models"/);
-	assert.match(html, /id="openrouter-models"/);
 	assert.doesNotMatch(html, /id="auto-model"/);
-	assert.match(html, /OpenRouter credits/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
 	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);
@@ -336,13 +333,6 @@ try {
 
 	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
 	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
-
-	const unauthenticatedOpenrouter = await fetch(`${origin}/api/openrouter`);
-	assert.equal(
-		unauthenticatedOpenrouter.status,
-		401,
-		'OpenRouter route without a session cookie should return 401',
-	);
 
 	const foreignChat = await fetch(
 		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,

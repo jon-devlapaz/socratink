@@ -52,14 +52,9 @@ export async function verifyInkBrowser({ origin, initialMessage }) {
 		await expression('explain');
 		await page.locator('#message').fill('');
 		await expression('connect');
-		// Keep the existing dock as an operable button, including keyboard access.
-		await page.locator('.alive-core').focus();
-		await page.keyboard.press('Enter');
-		assert.equal(
-			await page.locator('.alive-core').getAttribute('aria-expanded'),
-			'true',
-		);
-		await page.keyboard.press('Escape');
+		// With no dock tools, the orb is living ink only: not a control and not focusable.
+		assert.equal(await page.locator('.alive-core').isDisabled(), true);
+		assert.equal(await page.locator('.alive-core').getAttribute('aria-expanded'), null);
 		await page.locator('#menu-trigger').click();
 		await page.locator('#appearance-toggle').click();
 		await page.keyboard.press('Escape');
