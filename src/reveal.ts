@@ -33,6 +33,12 @@ export function revealFromParts(
 	return part ? parseRevealDefinition(part.data) : undefined;
 }
 
+export function revealFromReply(
+	data: Record<string, unknown[]> | undefined,
+): RevealDefinition | undefined {
+	return parseRevealDefinition(data?.[revealDataName]?.at(-1));
+}
+
 export function isRevealTool(name: string): boolean {
 	return name === revealToolName;
 }

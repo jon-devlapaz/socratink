@@ -395,6 +395,7 @@ try {
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
 	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);
 	assert.equal(visibleTurns[5]?.tools, undefined, 'mark_reveal is not card chrome');
+	assert.deepEqual(visibleTurns[5]?.reveal, revealExample, 'supplied text keeps its display mark after restart');
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
 	assert.deepEqual(visibleTurns[7]?.ink, { expression: 'connect' });
 	assert.equal(visibleTurns[7]?.tools, undefined, 'cosmetic ink is not card chrome');
@@ -409,6 +410,13 @@ try {
 		[revealExample],
 		'completed loop should restore reveal provenance on the assistance turn',
 	);
+
+	if (process.env.REVEAL_BROWSER === '1') {
+		providerTurns = 0;
+		const { verifyRevealBrowser } = await import('./reveal-browser-smoke.mjs');
+		await verifyRevealBrowser({ origin, session, initialMessage, assistanceText,
+			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
+	}
 
 	if (process.env.INK_BROWSER === '1') {
 		providerTurns = 0;

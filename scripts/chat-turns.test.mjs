@@ -132,7 +132,7 @@ test('keeps mark_reveal off the card and skips a reveal-only empty turn', () => 
 				},
 			],
 		}),
-		[{ role: 'Assistant', text: 'A stable submission identifier is evidence.' }],
+		[{ role: 'Assistant', text: 'A stable submission identifier is evidence.', reveal }],
 	);
 });
 
