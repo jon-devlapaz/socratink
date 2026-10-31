@@ -49,12 +49,12 @@ export function Chat({ id }: AgentProps) {
 	});
 	const delivery = useDelivery();
 	useAgentStart(async ({ append }) => {
-		// Card answers are already structured; only free text needs reading.
-		if (!jevConnection || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
-		const move = await readLearnerMove(
-			{ tutorQuestion: capturedAssistantText(id), learnerReply: delivery.body },
-			jevConnection,
-		);
+		// Card answers are already structured; only free text needs reading. Jev reads a reply
+		// to the tutor's question: an opening goal with no question before it read as a request
+		// for the answer in a live run, and the tutor then revealed on its first turn.
+		const tutorQuestion = capturedAssistantText(id);
+		if (!jevConnection || !tutorQuestion || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
+		const move = await readLearnerMove({ tutorQuestion, learnerReply: delivery.body }, jevConnection);
 		const body = learnerMoveSignalBody(move);
 		if (body) append({ kind: 'signal', type: learnerMoveSignalType, body });
 	});

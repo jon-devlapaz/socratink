@@ -28,6 +28,8 @@ const revisedAnswer = `Questionnaire answers:\n- What is your revised recovery a
 const assistanceText =
 	'A stable submission identifier is evidence that work may continue after the response stream is lost. Rechecking that submission preserves one admission, while resending can create duplicate work. This information was supplied by Socratink.';
 const finalSummary = `Your baseline decision was ${baselineChoice}. Socratink supplied the distinction between losing local observation and losing admitted work. Your revised decision was ${revisedChoice}. This is evidence from this session, not proof of mastery or durable learning.`;
+const answerRequest = 'Just tell me the answer.';
+const answerGiven = 'Recheck the admitted request by its stable submission identifier before sending anything again. Why does that avoid duplicate work?';
 const unboxedBaseline =
 	'Which recovery action should the client take first?\n\n1. Recheck the admitted request by its stable submission identifier\n2. Send the same message again\n3. Start a new conversation\n4. Assume the request failed';
 const baselinePresent = {
@@ -163,8 +165,9 @@ function presentQuestionCall(id, input) {
 	return { id, name: 'present_question', arguments: input };
 }
 
-// The fake Jev reads the opening message as a request for the answer, so the tutor's
-// first turn must carry the private signal. Card answers must never reach Jev.
+// Jev reads only free-text replies to a tutor question: never the opening goal, never card
+// answers. The fake reads the closing request as asking for the answer, so the tutor's
+// next turn must carry the private signal.
 const learnerMoveSignal = learnerMoveSignalBody('asks_for_answer');
 const jevRequests = [];
 const fakeJev = createServer(async (request, response) => {
@@ -185,7 +188,7 @@ const fakeJev = createServer(async (request, response) => {
 
 const scriptedProviderTurns = [
 	{
-		expectedMessages: [initialMessage, learnerMoveSignal],
+		expectedMessages: [initialMessage],
 		text: unboxedBaseline,
 		finishReason: 'stop',
 	},
@@ -220,6 +223,11 @@ const scriptedProviderTurns = [
 		text: finalSummary,
 		finishReason: 'stop',
 	},
+	{
+		expectedMessages: [answerRequest, learnerMoveSignal],
+		text: answerGiven,
+		finishReason: 'stop',
+	},
 ];
 
 let providerTurns = 0;
@@ -238,7 +246,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the completed loop should use exactly seven provider calls');
+	assert.ok(turn, 'the smoke should use exactly eight provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -393,8 +401,15 @@ try {
 	);
 	assert.equal(complete.text, finalSummary);
 	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
-	assert.equal(jevRequests.length, 1, 'only the free-text opening message should reach Jev');
-	assert.deepEqual(jevRequests[0].state, { tutor_question: '', learner_reply: initialMessage });
+	assert.equal(jevRequests.length, 0, 'neither the opening goal nor card answers should reach Jev');
+
+	const answered = await client.read(
+		await client.send({ message: { kind: 'user', body: answerRequest } }),
+	);
+	assert.equal(answered.text, answerGiven);
+	assert.equal(providerTurns, 8, 'the request for the answer should take one provider call');
+	assert.equal(jevRequests.length, 1, 'a free-text reply to the tutor should reach Jev once');
+	assert.deepEqual(jevRequests[0].state, { tutor_question: finalSummary, learner_reply: answerRequest });
 
 	await stopApp(appProcess);
 	appProcess = startApp(appPort, providerPort, jevPort);
@@ -413,6 +428,8 @@ try {
 			{ role: 'Assistant', text: assistanceText },
 			{ role: 'You', text: revisedAnswer },
 			{ role: 'Assistant', text: finalSummary },
+			{ role: 'You', text: answerRequest },
+			{ role: 'Assistant', text: answerGiven },
 		],
 		'completed loop should restore the learner-visible turns in order',
 	);
@@ -425,7 +442,7 @@ try {
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
 	assert.deepEqual(visibleTurns[7]?.ink, { expression: 'connect' });
 	assert.equal(visibleTurns[7]?.tools, undefined, 'cosmetic ink is not card chrome');
-	assert.deepEqual(inkCueFromParts(visibleMessages.at(-1).parts), { expression: 'connect' });
+	assert.deepEqual(inkCueFromParts(visibleMessages.at(-3).parts), { expression: 'connect' });
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
 		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
