@@ -19,6 +19,7 @@
 		"check:file-size": "node scripts/check-file-size.mjs",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
+		"eval:jev-pilot": "node scripts/jev-pilot.mjs",
 		"test:chat-model": "node scripts/chat-model.test.mjs",
 		"test:model-route": "node --test scripts/model-route.test.mjs",
 		"test:chat-auto": "node --test scripts/chat-auto.test.mjs",
