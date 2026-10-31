@@ -29,7 +29,13 @@ const assistanceText =
 	'A stable submission identifier is evidence that work may continue after the response stream is lost. Rechecking that submission preserves one admission, while resending can create duplicate work. This information was supplied by Socratink.';
 const finalSummary = `Your baseline decision was ${baselineChoice}. Socratink supplied the distinction between losing local observation and losing admitted work. Your revised decision was ${revisedChoice}. This is evidence from this session, not proof of mastery or durable learning.`;
 const answerRequest = 'Just tell me the answer.';
-const answerGiven = 'Recheck the admitted request by its stable submission identifier before sending anything again. Why does that avoid duplicate work?';
+const transferPresent = {
+	prompt: 'Which request should reuse the first idempotency key?',
+	choices: ['A retry of the same payment', 'A second, separate purchase'],
+	reasoning: true,
+};
+const unsureReply = 'Honestly no idea, I do not know where to start.';
+const scaffoldText = 'Picture paying twice for one coffee. What would the server need to remember?';
 const unboxedBaseline =
 	'Which recovery action should the client take first?\n\n1. Recheck the admitted request by its stable submission identifier\n2. Send the same message again\n3. Start a new conversation\n4. Assume the request failed';
 const baselinePresent = {
@@ -165,10 +171,9 @@ function presentQuestionCall(id, input) {
 	return { id, name: 'present_question', arguments: input };
 }
 
-// Jev reads only free-text replies to a tutor question: never the opening goal, never card
-// answers. The fake reads the closing request as asking for the answer, so the tutor's
-// next turn must carry the private signal.
-const learnerMoveSignal = learnerMoveSignalBody('asks_for_answer');
+// Jev reads only free-text replies to the tutor: never the opening goal, never card answers.
+// After a restart it reads a reply to the tutor's last text, then a reply to a card-only
+// question, so each must carry the matching private signal.
 const jevRequests = [];
 const fakeJev = createServer(async (request, response) => {
 	assert.equal(request.method, 'POST');
@@ -178,11 +183,12 @@ const fakeJev = createServer(async (request, response) => {
 	for await (const chunk of request) body += chunk;
 	const payload = JSON.parse(body);
 	jevRequests.push(payload);
+	const choice = payload.state.learner_reply === unsureReply ? 'dont_know' : 'asks_for_answer';
 	assert.deepEqual(payload.questions, { learner_move: learnerMoveQuestion });
 	response.writeHead(200, { 'content-type': 'application/json' });
 	response.end(JSON.stringify({
 		model: 'jev-smoke',
-		answers: { learner_move: { type: 'choice', choice: 'asks_for_answer', probabilities: { asks_for_answer: 0.95 }, confidence: 0.9 } },
+		answers: { learner_move: { type: 'choice', choice, probabilities: { [choice]: 0.95 }, confidence: 0.9 } },
 	}));
 });
 
@@ -224,8 +230,13 @@ const scriptedProviderTurns = [
 		finishReason: 'stop',
 	},
 	{
-		expectedMessages: [answerRequest, learnerMoveSignal],
-		text: answerGiven,
+		expectedMessages: [answerRequest, learnerMoveSignalBody('asks_for_answer')],
+		tools: [presentQuestionCall('call_transfer', transferPresent)],
+		finishReason: 'tool_calls',
+	},
+	{
+		expectedMessages: [unsureReply, learnerMoveSignalBody('dont_know')],
+		text: scaffoldText,
 		finishReason: 'stop',
 	},
 ];
@@ -246,7 +257,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the smoke should use exactly eight provider calls');
+	assert.ok(turn, 'the smoke should use exactly nine provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -403,14 +414,6 @@ try {
 	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
 	assert.equal(jevRequests.length, 0, 'neither the opening goal nor card answers should reach Jev');
 
-	const answered = await client.read(
-		await client.send({ message: { kind: 'user', body: answerRequest } }),
-	);
-	assert.equal(answered.text, answerGiven);
-	assert.equal(providerTurns, 8, 'the request for the answer should take one provider call');
-	assert.equal(jevRequests.length, 1, 'a free-text reply to the tutor should reach Jev once');
-	assert.deepEqual(jevRequests[0].state, { tutor_question: finalSummary, learner_reply: answerRequest });
-
 	await stopApp(appProcess);
 	appProcess = startApp(appPort, providerPort, jevPort);
 	await waitForServer(`${origin}/healthz`, appProcess);
@@ -428,8 +431,6 @@ try {
 			{ role: 'Assistant', text: assistanceText },
 			{ role: 'You', text: revisedAnswer },
 			{ role: 'Assistant', text: finalSummary },
-			{ role: 'You', text: answerRequest },
-			{ role: 'Assistant', text: answerGiven },
 		],
 		'completed loop should restore the learner-visible turns in order',
 	);
@@ -442,7 +443,7 @@ try {
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
 	assert.deepEqual(visibleTurns[7]?.ink, { expression: 'connect' });
 	assert.equal(visibleTurns[7]?.tools, undefined, 'cosmetic ink is not card chrome');
-	assert.deepEqual(inkCueFromParts(visibleMessages.at(-3).parts), { expression: 'connect' });
+	assert.deepEqual(inkCueFromParts(visibleMessages.at(-1).parts), { expression: 'connect' });
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
 		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
@@ -453,6 +454,24 @@ try {
 		[revealExample],
 		'completed loop should restore reveal provenance on the assistance turn',
 	);
+
+	// The tutor's last ask must survive the restart, and a card prompt counts as an ask.
+	const transfer = await client.read(
+		await client.send({ message: { kind: 'user', body: answerRequest } }),
+	);
+	questionnaireFromReply(transfer, questionnaireFromPresentQuestion(transferPresent), 'transfer');
+	assert.deepEqual(jevRequests.map((request) => request.state), [
+		{ tutor_question: finalSummary, learner_reply: answerRequest },
+	]);
+	const scaffold = await client.read(
+		await client.send({ message: { kind: 'user', body: unsureReply } }),
+	);
+	assert.equal(scaffold.text, scaffoldText);
+	assert.equal(providerTurns, 9, 'each reply should take one provider call');
+	assert.deepEqual(jevRequests.map((request) => request.state).at(-1), {
+		tutor_question: transferPresent.prompt,
+		learner_reply: unsureReply,
+	});
 
 	if (process.env.REVEAL_BROWSER === '1') {
 		providerTurns = 0;

@@ -34,7 +34,7 @@ routing. Otherwise Chat uses AI Gateway. Northflank still requires
 `AI_GATEWAY_API_KEY` when that fallback is used.
 
 Set `TYPESAFE_API_KEY` to let TypeSafe's Jev read each free-text learner
-reply to a tutor question (about 100 ms, one paid call per reply; never the
+reply to the tutor (about 100 ms, one paid call per reply; never the
 opening message or card answers). When it is sure the learner
 is asking for the answer or does not know, the tutor gets a private note; the
 learner never sees it. Without the key, no learner text goes to TypeSafe.

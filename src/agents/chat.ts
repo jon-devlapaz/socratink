@@ -47,14 +47,16 @@ export function Chat({ id }: AgentProps) {
 	useAgentStart(() => {
 		if (boxedRetry) setBoxedRetry(false);
 	});
+	// The tutor's last ask, text or card prompt, kept durably so a restart or a card-only turn
+	// still leaves Jev the question the learner is answering. Empty until the tutor first speaks.
+	const [lastTutorTurn, setLastTutorTurn] = usePersistentState('learner-move-last-tutor-turn', '');
 	const delivery = useDelivery();
 	useAgentStart(async ({ append }) => {
-		// Card answers are already structured; only free text needs reading. Jev reads a reply
-		// to the tutor's question: an opening goal with no question before it read as a request
-		// for the answer in a live run, and the tutor then revealed on its first turn.
-		const tutorQuestion = capturedAssistantText(id);
-		if (!jevConnection || !tutorQuestion || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
-		const move = await readLearnerMove({ tutorQuestion, learnerReply: delivery.body }, jevConnection);
+		// Jev reads only free-text replies to the tutor. An opening goal read as a request for the
+		// answer in a live run, and the tutor then revealed on its first turn. Card answers are
+		// already structured.
+		if (!jevConnection || !lastTutorTurn || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
+		const move = await readLearnerMove({ tutorQuestion: lastTutorTurn, learnerReply: delivery.body }, jevConnection);
 		const body = learnerMoveSignalBody(move);
 		if (body) append({ kind: 'signal', type: learnerMoveSignalType, body });
 	});
@@ -88,6 +90,7 @@ export function Chat({ id }: AgentProps) {
 		input: PresentQuestionInputSchema,
 		async run({ data }) {
 			const questionnaire = questionnaireFromPresentQuestion(data);
+			setLastTutorTurn(data.prompt);
 			writeQuestionnaireData(questionnaire);
 			writeInkData({ expression: 'question' });
 			return { output: 'Question presented on the card.', terminate: true };
@@ -101,6 +104,11 @@ export function Chat({ id }: AgentProps) {
 			writeRevealData(data);
 			return { output: 'Reveal recorded.' };
 		},
+	});
+	useAgentFinish(({ response }) => {
+		const askedOnCard = response.toolCalls.some((call) => call.tool === presentQuestionToolName && !call.isError);
+		const text = capturedAssistantText(id);
+		if (!askedOnCard && text) setLastTutorTurn(text);
 	});
 	useAgentFinish(({ response, append }) => {
 		const reason = presentQuestionRetryReason({
