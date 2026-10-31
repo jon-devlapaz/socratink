@@ -76,6 +76,10 @@ pnpm install --frozen-lockfile
 # Build the UI once, then run the local development server
 pnpm dev
 
+# Same, reachable from a phone on your Wi-Fi or tailnet; with no JON_LOCAL_* key
+# it answers with a free scripted practice tutor
+pnpm dev:phone
+
 # Run the full local quality gate: types, contract tests, and production builds
 pnpm check
 

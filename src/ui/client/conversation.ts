@@ -87,12 +87,23 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
+// crypto.randomUUID exists only in secure contexts (https, localhost), so a
+// phone opening the dev server at http://<lan-ip> needs the getRandomValues path.
+function randomUuid(): string {
+	if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+	const bytes = crypto.getRandomValues(new Uint8Array(16));
+	bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+	bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export function openChatConversation(userId: string, aliases: readonly string[] = []) {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
-			: namespacedConversationId(userId, crypto.randomUUID());
+			: namespacedConversationId(userId, randomUuid());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createFlueClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
@@ -104,7 +115,7 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 }
 
 export function startNewChatConversation(userId: string) {
-	const conversationId = namespacedConversationId(userId, crypto.randomUUID());
+	const conversationId = namespacedConversationId(userId, randomUuid());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();
