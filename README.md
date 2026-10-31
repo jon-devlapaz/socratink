@@ -33,6 +33,12 @@ endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
 routing. Otherwise Chat uses AI Gateway. Northflank still requires
 `AI_GATEWAY_API_KEY` when that fallback is used.
 
+Set `TYPESAFE_API_KEY` to let TypeSafe's Jev read each free-text learner
+message (about 100 ms, one paid call per message). When it is sure the learner
+is asking for the answer or does not know, the tutor gets a private note; the
+learner never sees it. Without the key, no learner text goes to TypeSafe.
+`TYPESAFE_BASE_URL` points local runs at a fake; hosted runs ignore it.
+
 Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
 refuses to start without durable conversation storage or a session signing
 secret. Local development uses file-backed SQLite at `.cache/flue/local.db` and

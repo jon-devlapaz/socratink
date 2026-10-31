@@ -9,6 +9,7 @@ import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
+import { learnerMoveQuestion, learnerMoveSignalBody } from '../src/learner-move.ts';
 import { inkCueFromParts } from '../src/ink-cue.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
@@ -162,9 +163,29 @@ function presentQuestionCall(id, input) {
 	return { id, name: 'present_question', arguments: input };
 }
 
+// The fake Jev reads the opening message as a request for the answer, so the tutor's
+// first turn must carry the private signal. Card answers must never reach Jev.
+const learnerMoveSignal = learnerMoveSignalBody('asks_for_answer');
+const jevRequests = [];
+const fakeJev = createServer(async (request, response) => {
+	assert.equal(request.method, 'POST');
+	assert.equal(request.url, '/v1/systemone');
+	assert.equal(request.headers.authorization, 'Bearer smoke-jev-key');
+	let body = '';
+	for await (const chunk of request) body += chunk;
+	const payload = JSON.parse(body);
+	jevRequests.push(payload);
+	assert.deepEqual(payload.questions, { learner_move: learnerMoveQuestion });
+	response.writeHead(200, { 'content-type': 'application/json' });
+	response.end(JSON.stringify({
+		model: 'jev-smoke',
+		answers: { learner_move: { type: 'choice', choice: 'asks_for_answer', probabilities: { asks_for_answer: 0.95 }, confidence: 0.9 } },
+	}));
+});
+
 const scriptedProviderTurns = [
 	{
-		expectedMessages: [initialMessage],
+		expectedMessages: [initialMessage, learnerMoveSignal],
 		text: unboxedBaseline,
 		finishReason: 'stop',
 	},
@@ -231,7 +252,7 @@ let appProcess;
 let stderr = '';
 let appDirectory;
 
-function startApp(appPort, providerPort) {
+function startApp(appPort, providerPort, jevPort) {
 	const child = spawn(process.execPath, ['dist/server.mjs'], {
 		cwd: appDirectory,
 		env: {
@@ -241,6 +262,8 @@ function startApp(appPort, providerPort) {
 			SESSION_SECRET: 'socratink-smoke-session-secret',
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
+			TYPESAFE_API_KEY: 'smoke-jev-key',
+			TYPESAFE_BASE_URL: `http://127.0.0.1:${jevPort}`,
 		},
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
@@ -258,6 +281,7 @@ async function stopApp(child) {
 
 try {
 	const providerPort = await listen(fakeProvider);
+	const jevPort = await listen(fakeJev);
 	const portProbe = createServer();
 	const appPort = await listen(portProbe);
 	await close(portProbe);
@@ -265,7 +289,7 @@ try {
 	appDirectory = await mkdtemp(join(tmpdir(), 'socratink-smoke-'));
 	await cp('dist', join(appDirectory, 'dist'), { recursive: true });
 	await symlink(resolve('node_modules'), join(appDirectory, 'node_modules'), 'dir');
-	appProcess = startApp(appPort, providerPort);
+	appProcess = startApp(appPort, providerPort, jevPort);
 
 	const origin = `http://127.0.0.1:${appPort}`;
 	const health = await waitForServer(`${origin}/healthz`, appProcess);
@@ -369,9 +393,11 @@ try {
 	);
 	assert.equal(complete.text, finalSummary);
 	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
+	assert.equal(jevRequests.length, 1, 'only the free-text opening message should reach Jev');
+	assert.deepEqual(jevRequests[0].state, { tutor_question: '', learner_reply: initialMessage });
 
 	await stopApp(appProcess);
-	appProcess = startApp(appPort, providerPort);
+	appProcess = startApp(appPort, providerPort, jevPort);
 	await waitForServer(`${origin}/healthz`, appProcess);
 	const restored = await client.history();
 	const visibleMessages = restored.messages.filter((message) => message.display === 'visible');
@@ -425,7 +451,7 @@ try {
 	}
 
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, ink_express, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, learner_move signal, mark_reveal, ink_express, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
@@ -433,5 +459,6 @@ try {
 } finally {
 	await stopApp(appProcess);
 	if (fakeProvider.listening) await close(fakeProvider);
+	if (fakeJev.listening) await close(fakeJev);
 	if (appDirectory) await rm(appDirectory, { recursive: true, force: true });
 }

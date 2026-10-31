@@ -6,22 +6,12 @@
 // Usage: node scripts/jev-pilot.mjs --budget 200 [--model jev-latest]
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import { learnerMoveQuestion } from '../src/learner-move.ts';
 
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 
-const learnerQuestions = {
-	learner_move: {
-		type: 'choice',
-		instructions:
-			'What is `learner_reply` doing in response to `tutor_question` from a tutor who wants the learner to work it out?',
-		criteria: {
-			attempt: 'Offers their own answer, guess, or reasoning about the question, even if tentative or wrong',
-			asks_for_answer: 'Asks the tutor to give the answer, definition, or explanation instead of trying',
-			dont_know: 'Says they do not know or cannot start, without asking for the answer and without a guess',
-			other: 'Off topic, logistics, a request about the app, small talk, or changing the subject',
-		},
-	},
-};
+// The shipped question, so the pilot measures what the tutor receives.
+const learnerQuestions = { learner_move: learnerMoveQuestion };
 
 const tutorQuestions = {
 	reveal: {
