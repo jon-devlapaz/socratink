@@ -9,6 +9,7 @@ import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
+import { learnerMoveQuestion, learnerMoveSignalBody } from '../src/learner-move.ts';
 import { inkCueFromParts } from '../src/ink-cue.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
@@ -27,6 +28,14 @@ const revisedAnswer = `Questionnaire answers:\n- What is your revised recovery a
 const assistanceText =
 	'A stable submission identifier is evidence that work may continue after the response stream is lost. Rechecking that submission preserves one admission, while resending can create duplicate work. This information was supplied by Socratink.';
 const finalSummary = `Your baseline decision was ${baselineChoice}. Socratink supplied the distinction between losing local observation and losing admitted work. Your revised decision was ${revisedChoice}. This is evidence from this session, not proof of mastery or durable learning.`;
+const answerRequest = 'Just tell me the answer.';
+const transferPresent = {
+	prompt: 'Which request should reuse the first idempotency key?',
+	choices: ['A retry of the same payment', 'A second, separate purchase'],
+	reasoning: true,
+};
+const unsureReply = 'Honestly no idea, I do not know where to start.';
+const scaffoldText = 'Picture paying twice for one coffee. What would the server need to remember?';
 const unboxedBaseline =
 	'Which recovery action should the client take first?\n\n1. Recheck the admitted request by its stable submission identifier\n2. Send the same message again\n3. Start a new conversation\n4. Assume the request failed';
 const baselinePresent = {
@@ -162,6 +171,27 @@ function presentQuestionCall(id, input) {
 	return { id, name: 'present_question', arguments: input };
 }
 
+// Jev reads only free-text replies to the tutor: never the opening goal, never card answers.
+// After a restart it reads a reply to the tutor's last text, then a reply to a card-only
+// question, so each must carry the matching private signal.
+const jevRequests = [];
+const fakeJev = createServer(async (request, response) => {
+	assert.equal(request.method, 'POST');
+	assert.equal(request.url, '/v1/systemone');
+	assert.equal(request.headers.authorization, 'Bearer smoke-jev-key');
+	let body = '';
+	for await (const chunk of request) body += chunk;
+	const payload = JSON.parse(body);
+	jevRequests.push(payload);
+	const choice = payload.state.learner_reply === unsureReply ? 'dont_know' : 'asks_for_answer';
+	assert.deepEqual(payload.questions, { learner_move: learnerMoveQuestion });
+	response.writeHead(200, { 'content-type': 'application/json' });
+	response.end(JSON.stringify({
+		model: 'jev-smoke',
+		answers: { learner_move: { type: 'choice', choice, probabilities: { [choice]: 0.95 }, confidence: 0.9 } },
+	}));
+});
+
 const scriptedProviderTurns = [
 	{
 		expectedMessages: [initialMessage],
@@ -199,6 +229,16 @@ const scriptedProviderTurns = [
 		text: finalSummary,
 		finishReason: 'stop',
 	},
+	{
+		expectedMessages: [answerRequest, learnerMoveSignalBody('asks_for_answer')],
+		tools: [presentQuestionCall('call_transfer', transferPresent)],
+		finishReason: 'tool_calls',
+	},
+	{
+		expectedMessages: [unsureReply, learnerMoveSignalBody('dont_know')],
+		text: scaffoldText,
+		finishReason: 'stop',
+	},
 ];
 
 let providerTurns = 0;
@@ -217,7 +257,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the completed loop should use exactly seven provider calls');
+	assert.ok(turn, 'the smoke should use exactly nine provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -231,7 +271,7 @@ let appProcess;
 let stderr = '';
 let appDirectory;
 
-function startApp(appPort, providerPort) {
+function startApp(appPort, providerPort, jevPort) {
 	const child = spawn(process.execPath, ['dist/server.mjs'], {
 		cwd: appDirectory,
 		env: {
@@ -241,6 +281,8 @@ function startApp(appPort, providerPort) {
 			SESSION_SECRET: 'socratink-smoke-session-secret',
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
+			TYPESAFE_API_KEY: 'smoke-jev-key',
+			TYPESAFE_BASE_URL: `http://127.0.0.1:${jevPort}`,
 		},
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
@@ -258,6 +300,7 @@ async function stopApp(child) {
 
 try {
 	const providerPort = await listen(fakeProvider);
+	const jevPort = await listen(fakeJev);
 	const portProbe = createServer();
 	const appPort = await listen(portProbe);
 	await close(portProbe);
@@ -265,7 +308,7 @@ try {
 	appDirectory = await mkdtemp(join(tmpdir(), 'socratink-smoke-'));
 	await cp('dist', join(appDirectory, 'dist'), { recursive: true });
 	await symlink(resolve('node_modules'), join(appDirectory, 'node_modules'), 'dir');
-	appProcess = startApp(appPort, providerPort);
+	appProcess = startApp(appPort, providerPort, jevPort);
 
 	const origin = `http://127.0.0.1:${appPort}`;
 	const health = await waitForServer(`${origin}/healthz`, appProcess);
@@ -369,9 +412,10 @@ try {
 	);
 	assert.equal(complete.text, finalSummary);
 	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
+	assert.equal(jevRequests.length, 0, 'neither the opening goal nor card answers should reach Jev');
 
 	await stopApp(appProcess);
-	appProcess = startApp(appPort, providerPort);
+	appProcess = startApp(appPort, providerPort, jevPort);
 	await waitForServer(`${origin}/healthz`, appProcess);
 	const restored = await client.history();
 	const visibleMessages = restored.messages.filter((message) => message.display === 'visible');
@@ -411,6 +455,24 @@ try {
 		'completed loop should restore reveal provenance on the assistance turn',
 	);
 
+	// The tutor's last ask must survive the restart, and a card prompt counts as an ask.
+	const transfer = await client.read(
+		await client.send({ message: { kind: 'user', body: answerRequest } }),
+	);
+	questionnaireFromReply(transfer, questionnaireFromPresentQuestion(transferPresent), 'transfer');
+	assert.deepEqual(jevRequests.map((request) => request.state), [
+		{ tutor_question: finalSummary, learner_reply: answerRequest },
+	]);
+	const scaffold = await client.read(
+		await client.send({ message: { kind: 'user', body: unsureReply } }),
+	);
+	assert.equal(scaffold.text, scaffoldText);
+	assert.equal(providerTurns, 9, 'each reply should take one provider call');
+	assert.deepEqual(jevRequests.map((request) => request.state).at(-1), {
+		tutor_question: transferPresent.prompt,
+		learner_reply: unsureReply,
+	});
+
 	if (process.env.REVEAL_BROWSER === '1') {
 		providerTurns = 0;
 		const { verifyRevealBrowser } = await import('./reveal-browser-smoke.mjs');
@@ -425,7 +487,7 @@ try {
 	}
 
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, ink_express, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, learner_move signal, mark_reveal, ink_express, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
@@ -433,5 +495,6 @@ try {
 } finally {
 	await stopApp(appProcess);
 	if (fakeProvider.listening) await close(fakeProvider);
+	if (fakeJev.listening) await close(fakeJev);
 	if (appDirectory) await rm(appDirectory, { recursive: true, force: true });
 }

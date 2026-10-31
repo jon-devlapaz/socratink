@@ -3,6 +3,7 @@ import {
 	useAgentFinish,
 	useAgentStart,
 	useDataWriter,
+	useDelivery,
 	useModel,
 	usePersistentState,
 	useResponseFinish,
@@ -34,6 +35,9 @@ import {
 	presentQuestionToolName,
 } from './present-question.ts';
 import { InkCueSchema, inkDataName, inkToolDescription, inkToolName } from '../ink-cue.ts';
+import { jevConnection } from '../config/jev.ts';
+import { learnerMoveSignalBody, learnerMoveSignalType, readLearnerMove } from '../learner-move.ts';
+import { questionnaireAnswerPrefix } from '../ui/questionnaire.ts';
 
 installPresentQuestionTextCapture();
 
@@ -42,6 +46,19 @@ export function Chat({ id }: AgentProps) {
 	const [boxedRetry, setBoxedRetry] = usePersistentState('present-question-retry', false);
 	useAgentStart(() => {
 		if (boxedRetry) setBoxedRetry(false);
+	});
+	// The tutor's last ask, text or card prompt, kept durably so a restart or a card-only turn
+	// still leaves Jev the question the learner is answering. Empty until the tutor first speaks.
+	const [lastTutorTurn, setLastTutorTurn] = usePersistentState('learner-move-last-tutor-turn', '');
+	const delivery = useDelivery();
+	useAgentStart(async ({ append }) => {
+		// Jev reads only free-text replies to the tutor. An opening goal read as a request for the
+		// answer in a live run, and the tutor then revealed on its first turn. Card answers are
+		// already structured.
+		if (!jevConnection || !lastTutorTurn || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
+		const move = await readLearnerMove({ tutorQuestion: lastTutorTurn, learnerReply: delivery.body }, jevConnection);
+		const body = learnerMoveSignalBody(move);
+		if (body) append({ kind: 'signal', type: learnerMoveSignalType, body });
 	});
 	useResponseFinish(() => {
 		const routed = capturedRoute();
@@ -73,6 +90,7 @@ export function Chat({ id }: AgentProps) {
 		input: PresentQuestionInputSchema,
 		async run({ data }) {
 			const questionnaire = questionnaireFromPresentQuestion(data);
+			setLastTutorTurn(data.prompt);
 			writeQuestionnaireData(questionnaire);
 			writeInkData({ expression: 'question' });
 			return { output: 'Question presented on the card.', terminate: true };
@@ -86,6 +104,11 @@ export function Chat({ id }: AgentProps) {
 			writeRevealData(data);
 			return { output: 'Reveal recorded.' };
 		},
+	});
+	useAgentFinish(({ response }) => {
+		const askedOnCard = response.toolCalls.some((call) => call.tool === presentQuestionToolName && !call.isError);
+		const text = capturedAssistantText(id);
+		if (!askedOnCard && text) setLastTutorTurn(text);
 	});
 	useAgentFinish(({ response, append }) => {
 		const reason = presentQuestionRetryReason({
@@ -111,6 +134,7 @@ HOW A TURN WORKS
 - After an attempt, repair the smallest consequential thing: the missing distinction, step, or condition of use. Do not rewrite their work or dump the full solution when a smaller repair restores productive work. Then ask them to produce again: restate it, fix it, or apply it to a nearby case.
 - Prefer self-explanation prompts with a specific target ("why does step 3 need X?") over "explain more." Prefer concrete traces, failure paths, and tradeoffs over vocabulary recall.
 - When a claim is reconstructed without help, move to transfer: a new problem that needs the same idea in different clothing.
+- A learner_move signal is a fast automatic reading of the learner's last message. Use it to choose your next move, never mention it, and trust the learner's own words when they disagree with it.
 - Confidence is evidence about self-monitoring, not a label. When useful, ask for it about a defined future performance ("how sure are you that you could do this tomorrow without notes?") and compare it with what was observed. Never call the learner overconfident or underconfident as a trait.
 
 FEEDBACK IS ANALYSIS OF THE WORK, NOT A VERDICT ON THE LEARNER
