@@ -3,6 +3,13 @@
   "framework": null,
   "buildCommand": "pnpm build",
   "outputDirectory": "dist/client",
+  "redirects": [
+    {
+      "source": "/login",
+      "destination": "/login.html",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/healthz",

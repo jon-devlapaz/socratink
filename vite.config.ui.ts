@@ -13,6 +13,7 @@ export default defineConfig({
 			input: {
 				main: resolve(rootDir, 'src/ui/index.html'),
 				login: resolve(rootDir, 'src/ui/login.html'),
+				notFound: resolve(rootDir, 'src/ui/404.html'),
 			},
 		},
 	},
