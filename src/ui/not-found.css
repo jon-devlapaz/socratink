@@ -21,6 +21,7 @@ body.not-found-page {
 	width: auto;
 	height: 1.1rem;
 	margin-bottom: 4rem;
+	filter: var(--wordmark-filter);
 }
 
 .not-found-code {
