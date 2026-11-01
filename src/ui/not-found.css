@@ -1,0 +1,70 @@
+@import './styles.css';
+
+html:has(.not-found-page),
+body.not-found-page {
+	height: auto;
+	min-height: 100dvh;
+	overflow: auto;
+	overscroll-behavior: auto;
+}
+
+.not-found {
+	display: flex;
+	min-height: 100dvh;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 4rem max(1.75rem, calc((100vw - 36rem) / 2));
+}
+
+.not-found-wordmark {
+	width: auto;
+	height: 1.1rem;
+	margin-bottom: 4rem;
+	filter: var(--wordmark-filter);
+}
+
+.not-found-code {
+	margin: 0 0 1rem;
+	color: var(--muted);
+	font-size: 0.8125rem;
+	letter-spacing: 0.12em;
+}
+
+.not-found h1 {
+	margin: 0;
+	font-family: Georgia, 'Times New Roman', ui-serif, serif;
+	font-size: clamp(2rem, 7vw, 3rem);
+	font-weight: 400;
+	letter-spacing: -0.03em;
+	line-height: 1.15;
+}
+
+.not-found h1 + p {
+	margin: 1.5rem 0 2.5rem;
+	color: var(--muted);
+	line-height: 1.75;
+}
+
+.not-found nav {
+	display: flex;
+	gap: 2rem;
+}
+
+.not-found a {
+	display: inline-flex;
+	min-height: 2.75rem;
+	align-items: center;
+	color: var(--ink);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.3em;
+}
+
+.not-found a:hover {
+	color: var(--accent);
+}
+
+.not-found a:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 4px;
+}
