@@ -5,6 +5,11 @@
   "outputDirectory": "dist/client",
   "redirects": [
     {
+      "source": "/login/",
+      "destination": "/login.html",
+      "permanent": false
+    },
+    {
       "source": "/login",
       "destination": "/login.html",
       "permanent": false

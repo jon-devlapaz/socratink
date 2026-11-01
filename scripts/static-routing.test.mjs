@@ -5,12 +5,14 @@ import test from 'node:test';
 const config = JSON.parse(await readFile('vercel.json', 'utf8'));
 
 test('hosted login alias reaches the static login document without a loop', () => {
-	const alias = config.redirects?.find(({ source }) => source === '/login');
-	assert.deepEqual(alias, {
-		source: '/login',
-		destination: '/login.html',
-		permanent: false,
-	});
+	for (const source of ['/login', '/login/']) {
+		const alias = config.redirects?.find((redirect) => redirect.source === source);
+		assert.deepEqual(alias, {
+			source,
+			destination: '/login.html',
+			permanent: false,
+		});
+	}
 	assert.ok(!config.redirects.some(({ source }) => source === '/login.html'));
 });
 
