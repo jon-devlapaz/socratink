@@ -1,9 +1,8 @@
-Checks: recall 3/3 and ink 1/1 passed. Browser and mutation checks were not run under the review restrictions.
+No findings requiring changes.
 
-Interfaces: added `createRecallSession(source): HTMLElement | undefined`, which owns extraction and the recall lifecycle; changed `createActiveTurn` behavior without expanding its signature; added `pnpm test:recall` to `check`; added the standalone browser-smoke command. No new flags or pass-throughs.
+- Round 1: multiline references now preserve continuations; active recall suppresses the Latest pill. Public-turn and browser regressions cover both fixes.
+- Interfaces: added `createRecallSession(source)` owns extraction and lifecycle; `createActiveTurn` gains behavior without signature expansion; added `pnpm test:recall` and `scripts/recall-browser-smoke.py`; expanded `pnpm check`. No pass-throughs or single-caller flags added.
+- Recall stays local, preserves the attempt beside the reference, and introduces no scheduling or ink verdicts. Supplied phone captures show ink clearance.
+- Ran: recall session **3/3**, ink **1/1**, passing. Definition tests, browser smoke, and mutation checks were inspected, not executed under the review restrictions.
 
-1. **`src/ui/recall-session.ts:86–88` — blocking.** Multiline definitions lose their reference or disappear. `**Term**: first line\ncontinued meaning` reveals only “first line”; an indented list continuation makes the entire entry fail the regex. Parse complete definition entries, preserving continuation text. Add public-turn regressions asserting the full revealed reference for paragraph and list forms.
-
-2. **`src/ui/recall-session.css:102–104` — blocking.** Recall hides history chrome but leaves `#jump-latest` available. Scrolling upward through a long reference activates the existing rounded “Latest” pill, violating the explicit no-pills constraint. Suppress that control during active recall, or provide a paper-and-ink equivalent. Extend browser coverage with overflowing content and upward scrolling.
-
-VERDICT: REQUEST CHANGES
+VERDICT: APPROVE
