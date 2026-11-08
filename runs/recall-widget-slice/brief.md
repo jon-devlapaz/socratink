@@ -7,6 +7,10 @@ The confirmed seed (`seed-contract.md`) is the definition. This brief only adds 
 - Recall mode: "recall, then reveal". As relayed: the learner recalls privately, reveals the reference answer and sees it beside their attempt, with no model call per recall.
 - Term source: terms come from what is already in Socratink. No separately created term sets.
 
+## Environment (2026-11-08, resolves the build's first stop)
+
+The `socratink-brain` skill is restored, untracked and gitignored, at `.agents/skills/socratink-brain` (from socratink commit `9579266b^`). The brain checkout is `/Users/jondev/dev/active/product/socratink/socratink-brain` (HEAD 8471da5); `SOCRATINK_BRAIN_PATH` points at it, so `python3 .agents/skills/socratink-brain/scripts/brain.py orient` works. Read it, then implement.
+
 ## Problem and outcome
 
 See the seed.

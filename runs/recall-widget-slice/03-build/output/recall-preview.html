@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recall phone preview</title>
+<style>
+body { margin: 0; padding: 1rem; background: #fffcf0; color: #100f0f; font: 16px/1.5 system-ui; }
+main { max-width: 390px; margin: auto; }
+nav { display: flex; gap: 1.5rem; margin: 1rem 0; }
+button { border: 0; padding: .5rem 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+button[aria-pressed="true"] { font-weight: 700; }
+img { display: block; max-width: 100%; height: auto; }
+p { font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+<p>390×844 browser capture of the production app with synthetic conversation history. This is a screenshot replay, not learner evidence.</p>
+<nav aria-label="Captured recall path">
+<button type="button" data-state="term" aria-pressed="true">Term</button>
+<button type="button" data-state="reveal" aria-pressed="false">Reveal</button>
+<button type="button" data-state="next" aria-pressed="false">Next</button>
+</nav>
+<img id="capture" src="recall-phone-term.png" width="390" height="844" alt="Term shown before reference reveal">
+<p>For the real keyboard interaction, rerun <code>scripts/recall-browser-smoke.py</code> after <code>pnpm build</code>, using a Python environment with Playwright and local Chrome. The script uses a loopback-only fake API and stops its server and browser on exit.</p>
+</main>
+<script>
+const descriptions = { term: "Term shown before reference reveal", reveal: "Private attempt beside the revealed reference", next: "Next term with the reference hidden" };
+for (const button of document.querySelectorAll("button")) {
+ button.addEventListener("click", () => {
+  const state = button.dataset.state;
+  document.querySelector("#capture").src = `recall-phone-${state}.png`;
+  document.querySelector("#capture").alt = descriptions[state];
+  for (const other of document.querySelectorAll("button")) other.setAttribute("aria-pressed", String(other === button));
+ });
+}
+</script>
+</body>
+</html>

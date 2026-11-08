@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "run_id": "bf2ac4f4-0af2-41dc-a81d-32f315b14466",
+  "checkout": "/Users/jondev/dev/worktrees/socratink/recall-widget",
+  "report": "/private/tmp/tinkery-TEST-socratink-recall/notes/build-report.md",
+  "model": "openai-codex/gpt-6.1-sol:medium",
+  "launcher": "/Users/jondev/dev/worktrees/socratink/recall-widget/_system/scripts/pi-launcher",
+  "launcher_sha256": "ec8f436d1bb8bec01d0771329c8c52486e2d2c07daedf10540af3e956962a38b",
+  "state": "active",
+  "session": "tsdlc-73ec31b4a02344e0b15189e20a12fdd9",
+  "prepared_ns": 1794105368798249000,
+  "max_responses": 60,
+  "process_group": 87703
+}

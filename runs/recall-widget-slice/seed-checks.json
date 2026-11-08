@@ -10,6 +10,11 @@
       "source": "Confirmed goal Done when; package.json:6-9,34-48 establishes Node test convention; .github/workflows/ci.yml:22-35 establishes setup; scripts/reveal-ui.test.mjs:1-5,15-41 shows UI assertion convention.",
       "statement": "A term is shown, the learner recalls it, and immediate feedback follows.",
       "id": "seed-1",
+      "activation": {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/recall-session.test.mjs",
+        "cwd": ".",
+        "evidence": "Prerequisite exists at scripts/recall-session.test.mjs; the production createActiveTurn path asserts term, private attempt, immediate reference reveal and next. Removing reference insertion in src/ui/recall-session.ts made the feedback assertion fail; restoring it passed all three tests. Node v24.14.1 and pnpm 11.1.1 satisfy package.json."
+      },
       "description": "A term is shown, the learner recalls it, and immediate feedback follows.",
       "origin": "agent-confirmed-seed",
       "locked": true
@@ -23,6 +28,11 @@
       "statement": "The widget excludes spaced repetition and scheduling anything for later.",
       "cmd": "node --test scripts/recall-session.test.mjs\n",
       "id": "seed-2",
+      "activation": {
+        "cmd": "node --test scripts/recall-session.test.mjs\n",
+        "cwd": ".",
+        "evidence": "Prerequisite exists at src/ui/recall-session.ts and scripts/recall-session.test.mjs; recall state is closure-local to the mounted turn, with finite next/finish and early exit. Explicit completion assertions run with throwing network, timer and persistence boundaries and require no scheduling obligation or questionnaire state."
+      },
       "description": "The widget excludes spaced repetition and scheduling anything for later.",
       "origin": "agent-confirmed-seed",
       "locked": true
