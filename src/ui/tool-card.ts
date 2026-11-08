@@ -1,5 +1,6 @@
 import type { ConversationStreamChunk, FlueConversationPart } from '@flue/sdk';
 import { inkToolName } from '../ink-cue.ts';
+export { inkToolName } from '../ink-cue.ts';
 import { isRevealTool } from '../reveal.ts';
 import { isQuestionnaireTool } from './questionnaire.ts';
 

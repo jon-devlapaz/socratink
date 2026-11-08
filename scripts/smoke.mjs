@@ -12,6 +12,7 @@ import { revealExample } from '../src/reveal.ts';
 import { learnerMoveQuestion, learnerMoveSignalBody } from '../src/learner-move.ts';
 import { inkCueFromParts } from '../src/ink-cue.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
+import { inkToolName } from '../src/ui/tool-card.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
 
 const initialMessage =
@@ -254,7 +255,8 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
-	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
+	assert.equal(payload.tools.some((tool) => tool.function?.name === inkToolName), false,
+		'legacy cosmetic tool must not be advertised');
 
 	const turn = scriptedProviderTurns[providerTurns];
 	assert.ok(turn, 'the smoke should use exactly nine provider calls');
