@@ -1,0 +1,8 @@
+{
+  "require_tink": false,
+  "setup": { "argv": ["pnpm", "install", "--frozen-lockfile"], "timeout_seconds": 600 },
+  "checks": [
+    { "argv": ["pnpm", "check"], "timeout_seconds": 600 },
+    { "argv": ["pnpm", "test:ink"], "timeout_seconds": 120 }
+  ]
+}
