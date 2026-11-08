@@ -10,8 +10,8 @@ import { namespacedConversationId } from '../src/config/session.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
 import { learnerMoveQuestion, learnerMoveSignalBody } from '../src/learner-move.ts';
-import { inkCueFromParts } from '../src/ink-cue.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
+import { inkToolName } from '../src/ui/tool-card.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
 
 const initialMessage =
@@ -221,11 +221,6 @@ const scriptedProviderTurns = [
 	},
 	{
 		expectedMessages: [baselineAnswer, comparisonAnswer, revisedAnswer],
-		tools: [{ id: 'call_ink', name: 'ink_express', arguments: { expression: 'connect' } }],
-		finishReason: 'tool_calls',
-	},
-	{
-		expectedMessages: [revisedAnswer, 'Visual cue recorded.'],
 		text: finalSummary,
 		finishReason: 'stop',
 	},
@@ -254,10 +249,11 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
-	assert.ok(JSON.stringify(payload.tools).includes('ink_express'));
+	assert.equal(payload.tools.some((tool) => tool.function?.name === inkToolName), false,
+		'legacy cosmetic tool must not be advertised');
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the smoke should use exactly nine provider calls');
+	assert.ok(turn, 'the smoke should use exactly eight provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -411,7 +407,7 @@ try {
 		await client.send({ message: { kind: 'user', body: revisedAnswer } }),
 	);
 	assert.equal(complete.text, finalSummary);
-	assert.equal(providerTurns, 7, 'the completed loop should make exactly seven provider calls');
+	assert.equal(providerTurns, 6, 'the completed loop should make exactly six provider calls');
 	assert.equal(jevRequests.length, 0, 'neither the opening goal nor card answers should reach Jev');
 
 	await stopApp(appProcess);
@@ -441,9 +437,7 @@ try {
 	assert.equal(visibleTurns[5]?.tools, undefined, 'mark_reveal is not card chrome');
 	assert.deepEqual(visibleTurns[5]?.reveal, revealExample, 'supplied text keeps its display mark after restart');
 	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
-	assert.deepEqual(visibleTurns[7]?.ink, { expression: 'connect' });
-	assert.equal(visibleTurns[7]?.tools, undefined, 'cosmetic ink is not card chrome');
-	assert.deepEqual(inkCueFromParts(visibleMessages.at(-1).parts), { expression: 'connect' });
+	assert.equal(visibleTurns[7]?.tools, undefined, 'final summary should not show tool chrome');
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
 		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
@@ -467,7 +461,7 @@ try {
 		await client.send({ message: { kind: 'user', body: unsureReply } }),
 	);
 	assert.equal(scaffold.text, scaffoldText);
-	assert.equal(providerTurns, 9, 'each reply should take one provider call');
+	assert.equal(providerTurns, 8, 'each reply should take one provider call');
 	assert.deepEqual(jevRequests.map((request) => request.state).at(-1), {
 		tutor_question: transferPresent.prompt,
 		learner_reply: unsureReply,
@@ -479,15 +473,8 @@ try {
 		await verifyRevealBrowser({ origin, session, initialMessage, assistanceText,
 			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
 	}
-
-	if (process.env.INK_BROWSER === '1') {
-		providerTurns = 0;
-		const { verifyInkBrowser } = await import('./ink-browser-smoke.mjs');
-		await verifyInkBrowser({ origin, initialMessage });
-	}
-
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, learner_move signal, mark_reveal, ink_express, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, learner_move signal, mark_reveal, no cosmetic tool advertisement, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);

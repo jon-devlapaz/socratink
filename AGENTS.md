@@ -24,12 +24,13 @@ Do not list or load them as default project skills unless Captain explicitly
 restores them to `.agents/skills/`.
 
 Praxist-as-progress and extra WebGL scope freezes live in host
-`…/PARETO-01/FREEZE.md` (same archives folder). That file does not authorize
-deleting `living-ink` / `src/ui/effects/living-ink*` or any Chat knee code.
-WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete). Do not
-start new work on `organic-sphere`, `icon-cloud`, heavy/smooth-cursor, or other
-WebGL experiments beyond living-ink unless Captain explicitly requests that
-capability (bugfixes that preserve behavior are OK).
+`…/PARETO-01/FREEZE.md` (same archives folder). The operator's “kill the orb”
+exception authorizes deleting only `living-ink` / `src/ui/effects/living-ink*`.
+It does not authorize deleting Chat knee code or unrelated effects.
+Other WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete).
+Do not start new work on `organic-sphere`, `icon-cloud`, heavy/smooth-cursor,
+or other WebGL experiments unless Captain explicitly requests that capability
+(bugfixes that preserve behavior are OK).
 
 
 ## Operator tripwires (S010 / S030)
@@ -188,9 +189,8 @@ restate code. Do not add abstraction, generality, or a dependency until a
 demonstrated need makes the resulting module simpler to use or safer to change.
 Keep function complexity bounded. Do not pile branching or nested logic onto
 hotspot functions identified by `pnpm audit:trellis` (e.g. in
-`src/ui/chat-markdown-parse.ts`, `src/ui/chat-surface.ts`, or
-`src/ui/effects/living-ink/renderer.ts`); extract focused pure helpers instead
-of expanding existing hotspots.
+`src/ui/chat-markdown-parse.ts` or `src/ui/chat-surface.ts`); extract focused
+pure helpers instead of expanding existing hotspots.
 
 ## Flue harness rules
 

@@ -47,14 +47,14 @@ The dialogue workflow:
 Confirmed capabilities:
 - Real-time streaming conversational dialogue powered by Hono and Flue agent runtime.
 - Interactive questionnaire cards (`present_question`) mounted in-stream.
-- Voice dictation with real-time audio analysis and visual reactivity.
-- Living ink fluid droplet (`.alive-core`) reflecting conversational states (`question`, `thinking`, `speaking`).
+- Voice dictation with listening, processing, and review states.
+- Plain tutor-working feedback with cancellation and recovery controls.
 - Sovereign privacy architecture: cookieless, no analytics tracking, portable export.
 
 Durable constraints:
 - Language must never exceed available evidence (DEC-0003); no manufactured mastery scores or fake progress bars.
 - No unsolicited answer dumps: assistance must match learner footing.
-- WebGL living ink loop must throttle to idle when the learner is reading or inactive.
+- The learning-dock trigger (`.alive-core`) stays empty, without a canvas, poster, or ink visualization.
 
 ## Brand Commitments
 - Name: Socratink. Pronunciation: "so-cre-tink" (`soʊ krə tɪŋk`).

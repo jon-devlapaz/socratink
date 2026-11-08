@@ -12,7 +12,6 @@ export function mountAppDock(core: HTMLButtonElement) {
 	const dock = found;
 	const cluster = core.closest('.alive-cluster');
 	const cloud = mountIconCloud(dock);
-	// With no tools in the dock, the orb stays as living ink but offers no control.
 	if (dock.children.length === 0) {
 		core.disabled = true;
 		core.removeAttribute('aria-controls');

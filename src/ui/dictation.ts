@@ -48,7 +48,6 @@ type DictationSession = {
 	finalized: Set<number>;
 	interim: Map<number, string>;
 	completion: DictationCompletion;
-	stopVoiceActivity?: () => void;
 	stopTimer?: number;
 	elapsedTimer?: number;
 	startedAt: number;
@@ -59,11 +58,6 @@ export type DictationController = Readonly<{
 	stopForReview(): boolean;
 	cancel(): void;
 	destroy(): void;
-}>;
-
-export type DictationVoiceActivity = Readonly<{
-	start(): void;
-	stop(): void;
 }>;
 
 const stopFallbackMs = 2_000;
@@ -120,10 +114,9 @@ export function mountDictation(options: Readonly<{
 	input: HTMLTextAreaElement;
 	toggle: HTMLButtonElement;
 	status: HTMLElement;
-	voiceActivity?: DictationVoiceActivity;
 	onSendRequested: () => void;
 }>): DictationController {
-	const { input, toggle, status, voiceActivity, onSendRequested } = options;
+	const { input, toggle, status, onSendRequested } = options;
 	const Recognition = recognitionConstructor();
 	const announcement = status.querySelector<HTMLElement>('.dictation-announcement');
 	const errorCopy = status.querySelector<HTMLElement>('.dictation-error');
@@ -174,18 +167,10 @@ export function mountDictation(options: Readonly<{
 		active.stopTimer = undefined;
 		active.elapsedTimer = undefined;
 	}
-
-	function stopVoiceActivity(active: DictationSession) {
-		const stop = active.stopVoiceActivity;
-		active.stopVoiceActivity = undefined;
-		stop?.();
-	}
-
 	function finishSession(active: DictationSession, abort: boolean) {
 		if (session !== active) return;
 		session = undefined;
 		clearTimers(active);
-		stopVoiceActivity(active);
 		for (const [type, listener] of active.listeners) {
 			active.recognition.removeEventListener(type, listener);
 		}
@@ -245,7 +230,6 @@ export function mountDictation(options: Readonly<{
 		}
 		paint('stopping', message);
 		clearTimers(active);
-		stopVoiceActivity(active);
 		try {
 			active.recognition.stop();
 		} catch {
@@ -351,10 +335,6 @@ export function mountDictation(options: Readonly<{
 		paint('starting', 'Starting dictation.');
 		try {
 			// SpeechRecognition requires start() in the original click gesture.
-			if (voiceActivity) {
-				active.stopVoiceActivity = () => voiceActivity.stop();
-				voiceActivity.start();
-			}
 			active.recognition.start();
 		} catch {
 			fail(active, 'Dictation could not start. You can keep typing.');

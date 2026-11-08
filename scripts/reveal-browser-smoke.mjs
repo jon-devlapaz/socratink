@@ -64,7 +64,6 @@ export async function verifyRevealBrowser({ origin, session, initialMessage, ass
 			artifacts.push({ width, live, geometry, accessibility: await supplied.ariaSnapshot() });
 		}
 		await answer(revisedChoice, revisedReason);
-		await page.waitForFunction(() => document.querySelector('.alive-core')?.getAttribute('data-ink-expression') === 'connect');
 		await page.reload();
 		await page.locator('#trail-toggle').click();
 		const earlier = page.locator('#messages .reveal-copy');

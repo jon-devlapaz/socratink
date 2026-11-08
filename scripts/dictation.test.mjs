@@ -245,32 +245,6 @@ test('starts synchronously from click and projects starting, listening, stopping
 	}
 });
 
-test('bounds voice activity to the dictation session', () => {
-	const harness = setup();
-	const calls = [];
-	try {
-		const controller = harness.mount({
-			voiceActivity: {
-				start: () => calls.push('start'),
-				stop: () => calls.push('stop'),
-			},
-		});
-		harness.toggle.click();
-		const recognition = FakeRecognition.instances.at(-1);
-		assert.ok(recognition);
-		assert.deepEqual(calls, ['start']);
-		recognition.emit('start');
-		harness.toggle.click();
-		assert.deepEqual(calls, ['start', 'stop']);
-		recognition.emit('end');
-		assert.deepEqual(calls, ['start', 'stop']);
-		controller.destroy();
-		assert.deepEqual(calls, ['start', 'stop']);
-	} finally {
-		harness.restore();
-	}
-});
-
 test('a final Send message command strips itself and submits once after end', () => {
 	const harness = setup();
 	let sends = 0;
