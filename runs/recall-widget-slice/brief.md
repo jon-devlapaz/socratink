@@ -11,6 +11,10 @@ The confirmed seed (`seed-contract.md`) is the definition. This brief only adds 
 
 The `socratink-brain` skill is restored, untracked and gitignored, at `.agents/skills/socratink-brain` (from socratink commit `9579266b^`). The brain checkout is `/Users/jondev/dev/active/product/socratink/socratink-brain` (HEAD 8471da5); `SOCRATINK_BRAIN_PATH` points at it, so `python3 .agents/skills/socratink-brain/scripts/brain.py orient` works. Read it, then implement.
 
+## Review round 1 (2026-11-08)
+
+An independent Pi review requested changes: `runs/recall-widget-slice/05-deploy/output/REVIEW-findings.md`. Fix both blocking findings (multiline/list-continuation definitions; the "Latest" jump pill shown during recall) with public-path regressions, keep `pnpm check` and `pnpm test:ink` green, commit nothing yourself, and report each change.
+
 ## Problem and outcome
 
 See the seed.
