@@ -75,7 +75,7 @@ The app enforces strict operational discipline:
 - **No Editorial Typography in Dialogue:** `Instrument Serif` is forbidden in conversational turns, timestamps, and tool metadata; fast-paced dialogue remains strictly in `Inter`.
 - **Horizontal Over Vertical Yohaku:** Whitespace must not push previous dialogue turns out of view. Vertical spacing is compact and scannable; horizontal margins provide the breathing room.
 - **Code & Math Breakout:** Prose is constrained to comfortable reading measures (max 65ch), while code blocks and mathematical proofs break out to the full container width with horizontal scrolling.
-- **Idle Energy Conservation:** The WebGL living ink orb must decelerate and pause during inactive reading periods to preserve laptop battery and prevent fan noise.
+- **Plain Working Feedback:** Pending tutor responses use the existing textual status and cancel control, without an animated ink visualization.
 
 ## Colors
 
@@ -132,22 +132,22 @@ The application shares the foundational Flexoki paper-and-ink ramp, with true in
 
 ## Shapes
 
-- **The Living Ink Droplet (`.alive-core`):** A centralized WebGL fluid orb, reacting to voice activity, assistant thinking, and inquiry cues.
+- **Learning-Dock Trigger (`.alive-core`):** A plain, empty button retained for learning tools and request-state targeting; disabled when the dock has no tools.
 - **Controls & Chips:** Softly rounded rectangles (`border-radius: 0.5rem` to `0.75rem`).
 - **Interactive Question Cards:** Clean rectangular sheets bounded by 1px hairline ink rules.
 
 ## Components
 
-### 1. The Stage & Living Ink Core (`.alive-core`)
-- The visual anchor of the session. Displays the organic sumi droplet.
-- Automatically throttles and pauses simulation during idle reading states.
+### 1. The Stage & Learning-Dock Trigger (`.alive-core`)
+- An empty button with no canvas, poster, or ink animation.
+- Opens learning tools when present and retains the request coordinator's `is-working` class.
+- Existing pending, cancel, recovery, and error feedback stays in the conversation.
 
 ### 2. The Conversational Transcript (`.chat-surface`)
 - Streamed assistant responses and learner inputs rendered with high typographic clarity.
 - Interactive questionnaire cards (`present_question`) mounted directly into the flow without modal overlays.
 
 ### 3. Audio & Dictation Control (`#dictation-button`)
-- Real-time voice energy analysis driving the living ink orb.
 - Visual state transitions: idle, listening, processing, review.
 
 ### 4. Tool Cards (`.tool-card`)
@@ -161,11 +161,9 @@ The application shares the foundational Flexoki paper-and-ink ramp, with true in
 ### Do:
 - **Do** prioritize learner context retention: keep vertical turn spacing compact so recent turns remain visible.
 - **Do** allow code blocks, proofs, and traces to expand to full container width.
-- **Do** throttle and pause the WebGL canvas after 3–5 seconds of user/model inactivity.
 - **Do** preserve deterministic DOM class names (`.tool-card`, `.active-turn`, `.questionnaire-form`) to protect contract tests.
 
 ### Don't:
 - **Don't** use Instrument Serif in dialogue turns or metadata.
 - **Don't** add large vertical padding gaps that push active inquiry below the fold.
 - **Don't** use bright or saturated accent colors beyond Jade (#1f7a72 / #3aa99f).
-- **Don't** allow continuous WebGL rendering during idle periods.

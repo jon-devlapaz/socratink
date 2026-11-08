@@ -34,12 +34,6 @@ import {
 import { isRevealTool, revealFromReply } from '../reveal.ts';
 import { formatSteeringMessage } from './steering.ts';
 import {
-	expressionForInteraction,
-	inkCueFromReply,
-	inkToolName,
-	type InkExpression,
-} from '../ink-cue.ts';
-import {
 	applyToolStreamEvent,
 	visibleCardTools,
 	type DisplayedToolCall,
@@ -49,7 +43,7 @@ import {
 	createLiveReasoning,
 	resetLiveReasoning,
 } from './thinking.ts';
-import { mountDictation, type DictationVoiceActivity } from './dictation.ts';
+import { mountDictation } from './dictation.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
 import {
 	createActiveTurn,
@@ -100,10 +94,8 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 
 export function mountChatSurface(options: Readonly<{
 	elements?: ChatSurfaceElements;
-	voiceActivity?: DictationVoiceActivity;
 	userId: string;
 	aliases: readonly string[];
-	onInkExpression?: (expression: InkExpression) => void;
 }>): void {
 	const elements = options.elements ?? queryChatSurface();
 	const {
@@ -133,7 +125,6 @@ export function mountChatSurface(options: Readonly<{
 		input,
 		toggle: dictationToggle,
 		status: dictationStatus,
-		voiceActivity: options.voiceActivity,
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation(options.userId, options.aliases);
@@ -164,19 +155,6 @@ export function mountChatSurface(options: Readonly<{
 			markdownRenderers.push(renderer);
 		},
 	};
-
-	function syncInk() {
-		const latest = turns.at(-1);
-		options.onInkExpression?.(
-			expressionForInteraction({
-				idle: requestState.kind === 'idle',
-				composing: Boolean(input.value.trim()),
-				assistant: latest?.role === 'Assistant' ? latest : undefined,
-			}),
-		);
-	}
-	input.addEventListener('input', syncInk);
-
 	function wait(ms: number) {
 		return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 	}
@@ -314,7 +292,6 @@ export function mountChatSurface(options: Readonly<{
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
 			document.body.classList.toggle('conversation-empty', nothingSaidYet);
-			syncInk();
 			input.placeholder = nothingSaidYet ? 'What are you working on?' : '';
 			document.body.classList.toggle(
 				'questionnaire-active',
@@ -397,7 +374,6 @@ export function mountChatSurface(options: Readonly<{
 
 	async function appendAssistantReply(reply: AgentReadResult) {
 		const questionnaire = questionnaireFromReplyData(reply.data);
-		const ink = inkCueFromReply(reply.data);
 		const reveal = revealFromReply(reply.data);
 		const route = modelRouteLabel(reply.metadata);
 		const tools = visibleCardTools(liveTools, { questionnaire });
@@ -408,7 +384,6 @@ export function mountChatSurface(options: Readonly<{
 			...turns,
 			{
 				role: 'Assistant',
-				...(ink ? { ink } : {}),
 				...(reveal ? { reveal } : {}),
 				text: learnerVisibleAssistantText(reply.text),
 				...(questionnaire ? { questionnaire } : {}),
@@ -509,7 +484,7 @@ function isQuietToolStreamEvent(
 	event: { type: string; toolName?: string; toolCallId?: string },
 	quietToolIds: Set<string>,
 ): boolean {
-	if (event.type === 'tool-input' && event.toolName && (isRevealTool(event.toolName) || event.toolName === inkToolName)) {
+	if (event.type === 'tool-input' && event.toolName && isRevealTool(event.toolName)) {
 		if (event.toolCallId) quietToolIds.add(event.toolCallId);
 		return true;
 	}

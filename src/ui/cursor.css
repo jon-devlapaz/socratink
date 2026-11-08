@@ -132,10 +132,6 @@
 	height: var(--grab-bar-height);
 }
 
-html:has(.alive-core.is-working) .smooth-cursor:not(.is-text):not(.is-grab):not(.is-fused-bar):not(.is-fused-core) .smooth-cursor-orb {
-	animation: brand-breathe 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
 html:has(.smooth-cursor.is-fused-bar) .peek-handle::after,
 html:has(.smooth-cursor.is-fused-bar) .peek-handle:hover::after,
 html:has(.smooth-cursor.is-fused-bar) .peek-handle:focus-visible::after,
@@ -172,9 +168,5 @@ html.has-smooth-cursor:has(.trail-toggle:hover) .trail-mark {
 	.smooth-cursor-caret,
 	.smooth-cursor-pill {
 		transition: none;
-	}
-
-	html:has(.alive-core.is-working) .smooth-cursor:not(.is-text):not(.is-grab):not(.is-fused-bar):not(.is-fused-core) .smooth-cursor-orb {
-		animation: none;
 	}
 }
