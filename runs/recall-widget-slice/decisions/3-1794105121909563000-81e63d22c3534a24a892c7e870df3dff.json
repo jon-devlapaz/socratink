@@ -1,0 +1,81 @@
+{
+  "inputs": "db592ac216f1e9de68bf563ecc9389383625e886883599c5aa1fcfbcd01020cc",
+  "decision": "approved",
+  "basis": "confirmed-seed",
+  "reviewer": "confirmed-seed binding (automatic)",
+  "source": "runs/recall-widget-slice/seed-contract.md",
+  "seed_binding": {
+    "path": "runs/recall-widget-slice/seed-contract.md",
+    "sha256": "94524b4877bcefceec92396559f5ed055bcbb90d74cba57ece8ac1c8287756bd",
+    "source": "/private/tmp/tinkery-TEST-socratink-recall/sessions/session-XF9tl9/seed-contract.md",
+    "definitions_sha256": "4a4a7875b5a95d6d38a94bf0ae7f307c86ac3080f7b78c941cd0b4e9575f93aa",
+    "confirmation": {
+      "schema_version": 3,
+      "checks_sha256": "b6c24c90503ea4bc0164da65ae920fc9f407057c4899af249577c9d9f1c1bb7e",
+      "session_id": "session-XF9tl9",
+      "operator": "agent",
+      "revision": "r1",
+      "source": "confirm",
+      "confirmed_at": "2026-11-08T00:27:29.756421+00:00",
+      "seed_sha256": "94524b4877bcefceec92396559f5ed055bcbb90d74cba57ece8ac1c8287756bd",
+      "decisions_sha256": "4f2967c0bd9e24725f6246a1319a1cd0a1c46cbf736034665de5778319dbf6b7",
+      "actor": {
+        "action": "typed confirm at this terminal",
+        "by": "terminal",
+        "declaration": "declared: agent",
+        "identity": "declaration is not verified identity"
+      }
+    },
+    "definitions": [
+      {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/recall-session.test.mjs",
+        "cwd": ".",
+        "expect": "Proposed: a behavior-specific regression asserts term presentation, learner recall and immediate feedback in that order under the eventually selected interaction.",
+        "kind": "provisional",
+        "missing": "scripts/recall-session.test.mjs is not present in the inspected scripts listing. Add the regression after the operator's open interaction choice supplies its concrete assertions. Intended red: removing the feedback transition must fail the assertion that feedback follows recall; a missing named file must fail rather than count as coverage. Requires the repository Node/pnpm versions.",
+        "source": "Confirmed goal Done when; package.json:6-9,34-48 establishes Node test convention; .github/workflows/ci.yml:22-35 establishes setup; scripts/reveal-ui.test.mjs:1-5,15-41 shows UI assertion convention.",
+        "statement": "A term is shown, the learner recalls it, and immediate feedback follows.",
+        "id": "seed-1",
+        "description": "A term is shown, the learner recalls it, and immediate feedback follows.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cwd": ".",
+        "expect": "Proposed: behavior-specific assertions establish that completing recall neither schedules later work nor creates a spaced-repetition obligation.",
+        "kind": "provisional",
+        "missing": "The widget and its state boundaries have not been selected or implemented; identify those boundaries and add explicit no-scheduling assertions. No separate runnable invocation is established yet.",
+        "source": "Confirmed goal Must not; package.json:34-48 supplies the Node test convention, but no scheduling-exclusion regression was established.",
+        "statement": "The widget excludes spaced repetition and scheduling anything for later.",
+        "cmd": "node --test scripts/recall-session.test.mjs\n",
+        "id": "seed-2",
+        "description": "The widget excludes spaced repetition and scheduling anything for later.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm test:ink",
+        "cwd": ".",
+        "expect": "Proposed: existing ink-cue assertions pass. This does not verify visual clearance. Intended targeted red: allowing a mastered expression or a score-bearing cue must fail the existing malformed-value rejection assertions.",
+        "kind": "cmd",
+        "source": "package.json:6-9,47; .github/workflows/ci.yml:22-35; scripts/ink-cue.test.mjs:9-40.",
+        "statement": "Existing ink cue boundaries remain bounded and cosmetic.",
+        "id": "seed-3",
+        "description": "Existing ink cue boundaries remain bounded and cosmetic.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "how_to_judge": "Proposed, not performed: inspect the implemented recall interaction and immediate-feedback states at desktop and mobile sizes, with keyboard interaction, reduced motion and WebGL fallback. Inspect paper/ink appearance and absence of pills, counters and boxes. Confirm the ink remains usable and uncrowded throughout. Browser tooling availability and actual rendering remain unverified.",
+        "kind": "judge",
+        "source": "Confirmed goal Must and Must not; src/ui/dock.css:18-25; src/ui/effects/living-ink/README.md:14-18,65-76.",
+        "statement": "The widget uses a yohaku paper and ink look without pills, counters or boxes, and never breaks or crowds Socratink's living ink blob.",
+        "id": "seed-4",
+        "description": "The widget uses a yohaku paper and ink look without pills, counters or boxes, and never breaks or crowds Socratink's living ink blob.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      }
+    ]
+  },
+  "reason": "matches confirmed seed (sha256: 94524b4877bcefceec92396559f5ed055bcbb90d74cba57ece8ac1c8287756bd)"
+}
