@@ -1,0 +1,11 @@
+{
+  "result": "failed",
+  "error": "Checklist incomplete: seed-4 (mark them with: sdlc.py mark recall-widget-slice <id> passed --evidence \"...\" --reviewer 'REVIEWER' --source 'SOURCE')",
+  "inputs": "c7543c918d0079564c0fe1d2d46867dcb74ea41a64bd8667a212e15df419c6d1",
+  "seed_checks": {
+    "seed-1": "proven",
+    "seed-2": "proven",
+    "seed-3": "proven",
+    "seed-4": "pending"
+  }
+}

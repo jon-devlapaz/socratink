@@ -6,9 +6,10 @@
   "model": "openai-codex/gpt-6.1-sol:medium",
   "launcher": "/Users/jondev/dev/worktrees/socratink/recall-widget/_system/scripts/pi-launcher",
   "launcher_sha256": "ec8f436d1bb8bec01d0771329c8c52486e2d2c07daedf10540af3e956962a38b",
-  "state": "active",
+  "state": "completed",
   "session": "tsdlc-73ec31b4a02344e0b15189e20a12fdd9",
   "prepared_ns": 1794105368798249000,
   "max_responses": 60,
-  "process_group": 87703
+  "process_group": 87703,
+  "report_sha256": "46f60e4c1870e959e071d70cf8f7fdecce8b8f6ecea21c16243c0814f28c7ef7"
 }
