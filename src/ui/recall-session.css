@@ -1,0 +1,106 @@
+.recall-session {
+	color: var(--ink);
+	line-height: 1.55;
+}
+
+.recall-session button {
+	min-height: 44px;
+	padding: 0.5rem 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	color: var(--muted);
+	font: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.25em;
+	cursor: pointer;
+}
+
+.recall-session button:hover {
+	color: var(--ink);
+}
+
+.recall-session :focus-visible {
+	outline: 1px solid var(--ink);
+	outline-offset: 4px;
+}
+
+.recall-term {
+	margin: 1.5rem 0 0.75rem;
+	font-family: Georgia, serif;
+	font-weight: 400;
+	font-size: clamp(1.8rem, 6vw, 2.5rem);
+	overflow-wrap: anywhere;
+}
+
+.recall-instruction,
+.recall-note {
+	color: var(--muted);
+	font-size: 0.85em;
+}
+
+.recall-comparison {
+	display: grid;
+	gap: 1.25rem;
+	margin: 1.75rem 0;
+}
+
+.recall-comparison[data-revealed] {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.recall-column {
+	min-width: 0;
+}
+
+.recall-column > span {
+	display: block;
+	margin-bottom: 0.75rem;
+	color: var(--muted);
+	font-size: 0.75em;
+}
+
+.recall-session .recall-attempt {
+	display: block;
+	width: 100%;
+	min-height: 8rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	resize: vertical;
+	background: none;
+	color: var(--ink);
+	font: inherit;
+	line-height: inherit;
+}
+
+.recall-reference {
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.recall-controls button {
+	color: var(--ink);
+}
+
+.turn:has(> .recall-session[data-active]) > :not(.recall-session) {
+	display: none;
+}
+
+.active-node:has(.recall-session) {
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+}
+
+.active-node:has(.recall-session)::before,
+.active-node:has(.recall-session)::after {
+	display: none;
+}
+
+.active-node:has(.recall-session[data-active]) .trail-toggle,
+.active-node:has(.recall-session[data-active]) #messages,
+#active-turn:has(.recall-session[data-active]) > :not(:has(.recall-session[data-active])) {
+	display: none;
+}

@@ -1,4 +1,5 @@
 import { markSuppliedCopy } from './reveal-mark.ts';
+import { createRecallSession } from './recall-session.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
@@ -103,6 +104,10 @@ export function createActiveTurn(
 				onSteer: handlers.onSteer,
 			}),
 		);
+		if (!item.questionnaire) {
+			const recall = createRecallSession(item.text);
+			if (recall) wrap.append(recall);
+		}
 	}
 	return wrap;
 }

@@ -16,6 +16,7 @@ import './questionnaire.css';
 import './tool-card.css';
 import './dictation.css';
 import './steering.css';
+import './recall-session.css';
 
 void (async () => {
 	const session = await readOrCreateSession();
