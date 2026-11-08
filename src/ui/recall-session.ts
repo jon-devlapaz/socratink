@@ -83,9 +83,10 @@ function action(label: string, onClick: () => void): HTMLButtonElement {
 function definitionEntries(source: string): Term[] {
 	const entries: Term[] = [];
 	for (const block of parseMarkdownBlocks(source)) {
-		const lines = block.type === 'list' ? block.items : block.type === 'paragraph' ? block.text.split('\n') : [];
+		const lines = block.type === 'list' ? block.items : block.type === 'paragraph'
+			? block.text.split(/\n(?=\s*\*\*[^*\n:]{1,100}\*\*:)/) : [];
 		for (const line of lines) {
-			const match = /^\*\*([^*\n:]{1,100})\*\*:\s+(.+)$/.exec(line.trim());
+			const match = /^\*\*([^*\n:]{1,100})\*\*:\s+(.+)$/s.exec(line.trim());
 			if (!match) continue;
 			const term = compactMarkdownText(match[1] ?? '').trim();
 			const reference = compactMarkdownText(match[2] ?? '').trim();

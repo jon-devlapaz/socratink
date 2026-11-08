@@ -46,7 +46,7 @@
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:voice-reactivity": "node --test scripts/voice-reactivity.test.mjs",
 		"test:ink": "node --test scripts/ink-cue.test.mjs",
-		"test:recall": "node --test scripts/recall-session.test.mjs",
+		"test:recall": "node --test scripts/recall-session.test.mjs scripts/recall-definitions.test.mjs",
 		"test:client-id": "node --test scripts/client-id.test.mjs",
 		"test:static-routing": "node --test scripts/static-routing.test.mjs"
 	},

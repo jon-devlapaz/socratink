@@ -99,6 +99,7 @@
 	display: none;
 }
 
+.active-node:has(.recall-session[data-active]) #jump-latest,
 .active-node:has(.recall-session[data-active]) .trail-toggle,
 .active-node:has(.recall-session[data-active]) #messages,
 #active-turn:has(.recall-session[data-active]) > :not(:has(.recall-session[data-active])) {

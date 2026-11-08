@@ -9,7 +9,8 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'runs/recall-widget-slice/03-build/output'
-SOURCE = '**Submission identifier**: A stable identifier used to recheck admitted work.\n\n**Rechecking**: Reading the existing submission rather than sending the work again.'
+REFERENCE = 'A stable identifier used to recheck admitted work. ' + 'Recheck the admitted work rather than sending it again. ' * 100
+SOURCE = f'**Submission identifier**: {REFERENCE}\n\n**Rechecking**: Reading the existing submission rather than sending the work again.'
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -60,7 +61,17 @@ def verify(page, origin, label):
         if state == 'reveal':
             page.get_by_role('button', name='Reveal reference', exact=True).focus()
             page.keyboard.press('Enter')
-            assert page.locator('.recall-reference').inner_text() == 'A stable identifier used to recheck admitted work.'
+            assert page.locator('.recall-reference').inner_text() == REFERENCE.strip()
+            scroller = page.locator('.active-scroll')
+            assert scroller.evaluate('(node) => node.scrollHeight > node.clientHeight + 100')
+            scroller.evaluate('(node) => { node.scrollTop = node.scrollHeight; }')
+            page.wait_for_timeout(150)
+            scroller.evaluate('(node) => { node.scrollTop = 100; }')
+            page.wait_for_function("document.querySelector('#jump-latest').hidden === false")
+            assert not page.locator('#jump-latest').is_visible(), 'Latest pill must not appear during recall'
+            assert page.get_by_role('button', name='Jump to latest').count() == 0
+            scroller.evaluate('(node) => { node.scrollTop = 0; }')
+            page.wait_for_timeout(150)
             assert attempt.input_value() == 'The identity of work already sent'
             assert attempt.evaluate('(node) => node.readOnly')
         elif state == 'next':
