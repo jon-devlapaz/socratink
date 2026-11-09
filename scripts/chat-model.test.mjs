@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
-import { resolveChatModel } from '../src/config/operator-model.ts';
+import { resolveChatModel } from '../src/inference/operator.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import {
 	applyLearnerChatPick,
@@ -121,10 +121,9 @@ import {
 }
 
 {
-	assert.throws(
-		() => resolveChatModel({ NF_PROJECT_ID: 'socratink' }),
-		/AI_GATEWAY_API_KEY is required for hosted Socratink conversations/,
-	);
+	// A hosted deploy with no credential is unconfigured, not a crash at import.
+	assert.equal(resolveChatModel({ NF_PROJECT_ID: 'socratink' }), undefined);
+	assert.equal(resolveChatModel({ VERCEL: '1' }), undefined);
 }
 
 {

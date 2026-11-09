@@ -22,5 +22,5 @@
 		"incremental": true,
 		"preserveWatchOutput": true
 	},
-	"include": ["api", "src", "vite.config.ts", "vite.config.ui.ts", "vite.config.legacy.ts"]
+	"include": ["api", "src", "vite.config.ts", "vite.config.ui.ts"]
 }

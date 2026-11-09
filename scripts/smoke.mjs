@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createFlueClient } from '@flue/sdk';
-import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
+import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
@@ -330,7 +330,7 @@ try {
 
 	const origin = `http://127.0.0.1:${appPort}`;
 	const health = await waitForServer(`${origin}/healthz`, appProcess);
-	assert.deepEqual(await health.json(), { status: 'ok', harness: 'pi-durable' });
+	assert.deepEqual(await health.json(), { status: 'ok', inference: 'local' });
 
 	const root = await fetch(`${origin}/`);
 	assert.equal(root.status, 200);

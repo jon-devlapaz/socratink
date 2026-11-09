@@ -16,8 +16,8 @@ import {
 	createRateLimiter,
 } from './server/rate-limit.ts';
 import { mountSessionRoutes } from './server/session.ts';
-import './server/provider.ts';
 import { reportFailure } from './server/failure-logging.ts';
+import type { Inference } from './inference/index.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
 const credentialStore = getCredentialStore();
@@ -33,14 +33,20 @@ const signedSession = requireSignedSession({
 	authDb,
 });
 
-export function createApp(chatRouter: Hono, harness: 'pi-durable' | 'flue') {
+export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operatorStatus'>) {
 	const app = new Hono();
 	app.onError((_error, context) => {
 		reportFailure('request_failed');
 		return context.json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
 	});
 
-	app.get('/healthz', (context) => context.json(harness === 'pi-durable' ? { status: 'ok', harness } : { status: 'ok' }));
+	// Unconfigured inference fails the health check so the monitor alerts before a learner does.
+	app.get('/healthz', (context) => {
+		const status = inference.operatorStatus();
+		return status.state === 'ready'
+			? context.json({ status: 'ok', inference: status.route })
+			: context.json({ status: 'unconfigured', inference: 'unconfigured' }, 503);
+	});
 	mountSessionRoutes(app, { secret: sessionSecret, authDb });
 	mountOpenaiKeyRoutes(app, {
 		signed: signedSession,

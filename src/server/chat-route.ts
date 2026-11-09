@@ -1,7 +1,7 @@
 import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
 import type { CredentialStore } from './credentials.ts';
-import { learnerChatStatusForUser } from './learner-key.ts';
+import { learnerChatStatusForUser } from '../inference/learner.ts';
 import { sessionFromContext, unauthorizedSessionError } from './session.ts';
 
 type ChatRouteStore = Pick<CredentialStore, 'hasUserKey'>;

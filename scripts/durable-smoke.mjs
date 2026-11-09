@@ -20,8 +20,8 @@ try {
 	apps = appFactory(fixture);
 	let app = await apps.start();
 	stage = 'default-harness';
-	assert.deepEqual(await (await fetch(`${app.origin}/healthz`)).json(), { status: 'ok', harness: 'pi-durable' });
-	report.checks.push('Normal built server defaults to Pi Durable.');
+	assert.deepEqual(await (await fetch(`${app.origin}/healthz`)).json(), { status: 'ok', inference: 'local' });
+	report.checks.push('Normal built server reports its inference route.');
 	const session = await mintSessionFixture(app.origin);
 	const key = 'sk-synthetic-durable-http-learner';
 	fixture.secrets.set(key, 'learner');

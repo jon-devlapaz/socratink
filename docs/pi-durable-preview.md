@@ -1,29 +1,27 @@
 # Pi Durable migration and preview verification
 
-New conversations use Pi Durable. Existing Flue conversations retain their
-original records and continue to accept turns through Flue. The integration was
-verified in an isolated preview before release. Merging to `main` automatically
+Conversations use Pi Durable. Flue is retired as a runtime; conversations
+created before the switch are no longer served. The integration was verified in
+an isolated preview before release. Merging to `main` automatically
 deploys the normal build to production; deploying a preview alone does not.
 
 ## What stays the same
 
 The interface, learner controls, teaching prompt, question validation and retry
 rules, assistance provenance, model picker, native provider APIs, and failure
-monitoring remain. The teaching policy is shared in `src/learning/`, so two copies
-cannot silently diverge.
+monitoring remain. The teaching policy lives in `src/learning/` and model routing
+in `src/inference/`.
 
 Authentication still uses the existing signed session cookie and Postgres auth
 tables. Guest-to-account aliases and encrypted keys use the existing stores.
-Both runtimes resolve an old conversation's guest ID to its current account
-before looking up a key. Provider keys are resolved afresh, never copied into
+Inference resolves a conversation's guest ID to its current account before
+looking up a key. Provider keys are resolved afresh, never copied into
 Pi execution records. Keeping the database, `SESSION_SECRET`, and
 `CREDENTIALS_SECRET` preserves users, cookies, encrypted keys, and history.
 
-An authenticated, ownership-checked request first checks for a Pi conversation.
-Otherwise Flue's read-only HEAD route detects existing history. Flue errors do
-not silently create replacement Pi history. An unknown conversation goes to Pi.
-The published Flue build/runtime and browser SDK remain compatibility
-dependencies; Pi is the executor for all newly admitted conversations.
+Every authenticated, ownership-checked request goes to Pi. The published
+`@flue/vite` build and `@flue/sdk` browser wire format remain as dependencies
+until they are replaced; no Flue runtime executes conversations.
 
 ## Storage and hosting
 
@@ -47,9 +45,6 @@ function limit is 300 seconds. An interrupted slice remains pending; a later
 authenticated read resumes it. Cancellation is persisted so another process
 can request it. There is no unattended scheduler in this change.
 
-Pi's browser journal is separate from Flue tables. Reading or executing a new
-Pi conversation must not rewrite legacy records. Existing conversations still
-inherit Flue's hosting and ownership limitations.
 
 ## Repeatable verification
 
@@ -66,9 +61,7 @@ trellis audit . --baseline .audit/baseline.json
 The Postgres checks create and remove their own Docker database. Model and OAuth
 responses are synthetic. They cover two simultaneous processes, cross-process
 cancellation, process death, stale history reads, signed users, guest aliases,
-key rekey/rotation/revocation, legacy continuation, and browser restoration.
-`build:legacy` creates an explicit compatibility fixture at
-`dist/legacy/server.mjs`; the normal `build` defaults to Pi.
+key rekey/rotation/revocation, and browser restoration.
 
 For hosted verification, use an empty task-owned database on a preview endpoint
 separate from production, new session/encryption secrets, synthetic history,
@@ -76,14 +69,12 @@ and a bounded model key. Keep deployment protection enabled. Capture the current
 production deployment before and after; never promote or assign production
 domains during this check. Do not put private environment files in proof output.
 
-## Operational limits and remaining Flue retirement
+## Operational limits
 
-- The app still supports Flue history and ships Flue compatibility dependencies.
-  Removing them requires a separately proven history migration or an explicit
-  decision to retain that compatibility path.
-- A rollback to a Flue-only build cannot read conversations created in Pi.
-  Keep the Pi tables and a compatible reader; do not treat an application revert
-  as a complete data rollback.
+- Old `flue_*` tables are left in place and unread. Dropping them is a separate,
+  explicit data decision.
+- `@flue/vite` (server build) and `@flue/sdk` (browser wire format) are still
+  dependencies. Replacing them is the remaining Flue removal step.
 - The Postgres adapter replays the full commit log. Pi context compaction is
   disabled here; long conversations and storage growth need bounded testing and
   a deliberate retention/compaction design before a broad rollout.
@@ -100,5 +91,5 @@ domains during this check. Do not put private environment files in proof output.
   Dependency remediation remains part of production readiness.
 
 `pi-ai-durable` is an npm alias for Pi AI 1.5.0. It keeps Pi Durable's native
-provider API separate from the older Pi AI version required by Flue 2.0.3. Remove
-that version split only when the Flue compatibility path can be retired.
+provider API separate from the older Pi AI version that `@flue/*` still pulls in.
+Remove that version split together with the last `@flue/*` package.

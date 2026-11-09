@@ -1,5 +1,5 @@
-import { appConfig } from './app.config.ts';
-import { chatProviderId, type ChatModel } from './chat-model.ts';
+import { appConfig } from '../config/app.config.ts';
+import { chatProviderId, type ChatModel } from '../config/chat-model.ts';
 
 export type ChatModelEnvironment = {
 	readonly VERCEL?: string;
@@ -12,7 +12,7 @@ export type ChatModelEnvironment = {
 };
 
 const localChatModelLimits = {
-	// Lets Flue keep thinking blocks. Effort is sent only on the Vercel gateway URL.
+	// Keeps thinking blocks. Effort is sent only on the Vercel gateway URL.
 	reasoning: true,
 	contextWindow: 1_048_576,
 	maxTokens: 131_100,
@@ -54,15 +54,14 @@ function hostedLocalOverride(environment: ChatModelEnvironment): ChatModel | und
 	};
 }
 
-export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
+/** The operator's model, or undefined when a hosted deploy has no credential. */
+export function resolveChatModel(environment: ChatModelEnvironment): ChatModel | undefined {
 	if (environment.VERCEL === '1' || environment.NF_PROJECT_ID) {
 		const override = hostedLocalOverride(environment);
 		if (override) return override;
 
 		const apiKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
-		if (!apiKey && environment.NF_PROJECT_ID) {
-			throw new Error('AI_GATEWAY_API_KEY is required for hosted Socratink conversations.');
-		}
+		if (!apiKey) return undefined;
 		return {
 			providerId: chatProviderId,
 			baseUrl: appConfig.vercelAiGatewayBaseUrl,
@@ -80,5 +79,3 @@ export function resolveChatModel(environment: ChatModelEnvironment): ChatModel {
 		...localChatModelLimits,
 	};
 }
-
-export const chatModel = resolveChatModel(process.env);
