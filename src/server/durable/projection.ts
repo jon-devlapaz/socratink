@@ -1,6 +1,6 @@
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { LiveDoc, ROOT_CONVERSATION_ID, type Cursor, type EntryRecord, type LiveState, type SubmissionRecord } from '@earendil-works/pi-durable';
-import type { AssistantMessage, Message } from 'pi-ai-durable';
+import type { AssistantMessage, Message } from '@earendil-works/pi-ai';
 import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './contract.ts';
 import { inputKind, messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';

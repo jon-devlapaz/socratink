@@ -19,10 +19,9 @@ State the outcome, scope, proof, and stop condition before tool loops.
 - **Writing or reviewing code:** read [CODING_STANDARDS.md](CODING_STANDARDS.md)
   and the area-specific standards it links. For UI changes, also read
   [DESIGN.md](DESIGN.md).
-- **Flue agents, hooks, tools, routing, or harness changes:** inspect the
-  installed package version and consult matching published Flue documentation
-  or [upstream source](https://github.com/withastro/flue). Use a local Flue wiki
-  only when available and current; do not invent APIs or rely on missing helpers.
+- **Pi Durable engine, tools, or model routing changes:** inspect the installed
+  `@earendil-works/pi-durable` version and its published types; do not invent
+  APIs or rely on missing helpers.
 - **Repeating an operator failure:** read matching local notes under
   `.agents/learnings/` when present. Keep lessons conditional on their
   `read_when` triggers, and check historical commands against this checkout.
@@ -44,8 +43,8 @@ behavior. New modes, room systems, routes, storage, evaluation machinery, and
 other product capabilities require an explicit request. An unexpectedly large
 diff is a reason to reconsider the approach, not expand the scope.
 
-The product owns `src/`; Flue remains a published dependency. Preserve its
-package names, attribution, and Apache licensing. Treat `dist/`, dependencies,
+The product owns `src/`. Preserve the Flue attribution and Apache licensing
+in the README. Treat `dist/`, dependencies,
 caches, logs, artifacts, and environment files as generated or local data.
 
 Keep learner-authored work distinct from AI output and assistance. Use
