@@ -9,25 +9,20 @@ on:
         description: 'Optional isolated preview deployment ID for an alert drill'
         type: string
         required: false
-  push:
-    branches: [codex/core-product-verification]
-    paths:
-      - '.github/workflows/runtime-monitor.yml'
-      - 'scripts/runtime-monitor.mjs'
 
 permissions:
   contents: read
 
 concurrency:
-  group: socratink-runtime-monitor-${{ github.ref }}
+  group: socratink-runtime-monitor-${{ github.ref }}-${{ inputs.preview_deployment && 'verification' || 'production' }}
   cancel-in-progress: false
 
 jobs:
   monitor:
-    if: github.event_name != 'push' || vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT != ''
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: ${{ github.ref == 'refs/heads/main' && 'runtime-monitor' || 'runtime-monitor-verification' }}
+    environment: ${{ inputs.preview_deployment && 'runtime-monitor-verification' || 'runtime-monitor' }}
     steps:
       - name: Check out reviewed monitor
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -56,4 +51,4 @@ jobs:
         run: node scripts/runtime-monitor.mjs
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || (github.event_name == 'push' && vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT) || '' }}
+          MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || '' }}
