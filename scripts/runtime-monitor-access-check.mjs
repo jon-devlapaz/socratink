@@ -7,9 +7,12 @@ const team = 'team_bOdbOHK6yluaErCcwM1iZaUD';
 const preview = process.env.MONITOR_PREVIEW_DEPLOYMENT;
 if (!/^dpl_[A-Za-z0-9]+$/.test(preview ?? '')) process.exit(1);
 console.log(JSON.stringify({ tokenPresent: Boolean(process.env.VERCEL_TOKEN) }));
-for (const [stage, path] of [['project', `/v9/projects/${project}`], ['deployment', `/v13/deployments/${preview}`]]) {
+const requestLogs = new URLSearchParams({ projectId: project, ownerId: team, teamId: team,
+	page: '0', startDate: String(Date.now() - 2_700_000), endDate: String(Date.now()), deploymentId: preview, level: 'error,fatal' });
+for (const [stage, path] of [['project', `/v9/projects/${project}?teamId=${team}`], ['deployment', `/v13/deployments/${preview}?teamId=${team}`],
+	['project-request-logs', `/v1/projects/${project}/request-logs?${requestLogs}`]]) {
 	try {
-		const response = await fetch(`https://api.vercel.com${path}?teamId=${team}`, {
+		const response = await fetch(`https://api.vercel.com${path}`, {
 			headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` }, redirect: 'error', signal: AbortSignal.timeout(15_000),
 		});
 		console.log(JSON.stringify({ stage, httpStatus: response.status }));
