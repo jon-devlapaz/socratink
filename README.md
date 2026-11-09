@@ -104,6 +104,8 @@ The `Socratink runtime monitor` workflow checks production availability and
 queries Vercel runtime errors and HTTP 5xx responses approximately every 10 minutes
 after the workflow reaches `main`. Failed or
 incomplete reads fail the job and use GitHub Actions failure notifications.
+The monitor uses Vercel's project log API and rejects responses with more
+pages or truncated messages.
 Enable email notifications for failed Actions runs in your GitHub settings.
 The application logs constant failure categories for failed chat submissions
 and recovery failures, including failures after an HTTP 202 admission. The
@@ -126,5 +128,6 @@ GitHub schedules activate only on the default branch and can be delayed or
 dropped; public-repository schedules stop after 60 days without activity. The
 45-minute query window deliberately overlaps runs; the same failure can alert
 more than once. Vercel Hobby retains runtime logs for one hour, so a long
-scheduler outage can lose evidence. This is a basic failure monitor, not an
-on-call guarantee or a check of model quality. It makes no model calls.
+scheduler outage can lose evidence. The log API does not report gaps within
+returned history. This is a basic failure monitor, not an on-call guarantee or
+a check of model quality. It makes no model calls.

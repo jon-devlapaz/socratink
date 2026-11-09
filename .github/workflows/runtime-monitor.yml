@@ -14,7 +14,6 @@ on:
     paths:
       - '.github/workflows/runtime-monitor.yml'
       - 'scripts/runtime-monitor.mjs'
-      - 'scripts/runtime-monitor-access-check.mjs'
 
 permissions:
   contents: read
@@ -40,9 +39,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install pinned Vercel CLI
-        run: npm install --global vercel@65.12.1
-
       - name: Check public app availability
         if: github.ref == 'refs/heads/main' && inputs.preview_deployment == ''
         run: |
@@ -61,10 +57,3 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || (github.event_name == 'push' && vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT) || '' }}
-
-      - name: Diagnose preview log access without publishing contents
-        if: failure() && github.event_name == 'push'
-        run: node scripts/runtime-monitor-access-check.mjs
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          MONITOR_PREVIEW_DEPLOYMENT: ${{ vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT }}
