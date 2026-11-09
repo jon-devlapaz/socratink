@@ -1,0 +1,62 @@
+name: Socratink runtime monitor
+
+on:
+  schedule:
+    - cron: '7,17,27,37,47,57 * * * *'
+  workflow_dispatch:
+    inputs:
+      preview_deployment:
+        description: 'Optional isolated preview deployment ID for an alert drill'
+        type: string
+        required: false
+  push:
+    branches: [codex/core-product-verification]
+    paths:
+      - '.github/workflows/runtime-monitor.yml'
+      - 'scripts/runtime-monitor.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: socratink-runtime-monitor-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    if: github.event_name != 'push' || vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: ${{ github.ref == 'refs/heads/main' && 'runtime-monitor' || 'runtime-monitor-verification' }}
+    steps:
+      - name: Check out reviewed monitor
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Install pinned Vercel CLI
+        run: npm install --global vercel@65.12.1
+
+      - name: Check public app availability
+        if: github.ref == 'refs/heads/main' && inputs.preview_deployment == ''
+        run: |
+          node --input-type=module <<'NODE'
+          try {
+            const response = await fetch('https://app.socratink.ai/healthz', { redirect: 'manual', signal: AbortSignal.timeout(15_000) });
+            if (response.status !== 200 || (await response.json()).status !== 'ok') throw new Error();
+          } catch {
+            console.error('Socratink public health check failed.');
+            process.exitCode = 1;
+          }
+          NODE
+
+      - name: Check runtime failures
+        run: node scripts/runtime-monitor.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || (github.event_name == 'push' && vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT) || '' }}

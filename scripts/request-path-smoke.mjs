@@ -14,6 +14,8 @@ import { writeModelResponse } from './request-path-smoke-transport.mjs';
 // Failure cases: the HTTP model header is lost; overlapping users share a key or
 // selection; a foreign owner reaches the provider; revoke leaves the next turn on
 // a deleted key; revoking Alice also changes Bob; replies persist to the wrong trail.
+// An admitted provider failure must log without prompt/key/user data; successful
+// or aborted turns must stay quiet, and one settlement must not duplicate logs.
 const out = resolve(process.env.REQUEST_PATH_SMOKE_OUT ?? '.cache/verification-2026-11-08/request-path');
 const builtApp = resolve(process.env.REQUEST_PATH_SMOKE_DIST ?? 'dist');
 const calls = [];
@@ -21,11 +23,14 @@ const checks = [];
 const errors = [];
 const syntheticKeys = { alice: 'synthetic-request-alice', bob: 'synthetic-request-bob', operator: 'synthetic-request-operator' };
 const replyText = 'Synthetic request-path reply.';
+const privatePrompt = 'private-failure-prompt-sentinel';
 const pending = [];
 let overlapTimer;
 let appProcess;
 let appDirectory;
 let appError = '';
+let failureLogCategories = [];
+let frameworkStderrExposure;
 let failure;
 
 function listen(server) {
@@ -49,6 +54,18 @@ const fakeProvider = createServer(async (request, response) => {
 		const owner = Object.keys(syntheticKeys).find((key) => request.headers.authorization === `Bearer ${syntheticKeys[key]}`);
 		assert.ok(owner, 'provider must receive only one of the synthetic credentials');
 		const prompt = JSON.stringify(payload.input ?? payload.messages);
+		if (prompt.includes('synthetic-abort-check')) {
+			calls.push({ owner, model: payload.model, path: request.url, marker: 'aborted' });
+			response.writeHead(200, { 'content-type': 'text/event-stream' });
+			response.flushHeaders();
+			return;
+		}
+		if (prompt.includes(privatePrompt)) {
+			calls.push({ owner, model: payload.model, path: request.url, marker: 'provider-failure' });
+			response.writeHead(500, { 'content-type': 'application/json', 'x-should-retry': 'false' });
+			response.end(JSON.stringify({ error: { message: `Invalid API key. ${privatePrompt} ${syntheticKeys.operator}` } }));
+			return;
+		}
 		const marker = [...prompt.matchAll(/alice-first|bob-first|alice-revoked|bob-after-revoke/g)].at(-1)?.[0];
 		assert.ok(marker, 'provider request must belong to a synthetic turn');
 		calls.push({ owner, model: payload.model, path: request.url, marker });
@@ -129,7 +146,7 @@ try {
 			JON_LOCAL_API_KEY: syntheticKeys.operator,
 		},
 	});
-	appProcess.stderr.on('data', (chunk) => { appError = (appError + chunk).slice(-4000); });
+	appProcess.stderr.on('data', (chunk) => { appError += chunk; });
 	const origin = `http://127.0.0.1:${appPort}`;
 	await waitForApp(origin);
 	const [alice, bob] = await Promise.all([mintSessionFixture(origin), mintSessionFixture(origin)]);
@@ -177,6 +194,60 @@ try {
 	checks.push('completed replies persist only in their owner’s conversation');
 	assert.deepEqual(errors, []);
 	assert.equal(calls.length, 4);
+	assert.equal(appError.includes('socratink_failure'), false, 'successful turns must not log a failure');
+	const abortSession = await mintSessionFixture(origin);
+	const abortUrl = `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(abortSession.userId, 'abort'))}`;
+	const abortClient = createFlueClient({ url: abortUrl, headers: { cookie: abortSession.cookie } });
+	const abortAdmission = await abortClient.send({ message: { kind: 'user', body: 'synthetic-abort-check' } });
+	for (let attempt = 0; attempt < 100 && !calls.some((call) => call.marker === 'aborted'); attempt += 1) {
+		await new Promise((resolve) => setTimeout(resolve, 25));
+	}
+	assert.ok(calls.some((call) => call.marker === 'aborted'), 'abort check must reach the provider');
+	const aborted = await fetch(`${abortUrl}/abort`, { method: 'POST', headers: { cookie: abortSession.cookie } });
+	assert.equal(aborted.status, 200);
+	await assert.rejects(abortClient.read(abortAdmission, { signal: AbortSignal.timeout(10_000) }),
+		(error) => error.name !== 'TimeoutError');
+	assert.equal((await abortClient.history()).settlements.at(-1)?.outcome, 'aborted');
+	assert.equal(appError.includes('socratink_failure'), false, 'learner cancellation must not log a failure');
+	checks.push('successful turns and learner cancellation do not emit failure logs');
+	const failureSession = await mintSessionFixture(origin);
+	const failureUrl = `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(failureSession.userId, 'failure'))}`;
+	const failureClient = createFlueClient({ url: failureUrl, headers: { cookie: failureSession.cookie } });
+	const failedAdmission = await failureClient.send({ message: { kind: 'user', body: privatePrompt } });
+	let didFail = false;
+	try {
+		await failureClient.read(failedAdmission, { signal: AbortSignal.timeout(30_000) });
+	} catch (error) {
+		assert.notEqual(error.name, 'TimeoutError', 'provider failure must settle, not time out');
+		didFail = true;
+	}
+	assert.ok(didFail, 'admitted provider failure must reach the client');
+	const failureHistory = await failureClient.history();
+	assert.equal(failureHistory.settlements.at(-1)?.outcome, 'failed');
+	for (let attempt = 0; attempt < 40 && !appError.includes('"category":"submission_recovery"'); attempt += 1) {
+		await new Promise((resolve) => setTimeout(resolve, 25));
+	}
+	const failureLines = appError.split('\n').filter((line) => line.includes('socratink_failure'));
+	failureLogCategories = failureLines.map((line) => JSON.parse(line).category);
+	frameworkStderrExposure = {
+		prompt: appError.includes(privatePrompt),
+		credential: Object.values(syntheticKeys).some((value) => appError.includes(value)),
+		learnerId: appError.includes(failureSession.userId),
+	};
+	assert.equal(failureLogCategories.filter((category) => category === 'submission_failed').length, 1,
+		'one terminal background failure must produce one terminal failure log');
+	assert.ok(failureLogCategories.includes('submission_recovery'), 'contained recovery failure must also be observable');
+	for (const line of failureLines) {
+		const record = JSON.parse(line);
+		assert.ok(['submission_failed', 'submission_recovery'].includes(record.category));
+		assert.deepEqual(record, { event: 'socratink_failure', category: record.category });
+	}
+	for (const privateValue of [privatePrompt, ...Object.values(syntheticKeys), failureSession.userId,
+		alice.userId, bob.userId, failureSession.cookie]) {
+		assert.equal(failureLines.join('\n').includes(privateValue), false,
+			'Socratink failure records must not reveal learner or credential data');
+	}
+	checks.push('admitted provider HTTP 500 emits one terminal failure and a recovery signal, both payload-free');
 } catch (error) {
 	failure = error;
 } finally {
@@ -194,9 +265,11 @@ try {
 	await writeFile(join(out, 'proof.json'), `${JSON.stringify({
 		passed: !failure, node: process.version, command: 'node scripts/request-path-smoke.mjs', builtApp,
 		entry: 'built dist/server.mjs → real src/app routes → real provider SDK → fake HTTP transport',
-		checks, calls, errors, ...(failure ? { failure: failure.message } : {}),
+		checks, calls, errors, failureLogCategories, frameworkStderrExposure,
+		...(failure ? { failure: failure.message } : {}),
 		limits: ['Synthetic signed guest sessions, not OAuth login.', 'SQLite storage; PostgreSQL has a separate check.',
 			'Fake provider HTTP responses; no live model or provider account was used.', 'Revocation applies to later admissions, not already admitted work.',
+			'Published Flue may separately print raw provider errors to stderr; payload-free assertions cover only the added Socratink failure records.',
 			'OpenAI Responses does not expose responseModel in the installed provider SDK; optional saved route metadata is absent. Model selection is verified at the HTTP transport.'],
 	}, null, 2)}\n`);
 }

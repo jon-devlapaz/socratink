@@ -24,6 +24,7 @@ import {
 } from './server/rate-limit.ts';
 import { mountSessionRoutes, sessionFromContext } from './server/session.ts';
 import './server/provider.ts';
+import './server/failure-logging.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
 const credentialStore = getCredentialStore();

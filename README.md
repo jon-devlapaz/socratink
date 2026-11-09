@@ -97,3 +97,34 @@ Socratink was extracted from [Flue](https://github.com/withastro/flue) v2.0.3 at
 source commit [`bf86b872`](https://github.com/withastro/flue/commit/bf86b872).
 The product consumes published `@flue/*` packages and preserves their names,
 this provenance statement, and the original [Apache License 2.0](LICENSE).
+
+## Runtime failure alerts
+
+The `Socratink runtime monitor` workflow checks production availability and
+queries Vercel runtime errors and HTTP 5xx responses approximately every 10 minutes
+after the workflow reaches `main`. Failed or
+incomplete reads fail the job and use GitHub Actions failure notifications.
+Enable email notifications for failed Actions runs in your GitHub settings.
+The application logs constant failure categories for failed chat submissions
+and recovery failures, including failures after an HTTP 202 admission. The
+monitor publishes counts only; it never copies Vercel error bodies, request
+paths, learner text, or credentials into public Actions logs. Existing Flue
+runtime logs may contain raw provider errors in Vercel.
+
+Configure `VERCEL_TOKEN` as an environment secret in `runtime-monitor`, which
+is restricted to `main`. Use a token scoped to the Socratink Vercel project;
+Vercel project-scoped tokens are not read-only. For a controlled preview drill,
+use the separately reviewed `runtime-monitor-verification` environment and the
+workflow's `preview_deployment` input. Never place this credential in source,
+repository-wide secrets, or pull-request CI.
+
+Before merging, prove a real isolated-preview failure causes this workflow to
+fail and the matching notification reaches the operator. A local script test
+or a failed job without received notification is insufficient proof.
+
+GitHub schedules activate only on the default branch and can be delayed or
+dropped; public-repository schedules stop after 60 days without activity. The
+45-minute query window deliberately overlaps runs; the same failure can alert
+more than once. Vercel Hobby retains runtime logs for one hour, so a long
+scheduler outage can lose evidence. This is a basic failure monitor, not an
+on-call guarantee or a check of model quality. It makes no model calls.
