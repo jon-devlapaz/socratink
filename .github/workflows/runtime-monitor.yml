@@ -60,3 +60,10 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || (github.event_name == 'push' && vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT) || '' }}
+
+      - name: Diagnose preview log access without publishing contents
+        if: failure() && github.event_name == 'push'
+        run: node scripts/runtime-monitor-access-check.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          MONITOR_PREVIEW_DEPLOYMENT: ${{ vars.SOCRATINK_MONITOR_PREVIEW_DEPLOYMENT }}
