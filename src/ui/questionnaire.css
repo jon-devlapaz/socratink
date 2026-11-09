@@ -45,10 +45,6 @@
 	border: 0;
 }
 
-.questionnaire-item[hidden] {
-	display: none;
-}
-
 .questionnaire-item:focus {
 	outline: none;
 }
@@ -213,7 +209,6 @@
 	background: var(--accent);
 }
 
-.questionnaire-button-secondary,
 .questionnaire-button-ghost {
 	color: var(--ink);
 	background: var(--chip);

@@ -1,12 +1,11 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { instrument } from '@flue/runtime';
+import { instrument, InstrumentationAlreadyInstalledError } from '@flue/runtime';
 import {
-	credentialNameForLearnerChat,
+	learnerChatRoute,
 	formatLearnerChatSpecifier,
 	parseLearnerChatSpecifier,
 	specifierForLearnerChatFromStatus,
 	type ChatModel,
-	type LearnerChatRoute,
 	type LearnerChatStatus,
 	type LearnerCredentialName,
 } from '../config/chat-model.ts';
@@ -18,9 +17,9 @@ import { missingUserKeyError, UserKeyError, type CredentialStore } from './crede
 // Agent intercepts read ctx.instanceId. Session-scope conversationId is Flue's
 // conv_* identity and cannot recover a learner.
 
-export const openaiCredentialName = credentialNameForLearnerChat({ kind: 'openai' });
+export const openaiCredentialName: LearnerCredentialName = 'openai';
 
-export const openrouterCredentialName = credentialNameForLearnerChat({ kind: 'openrouter' });
+export const openrouterCredentialName: LearnerCredentialName = 'openrouter';
 
 export const missingChatInstanceIdError = {
 	type: 'missing_chat_instance_id',
@@ -73,31 +72,23 @@ export async function learnerChatStatusForUser(options: {
 		}),
 	]);
 	return {
-		kind: learnerChatKind({ openai, openrouter }),
+		kind: learnerChatRoute({ openai, openrouter }).kind,
 		openai,
 		openrouter,
 	};
 }
 
-export async function learnerChatRouteForUser(options: {
-	store: Pick<CredentialStore, 'hasUserKey'>;
-	userId: string;
-}): Promise<LearnerChatRoute> {
-	const status = await learnerChatStatusForUser(options);
-	return { kind: status.kind };
-}
-
 export function rememberConversationChatPick(
-	conversationId: string | undefined,
+	instanceId: string | undefined,
 	value: string | undefined | null,
 ): void {
-	if (!conversationId) return;
+	if (!instanceId) return;
 	const pick = parseLearnerChatSpecifier(value);
 	if (!pick) {
-		pendingChatPicks.delete(conversationId);
+		pendingChatPicks.delete(instanceId);
 		return;
 	}
-	pendingChatPicks.set(conversationId, formatLearnerChatSpecifier(pick));
+	pendingChatPicks.set(instanceId, formatLearnerChatSpecifier(pick));
 }
 
 export async function specifierForStoredLearner(options: {
@@ -113,17 +104,11 @@ export async function specifierForStoredLearner(options: {
 	return specifierForLearnerChatFromStatus(status, options.operator, options.requested);
 }
 
-function consumeConversationChatPick(conversationId: string | undefined): string | undefined {
-	if (!conversationId) return undefined;
-	const requested = pendingChatPicks.get(conversationId);
-	pendingChatPicks.delete(conversationId);
+function consumeConversationChatPick(instanceId: string | undefined): string | undefined {
+	if (!instanceId) return undefined;
+	const requested = pendingChatPicks.get(instanceId);
+	pendingChatPicks.delete(instanceId);
 	return requested;
-}
-
-export async function resolveOperatorChatApiKey(options: {
-	apiKey: string | undefined;
-}): Promise<{ auth: { apiKey: string | undefined } }> {
-	return { auth: { apiKey: options.apiKey } };
 }
 
 export async function resolveStoredLearnerApiKey(options: {
@@ -140,12 +125,6 @@ export async function resolveStoredLearnerApiKey(options: {
 	return { auth: { apiKey } };
 }
 
-function learnerChatKind(rows: { openai: boolean; openrouter: boolean }): LearnerChatRoute['kind'] {
-	if (rows.openrouter) return 'openrouter';
-	if (rows.openai) return 'openai';
-	return 'operator';
-}
-
 export function installLearnerKeyCapture(options: { store: LearnerKeyStore; operator: ChatModel }): void {
 	try {
 		instrument({
@@ -159,7 +138,7 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 						store: options.store,
 						userId,
 						operator: options.operator,
-						requested: consumeConversationChatPick(ctx.conversationId),
+						requested: consumeConversationChatPick(ctx.instanceId),
 					});
 					return runWithChatSpecifier(specifier, next);
 				});
@@ -167,10 +146,6 @@ export function installLearnerKeyCapture(options: { store: LearnerKeyStore; oper
 			dispose() {},
 		});
 	} catch (error) {
-		if (!isInstrumentationAlreadyInstalled(error)) throw error;
+		if (!(error instanceof InstrumentationAlreadyInstalledError)) throw error;
 	}
-}
-
-function isInstrumentationAlreadyInstalled(error: unknown): boolean {
-	return error instanceof Error && error.name === 'InstrumentationAlreadyInstalledError';
 }

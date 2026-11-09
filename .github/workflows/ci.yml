@@ -31,8 +31,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run full quality gate
-        run: pnpm check
+      - name: Install Chromium and system dependencies
+        run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run deterministic smoke test
-        run: pnpm smoke
+      - name: Run full quality gate
+        shell: bash
+        run: |
+          mkdir -p .cache/browser-proof
+          pnpm check 2>&1 | tee .cache/browser-proof/check.log
+
+      - name: Run deterministic browser smoke test
+        shell: bash
+        run: pnpm smoke 2>&1 | tee .cache/browser-proof/smoke.log
+        env:
+          REVEAL_BROWSER: '1'
+          BROWSER_PROOF_DIR: .cache/browser-proof
+
+      - name: Run provider request-path smoke test
+        shell: bash
+        run: pnpm smoke:request-path 2>&1 | tee .cache/browser-proof/request-path.log
+        env:
+          REQUEST_PATH_SMOKE_OUT: .cache/browser-proof/request-path
+
+      - name: Upload synthetic browser proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: browser-proof-node22-linux
+          path: .cache/browser-proof
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7

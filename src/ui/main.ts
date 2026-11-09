@@ -1,9 +1,6 @@
 import { readOrCreateSession } from './session.ts';
 import { mountChatSurface } from './chat-surface.ts';
-import { mountSmoothCursor } from './effects/smooth-cursor.ts';
 import './styles.css';
-import './cursor.css';
-import './dock.css';
 import './menu.css';
 import './transcript.css';
 import './reveal-mark.css';
@@ -25,7 +22,6 @@ void (async () => {
 		authLink.href = '/api/session/logout';
 		authLinkLabel.textContent = 'Sign out';
 	}
-	mountSmoothCursor();
 	mountChatSurface({
 		userId: session.userId,
 		aliases: session.aliases,

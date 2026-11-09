@@ -14,7 +14,6 @@ export type CredentialRow = Readonly<{
 export type CredentialDb = {
 	upsert(row: CredentialRow): Promise<string>;
 	getByName(lookup: { userId: string; name: string }): Promise<CredentialRow | undefined>;
-	getByRef(credentialRef: string): Promise<CredentialRow | undefined>;
 	deleteByName(lookup: { userId: string; name: string }): Promise<void>;
 	rekeyUser(lookup: { fromUserId: string; toUserId: string }): Promise<void>;
 	close(): Promise<void>;
@@ -43,8 +42,6 @@ ON CONFLICT (user_id, name) DO UPDATE SET
 RETURNING credential_ref`;
 const POSTGRES_SELECT_BY_NAME_SQL =
 	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE user_id = $1 AND name = $2';
-const POSTGRES_SELECT_BY_REF_SQL =
-	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE credential_ref = $1';
 const POSTGRES_DELETE_SQL =
 	'DELETE FROM socratink_credentials WHERE user_id = $1 AND name = $2';
 const POSTGRES_REKEY_SQL = `UPDATE socratink_credentials SET user_id = $1
@@ -59,8 +56,6 @@ ON CONFLICT (user_id, name) DO UPDATE SET
 RETURNING credential_ref`;
 const SQLITE_SELECT_BY_NAME_SQL =
 	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE user_id = ? AND name = ?';
-const SQLITE_SELECT_BY_REF_SQL =
-	'SELECT user_id, name, credential_ref, ciphertext FROM socratink_credentials WHERE credential_ref = ?';
 const SQLITE_DELETE_SQL = 'DELETE FROM socratink_credentials WHERE user_id = ? AND name = ?';
 const SQLITE_REKEY_SQL = `UPDATE socratink_credentials SET user_id = ?
 WHERE user_id = ? AND name NOT IN (SELECT name FROM socratink_credentials WHERE user_id = ?)`;
@@ -103,11 +98,6 @@ export function createPostgresCredentialDb(client: CredentialPgClient): Credenti
 			const result = await client.query(POSTGRES_SELECT_BY_NAME_SQL, [lookup.userId, lookup.name]);
 			return mapOptionalRow(result.rows[0]);
 		},
-		async getByRef(credentialRef) {
-			await ensure();
-			const result = await client.query(POSTGRES_SELECT_BY_REF_SQL, [credentialRef]);
-			return mapOptionalRow(result.rows[0]);
-		},
 		async deleteByName(lookup) {
 			await ensure();
 			await client.query(POSTGRES_DELETE_SQL, [lookup.userId, lookup.name]);
@@ -134,9 +124,6 @@ export function createSqliteCredentialDb(filename: string): CredentialDb {
 		},
 		async getByName(lookup) {
 			return mapOptionalRow(database.prepare(SQLITE_SELECT_BY_NAME_SQL).get(lookup.userId, lookup.name));
-		},
-		async getByRef(credentialRef) {
-			return mapOptionalRow(database.prepare(SQLITE_SELECT_BY_REF_SQL).get(credentialRef));
 		},
 		async deleteByName(lookup) {
 			database.prepare(SQLITE_DELETE_SQL).run(lookup.userId, lookup.name);

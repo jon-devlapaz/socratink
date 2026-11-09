@@ -1,5 +1,6 @@
 import type { Context, Hono } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
+import { appConfig } from '../config/app.config.ts';
 import type { AuthConfig } from '../config/auth.ts';
 import { sessionUsesSecureCookie } from '../config/session.ts';
 import type { AuthDb } from './auth-db.ts';
@@ -116,7 +117,7 @@ export function mountOAuthRoutes(
 		onRekey: (guestUserId: string, durableUserId: string) => Promise<void>;
 	},
 ): void {
-	app.get('/api/auth/providers', (context) =>
+	app.get(appConfig.authProvidersPath, (context) =>
 		context.json({
 			google: options.config.google !== undefined,
 			github: options.config.github !== undefined,

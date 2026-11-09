@@ -1,5 +1,4 @@
-// Mirrors credential-db.ts's dual-dialect shape on purpose: the stores evolve
-// independently, and the third store is the trigger to extract a shared executor.
+// Auth and credential stores evolve independently despite sharing SQL dialects.
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -56,7 +55,6 @@ CREATE TABLE IF NOT EXISTS socratink_user_aliases (
 	created_at TEXT NOT NULL
 );`;
 
-// POSTGRES SQL
 const POSTGRES_FIND_USER_BY_EMAIL_SQL =
 	'SELECT id, email, created_at FROM socratink_users WHERE email = $1';
 const POSTGRES_FIND_USER_BY_ID_SQL =
@@ -79,7 +77,6 @@ const POSTGRES_FIND_ALIASES_SQL =
 const POSTGRES_FIND_ALIAS_OWNER_SQL =
 	'SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = $1';
 
-// SQLITE SQL
 const SQLITE_FIND_USER_BY_EMAIL_SQL =
 	'SELECT id, email, created_at FROM socratink_users WHERE email = ?';
 const SQLITE_FIND_USER_BY_ID_SQL =

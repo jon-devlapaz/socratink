@@ -1,15 +1,19 @@
 import { appConfig } from '../config/app.config.ts';
 import {
 	isLearnerChatStatus,
-	operatorChatStatus,
 	type LearnerChatStatus,
 } from '../config/chat-model.ts';
 
 export async function loadLearnerChatStatus(): Promise<LearnerChatStatus> {
 	const response = await fetch(appConfig.chatRoutePath, { credentials: 'same-origin' });
-	if (!response.ok) return operatorChatStatus;
+	return readLearnerChatStatus(response);
+}
+
+export async function readLearnerChatStatus(response: Response): Promise<LearnerChatStatus> {
+	if (!response.ok) throw new Error('Unable to load the chat provider.');
 	const body: unknown = await response.json();
-	return isLearnerChatStatus(body) ? body : operatorChatStatus;
+	if (!isLearnerChatStatus(body)) throw new Error('Unable to load the chat provider.');
+	return body;
 }
 
 export function providersChatStatusCopy(status: LearnerChatStatus): string {

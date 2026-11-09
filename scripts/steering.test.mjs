@@ -3,9 +3,9 @@ import test from 'node:test';
 import {
 	createSteeringBar,
 	formatSteeringMessage,
-	steeringPrefix,
 	turnSnippetToCopy,
 } from '../src/ui/steering.ts';
+import { steeringPrefix } from '../src/config/chat-message.ts';
 
 test('steering messages are prefixed learner turns, not capability claims', () => {
 	assert.equal(
@@ -16,8 +16,6 @@ test('steering messages are prefixed learner turns, not capability claims', () =
 		formatSteeringMessage('try-unaided'),
 		`${steeringPrefix} try unaided. I have enough footing. Withhold the next reveal and let me attempt the target.`,
 	);
-	assert.match(formatSteeringMessage('smaller-step'), /^Steering:/);
-	assert.doesNotMatch(formatSteeringMessage('try-unaided'), /mastery|durable learning/i);
 });
 
 test('copy uses a selected snippet when present, otherwise the whole turn', () => {

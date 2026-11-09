@@ -3,19 +3,20 @@ import {
 	useAgentFinish,
 	useAgentStart,
 	useDataWriter,
-	useDelivery,
 	useModel,
 	usePersistentState,
 	useResponseFinish,
 	useTool,
 	type AgentProps,
 } from '@flue/runtime';
-import { chatModel } from '../config/chat-model.ts';
+import { chatModel } from '../config/operator-model.ts';
 import { capturedChatModelSpecifier } from '../server/learner-key.ts';
 import { modelRouteMetadata } from '../config/model-route.ts';
 import {
 	PresentQuestionInputSchema,
 	QuestionnaireSchema,
+	questionnaireDataName,
+	questionnaireAnswerPrefix,
 	questionnaireFromPresentQuestion,
 } from '../questionnaire.ts';
 import {
@@ -26,17 +27,14 @@ import {
 } from '../reveal.ts';
 import { capturedRoute } from '../server/model-route.ts';
 import {
-	capturedAssistantText,
+	takeAssistantText,
 	installPresentQuestionTextCapture,
-	presentQuestionRetryBody,
+	presentQuestionRetryBodies,
 	presentQuestionRetryReason,
 	presentQuestionSignalType,
 	presentQuestionToolDescription,
 	presentQuestionToolName,
 } from './present-question.ts';
-import { jevConnection } from '../config/jev.ts';
-import { learnerMoveSignalBody, learnerMoveSignalType, readLearnerMove } from '../learner-move.ts';
-import { questionnaireAnswerPrefix } from '../ui/questionnaire.ts';
 
 installPresentQuestionTextCapture();
 
@@ -46,19 +44,6 @@ export function Chat({ id }: AgentProps) {
 	useAgentStart(() => {
 		if (boxedRetry) setBoxedRetry(false);
 	});
-	// The tutor's last ask, text or card prompt, kept durably so a restart or a card-only turn
-	// still leaves Jev the question the learner is answering. Empty until the tutor first speaks.
-	const [lastTutorTurn, setLastTutorTurn] = usePersistentState('learner-move-last-tutor-turn', '');
-	const delivery = useDelivery();
-	useAgentStart(async ({ append }) => {
-		// Jev reads only free-text replies to the tutor. An opening goal read as a request for the
-		// answer in a live run, and the tutor then revealed on its first turn. Card answers are
-		// already structured.
-		if (!jevConnection || !lastTutorTurn || delivery.kind !== 'user' || delivery.body.startsWith(questionnaireAnswerPrefix)) return;
-		const move = await readLearnerMove({ tutorQuestion: lastTutorTurn, learnerReply: delivery.body }, jevConnection);
-		const body = learnerMoveSignalBody(move);
-		if (body) append({ kind: 'signal', type: learnerMoveSignalType, body });
-	});
 	useResponseFinish(() => {
 		const routed = capturedRoute();
 		if (!routed?.routedModel) return;
@@ -67,7 +52,7 @@ export function Chat({ id }: AgentProps) {
 			...(routed.fallbackAttempts ? { fallbackAttempts: routed.fallbackAttempts } : {}),
 		});
 	});
-	const writeQuestionnaireData = useDataWriter('questionnaire', {
+	const writeQuestionnaireData = useDataWriter(questionnaireDataName, {
 		schema: QuestionnaireSchema,
 	});
 	const writeRevealData = useDataWriter(revealDataName, {
@@ -79,7 +64,6 @@ export function Chat({ id }: AgentProps) {
 		input: PresentQuestionInputSchema,
 		async run({ data }) {
 			const questionnaire = questionnaireFromPresentQuestion(data);
-			setLastTutorTurn(data.prompt);
 			writeQuestionnaireData(questionnaire);
 			return { output: 'Question presented on the card.', terminate: true };
 		},
@@ -93,15 +77,10 @@ export function Chat({ id }: AgentProps) {
 			return { output: 'Reveal recorded.' };
 		},
 	});
-	useAgentFinish(({ response }) => {
-		const askedOnCard = response.toolCalls.some((call) => call.tool === presentQuestionToolName && !call.isError);
-		const text = capturedAssistantText(id);
-		if (!askedOnCard && text) setLastTutorTurn(text);
-	});
 	useAgentFinish(({ response, append }) => {
 		const reason = presentQuestionRetryReason({
 			toolCalls: response.toolCalls,
-			assistantText: capturedAssistantText(id),
+			assistantText: takeAssistantText(id),
 			alreadyRetried: boxedRetry,
 		});
 		if (!reason) return;
@@ -109,7 +88,7 @@ export function Chat({ id }: AgentProps) {
 		append({
 			kind: 'signal',
 			type: presentQuestionSignalType,
-			body: presentQuestionRetryBody(reason),
+			body: presentQuestionRetryBodies[reason],
 		});
 	});
 	return `You are Socratink, a learning partner. Your job is to make the learner's thinking visible, repair the specific gap in the work, and hand the work back. You are not here to produce polished answers for them. Do not claim from this conversation that the learner has become durably more capable; this session is not evidence of retention.
@@ -122,7 +101,6 @@ HOW A TURN WORKS
 - After an attempt, repair the smallest consequential thing: the missing distinction, step, or condition of use. Do not rewrite their work or dump the full solution when a smaller repair restores productive work. Then ask them to produce again: restate it, fix it, or apply it to a nearby case.
 - Prefer self-explanation prompts with a specific target ("why does step 3 need X?") over "explain more." Prefer concrete traces, failure paths, and tradeoffs over vocabulary recall.
 - When a claim is reconstructed without help, move to transfer: a new problem that needs the same idea in different clothing.
-- A learner_move signal is a fast automatic reading of the learner's last message. Use it to choose your next move, never mention it, and trust the learner's own words when they disagree with it.
 - Confidence is evidence about self-monitoring, not a label. When useful, ask for it about a defined future performance ("how sure are you that you could do this tomorrow without notes?") and compare it with what was observed. Never call the learner overconfident or underconfident as a trait.
 
 FEEDBACK IS ANALYSIS OF THE WORK, NOT A VERDICT ON THE LEARNER
@@ -139,7 +117,7 @@ THE CARD
 - Mark reveals by the target content you supply, not by whether the learner asked for it. Whenever this turn supplies a hint, worked example, partial explanation or solution, or full explanation or answer, call mark_reveal in the same turn with kind hint, worked_example, partial, or full_answer respectively. This includes volunteered scaffolding, explanations after a brief learner answer, and corrections that supply a missing step or distinction. Optional target names the performance that reveal was about. Do not end the turn on that call. Saying "revealed" in prose is not provenance.
 - A question that gives away target content is still a reveal: naming the key idea before asking about it counts as a hint. Asking a follow-up question does not cancel an explanation's reveal. A turn that only asks for the learner's thinking or presents a diagnostic without supplying target content must stay unmarked; do not call mark_reveal for it.
 - Diagnostic items isolate exactly one stated condition or decision, with enough context for exactly one defensible best answer. Do not combine independent failure modes in one item, and do not reveal the best answer before the learner submits.
-- When a learner message starts with "Questionnaire answers:", read both the selected choice and the written reasoning before responding.
+- When a learner message starts with "${questionnaireAnswerPrefix}", read both the selected choice and the written reasoning before responding.
 - When a learner message starts with "Steering:", treat it as a pacing correction for the previous turn, not as new domain work and not as evidence of capability. "smaller step" means the last turn assumed too much footing: slow down to one smaller step and check a missing assumption before continuing. "try unaided" means withhold the next reveal and ask for an attempt. Do not praise the request.
 
 FORMAT

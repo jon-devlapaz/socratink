@@ -2,23 +2,29 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { namespacedConversationId } from '../src/config/session.ts';
 
-// Opt-in browser proof using the same fake provider and signed session as smoke.
-export async function verifyRevealBrowser({ origin, session, initialMessage, assistanceText,
+// Browser proof uses only the fake provider and synthetic session from smoke.
+export async function verifyRevealBrowser({ origin, session, savedConversationId, initialMessage, assistanceText,
 	baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason }) {
-	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
+	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 	const browser = await chromium.launch({
-		executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+		executablePath: process.env.CHROME_PATH || undefined,
 		headless: true,
 	});
-	const out = '.cache/reveal';
+	const out = process.env.BROWSER_PROOF_DIR || '.cache/reveal';
 	await mkdir(out, { recursive: true });
+	await writeFile(`${out}/runtime.json`, JSON.stringify({
+		node: process.version, platform: process.platform, arch: process.arch, browser: browser.version(),
+	}, null, 2));
 	const context = await browser.newContext({ reducedMotion: 'reduce' });
+	await context.tracing.start({ screenshots: true, snapshots: true });
 	const equals = session.cookie.indexOf('=');
 	await context.addCookies([{
 		name: session.cookie.slice(0, equals), value: session.cookie.slice(equals + 1), url: origin,
 	}]);
 	await context.addInitScript((id) => {
-		localStorage.setItem('socratink-chat-conversation-id', id);
+		if (!localStorage.getItem('socratink-chat-conversation-id')) {
+			localStorage.setItem('socratink-chat-conversation-id', id);
+		}
 	}, namespacedConversationId(session.userId, 'reveal-browser'));
 	const page = await context.newPage();
 	const artifacts = [];
@@ -29,7 +35,65 @@ export async function verifyRevealBrowser({ origin, session, initialMessage, ass
 		await form.evaluate((node) => node.requestSubmit());
 	}
 	try {
-		await page.goto(origin);
+		const { verifyUiBrowser } = await import('./ui-browser-smoke.mjs');
+		await verifyUiBrowser({ browser, origin, session, out: `${out}/ui` });
+		const { verifyQuestionnaireBrowser } = await import('./questionnaire-browser-smoke.mjs');
+		await verifyQuestionnaireBrowser({ browser, origin, session, out: `${out}/questionnaires` });
+		for (const reducedMotion of ['no-preference', 'reduce']) {
+			await page.emulateMedia({ reducedMotion });
+			for (const width of [390, 1280]) {
+				await page.setViewportSize({ width, height: 900 });
+				await page.goto(origin);
+				const input = page.locator('#message');
+				await input.fill('Check input');
+				assert.equal(await input.inputValue(), 'Check input');
+				await input.fill('');
+				const peek = page.locator('#peek-handle');
+				await peek.click();
+				assert.equal(await peek.getAttribute('aria-expanded'), 'true');
+				assert.equal(await page.locator('#menu-layer').evaluate((node) =>
+					!node.inert && node.contains(document.activeElement)), true);
+				await page.keyboard.press('Escape');
+				assert.equal(await peek.getAttribute('aria-expanded'), 'false');
+				assert.equal(await peek.evaluate((node) => document.activeElement === node), true);
+				assert.equal(await input.evaluate((node) => !!node.closest('[inert]')), false);
+				const shell = await input.evaluate((node) => ({
+					bodyCursor: getComputedStyle(document.body).cursor,
+					inputCursor: getComputedStyle(node).cursor,
+					overflow: document.documentElement.scrollWidth > innerWidth,
+				}));
+				assert.notEqual(shell.bodyCursor, 'none');
+				assert.notEqual(shell.inputCursor, 'none');
+				assert.equal(shell.overflow, false);
+				await page.screenshot({ path: `${out}/${width}-${reducedMotion}-shell.png` });
+				artifacts.push({ kind: 'shell', width, reducedMotion, ...shell, menuKeyboard: 'passed' });
+			}
+		}
+		await page.emulateMedia({ colorScheme: 'light' });
+		await page.locator('#peek-handle').click();
+		await page.locator('#appearance-toggle').click();
+		await page.locator('#type-size-toggle').click();
+		await page.locator('#type-size-toggle').click();
+		assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+		assert.equal(await page.locator('#type-size-label').innerText(), 'Big');
+		const blockModules = route => route.abort();
+		await page.route('**/assets/*.js', blockModules);
+		try {
+			await page.reload({ waitUntil: 'domcontentloaded' });
+			assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+			assert.equal(await page.locator('html').getAttribute('data-type-size'), 'big');
+			assert.equal(await page.locator('#theme-color').getAttribute('content'), '#100f0f');
+		} finally {
+			await page.unroute('**/assets/*.js', blockModules);
+		}
+		await page.reload();
+		await page.locator('#peek-handle').click();
+		assert.equal(await page.locator('#appearance-toggle').getAttribute('aria-pressed'), 'true');
+		assert.equal(await page.locator('#type-size-label').innerText(), 'Big');
+		await page.locator('#appearance-toggle').click();
+		await page.locator('#type-size-toggle').click();
+		await page.keyboard.press('Escape');
+		artifacts.push({ kind: 'preferences', restoredBeforeAppModule: true, themeAndTextSizeSurviveReload: true });
 		await page.locator('#message').fill(initialMessage);
 		await page.locator('#chat').evaluate((form) => form.requestSubmit());
 		await answer(baselineChoice, baselineReason);
@@ -63,7 +127,22 @@ export async function verifyRevealBrowser({ origin, session, initialMessage, ass
 			await page.screenshot({ path: `${out}/${width}-restored.png` });
 			artifacts.push({ width, live, geometry, accessibility: await supplied.ariaSnapshot() });
 		}
+		const fourthTurnResponse = page.waitForResponse(response =>
+			response.request().method() === 'POST' && response.url().startsWith(`${origin}/api/agents/chat/`));
 		await answer(revisedChoice, revisedReason);
+		const rejected = await fourthTurnResponse;
+		assert.equal(rejected.status(), 403);
+		assert.equal((await rejected.json()).error.type, 'guest_turn_limit');
+		const notSent = page.locator('#active-turn .request-state.not-admitted');
+		await notSent.getByText('Not sent', { exact: true }).waitFor();
+		assert.ok((await notSent.innerText()).includes('Sign in to continue this conversation.'));
+		assert.equal(await notSent.getByRole('button', { name: 'Retry', exact: true }).isEnabled(), true);
+		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
+		await page.reload();
+		await supplied.waitFor();
+		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
+		artifacts.push({ kind: 'guest-limit', fourthTurnRejected: true, priorRevealRestored: true });
+		await page.evaluate(id => localStorage.setItem('socratink-chat-conversation-id', id), savedConversationId);
 		await page.reload();
 		await page.locator('#trail-toggle').click();
 		const earlier = page.locator('#messages .reveal-copy');
@@ -76,9 +155,17 @@ export async function verifyRevealBrowser({ origin, session, initialMessage, ass
 			await earlier.scrollIntoViewIfNeeded();
 			await page.screenshot({ path: `${out}/${width}-trail.png` });
 		}
-		await writeFile(`${out}/proof.json`, JSON.stringify(artifacts, null, 2));
-		console.log('Reveal browser passed: live answer, signed-session reload, accessible attribution, unchanged learner marks, 390px/1280px screenshots.');
+		artifacts.push({ kind: 'saved-history', earlierRevealAttributed: true });
+		console.log('Reveal browser passed: native cursor, menu keyboard recovery, normal/reduced motion, prepaint preferences, live answer, signed-session reload, accessible attribution, guest turn limit, 390px/1280px screenshots.');
+	} catch (error) {
+		await page.screenshot({ path: `${out}/failure.png` }).catch(() => {});
+		throw error;
 	} finally {
-		await browser.close();
+		await writeFile(`${out}/proof.json`, JSON.stringify(artifacts, null, 2));
+		try {
+			await context.tracing.stop({ path: `${out}/trace.zip` });
+		} finally {
+			await browser.close();
+		}
 	}
 }

@@ -12,7 +12,7 @@ import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
 import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
-import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-card.ts';
+import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-state.ts';
 import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
@@ -64,7 +64,6 @@ export function chatRequestControls(state: ChatRequestState): {
 		case 'recovery':
 			return { busy: false, composerLocked: true, startOverDisabled: false };
 		case 'terminal':
-			// Confirmed stop/fail: Retry remains, but a new message is allowed.
 			return { busy: false, composerLocked: false, startOverDisabled: false };
 		default: {
 			const exhaustive: never = state;
@@ -309,16 +308,6 @@ export class ChatRequestCoordinator {
 				),
 			);
 		}
-	}
-
-	retry(): Promise<ChatRequestState> {
-		if (this.state.kind !== 'terminal') {
-			throw new Error('Retry requires a confirmed terminal request.');
-		}
-		const text = this.state.text;
-		this.pending = undefined;
-		this.state = { kind: 'idle' };
-		return this.start(text);
 	}
 
 	acknowledgeCompleted(): void {

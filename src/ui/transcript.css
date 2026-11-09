@@ -20,7 +20,6 @@
 	transition-timing-function: var(--ease-out), var(--ease-out), cubic-bezier(0.2, 0, 0, 1), cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* The card settles into place the first time it appears (first send, or restore). */
 @starting-style {
 	.active-node {
 		opacity: 0;
@@ -254,7 +253,6 @@ html[data-type-size='small'] .active-node {
 }
 
 #messages:not([hidden]) {
-	/* Structure border: past trail ends; live beat begins. */
 	padding-top: 1.35rem;
 	padding-bottom: 0.95rem;
 	border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
@@ -818,7 +816,6 @@ html[data-type-size='small'] .active-node {
 	}
 }
 
-/* Nothing has been said yet: the composer is the whole moment. */
 body.conversation-empty .active-node {
 	display: none;
 }

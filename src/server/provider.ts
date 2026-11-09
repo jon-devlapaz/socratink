@@ -4,20 +4,11 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { setProvider } from '@flue/runtime';
 import { appConfig } from '../config/app.config.ts';
-import {
-	capOpenrouterChatMaxTokens,
-	chatModel,
-	credentialNameForLearnerChat,
-	resolveChatModel,
-} from '../config/chat-model.ts';
-import { installPresentQuestionTextCapture } from '../agents/present-question.ts';
+import { capOpenrouterChatMaxTokens } from '../config/chat-model.ts';
+import { chatModel, resolveChatModel } from '../config/operator-model.ts';
 import { installChatAutoCapture, wrapStreamsForChatAuto } from './chat-auto.ts';
 import { getCredentialStore } from './credential-runtime.ts';
-import {
-	installLearnerKeyCapture,
-	resolveOperatorChatApiKey,
-	resolveStoredLearnerApiKey,
-} from './learner-key.ts';
+import { installLearnerKeyCapture, resolveStoredLearnerApiKey } from './learner-key.ts';
 import { installModelRouteCapture, wrapStreamsForRouteCapture } from './model-route.ts';
 
 const openai = openaiProvider();
@@ -30,10 +21,7 @@ setProvider(
 		auth: {
 			apiKey: {
 				name: 'Chat model API key',
-				resolve: async () =>
-					resolveOperatorChatApiKey({
-						apiKey: resolveChatModel(process.env).apiKey,
-					}),
+				resolve: async () => ({ auth: { apiKey: resolveChatModel(process.env).apiKey } }),
 			},
 		},
 		models: [
@@ -65,7 +53,7 @@ setProvider({
 			resolve: async () =>
 				resolveStoredLearnerApiKey({
 					store: credentialStore,
-					name: credentialNameForLearnerChat({ kind: 'openai' }),
+					name: 'openai',
 				}),
 		},
 	},
@@ -79,7 +67,7 @@ setProvider({
 			resolve: async () =>
 				resolveStoredLearnerApiKey({
 					store: credentialStore,
-					name: credentialNameForLearnerChat({ kind: 'openrouter' }),
+					name: 'openrouter',
 				}),
 		},
 	},
@@ -90,4 +78,3 @@ installLearnerKeyCapture({
 	store: credentialStore,
 	operator: chatModel,
 });
-installPresentQuestionTextCapture();

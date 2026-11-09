@@ -5,7 +5,7 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromParts,
 	questionnaireFromReplyData,
-} from '../src/ui/questionnaire.ts';
+} from '../src/questionnaire.ts';
 
 const validDefinition = {
 	kind: 'question',

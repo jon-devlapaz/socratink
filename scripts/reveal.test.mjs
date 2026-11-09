@@ -4,8 +4,6 @@ import {
 	parseRevealDefinition,
 	revealExample,
 	revealFromParts,
-	revealToolName,
-	isRevealTool,
 } from '../src/reveal.ts';
 
 test('accepts a kind and optional target, and rejects unknown kinds', () => {
@@ -18,7 +16,7 @@ test('accepts a kind and optional target, and rejects unknown kinds', () => {
 	assert.equal(parseRevealDefinition({ kind: 'full_answer', extra: true }), undefined);
 });
 
-test('reads the last data-reveal part and identifies the quiet tool', () => {
+test('reads the last data-reveal part', () => {
 	assert.deepEqual(
 		revealFromParts([
 			{ type: 'data-reveal', data: { kind: 'hint' } },
@@ -27,6 +25,4 @@ test('reads the last data-reveal part and identifies the quiet tool', () => {
 		revealExample,
 	);
 	assert.equal(revealFromParts([{ type: 'data-questionnaire', data: {} }]), undefined);
-	assert.equal(isRevealTool(revealToolName), true);
-	assert.equal(isRevealTool('present_question'), false);
 });

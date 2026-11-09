@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
+import { resolveChatModel } from '../src/config/operator-model.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import {
+	applyLearnerChatPick,
+	specifierForLearnerChatFromStatus,
 	capOpenrouterChatMaxTokens,
 	chatProviderId,
 	learnerChatModelChoices,
 	openaiChatModelId,
 	openrouterChatMaxTokens,
 	openrouterChatModelId,
-	resolveChatModel,
 } from '../src/config/chat-model.ts';
 
 {
@@ -178,5 +180,24 @@ import {
 		other.maxTokens,
 	);
 }
+
+const operator = { providerId: 'jon-local', modelId: 'auto' };
+for (const [status, requested, expected] of [
+	[{ openai: false, openrouter: false }, 'openai/gpt-5', 'jon-local/auto'],
+	[{ openai: true, openrouter: false }, 'openrouter/openai/gpt-5', 'openai/gpt-5-nano'],
+	[{ openai: false, openrouter: true }, 'openai/gpt-5', 'openrouter/openai/gpt-5-nano'],
+	[{ openai: true, openrouter: true }, undefined, 'openrouter/openai/gpt-5-nano'],
+	[{ openai: true, openrouter: true }, 'openai/gpt-5', 'openai/gpt-5'],
+	[{ openai: true, openrouter: true }, 'openrouter/openai/gpt-5-mini', 'openrouter/openai/gpt-5-mini'],
+	[{ openai: true, openrouter: true }, 'openai/unlisted', 'openrouter/openai/gpt-5-nano'],
+]) {
+	assert.equal(specifierForLearnerChatFromStatus(status, operator, requested), expected);
+}
+const selected = { kind: 'openai', openai: true, openrouter: true };
+assert.deepEqual(applyLearnerChatPick(selected, 'openrouter/openai/gpt-5'), {
+	kind: 'openrouter', openai: true, openrouter: true,
+});
+assert.deepEqual(applyLearnerChatPick(selected, 'unlisted'), selected);
+assert.equal(resolveChatModel({ NODE_ENV: 'production' }).baseUrl, appConfig.defaultLocalBaseUrl);
 
 console.log('Chat model routing contract passed.');

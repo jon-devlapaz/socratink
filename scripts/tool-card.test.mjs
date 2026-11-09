@@ -7,7 +7,7 @@ import {
 	toolsFromParts,
 	visibleCardTools,
 	visibleToolOutput,
-} from '../src/ui/tool-card.ts';
+} from '../src/ui/tool-state.ts';
 
 test('projects Flue dynamic-tool parts into name, state, and output', () => {
 	assert.deepEqual(

@@ -1,4 +1,4 @@
-export const steeringPrefix = 'Steering:';
+import { steeringPrefix } from '../config/chat-message.ts';
 
 export type SteeringKind = 'smaller-step' | 'try-unaided';
 

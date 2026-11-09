@@ -1,62 +1,38 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
+Socratink's direction is defined in the Brain's
+[North Star](socratink-brain/NORTH-STAR.md), with a
+[source-repository fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md).
+This file describes the current application, not the full ambition.
 
-## Platform
+## Implemented boundary
 
-web
+The app provides a single-learner conversation with an AI learning partner:
 
-## Users
+- Streamed explanations, questions, and feedback in a persistent conversation.
+- Structured `present_question` cards with choices and optional reasoning.
+- Records of hints, worked examples, partial explanations, and full answers
+  through `mark_reveal`, keeping assistance distinguishable from learner work.
+- Learner controls for pacing, an unaided attempt, cancellation, and recovery.
+- Voice dictation as an input option, plus theme and text-size controls.
+- Signed guest sessions, configured Google/GitHub sign-in, conversation
+  ownership checks, rate limits, and encrypted learner API-key storage.
 
-Primary: adults facing consequential performance demands in difficult technical or academic material — "stakes learners" preparing for exams, certifications, systems architecture, or professional performance where guessing fails.
+The owning implementation is `src/agents/chat.ts`, `src/app.ts`, and their
+linked UI, configuration, and server modules. Setup and software checks are
+in [README.md](README.md).
 
-Subtypes:
-- Self-directed technical learners mastering complex formal domains (systems programming, mathematics, ML).
-- Certification and professional candidates (medical boards, legal outlines, cloud/security certifications).
-- Practicing engineers and scientists acquiring hard, unfamiliar bodies of knowledge.
+## Direction and limits
 
-Job to be done: Work through a hard problem with unassisted effort and see exactly where the understanding breaks. The learner needs a partner that refuses to autocomplete the answer, asks for an attempt first, and diagnoses the exact conceptual gap.
+Personal practice is one part of the North Star. Dialogue rooms, simulated
+audiences, one-on-one and group debates, shared projects, teacher workflows,
+and delayed independent demonstrations remain proposed capabilities.
 
-## Product Purpose
+The current app does not establish learning effectiveness, durable mastery,
+or readiness for a particular learner population. It must describe observed
+work and assistance accurately, without turning model interpretations into
+facts about a learner. Provider data-use and privacy claims require evidence
+for the configured service; the app uses essential session cookies.
 
-Socratink is a model-backed Socratic dialogue application that refuses to do the thinking for the learner. It makes the learner do the cognitive synthesis, diagnoses misconceptions, and preserves assistance provenance.
-
-Epistemic Invariants:
-- Exposure is not evidence.
-- Learner-authored work is the sole evidence of understanding.
-
-## Positioning
-
-The learning engine that refuses to autocomplete your thinking:
-- **Refusal to autocomplete:** Asks the learner to formulate axioms, trace steps, and defend solutions before revealing content.
-- **Voice-first deliberation:** Low-latency conversational dialogue tuned to listen for genuine understanding vs. regurgitated jargon.
-- **Privacy & Sovereignty:** Zero tracking cookies, sovereign session records, and zero model training on learner sessions.
-
-Tagline: "The learning engine that refuses to do the thinking for you."
-
-## Operating Context
-
-The dialogue workflow:
-1. **Target Formulation:** The learner states the problem, proof, or question they are working through.
-2. **Unaided Synthesis:** The engine requires an initial attempt or self-explanation before providing hints.
-3. **Targeted Repair:** When confusion arises, the engine repairs the smallest missing distinction rather than dumping the full solution.
-4. **Interactive Diagnostics:** Uses structured `present_question` cards for decisive branch points and self-reflection.
-
-## Capabilities and Constraints
-
-Confirmed capabilities:
-- Real-time streaming conversational dialogue powered by Hono and Flue agent runtime.
-- Interactive questionnaire cards (`present_question`) mounted in-stream.
-- Voice dictation with listening, processing, and review states.
-- Plain tutor-working feedback with cancellation and recovery controls.
-- Sovereign privacy architecture: cookieless, no analytics tracking, portable export.
-
-Durable constraints:
-- Language must never exceed available evidence (DEC-0003); no manufactured mastery scores or fake progress bars.
-- No unsolicited answer dumps: assistance must match learner footing.
-- The learning-dock trigger (`.alive-core`) stays empty, without a canvas, poster, or ink visualization.
-
-## Brand Commitments
-- Name: Socratink. Pronunciation: "so-cre-tink" (`soʊ krə tɪŋk`).
-- Tagline: "The learning engine that refuses to do the thinking for you."
-- Aesthetic Direction: **Socratink Yohaku (余白)** — washi paper, sumi carbon ink, solitary jade accent (#1f7a72 / #3aa99f), generous whitespace, scholarly restraint.
+Use the North Star to choose future work. Keep implementation and validation
+claims tied to the code and evidence that support them.

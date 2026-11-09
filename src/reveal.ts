@@ -19,7 +19,7 @@ export const revealExample = {
 } as const satisfies RevealDefinition;
 
 export const revealToolDescription =
-	'Record that this turn supplied a hint, worked example, partial solution, or full answer. Call it in the same turn as that reveal. Do not use it for ordinary questions or feedback. Input is {"kind":"full_answer","target":"Recover an admitted request after the response stream drops"}.';
+	`Record that this turn supplied a hint, worked example, partial solution, or full answer. Call it in the same turn as that reveal. Do not use it for ordinary questions or feedback. Input is ${JSON.stringify(revealExample)}.`;
 
 export function parseRevealDefinition(value: unknown): RevealDefinition | undefined {
 	const result = v.safeParse(RevealSchema, value);
@@ -37,8 +37,4 @@ export function revealFromReply(
 	data: Record<string, unknown[]> | undefined,
 ): RevealDefinition | undefined {
 	return parseRevealDefinition(data?.[revealDataName]?.at(-1));
-}
-
-export function isRevealTool(name: string): boolean {
-	return name === revealToolName;
 }

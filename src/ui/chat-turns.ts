@@ -7,9 +7,9 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
-} from './questionnaire.ts';
-import { steeringPrefix } from './steering.ts';
-import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-card.ts';
+} from '../questionnaire.ts';
+import { steeringPrefix } from '../config/chat-message.ts';
+import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
 export type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
@@ -24,6 +24,25 @@ export type DisplayedTurn = {
 	modelRoute?: string;
 	tools?: DisplayedToolCall[];
 };
+
+export function displayedAssistantTurn(input: {
+	text: string;
+	questionnaire?: QuestionnaireDefinition;
+	reveal?: RevealDefinition;
+	modelRoute?: string;
+	tools?: readonly DisplayedToolCall[];
+}): DisplayedTurn | undefined {
+	if (!assistantTurnHasVisibleContent(input)) return undefined;
+	const tools = visibleCardTools(input.tools ?? [], { questionnaire: input.questionnaire });
+	return {
+		role: 'Assistant',
+		text: learnerVisibleAssistantText(input.text),
+		...(input.questionnaire ? { questionnaire: input.questionnaire } : {}),
+		...(input.reveal ? { reveal: input.reveal } : {}),
+		...(input.modelRoute ? { modelRoute: input.modelRoute } : {}),
+		...(tools.length ? { tools } : {}),
+	};
+}
 
 export function displayedLearnerTurn(text: string): DisplayedTurn {
 	if (text.startsWith(questionnaireAnswerPrefix)) {
@@ -72,28 +91,19 @@ export function visibleTurnsFromHistory(
 		}
 		if (message.submissionId && supersededSubmissionIds.has(message.submissionId)) continue;
 		const text = visibleText(message);
-		const questionnaire =
-			message.role === 'assistant' ? questionnaireFromParts(message.parts) : undefined;
-		const modelRoute =
-			message.role === 'assistant' ? modelRouteLabel(message.metadata) : undefined;
-		const tools = message.role === 'assistant' ? toolsFromParts(message.parts) : [];
-		const cardTools = visibleCardTools(tools, { questionnaire });
 		if (message.role === 'user') {
 			if (!text) continue;
 			visible.push(displayedLearnerTurn(text));
 			continue;
 		}
-		const reveal = revealFromParts(message.parts);
-		const assistantText = learnerVisibleAssistantText(text);
-		if (!assistantTurnHasVisibleContent({ text, questionnaire, tools })) continue;
-		visible.push({
-			role: 'Assistant',
-			...(reveal ? { reveal } : {}),
-			text: assistantText,
-			...(questionnaire ? { questionnaire } : {}),
-			...(modelRoute ? { modelRoute } : {}),
-			...(cardTools.length ? { tools: cardTools } : {}),
+		const turn = displayedAssistantTurn({
+			text,
+			questionnaire: questionnaireFromParts(message.parts),
+			reveal: revealFromParts(message.parts),
+			modelRoute: modelRouteLabel(message.metadata),
+			tools: toolsFromParts(message.parts),
 		});
+		if (turn) visible.push(turn);
 	}
 	return visible;
 }

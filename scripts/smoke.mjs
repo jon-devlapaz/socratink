@@ -7,11 +7,9 @@ import { join, resolve } from 'node:path';
 import { createFlueClient } from '@flue/sdk';
 import { presentQuestionRetryBodies } from '../src/agents/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
-import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 import { revealExample } from '../src/reveal.ts';
-import { learnerMoveQuestion, learnerMoveSignalBody } from '../src/learner-move.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
-import { inkToolName } from '../src/ui/tool-card.ts';
+import { inkToolName } from '../src/ui/tool-state.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
 
 const initialMessage =
@@ -63,9 +61,47 @@ const revisedPresent = {
 	choices: baselinePresent.choices,
 	reasoning: true,
 };
-const baselineQuestionnaire = questionnaireFromPresentQuestion(baselinePresent);
-const comparisonQuestionnaire = questionnaireFromPresentQuestion(comparisonPresent);
-const revisedQuestionnaire = questionnaireFromPresentQuestion(revisedPresent);
+const baselineQuestionnaire = {
+	kind: 'question', submitLabel: 'Submit',
+	items: [{
+		name: 'item', prompt: baselinePresent.prompt, required: true, multiple: false,
+		choices: [
+			{ value: 'recheck-the-admitted-request-by-its-stable-submission-identifier', label: baselinePresent.choices[0] },
+			{ value: 'send-the-same-message-again', label: baselineChoice },
+			{ value: 'start-a-new-conversation', label: 'Start a new conversation' },
+			{ value: 'assume-the-request-failed', label: 'Assume the request failed' },
+		],
+		input: { label: 'Your reasoning' },
+	}],
+};
+const comparisonQuestionnaire = {
+	kind: 'question', submitLabel: 'Submit',
+	items: [{
+		name: 'item', prompt: comparisonPresent.prompt, required: true, multiple: false,
+		choices: [
+			{ value: 'whether-the-server-issued-a-stable-submission-identifier', label: comparisonPresent.choices[0] },
+			{ value: 'whether-the-local-loading-indicator-stopped', label: comparisonChoice },
+			{ value: 'how-long-the-learner-message-is', label: 'How long the learner message is' },
+			{ value: 'which-model-was-selected', label: 'Which model was selected' },
+		],
+		input: { label: 'Your reasoning' },
+	}],
+};
+const revisedQuestionnaire = {
+	...baselineQuestionnaire,
+	items: [{ ...baselineQuestionnaire.items[0], prompt: revisedPresent.prompt }],
+};
+const transferQuestionnaire = {
+	kind: 'question', submitLabel: 'Submit',
+	items: [{
+		name: 'item', prompt: transferPresent.prompt, required: true, multiple: false,
+		choices: [
+			{ value: 'a-retry-of-the-same-payment', label: 'A retry of the same payment' },
+			{ value: 'a-second-separate-purchase', label: 'A second, separate purchase' },
+		],
+		input: { label: 'Your reasoning' },
+	}],
+};
 const sockets = new Set();
 
 function listen(server) {
@@ -171,27 +207,6 @@ function presentQuestionCall(id, input) {
 	return { id, name: 'present_question', arguments: input };
 }
 
-// Jev reads only free-text replies to the tutor: never the opening goal, never card answers.
-// After a restart it reads a reply to the tutor's last text, then a reply to a card-only
-// question, so each must carry the matching private signal.
-const jevRequests = [];
-const fakeJev = createServer(async (request, response) => {
-	assert.equal(request.method, 'POST');
-	assert.equal(request.url, '/v1/systemone');
-	assert.equal(request.headers.authorization, 'Bearer smoke-jev-key');
-	let body = '';
-	for await (const chunk of request) body += chunk;
-	const payload = JSON.parse(body);
-	jevRequests.push(payload);
-	const choice = payload.state.learner_reply === unsureReply ? 'dont_know' : 'asks_for_answer';
-	assert.deepEqual(payload.questions, { learner_move: learnerMoveQuestion });
-	response.writeHead(200, { 'content-type': 'application/json' });
-	response.end(JSON.stringify({
-		model: 'jev-smoke',
-		answers: { learner_move: { type: 'choice', choice, probabilities: { [choice]: 0.95 }, confidence: 0.9 } },
-	}));
-});
-
 const scriptedProviderTurns = [
 	{
 		expectedMessages: [initialMessage],
@@ -225,12 +240,12 @@ const scriptedProviderTurns = [
 		finishReason: 'stop',
 	},
 	{
-		expectedMessages: [answerRequest, learnerMoveSignalBody('asks_for_answer')],
+		expectedMessages: [answerRequest],
 		tools: [presentQuestionCall('call_transfer', transferPresent)],
 		finishReason: 'tool_calls',
 	},
 	{
-		expectedMessages: [unsureReply, learnerMoveSignalBody('dont_know')],
+		expectedMessages: [unsureReply],
 		text: scaffoldText,
 		finishReason: 'stop',
 	},
@@ -267,18 +282,26 @@ let appProcess;
 let stderr = '';
 let appDirectory;
 
-function startApp(appPort, providerPort, jevPort) {
+function startApp(appPort, providerPort) {
 	const child = spawn(process.execPath, ['dist/server.mjs'], {
 		cwd: appDirectory,
 		env: {
 			...process.env,
 			NODE_ENV: 'development',
+			DATABASE_URL: '',
+			VERCEL: '',
+			NF_PROJECT_ID: '',
+			GOOGLE_CLIENT_ID: '',
+			GOOGLE_CLIENT_SECRET: '',
+			GITHUB_CLIENT_ID: '',
+			GITHUB_CLIENT_SECRET: '',
+			AUTH_REDIRECT_BASE_URL: '',
 			PORT: String(appPort),
 			SESSION_SECRET: 'socratink-smoke-session-secret',
+			CREDENTIALS_SECRET: 'socratink-smoke-credentials-secret',
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
-			TYPESAFE_API_KEY: 'smoke-jev-key',
-			TYPESAFE_BASE_URL: `http://127.0.0.1:${jevPort}`,
+			JON_LOCAL_MODEL_ID: 'auto',
 		},
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
@@ -296,7 +319,6 @@ async function stopApp(child) {
 
 try {
 	const providerPort = await listen(fakeProvider);
-	const jevPort = await listen(fakeJev);
 	const portProbe = createServer();
 	const appPort = await listen(portProbe);
 	await close(portProbe);
@@ -304,7 +326,7 @@ try {
 	appDirectory = await mkdtemp(join(tmpdir(), 'socratink-smoke-'));
 	await cp('dist', join(appDirectory, 'dist'), { recursive: true });
 	await symlink(resolve('node_modules'), join(appDirectory, 'node_modules'), 'dir');
-	appProcess = startApp(appPort, providerPort, jevPort);
+	appProcess = startApp(appPort, providerPort);
 
 	const origin = `http://127.0.0.1:${appPort}`;
 	const health = await waitForServer(`${origin}/healthz`, appProcess);
@@ -382,8 +404,9 @@ try {
 		error: { type: 'forbidden', message: 'This conversation does not belong to the current session.' },
 	});
 
+	const conversationId = namespacedConversationId(session.userId, 'smoke');
 	const client = createFlueClient({
-		url: `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(session.userId, 'smoke'))}`,
+		url: `${origin}/api/agents/chat/${encodeURIComponent(conversationId)}`,
 		headers: { cookie: session.cookie },
 	});
 	const baseline = await client.read(
@@ -408,10 +431,9 @@ try {
 	);
 	assert.equal(complete.text, finalSummary);
 	assert.equal(providerTurns, 6, 'the completed loop should make exactly six provider calls');
-	assert.equal(jevRequests.length, 0, 'neither the opening goal nor card answers should reach Jev');
 
 	await stopApp(appProcess);
-	appProcess = startApp(appPort, providerPort, jevPort);
+	appProcess = startApp(appPort, providerPort);
 	await waitForServer(`${origin}/healthz`, appProcess);
 	const restored = await client.history();
 	const visibleMessages = restored.messages.filter((message) => message.display === 'visible');
@@ -449,32 +471,24 @@ try {
 		'completed loop should restore reveal provenance on the assistance turn',
 	);
 
-	// The tutor's last ask must survive the restart, and a card prompt counts as an ask.
 	const transfer = await client.read(
 		await client.send({ message: { kind: 'user', body: answerRequest } }),
 	);
-	questionnaireFromReply(transfer, questionnaireFromPresentQuestion(transferPresent), 'transfer');
-	assert.deepEqual(jevRequests.map((request) => request.state), [
-		{ tutor_question: finalSummary, learner_reply: answerRequest },
-	]);
+	questionnaireFromReply(transfer, transferQuestionnaire, 'transfer');
 	const scaffold = await client.read(
 		await client.send({ message: { kind: 'user', body: unsureReply } }),
 	);
 	assert.equal(scaffold.text, scaffoldText);
 	assert.equal(providerTurns, 8, 'each reply should take one provider call');
-	assert.deepEqual(jevRequests.map((request) => request.state).at(-1), {
-		tutor_question: transferPresent.prompt,
-		learner_reply: unsureReply,
-	});
 
 	if (process.env.REVEAL_BROWSER === '1') {
 		providerTurns = 0;
 		const { verifyRevealBrowser } = await import('./reveal-browser-smoke.mjs');
-		await verifyRevealBrowser({ origin, session, initialMessage, assistanceText,
+		await verifyRevealBrowser({ origin, session, savedConversationId: conversationId, initialMessage, assistanceText,
 			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
 	}
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, learner_move signal, mark_reveal, no cosmetic tool advertisement, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, no cosmetic tool advertisement, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
@@ -482,6 +496,5 @@ try {
 } finally {
 	await stopApp(appProcess);
 	if (fakeProvider.listening) await close(fakeProvider);
-	if (fakeJev.listening) await close(fakeJev);
 	if (appDirectory) await rm(appDirectory, { recursive: true, force: true });
 }
