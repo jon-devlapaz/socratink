@@ -1,3 +1,4 @@
+import { getAuthDb } from './auth-runtime.ts';
 import { createProvider } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
@@ -75,6 +76,7 @@ setProvider({
 installModelRouteCapture();
 installChatAutoCapture();
 installLearnerKeyCapture({
+	resolveUserId: async (originalId) => await getAuthDb().findAliasOwner(originalId) ?? originalId,
 	store: credentialStore,
 	operator: chatModel,
 });

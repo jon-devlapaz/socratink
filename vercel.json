@@ -24,5 +24,10 @@
       "source": "/api/(.*)",
       "destination": "/api/[...path]"
     }
-  ]
+  ],
+  "functions": {
+    "api/[...path].ts": {
+      "maxDuration": 300
+    }
+  }
 }

@@ -1,11 +1,16 @@
 # Socratink
 
-Socratink is a single-learner AI conversation built with
-[Flue](https://github.com/withastro/flue). It supports open dialogue, structured
+Socratink is a single-learner AI conversation. New conversations use
+[Pi Durable](https://github.com/earendil-works/pi/tree/main/packages/durable)
+for new conversations and retains [Flue](https://github.com/withastro/flue)
+for existing conversations. It supports open dialogue, structured
 question cards, and records of assistance. See [PRODUCT.md](PRODUCT.md) for
 the current boundary and the Brain's
 [North Star](socratink-brain/NORTH-STAR.md) for the intended direction
 ([source fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md)).
+
+See [the Pi migration notes](docs/pi-durable-preview.md) for continuity, verification,
+and operational limits. Merges to `main` automatically deploy to production.
 
 ## Run locally
 
@@ -59,6 +64,9 @@ for a particular learner population.
 ```sh
 pnpm check
 pnpm smoke
+pnpm smoke:durable
+pnpm test:durable:postgres
+pnpm smoke:durable:postgres
 pnpm audit:trellis
 pnpm audit --prod
 ```
@@ -112,6 +120,10 @@ and recovery failures, including failures after an HTTP 202 admission. The
 monitor publishes counts only; it never copies Vercel error bodies, request
 paths, learner text, or credentials into public Actions logs. Existing Flue
 runtime logs may contain raw provider errors in Vercel.
+
+Pi emits the same constant failure and recovery categories, including actual
+model retries and recovery of interrupted turns. It never logs provider error
+bodies. Request failures also produce a constant category and generic response.
 
 Configure `VERCEL_TOKEN` as an environment secret in `runtime-monitor`, which
 is restricted to `main`. Use a token scoped to the Socratink Vercel project;

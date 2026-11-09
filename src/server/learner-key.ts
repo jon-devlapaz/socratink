@@ -125,15 +125,18 @@ export async function resolveStoredLearnerApiKey(options: {
 	return { auth: { apiKey } };
 }
 
-export function installLearnerKeyCapture(options: { store: LearnerKeyStore; operator: ChatModel }): void {
+export function installLearnerKeyCapture(options: {
+	store: LearnerKeyStore; operator: ChatModel; resolveUserId?: (originalId: string) => Promise<string>;
+}): void {
 	try {
 		instrument({
 			key: instrumentationKey,
 			observe() {},
 			interceptor: async (operation, ctx, next) => {
 				if (operation.type !== 'agent') return next();
-				const userId = requireAgentInstanceUserId(ctx.instanceId);
-				return runWithLearnerKey(ctx.instanceId, async () => {
+				const originalId = requireAgentInstanceUserId(ctx.instanceId);
+				const userId = options.resolveUserId ? await options.resolveUserId(originalId) : originalId;
+				return learnerUser.run(userId, async () => {
 					const specifier = await specifierForStoredLearner({
 						store: options.store,
 						userId,

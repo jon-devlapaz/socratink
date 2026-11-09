@@ -1,92 +1,51 @@
 import { createAgentRouter } from '@flue/runtime/routing';
-import { serveStatic } from '@hono/node-server/serve-static';
+import { waitUntil } from '@vercel/functions';
 import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
-import { resolveAuthConfig } from './config/auth.ts';
-import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
-import { chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
-import { chatModel } from './config/operator-model.ts';
+import { createApp } from './app-factory.ts';
 import { appConfig } from './config/app.config.ts';
-import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
+import { chatConversationIdFromPath } from './config/session.ts';
+import { resolveDatabaseTarget } from './config/database.ts';
+import { resolveChatModel } from './config/operator-model.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
-import { requireChatSession, requireSignedSession } from './server/chat-access.ts';
-import { rememberConversationAuto } from './server/chat-auto.ts';
-import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
-import { guestTurnGateMiddleware } from './server/guest-turns.ts';
-import { learnerChatStatusForUser, rememberConversationChatPick } from './server/learner-key.ts';
-import { mountOAuthRoutes } from './server/oauth.ts';
-import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
-import {
-	chatRateLimitMax,
-	chatRateLimitWindowMs,
-	createRateLimiter,
-} from './server/rate-limit.ts';
-import { mountSessionRoutes, sessionFromContext } from './server/session.ts';
-import './server/provider.ts';
-import './server/failure-logging.ts';
+import { mountBrowserBridge } from './server/durable/browser-bridge.ts';
+import { openPostgresBrowserStream } from './server/durable/browser-postgres.ts';
+import { openBrowserStream } from './server/durable/browser-stream.ts';
+import { openEngine } from './server/durable/engine.ts';
+import { modelRouting } from './server/durable/model-routing.ts';
+import { rememberLegacySelection } from './server/legacy-selection.ts';
+import { reportFailure } from './server/failure-logging.ts';
 
-const sessionSecret = resolveSessionSecret(process.env);
-const credentialStore = getCredentialStore();
-const authDb = getAuthDb();
-const authConfig = resolveAuthConfig(process.env);
-const chatRateLimiter = createRateLimiter({
-	windowMs: chatRateLimitWindowMs,
-	max: chatRateLimitMax,
-});
-const signedSession = requireSignedSession({
-	secret: sessionSecret,
-	rateLimiter: chatRateLimiter,
-	authDb,
-});
+const target = resolveDatabaseTarget(process.env);
+const routing = modelRouting({ authDb: getAuthDb(), store: getCredentialStore(),
+	operator: () => resolveChatModel(process.env) });
+const engine = await openEngine({ target, resolveModel: routing.resolveModel, keepAlive: waitUntil, report: reportFailure });
+const stream = target.kind === 'postgres'
+	? await openPostgresBrowserStream(target.connectionString)
+	: openBrowserStream(target.filename);
+const legacy = new Hono().route(appConfig.chatAgentPath, createAgentRouter(Chat));
+const chat = new Hono();
 
-const app = new Hono();
-
-app.get('/healthz', (context) => context.json({ status: 'ok' }));
-mountSessionRoutes(app, { secret: sessionSecret, authDb });
-mountOpenaiKeyRoutes(app, {
-	signed: signedSession,
-	store: credentialStore,
-});
-mountChatRoute(app, {
-	signed: signedSession,
-	store: credentialStore,
-});
-if (authConfig) {
-	mountOAuthRoutes(app, {
-		config: authConfig,
-		secret: sessionSecret,
-		authDb,
-		onRekey: (guestUserId, durableUserId) =>
-			credentialStore.rekeyUser({ fromUserId: guestUserId, toUserId: durableUserId }),
-	});
-}
-app.use(
-	`${appConfig.chatAgentPath}/*`,
-	guestTurnGateMiddleware({ secret: sessionSecret, authDb }),
-);
-app.use(
-	`${appConfig.chatAgentPath}/*`,
-	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
-);
-app.use(`${appConfig.chatAgentPath}/*`, async (context, next) => {
-	const userId = sessionFromContext(context)?.userId;
-	const route: LearnerChatRoute = userId
-		? await learnerChatStatusForUser({ store: credentialStore, userId })
-		: { kind: 'operator' };
-	const conversationId = chatConversationIdFromPath(context.req.path);
-	if (route.kind === 'operator' && chatAllowsAutoSelection(chatModel.modelId)) {
-		rememberConversationAuto(conversationId, context.req.header(chatAutoModelHeader));
+chat.use('*', async (context, next) => {
+	const id = chatConversationIdFromPath(context.req.path);
+	if (!id) return context.notFound();
+	if (!(await engine.exists(id))) {
+		// HEAD reads Flue's stream metadata without admitting work or creating history.
+		const probeUrl = new URL(context.req.url);
+		probeUrl.pathname = `${appConfig.chatAgentPath}/${encodeURIComponent(id)}`;
+		probeUrl.search = '';
+		const existing = await legacy.fetch(new Request(probeUrl, { method: 'HEAD' }), context.env);
+		if (existing.ok) {
+			await rememberLegacySelection(context);
+			return legacy.fetch(context.req.raw, context.env);
+		}
+		// A database failure must never silently start a second conversation in Pi.
+		if (existing.status !== 404) return existing;
 	}
-	rememberConversationChatPick(conversationId, context.req.header(chatModelHeader));
 	return next();
 });
-app.route(appConfig.chatAgentPath, createAgentRouter(Chat));
-app.all('/api/*', (context) =>
-	context.json({ error: { type: 'not_found', message: 'API route not found.' } }, 404),
-);
-app.get('/login', (context) => context.redirect('/login.html'));
-app.use('*', serveStatic({ root: './dist/client' }));
-app.get('*', serveStatic({ path: './dist/client/index.html' }));
 
-export default app;
+mountBrowserBridge(chat, engine, routing.selection, stream);
+
+export default createApp(chat, 'pi-durable');

@@ -53,6 +53,19 @@ jobs:
         env:
           REQUEST_PATH_SMOKE_OUT: .cache/browser-proof/request-path
 
+      - name: Verify Pi execution and browser recovery
+        run: pnpm smoke:durable
+        env:
+          DURABLE_SMOKE_OUT: .cache/browser-proof/durable
+
+      - name: Prepare disposable PostgreSQL
+        run: docker pull postgres:17-alpine
+
+      - name: Verify PostgreSQL ownership and existing account continuity
+        run: pnpm test:durable:postgres && pnpm smoke:durable:postgres
+        env:
+          DURABLE_POSTGRES_SMOKE_OUT: .cache/browser-proof/durable-postgres
+
       - name: Upload synthetic browser proof
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
