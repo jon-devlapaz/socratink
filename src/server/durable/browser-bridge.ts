@@ -45,17 +45,18 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 	app.on(['GET', 'HEAD'], path, async (c) => {
 		const id = c.req.param('id');
 		let observed = await stream.sync(project(id, await engine.snapshot(id)));
-		if (c.req.method === 'HEAD') return c.body(null, 200, { 'Stream-Next-Offset': observed.offset });
-		if (c.req.query('view') === 'history') return c.json({ ...observed.snapshot, offset: observed.offset });
+		c.header('Cache-Control', 'no-store');
+		c.header('Stream-Next-Offset', observed.offset);
+		c.header('Stream-Up-To-Date', 'true');
+		if (c.req.method === 'HEAD') return c.body(null, 200);
+		if ((c.req.query('view') ?? 'history') === 'history') return c.json({ ...observed.snapshot, offset: observed.offset });
 		const requested = c.req.query('offset') ?? '-1';
 		const deadline = Date.now() + 20_000;
 		while (observed.offset === requested && Date.now() < deadline && !c.req.raw.signal.aborted) {
 			await delay(200);
 			observed = await stream.sync(project(id, await engine.snapshot(id)));
 		}
-		c.header('Cache-Control', 'no-store');
 		c.header('Stream-Next-Offset', observed.offset);
-		c.header('Stream-Up-To-Date', 'true');
 		// A conversation remains open for later submissions.
 		return c.json(await stream.read(id, requested, observed.offset));
 	});
