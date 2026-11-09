@@ -14,10 +14,12 @@ for (const source of counts.invalidTarget ? [] : ['runtime', 'requests']) {
 	try {
 		const queryStartedAt = Date.now();
 		const { stdout } = await run('vercel', ['logs', source,
-			'--project', 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q', '--scope', 'jon-devlapazs-projects',
+			'--project', 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q',
 			'--since', '45m', '--limit', '100', '--json', '--query',
 			source === 'runtime' ? 'level:(error OR fatal)' : 'httpStatus >=500', ...target,
-		], { timeout: 45_000, maxBuffer: 4 * 1024 * 1024, encoding: 'utf8' });
+		], { timeout: 45_000, maxBuffer: 4 * 1024 * 1024, encoding: 'utf8', env: {
+			...process.env, VERCEL_ORG_ID: 'team_bOdbOHK6yluaErCcwM1iZaUD', VERCEL_PROJECT_ID: 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q',
+		} });
 		const records = stdout.trim().split('\n').map(line => JSON.parse(line));
 		const summary = records.pop();
 		const windowEnd = Date.parse(summary?.timeRange?.end);

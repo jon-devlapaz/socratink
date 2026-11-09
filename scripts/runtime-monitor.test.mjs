@@ -24,6 +24,9 @@ test('runtime monitor reports only fixed counts and fails closed through the CLI
 import { appendFileSync } from 'node:fs';
 appendFileSync(process.env.MONITOR_FAKE_ARGS, JSON.stringify(process.argv.slice(2)) + '\\n');
 process.stderr.write(process.env.MONITOR_FAKE_PRIVATE);
+if (process.argv.includes('--scope') || process.env.VERCEL_ORG_ID !== 'team_bOdbOHK6yluaErCcwM1iZaUD'
+ || process.env.VERCEL_PROJECT_ID !== 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q'
+ || process.env.VERCEL_TOKEN !== 'synthetic-monitor-token') process.exit(64);
 if (process.env.MONITOR_FAKE_EXIT === '1') process.exit(1);
 process.stdout.write(JSON.parse(process.env.MONITOR_FAKE_READS)[process.argv[3]]);
 `);
@@ -54,6 +57,7 @@ process.stdout.write(JSON.parse(process.env.MONITOR_FAKE_READS)[process.argv[3]]
 		for (const [name, runtime, requests, counts, extraEnv] of cases) await t.test(name, async () => {
 			await writeFile(capture, '');
 			const env = { ...process.env, PATH: `${dir}${delimiter}${process.env.PATH}`, MONITOR_PREVIEW_DEPLOYMENT: '',
+				VERCEL_ORG_ID: 'wrong-inherited-team', VERCEL_PROJECT_ID: 'wrong-inherited-project', VERCEL_TOKEN: 'synthetic-monitor-token',
 				MONITOR_FAKE_ARGS: capture, MONITOR_FAKE_READS: JSON.stringify({ runtime, requests }),
 				MONITOR_FAKE_PRIVATE: privateText, MONITOR_FAKE_EXIT: '', ...extraEnv };
 			let status = 0, stdout, stderr = '';
@@ -67,7 +71,7 @@ process.stdout.write(JSON.parse(process.env.MONITOR_FAKE_READS)[process.argv[3]]
 			const captured = (await readFile(capture, 'utf8')).trim();
 			const calls = captured ? captured.split('\n').map(JSON.parse) : [];
 			assert.deepEqual(calls, (counts.invalidTarget ? [] : ['runtime', 'requests']).map((source) => ['logs', source,
-				'--project', 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q', '--scope', 'jon-devlapazs-projects',
+				'--project', 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q',
 				'--since', '45m', '--limit', '100', '--json', '--query', source === 'runtime' ? 'level:(error OR fatal)' : 'httpStatus >=500',
 				...(extraEnv?.MONITOR_PREVIEW_DEPLOYMENT ? ['--deployment', 'dpl_synthetic'] : ['--environment', 'production'])]));
 		});
