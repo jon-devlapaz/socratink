@@ -51,7 +51,6 @@ body.login-page {
 	border-radius: 1.5rem;
 	border: 1px solid rgba(206, 205, 195, 0.04);
 	box-shadow: 0 0 80px rgba(0, 0, 0, 0.9);
-	/* sized by the card via absolute overlay below */
 	display: none;
 }
 

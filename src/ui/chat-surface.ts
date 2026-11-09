@@ -14,12 +14,11 @@ import {
 	unsettledSubmissionFromHistory,
 	watchChatConversationReset,
 } from './client/conversation.ts';
-import { learnerVisibleAssistantText } from './assistant-text.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
-import { mountAppDock } from './app-dock.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
+	displayedAssistantTurn,
 	displayedLearnerTurn,
 	groupEarlierSteps,
 	splitCurrentTurns,
@@ -30,14 +29,13 @@ import { modelRouteLabel } from '../config/model-route.ts';
 import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
-} from './questionnaire.ts';
-import { isRevealTool, revealFromReply } from '../reveal.ts';
+} from '../questionnaire.ts';
+import { revealToolName, revealFromReply } from '../reveal.ts';
 import { formatSteeringMessage } from './steering.ts';
 import {
 	applyToolStreamEvent,
-	visibleCardTools,
 	type DisplayedToolCall,
-} from './tool-card.ts';
+} from './tool-state.ts';
 import {
 	applyReasoningStreamEvent,
 	createLiveReasoning,
@@ -53,10 +51,8 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
-import { mountOpenaiKey, paintOpenaiKey } from './openai-key.ts';
-import { mountProviders, paintProviders } from './providers.ts';
-import { learnerChatStatusFromStoredPick } from './chat-pick.ts';
-import { loadLearnerChatStatus } from './chat-route.ts';
+import { mountProviders } from './providers.ts';
+import { requireElement } from './dom.ts';
 import {
 	applyRequestControlState,
 	buildRequestStateTurn,
@@ -70,7 +66,6 @@ type ChatSurfaceElements = {
 	input: HTMLTextAreaElement;
 	messages: HTMLOListElement;
 	button: HTMLButtonElement;
-	core: HTMLButtonElement;
 	lockup: HTMLButtonElement;
 	canvas: HTMLElement;
 	startOver: HTMLButtonElement;
@@ -93,16 +88,14 @@ type ChatSurfaceElements = {
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function mountChatSurface(options: Readonly<{
-	elements?: ChatSurfaceElements;
 	userId: string;
 	aliases: readonly string[];
 }>): void {
-	const elements = options.elements ?? queryChatSurface();
+	const elements = queryChatSurface();
 	const {
 		form,
 		input,
 		messages,
-		core,
 		startOver,
 		card,
 		activeTurn,
@@ -113,14 +106,7 @@ export function mountChatSurface(options: Readonly<{
 		dictationToggle,
 		dictationStatus,
 	} = elements;
-	async function refreshLearnerChat() {
-		const status = learnerChatStatusFromStoredPick(await loadLearnerChatStatus());
-		paintProviders(status);
-		paintOpenaiKey(status);
-	}
-	mountProviders(refreshLearnerChat);
-	mountOpenaiKey(refreshLearnerChat);
-	void refreshLearnerChat();
+	mountProviders();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,
@@ -142,7 +128,6 @@ export function mountChatSurface(options: Readonly<{
 			pendingSession?.setTools(liveTools);
 		},
 	});
-	const learningDock = mountAppDock(core);
 	let trailOpen = false;
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
@@ -188,17 +173,13 @@ export function mountChatSurface(options: Readonly<{
 	function createRequestStateTurn(
 		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
 	) {
-		const resume = state.kind === 'terminal'
-			? async () => {
-				if (state.outcome === 'not-admitted') {
-					await sendMessage(input.value);
-					return requests.state;
-				}
-				return requests.retry();
+		return buildRequestStateTurn(state, () => {
+			if (state.kind === 'recovery') {
+				void runRequestCommand(requests.recheck());
+				return;
 			}
-			: () => requests.recheck();
-		return buildRequestStateTurn(state, resume, (result) => {
-			void runRequestCommand(result);
+			const text = state.outcome === 'not-admitted' ? input.value.trim() || state.text : state.text;
+			void startRequest(text, state);
 		});
 	}
 
@@ -336,7 +317,6 @@ export function mountChatSurface(options: Readonly<{
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
 	mountMenuSheet(elements, {
 		reduceMotion,
-		onOpen: () => learningDock.close(),
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 
@@ -352,7 +332,10 @@ export function mountChatSurface(options: Readonly<{
 		await startRequest(text);
 	}
 
-	async function startRequest(text: string) {
+	async function startRequest(
+		text: string,
+		retryOf?: Extract<ChatRequestState, { kind: 'terminal' }>,
+	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
 		resetLiveReasoning(liveReasoning);
@@ -366,31 +349,26 @@ export function mountChatSurface(options: Readonly<{
 			await result;
 			return;
 		}
-		input.value = '';
-		turns = [...turns, displayedLearnerTurn(text)];
+		if (!retryOf || retryOf.outcome === 'not-admitted') input.value = '';
+		const previous = turns.at(-1);
+		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
+		turns = [...(replacesAttempt ? turns.slice(0, -1) : turns), displayedLearnerTurn(text)];
 		await paint('new-turn');
 		await applyRequestState(await result);
 	}
 
 	async function appendAssistantReply(reply: AgentReadResult) {
-		const questionnaire = questionnaireFromReplyData(reply.data);
-		const reveal = revealFromReply(reply.data);
-		const route = modelRouteLabel(reply.metadata);
-		const tools = visibleCardTools(liveTools, { questionnaire });
+		const turn = displayedAssistantTurn({
+			text: reply.text,
+			questionnaire: questionnaireFromReplyData(reply.data),
+			reveal: revealFromReply(reply.data),
+			modelRoute: modelRouteLabel(reply.metadata),
+			tools: liveTools,
+		});
 		liveTools.length = 0;
 		quietToolIds.clear();
 		resetLiveReasoning(liveReasoning);
-		turns = [
-			...turns,
-			{
-				role: 'Assistant',
-				...(reveal ? { reveal } : {}),
-				text: learnerVisibleAssistantText(reply.text),
-				...(questionnaire ? { questionnaire } : {}),
-				...(route ? { modelRoute: route } : {}),
-				...(tools.length ? { tools } : {}),
-			},
-		];
+		if (turn) turns = [...turns, turn];
 		await paint('hold');
 	}
 
@@ -484,17 +462,11 @@ function isQuietToolStreamEvent(
 	event: { type: string; toolName?: string; toolCallId?: string },
 	quietToolIds: Set<string>,
 ): boolean {
-	if (event.type === 'tool-input' && event.toolName && isRevealTool(event.toolName)) {
+	if (event.type === 'tool-input' && event.toolName === revealToolName) {
 		if (event.toolCallId) quietToolIds.add(event.toolCallId);
 		return true;
 	}
 	return Boolean(event.toolCallId && quietToolIds.has(event.toolCallId));
-}
-
-function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {
-	const node = root.querySelector<T>(selector);
-	if (!node) throw new Error('Socratink chat markup is missing required nodes.');
-	return node;
 }
 
 function queryChatSurface(): ChatSurfaceElements {
@@ -507,7 +479,6 @@ function queryChatSurface(): ChatSurfaceElements {
 		input: requireElement<HTMLTextAreaElement>('#message'),
 		messages: requireElement<HTMLOListElement>('#messages'),
 		button: requireElement<HTMLButtonElement>('.composer-send button[type="submit"]', form),
-		core: requireElement<HTMLButtonElement>('.alive-core'),
 		lockup,
 		canvas,
 		startOver: requireElement<HTMLButtonElement>('#start-over'),

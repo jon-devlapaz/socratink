@@ -1,132 +1,99 @@
 # Socratink
 
-Socratink is a focused, model-backed learning conversation built with
-[Flue](https://github.com/withastro/flue). The current interaction helps a
-learner reason about agentic engineering through open dialogue and validated
-in-card questionnaires.
+Socratink is a single-learner AI conversation built with
+[Flue](https://github.com/withastro/flue). It supports open dialogue, structured
+question cards, and records of assistance. See [PRODUCT.md](PRODUCT.md) for
+the current boundary and the Brain's
+[North Star](socratink-brain/NORTH-STAR.md) for the intended direction
+([source fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md)).
 
-This remains a narrow development product. It does not yet provide production
-authentication, durable multi-instance hosting, or evidence for broad claims
-about learning effectiveness.
+## Run locally
 
-## Run the current app
-
-Requirements: Node.js 22.19+, pnpm 11, and an OpenAI-compatible model endpoint.
-
-```sh
-pnpm install
-pnpm dev
-```
-
-To try it on a phone on the same Wi-Fi, run `pnpm dev:phone` and open the
-`Network:` URL it prints.
-
-The app reads these local environment settings without committing their values:
-
-- `JON_LOCAL_BASE_URL` — the model endpoint; defaults to
-  `http://127.0.0.1:3001/v1`
-- `JON_LOCAL_API_KEY` — the endpoint's API key when required
-
-On Vercel (`VERCEL=1`) and Northflank, Chat uses `JON_LOCAL_BASE_URL` and
-`JON_LOCAL_API_KEY` when both are set to a public `https` OpenAI-compatible
-endpoint. Private or loopback `JON_LOCAL_*` URLs do not override hosted
-routing. Otherwise Chat uses AI Gateway. Northflank still requires
-`AI_GATEWAY_API_KEY` when that fallback is used.
-
-Set `TYPESAFE_API_KEY` to let TypeSafe's Jev read each free-text learner
-reply against the tutor's last turn, its text or card prompt (about 100 ms,
-one paid call per reply; never the opening message or card answers). When it
-is sure the learner
-is asking for the answer or does not know, the tutor gets a private note; the
-learner never sees it. Without the key, no learner text goes to TypeSafe.
-`TYPESAFE_BASE_URL` points local runs at a fake; hosted runs ignore it.
-
-Hosted Node deployments require `DATABASE_URL` and `SESSION_SECRET`; the process
-refuses to start without durable conversation storage or a session signing
-secret. Local development uses file-backed SQLite at `.cache/flue/local.db` and
-a local session secret when `SESSION_SECRET` is unset.
-
-Opening the credential store requires `CREDENTIALS_SECRET` on hosted
-environments and uses `socratink-local-credentials-secret` when that env is
-unset locally. The store is keyed by session `userId` plus name. Authenticated
-Authenticated Chat uses an OpenAI key when one is connected; otherwise it uses
-operator `jon-local`. Existing stored OpenRouter credentials and model routing
-remain supported. Credential rows live in the product table
-`socratink_credentials` (Postgres when `DATABASE_URL` is set; otherwise
-`.cache/socratink/credentials.db`). That file is not Flue's conversation
-database, and secrets are not stored in `flue_*` tables. Profiles hold a
-`credentialRef`, never a raw key.
-
-Chat requires a signed HttpOnly session cookie. Conversation ids are
-`${userId}:${nonce}` so one session cannot resume another. Agent routes are
-rate-limited by that user id.
-
-## Verify the app
+Use the Node.js and pnpm versions specified in `package.json`.
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm dev
+```
+
+`pnpm dev:phone` exposes the development server to the local network and prints
+its URL. The operator model defaults to an OpenAI-compatible endpoint at
+`http://127.0.0.1:3001/v1`. Configure `JON_LOCAL_BASE_URL`, `JON_LOCAL_API_KEY`,
+and optionally `JON_LOCAL_MODEL_ID` for your endpoint. Do not commit values.
+
+Local conversation, authentication, and credential databases use separate
+SQLite files under `.cache/`. Configuration owners are `src/config/database.ts`,
+`auth.ts`, `session.ts`, `credentials.ts`, and `operator-model.ts`.
+
+## Identity, models, and hosted configuration
+
+The app creates a signed guest session. Its three-turn guest allowance leads
+to sign-in when OAuth providers are configured. Google and GitHub sign-in use
+the matching `*_CLIENT_ID` and `*_CLIENT_SECRET` settings plus
+`AUTH_REDIRECT_BASE_URL`; see [the authentication flow](src/ui/auth/README.md)
+for account linking and the limits of the guest allowance.
+
+Conversations are scoped to the session user and permitted aliases. Learner
+API keys are encrypted in the product credential store. The active model route
+depends on the connected credentials and selected model; otherwise it uses
+the operator provider. Model choices and routing are owned by
+`src/config/chat-model.ts` and `src/server/learner-key.ts`; operator environment
+settings are resolved separately in `src/config/operator-model.ts`.
+
+Production, Vercel, and Northflank deployments require `DATABASE_URL`,
+`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel/Northflank, a public HTTPS
+`JON_LOCAL_BASE_URL` with `JON_LOCAL_API_KEY` selects the operator endpoint;
+otherwise the app selects AI Gateway. Gateway credentials come from
+`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`; Northflank rejects a missing
+gateway credential. Inspect the configuration owners for exact resolution.
+
+The `Dockerfile` serves the built Node app on port `3000`, with `/healthz` for
+readiness. Retain the existing single-replica, recreate-deployment constraint
+until Flue's conversation ownership is verified for a different topology.
+Use private database connectivity. Local checks do not validate deployed
+identity settings, external providers, multi-instance hosting, or suitability
+for a particular learner population.
+
+## Verify
+
+```sh
 pnpm check
 pnpm smoke
+pnpm audit:trellis
 pnpm audit --prod
 ```
 
-The product source lives in `src/`. The default Vite build generates the
-Node application in `dist/`, and the UI build writes its static assets to
-`dist/client/`. The smoke test starts only local processes and uses a fake
-OpenAI-compatible provider; it never requires external credentials.
+`pnpm check` runs the current type, contract, build, and static-routing checks.
+`pnpm smoke` starts local processes with a deterministic fake model provider;
+it requires no external credentials. The complete command list is in
+`package.json`. Builds write generated output to `dist/` and `dist/client/`.
 
-## Demonstrate the current interaction
+Set `REVEAL_BROWSER=1` when running `pnpm smoke` to include browser interaction
+checks. They use installed Chrome and `playwright-core`; `CHROME_PATH` and
+`PLAYWRIGHT_MODULE` can point to existing installations. Screenshots and results
+are saved under `.cache/reveal/`.
 
-Open a fresh conversation and type what you are working on into the composer;
-there is no starter menu. Socratink asks the learner to explain or attempt the
-problem before substantive correction, then uses a structured card when a
-question has defined choices.
+To verify PostgreSQL restart and rollback, build the candidate and previous
+revision in separate directories, then run:
 
-For an operator walkthrough:
+```sh
+pnpm smoke:postgres --candidate <candidate-root> --baseline <previous-root> --out .cache/postgres-proof
+```
 
-1. Complete at least one conversational turn and one questionnaire turn.
-2. Inspect the earlier-step trail, then reload to verify that the conversation
-   is restored.
-3. Inspect the structured `present_question` card and response in the
-   conversation trail.
+This needs a running Docker daemon and a locally available `postgres:17-alpine`
+image. It creates and removes its own database container, uses synthetic OAuth
+and model responses, and saves a report proving session, key, and conversation
+recovery. The previous build runs against a disposable copy of that test data.
 
-This demonstrates a persisted, observable interaction and its software
-reliability boundaries. It does not establish agentic-engineering mastery,
-durable learning, transfer, learning effectiveness, or production readiness.
-Hosted Chat now requires a signed session cookie, conversation ownership, and
-per-user rate limits. Authenticated learners can paste an OpenAI platform key, which stays in the
-encrypted store. Keep the public domain off until that hosted path is verified
-for the learners who will use it.
-
-## Northflank staging
-
-The root `Dockerfile` packages the built Flue Node server as a non-root
-container listening on port `3000`. Configure one service replica with:
-
-- private HTTP port `3000`, reached for staging verification through a
-  Northflank CLI port-forward;
-- readiness check `GET /healthz`;
-- a private PostgreSQL addon;
-- `DATABASE_URL` mapped from the addon's `POSTGRES_URI` secret;
-- `SESSION_SECRET` stored as a Northflank runtime secret;
-- `CREDENTIALS_SECRET` stored as a Northflank runtime secret;
-- `AI_GATEWAY_API_KEY` stored as a Northflank runtime secret.
-
-Use Northflank's `recreate` rollout strategy. Do not use rolling or canary
-rollouts, autoscaling, or more than one replica: Flue currently requires one
-live owner for a conversation, including during replacement.
-
-Keep the PostgreSQL addon private. The current Northflank deployment is a
-private staging target. Do not expose its port or attach the production domain
-until an identity vendor and learner BYOK are implemented and verified. Session
-cookies, conversation ownership, rate limits, and the encrypted credential
-store are necessary but not sufficient for a public BYOK URL.
+For an interaction check, start a conversation, complete an open-ended turn
+and a question card, inspect the earlier-step trail, and reload to check
+restoration. Check assistance markings when the tutor supplies target content.
+These checks establish only the covered software behavior, not retention,
+transfer, mastery, or learning effectiveness.
 
 ## Foundation and attribution
 
-Socratink was extracted from [Flue](https://github.com/withastro/flue) v2.0.3
-at source commit
-[`bf86b872`](https://github.com/withastro/flue/commit/bf86b872). The standalone
-product consumes the published `@flue/*` packages and keeps those names, this
-provenance statement, and the original [Apache License 2.0](LICENSE) so its
-upstream lineage remains explicit.
+Socratink was extracted from [Flue](https://github.com/withastro/flue) v2.0.3 at
+source commit [`bf86b872`](https://github.com/withastro/flue/commit/bf86b872).
+The product consumes published `@flue/*` packages and preserves their names,
+this provenance statement, and the original [Apache License 2.0](LICENSE).

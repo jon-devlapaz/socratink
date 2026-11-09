@@ -12,6 +12,7 @@ import {
 	parseSessionCookieValue,
 	resolveSessionSecret,
 	sessionCookieName,
+	sessionUsesSecureCookie,
 	userIdFromConversationId,
 } from '../src/config/session.ts';
 import { createSqliteAuthDb } from '../src/server/auth-db.ts';
@@ -19,11 +20,12 @@ import {
 	forbiddenChatError,
 	rateLimitedChatError,
 	requireChatSession,
-	unauthorizedChatError,
+	requireSignedSession,
 } from '../src/server/chat-access.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
 import {
 	mintSessionUserId,
+	unauthorizedSessionError,
 	readSession,
 	writeSessionCookie,
 } from '../src/server/session.ts';
@@ -48,6 +50,8 @@ function createTestApp(options = {}) {
 		requireChatSession({ secret: testSecret, rateLimiter: limiter, authDb }),
 	);
 	app.all(`${appConfig.chatAgentPath}/*`, (context) => context.json({ ok: true }));
+	app.use('/signed', requireSignedSession({ secret: testSecret, rateLimiter: limiter, authDb }));
+	app.get('/signed', (context) => context.json({ ok: true }));
 	return app;
 }
 
@@ -210,11 +214,9 @@ test('session cookie payload is a versioned userId plus random nonce', () => {
 	const registered = { userId: 'user-a', kind: 'registered', nonce };
 	assert.deepEqual(parseSessionCookieValue(encodeSessionCookieValue(registered)), registered);
 
-	// User ids with dots survive the last-dot nonce split.
 	const dotted = { userId: 'a.b', kind: 'guest', nonce };
 	assert.deepEqual(parseSessionCookieValue(encodeSessionCookieValue(dotted)), dotted);
 
-	// Malformed payloads never authenticate.
 	assert.equal(parseSessionCookieValue(undefined), undefined);
 	assert.equal(parseSessionCookieValue(false), undefined);
 	assert.equal(parseSessionCookieValue(''), undefined);
@@ -254,7 +256,7 @@ test('privilege change kills the previous cookie bytes and keeps the owned id', 
 		// UUID becomes users.id and the cookie is rewritten as registered.
 		app.post('/test/privilege-change', async (context) => {
 			const guestUserId = (await readSession(context, testSecret, authDb))?.userId;
-			if (!guestUserId) return context.json({ error: unauthorizedChatError }, 401);
+			if (!guestUserId) return context.json({ error: unauthorizedSessionError }, 401);
 			await authDb.createUser(guestUserId, `${guestUserId}@example.com`);
 			await writeSessionCookie(context, guestUserId, testSecret, {}, 'registered');
 			return context.json({ userId: guestUserId });
@@ -280,12 +282,11 @@ test('privilege change kills the previous cookie bytes and keeps the owned id', 
 
 		const stale = await app.request(owned, { headers: { cookie: guest.cookie } });
 		assert.equal(stale.status, 401);
-		assert.deepEqual(await stale.json(), { error: unauthorizedChatError });
+		assert.deepEqual(await stale.json(), { error: unauthorizedSessionError });
 
 		const fresh = await app.request(owned, { headers: { cookie: rotatedCookie } });
 		assert.equal(fresh.status, 200);
 
-		// A stale guest cookie never mints its dead id back.
 		const remint = await app.request(appConfig.sessionPath, {
 			method: 'POST',
 			headers: { cookie: guest.cookie },
@@ -293,4 +294,23 @@ test('privilege change kills the previous cookie bytes and keeps the owned id', 
 		assert.equal(remint.status, 200);
 		assert.notEqual((await remint.json()).userId, guest.userId);
 	});
+});
+
+test('signed and Chat admission each consume exactly one shared allowance', async () => {
+	const app = createTestApp({ max: 2 });
+	const { cookie, userId } = await mintCookie(app);
+	const path = `${appConfig.chatAgentPath}/${encodeURIComponent(`${userId}:nonce`)}`;
+	assert.equal((await app.request('/signed')).status, 401);
+	assert.equal((await app.request('/signed', { headers: { cookie } })).status, 200);
+	assert.equal((await app.request(path, { headers: { cookie } })).status, 200);
+	assert.equal((await app.request('/signed', { headers: { cookie } })).status, 429);
+});
+
+test('secure cookies follow only the hosted security environment', () => {
+	for (const environment of [{ NODE_ENV: 'production' }, { NF_PROJECT_ID: 'x' }, { VERCEL: '1' }]) {
+		assert.equal(sessionUsesSecureCookie(environment), true);
+	}
+	for (const environment of [{}, { NODE_ENV: 'test' }, { VERCEL: '0' }, { NF_PROJECT_ID: '' }]) {
+		assert.equal(sessionUsesSecureCookie(environment), false);
+	}
 });

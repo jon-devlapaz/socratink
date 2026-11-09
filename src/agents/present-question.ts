@@ -3,15 +3,15 @@ import {
 	type AgentResponseToolCall,
 	type LlmAssistantMessage,
 } from '@flue/runtime';
-import { presentQuestionExample } from '../questionnaire.ts';
+import { presentQuestionExample, questionnaireToolName } from '../questionnaire.ts';
 
-export const presentQuestionToolName = 'present_question';
-export const presentQuestionSignalType = 'present_question';
-
-export const presentQuestionToolDescription =
-	'Box exactly one question on the card when the learner must choose among two or more defined options. Do not call it for open-ended reasoning. Do not list those options in markdown. Input is {"prompt":"Which recovery action should the client take first?","choices":["Recheck the admitted request","Send the same message again"],"reasoning":true}.';
+export const presentQuestionToolName = questionnaireToolName;
+export const presentQuestionSignalType = presentQuestionToolName;
 
 const presentQuestionExampleJson = JSON.stringify(presentQuestionExample);
+
+export const presentQuestionToolDescription =
+	`Box exactly one question on the card when the learner must choose among two or more defined options. Do not call it for open-ended reasoning. Do not list those options in markdown. Input is ${presentQuestionExampleJson}.`;
 
 export const presentQuestionRetryBodies = {
 	invalid: `present_question failed validation. Call it with this shape only: ${presentQuestionExampleJson}. One prompt, two to eight choices, optional reasoning. Do not list the choices in markdown.`,
@@ -20,7 +20,7 @@ export const presentQuestionRetryBodies = {
 
 export type PresentQuestionRetryReason = keyof typeof presentQuestionRetryBodies;
 
-const lastAssistantText = new Map<string, string>();
+const lastAssistantText = new Map<string, { text: string; submissionId?: string }>();
 let textCaptureInstalled = false;
 
 export function looksLikeUnboxedChoices(text: string): boolean {
@@ -50,30 +50,30 @@ export function presentQuestionRetryReason(input: {
 	return undefined;
 }
 
-export function presentQuestionRetryBody(reason: PresentQuestionRetryReason): string {
-	switch (reason) {
-		case 'invalid':
-		case 'unboxed':
-			return presentQuestionRetryBodies[reason];
-		default: {
-			const exhaustive: never = reason;
-			return exhaustive;
-		}
-	}
-}
-
-export function capturedAssistantText(instanceId: string): string {
-	return lastAssistantText.get(instanceId) ?? '';
+export function takeAssistantText(instanceId: string): string {
+	const captured = lastAssistantText.get(instanceId);
+	lastAssistantText.delete(instanceId);
+	return captured?.text ?? '';
 }
 
 export function installPresentQuestionTextCapture(): void {
 	if (textCaptureInstalled) return;
 	textCaptureInstalled = true;
 	observe((event, ctx) => {
-		if (event.type !== 'turn' || event.purpose !== 'agent') return;
 		const instanceId = ctx.id || event.instanceId || event.conversationId;
 		if (!instanceId) return;
-		lastAssistantText.set(instanceId, assistantTextFromOutput(event.response.output));
+		// Failed or aborted deliveries may never reach the consuming finish hook.
+		if (event.type === 'submission_settled') {
+			if (lastAssistantText.get(instanceId)?.submissionId === event.submissionId) {
+				lastAssistantText.delete(instanceId);
+			}
+			return;
+		}
+		if (event.type !== 'turn' || event.purpose !== 'agent') return;
+		lastAssistantText.set(instanceId, {
+			text: assistantTextFromOutput(event.response.output),
+			submissionId: event.submissionId,
+		});
 	});
 }
 

@@ -1,6 +1,6 @@
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
-import { questionnaireFromReplyData } from './questionnaire.ts';
-import { visibleCardTools, type DisplayedToolCall } from './tool-card.ts';
+import { questionnaireFromReplyData } from '../questionnaire.ts';
+import { visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 const internalAssistantMarkersPattern = /^(?:«[A-Z][A-Z0-9_]*»\s*)+/u;
 

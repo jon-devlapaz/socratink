@@ -16,7 +16,6 @@ export type MenuSheetElements = {
 
 export type MenuSheetOptions = {
 	reduceMotion: boolean;
-	onOpen: () => void;
 };
 
 export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOptions): void {
@@ -34,7 +33,6 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 
 	function setMenuOpen(open: boolean) {
 		if (menuOpen === open) return;
-		if (open) options.onOpen();
 		menuOpen = open;
 		menuPanel.classList.remove('is-dragging');
 		menuLayer.classList.toggle('is-open', open);

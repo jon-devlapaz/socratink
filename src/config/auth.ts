@@ -1,3 +1,4 @@
+import { isHostedEnvironment, type HostedEnvironment } from './hosted.ts';
 import { resolveDatabaseTarget, type DatabaseTarget } from './database.ts';
 
 export const localAuthFilename = '.cache/socratink/auth.db';
@@ -13,25 +14,14 @@ export type AuthConfig = Readonly<{
 	redirectBaseUrl: string;
 }>;
 
-export type AuthEnvironment = Readonly<{
+export type AuthEnvironment = HostedEnvironment & Readonly<{
 	GOOGLE_CLIENT_ID?: string;
 	GOOGLE_CLIENT_SECRET?: string;
 	GITHUB_CLIENT_ID?: string;
 	GITHUB_CLIENT_SECRET?: string;
 	AUTH_REDIRECT_BASE_URL?: string;
 	DATABASE_URL?: string;
-	NF_PROJECT_ID?: string;
-	NODE_ENV?: string;
-	VERCEL?: string;
 }>;
-
-function isHostedEnvironment(environment: AuthEnvironment): boolean {
-	return (
-		environment.NODE_ENV === 'production' ||
-		Boolean(environment.NF_PROJECT_ID) ||
-		environment.VERCEL === '1'
-	);
-}
 
 function isProductionRedirectHost(hostname: string): boolean {
 	return hostname === 'app.socratink.ai' || hostname === 'www.socratink.ai' || hostname === 'socratink.ai';

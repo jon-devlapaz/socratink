@@ -302,8 +302,8 @@ function readParagraph(
 	lines: readonly string[],
 	start: number,
 ): { block: Extract<MarkdownBlock, { type: 'paragraph' }>; next: number } {
-	const body: string[] = [];
-	let index = start;
+	const body: string[] = [lines[start] ?? ''];
+	let index = start + 1;
 	while (index < lines.length) {
 		const line = lines[index];
 		if (line === undefined || isBlank(line) || startsBlock(line, lines[index + 1])) break;

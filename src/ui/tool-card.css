@@ -4,10 +4,6 @@
 	margin-top: 0.35rem;
 }
 
-.turn.pending .tool-list {
-	margin-top: 0.35rem;
-}
-
 .tool-card {
 	display: grid;
 	gap: 0.15rem;
@@ -79,10 +75,4 @@
 	line-height: 1.45;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.tool-card-state {
-		transition: none;
-	}
 }

@@ -1,5 +1,3 @@
-// Inline auth gate card shown after the guest turn limit is reached.
-// Rendered into the conversation transcript, not as a modal or redirect.
 import type { AuthProviders } from './session.ts';
 
 export function hasAuthProvider(providers: AuthProviders): boolean {

@@ -1,322 +1,89 @@
 # Socratink product agent guide
 
-You are a product coding agent for the standalone Socratink learning product.
-Make the smallest complete change that produces the requested observable
-learner or operator outcome, and prove that outcome without expanding product
-scope.
-
-Before planning or changing files, read [ZEN.md](ZEN.md). Treat its working
-agreements as requirements and its software-design heuristics as defaults.
-Before Praxist runs, multi-agent research campaigns, or repeating a failed
-operator loop, read matching files in [.agents/learnings/](.agents/learnings/).
-
-## Cold archive and freezes
-
-Never preload or glob-read `research/_cold-archive/**` (gitignored; evacuated
-in FM-PARETO-CUT-02). Recovery copies live on the host only — see
-[`research/README.md`](research/README.md):
-
-`/Users/jondev/dev/archives/socratink-cold-archive/2026-09-16-from-main/`
-
-Mega skill packs under that host archive (`PARETO-01/skills/`:
-`personas-skillset`, `common-skills-skillset`, `variate`) are **archive-only**.
-Do not list or load them as default project skills unless Captain explicitly
-restores them to `.agents/skills/`.
-
-Praxist-as-progress and extra WebGL scope freezes live in host
-`…/PARETO-01/FREEZE.md` (same archives folder). The operator's “kill the orb”
-exception authorizes deleting only `living-ink` / `src/ui/effects/living-ink*`.
-It does not authorize deleting Chat knee code or unrelated effects.
-Other WebGL helpers under `src/ui/effects/` stay FREEZE-only (do not delete).
-Do not start new work on `organic-sphere`, `icon-cloud`, heavy/smooth-cursor,
-or other WebGL experiments unless Captain explicitly requests that capability
-(bugfixes that preserve behavior are OK).
-
-
-## Operator tripwires (S010 / S030)
-
-These are operator STOP rules for Ship and long IDE sessions. They do not replace
-`ZEN.md` or product scope tripwires.
-
-### Boot gate (S010)
-
-Before tool loops: state Outcome (`/goal`), repo, cwd, proof, stop condition, and
-Not-in-this-PR. **Refuse boot** if Outcome is missing. Do not substitute a
-skill-path hunt for Outcome + proof.
-
-### Thrash tripwire (S030)
-
-| # | Tripwire | Action |
-| ---: | --- | --- |
-| 1 | ≥3 identical tool signatures without a green gate | Change one variable → retry once; else rewrite `/goal` |
-| 2 | ≥5 same-file edit cycles without a green gate | **STOP.** Replate. No “one more polish.” |
-| 3 | Extreme thrash ∩ low happy ∩ low verify | Park; do not ship |
-
-**OOM budget:** IDE thrash leaders historically ran ~10× unique tool-roles vs
-median gold cloud PRs (~160). Treat climbing toward that multiple as a cost
-brake — stop, replate, or force Ship-cloud. High Axis-A ship score alone does
-not mean a healthy loop (S065).
-
-### Learnings after costly fails
-
-Same day as a costly repeatable negative operator path (S*-class thrash, waste
-campaigns), add
-`.agents/learnings/postmortem-YYYY-MM-DD-<slug>.md` with `read_when` and stop
-rules. Keep N* catalogs in research/Loops paste unless they are the recovery
-twin. Never duplicate Brain EVT rows as prose learnings; never promote learnings
-into Canon or dump full catalogs into this file.
-
-## Commands
-
-Run commands from the repository root.
-
-```sh
-# Install the locked dependency graph
-pnpm install --frozen-lockfile
-
-# Build the UI once, then run the local development server
-pnpm dev
-
-# Run the full local quality gate: types, contract tests, and production builds
-pnpm check
-
-# Exercise the built app against a deterministic fake model provider
-pnpm smoke
-
-# Audit production dependencies
-pnpm audit --prod
-
-# Measure structural debt and regressions with Trellis
-pnpm audit:trellis
-```
-
-Prefer the narrowest relevant check while iterating:
-
-```sh
-# Types and builds
-pnpm check:types
-pnpm build
-pnpm build:ui
-
-# Structural debt and baseline regression
-pnpm audit:trellis
-trellis audit . --baseline .audit/baseline.json
-
-# Targeted contract suites (see package.json "test:*")
-pnpm test:chat-model     # or test:chat-turns, test:chat-auto, test:model-route
-pnpm test:session        # or test:auth-db, test:oauth, test:credentials
-pnpm test:questionnaire  # or test:present-question, test:reveal, test:thinking
-```
-
-## Testing and proof
-
-- Never write unit tests after you write code.
-- Highly prefer E2E tests as the sole testing mechanism. Use them to verify complex features work. At the end of E2E tests, produce a verifiable and repeatable artifact.
-- If you must test a system in isolation, first write down all the ways it could fail, then write the code.
-
-Before handing off a code change, run `pnpm check` and `pnpm smoke` unless the
-user narrowed the proof boundary or the environment prevents a check. Report
-exactly what ran, what passed, and what remains unverified. GitHub CI installs
-with the frozen lockfile, runs the full `pnpm check` quality gate across all
-contracts, builds, and runs the deterministic `pnpm smoke` test in full parity
-with the local gate.
-
-`pnpm smoke:braintrust-live` is an explicit live integration check, not a CI
-step. It requires a completed `pnpm build` and an available Braintrust API key.
-Use only synthetic prompts because traces may contain inputs and outputs.
-
-Measure and protect structural maintainability with Trellis (`pnpm audit:trellis`).
-Trellis computes an offline 0–100 sloppiness index (lower is better) across
-cyclomatic complexity, function erosion, duplication, and import cycles. Before
-a refactor, capture a baseline (`pnpm audit:trellis:baseline` or
-`trellis audit . --json --out .audit/baseline.json`). During review or before
-handoff, verify with `trellis audit . --baseline .audit/baseline.json`. A change
-must never introduce circular imports (`failOnNew: [import-cycle]`) or exceed
-the regression tolerance in `trellis.yaml`.
-
-## Product and stack
-
-Socratink is a focused, model-backed learning conversation. Do not introduce
-a frontend framework to solve a local UI change; keep UI in vanilla TypeScript
-and CSS.
-
-The product owns `src/` and learner-facing behavior. Flue framework behavior
-comes from published `@flue/*` dependencies; its source is not vendored here.
-Keep Flue attribution, Apache licensing, and `@flue/*` package names intact.
-A product change must not become a framework rewrite.
-
-Generated and local-only paths such as `dist/`, `node_modules/`, `.cache/`,
-`.vercel/`, logs, artifacts, and environment files are not source.
-
-## Working method
-
-1. Write the smallest observable outcome in one sentence.
-2. Inspect the owning module, its callers, and the nearest contract or smoke
-   test before editing.
-3. State the proof needed for that outcome. Strengthen proof when the user says
-   “dogfood,” “vet,” “scientific,” “grounded,” or “production quality”; those
-   words do not authorize broader features.
-4. Change the narrowest stable owner and add or update the closest test.
-5. Run targeted checks while iterating, then the full applicable handoff gate.
-6. Parse the diff, remove incidental artifacts, and stop when the stated
-   outcome is proven.
-7. After a costly negative campaign or operator path, add a dated postmortem
-   under `.agents/learnings/` so the next agent can find the stop rule.
-
-A passing typecheck, build, or smoke proves only its covered behavior. Use live
-or browser validation when the request depends on real interaction, recovery,
-deployment, or external delivery. Clearly separate confirmed facts, reasonable
-inferences, and unknowns.
-
-## Code conventions
-
-Reviewers apply [`CODING_STANDARDS.md`](CODING_STANDARDS.md) and the area checklists it links. Read it before writing or reviewing code.
-
-Match adjacent code before inventing a new pattern. Use strict types, `.ts`
-extensions in local imports, single quotes, semicolons, and the repository's
-tab indentation. Prefer small pure functions for environment or policy
-decisions, explicit failure for unsafe hosted states, and tests that exercise
-the public contract. Keep UI behavior in the existing TypeScript/CSS modules
-and keep environment access behind `src/config/` or the server boundary.
-
-Hosted or production environments (`NODE_ENV=production`, `VERCEL=1`) require
-explicit configuration (`DATABASE_URL`, `SESSION_SECRET`, `CREDENTIALS_SECRET`,
-and `AI_GATEWAY_API_KEY`); fail fast if missing. Local development falls back
-to SQLite automatically.
-
-Use comments for rationale, constraints, or non-obvious tradeoffs—not to
-restate code. Do not add abstraction, generality, or a dependency until a
-demonstrated need makes the resulting module simpler to use or safer to change.
-Keep function complexity bounded. Do not pile branching or nested logic onto
-hotspot functions identified by `pnpm audit:trellis` (e.g. in
-`src/ui/chat-markdown-parse.ts` or `src/ui/chat-surface.ts`); extract focused
-pure helpers instead of expanding existing hotspots.
-
-## Flue harness rules
-
-An agent is a capitalized exported function in a module beginning with
-`'use agent'`. Flue hooks attach its model, tools, skills, state, and other
-capabilities. The function's return value is its instruction.
-
-Routing is explicit in `src/app.ts`: mount an HTTP-reachable agent with
-`createAgentRouter`. Registration comes from the `'use agent'` scan, not from
-mounting. The model layer uses Pi's provider protocol through the published
-Flue runtime.
-
-When posing diagnostics or multiple choices to the learner, the agent MUST
-call `present_question`. Never output raw text or markdown bullet choice lists;
-only `present_question` produces structured evidence.
-
-Before changing Flue agents, hooks, skills, tools, routing, or harness behavior,
-use `.agents/skills/flue-wiki` and read the relevant generated notes from the
-sibling `flue-obsidian-wiki` vault. Do not invent Flue APIs from memory.
-
-## Product scope and doctrine
-
-Do not add a user-facing mode, route family, persistence model, schema,
-reviewer workflow, evaluation system, or experiment framework unless the user
-explicitly requests that product capability. Attach requested behavior to the
-existing flow whenever it can own the outcome.
-
-Treat any such addition—and any unexpectedly large diff—as a scope tripwire.
-Stop before implementation, compare it with the one-sentence outcome, and ask
-for direction if it is not strictly required. Lockfiles and generated output do
-not justify expanded behavior.
-
-Failure precedent: a request to trace normal Socratink runs was once expanded
-into a separate learner-evidence product with new UI, routes, storage, schemas,
-and review machinery. That expansion was reverted. The complete solution was
-startup instrumentation plus one verified live trace.
-
-The sibling private `socratink-brain` repository governs what this product may
-become or claim. Before consequential product, learning, learner-agent, or
-experiment work, use `.agents/skills/socratink-brain` and run:
-
-```sh
-python .agents/skills/socratink-brain/scripts/brain.py orient
-```
-
-Read the files it lists. Do not reconstruct doctrine from memory, from
-`README.md`, or from software-maintenance documents. Never present synthetic
-model or evaluator output as learner-authored evidence, durable learning, or
-mastery.
-
-## Git workflow
-
-- Inspect `git status --short` before editing and before handoff.
-- Preserve user-owned and unrelated work in a dirty worktree.
-- Keep each change scoped to the observable outcome; do not bundle cleanup.
-- Stage, commit, amend, push, create branches, or open pull requests only when
-  the user explicitly asks.
-- When asked to commit, stage exact paths and report the resulting commit and
-  verification. Never bypass checks or rewrite shared history to make a change
-  appear clean.
-- Do not remove or weaken a failing test merely to obtain a green result.
-- **Git golden** is an on-demand stop condition, not a session gate and not CI.
-  When the user says "git golden" or "return to golden", run
-  `scripts/git-golden.sh` from the repository root and stop on a non-zero
-  exit. Report every `FAIL` line. Do not delete branches, worktrees, stashes,
-  or dirty files unless the user explicitly asks to restore or delete. The
-  script is the definition: on `main`, clean index, `HEAD == origin/main`,
-  exactly one worktree, and only local branch `main`.
-
-## Boundaries
-
-### Always
-
-- Read `ZEN.md`, state the outcome, inspect the real owner, and preserve product
-  attribution and learner-authored evidence.
-- Read matching files in `.agents/learnings/` before Praxist, multi-agent
-  research, or repeating a failed operator loop.
-- Keep secrets out of source and logs; use synthetic data for observability and
-  external-service checks.
-- Add proof at the same boundary as the behavior and report any unverified
-  assumptions.
-- Verify structural health does not regress during refactors or feature additions (`pnpm audit:trellis`).
-- Follow repository-owned skills only when their documented trigger applies.
-
-### Ask first
-
-Unless the user already requested the exact action, ask before:
-
-- adding or upgrading dependencies or changing the lockfile intentionally;
-- changing a database schema, persistence model, public API, authentication,
-  authorization, rate limits, or learner-data handling;
-- modifying CI, deployment configuration, hosting topology, production
-  settings, or external service state;
-- adding one of the product scope tripwires listed above;
-- deleting user-owned files, tests, data, or substantial existing behavior.
-
-### Never
-
-- Commit secrets, API keys, `.env*` contents, learner data, or trace payloads.
-- Edit generated dependencies or output such as `node_modules/`, `dist/`, or
-  caches as if they were source.
-- Vendor, rename, or silently replace published Flue framework behavior.
-- Claim learning effectiveness, mastery, or production readiness from code,
-  synthetic runs, configuration, or passing tests alone.
-- Introduce circular dependency import cycles across TypeScript modules.
-- Duplicate project doctrine in `CLAUDE.md`, `.cursor/rules/`, `.cursorrules`,
-  `.github/copilot-instructions.md`, `.cursor/skills/`, or `.claude/skills/`.
-
-## Research preload
-
-`research/chat-signal/`, `research/pareto/`, and other FM crumb shelves are
-**host-archived** (pointer-only in-tree). See [`research/README.md`](research/README.md).
-Do not preload archived research. Cold packs: **Cold archive and freezes** above.
-
-## Coding-agent portability
-
-This root `AGENTS.md` is the project-wide contract for coding agents. It is not
-owned by a particular editor, CLI, or model. Keep specialized, reusable
-workflows in `.agents/skills/` as portable `SKILL.md` packages with scripts.
-
-A thin compatibility shim may point to this file when a tool cannot discover
-`AGENTS.md`; it must not duplicate doctrine or workflow. This portability rule
-applies to coding-agent configuration and does not change the product's Flue
-agent runtime.
-
-Keep this guide concise and empirical. Add a rule when a repeated agent mistake
-reveals a missing constraint; remove or update rules when the repository no
-longer supports them. Prefer one real command or example over several
-paragraphs of abstract advice.
+Make the smallest complete change that produces the requested learner or
+operator outcome. Read [ZEN.md](ZEN.md) before planning or changing files.
+State the outcome, scope, proof, and stop condition before tool loops.
+
+## Read the right context
+
+- **Product direction or learning behavior:** read the Brain's
+  [Constitution](socratink-brain/CONSTITUTION.md) and
+  [North Star](socratink-brain/NORTH-STAR.md), then only the linked Canon needed
+  for the task. The Brain is a separate repository. If unavailable locally,
+  use [its source repository](https://github.com/jon-devlapaz/socratink-brain/tree/master).
+  Report missing authority rather than inventing doctrine. The application
+  code and its checks establish current implementation; the North Star does
+  not establish that a capability is built or proven.
+- **Current product:** [PRODUCT.md](PRODUCT.md) describes the implemented
+  boundary. [README.md](README.md) covers setup and verification.
+- **Writing or reviewing code:** read [CODING_STANDARDS.md](CODING_STANDARDS.md)
+  and the area-specific standards it links. For UI changes, also read
+  [DESIGN.md](DESIGN.md).
+- **Flue agents, hooks, tools, routing, or harness changes:** inspect the
+  installed package version and consult matching published Flue documentation
+  or [upstream source](https://github.com/withastro/flue). Use a local Flue wiki
+  only when available and current; do not invent APIs or rely on missing helpers.
+- **Repeating an operator failure:** read matching local notes under
+  `.agents/learnings/` when present. Keep lessons conditional on their
+  `read_when` triggers, and check historical commands against this checkout.
+- **Recovering old research:** use [the recovery index](research/README.md).
+  Never preload or glob-read `research/_cold-archive/**` or host archives.
+  Archived research and skill packs are not current instructions.
+
+## Work within the request
+
+Inspect the owning module, its callers, and the nearest contract or smoke
+test before editing. Prefer existing flows and vanilla TypeScript/CSS.
+Keep environment access behind `src/config/` or the server boundary.
+
+Unless the current task already authorizes the action, ask before adding or
+upgrading dependencies, changing schemas or learner-data handling, changing
+public APIs/authentication/authorization/rate limits, modifying deployment or
+external service state, or deleting user work, tests, data, or substantial
+behavior. New modes, room systems, routes, storage, evaluation machinery, and
+other product capabilities require an explicit request. An unexpectedly large
+diff is a reason to reconsider the approach, not expand the scope.
+
+The product owns `src/`; Flue remains a published dependency. Preserve its
+package names, attribution, and Apache licensing. Treat `dist/`, dependencies,
+caches, logs, artifacts, and environment files as generated or local data.
+
+Keep learner-authored work distinct from AI output and assistance. Use
+`present_question` for choices or diagnostics with defined options, and
+preserve reveal provenance. A correct response, synthetic run, or passing
+software test does not establish retention, transfer, mastery, or production
+readiness. Keep secrets and learner data out of source and logs; use synthetic
+data for external-service checks.
+
+## Prove and finish
+
+Prefer end-to-end checks for complex behavior and retain a repeatable proof
+artifact. For isolated testing, list failure cases and write the test before
+implementation. Use the narrowest relevant check while iterating; do not
+remove or weaken a test merely to make it pass.
+
+Before a refactor, capture the Trellis baseline with
+`pnpm audit:trellis:baseline`. For refactors or feature additions, compare the
+result with `trellis audit . --baseline .audit/baseline.json`; preserve the
+regression limits in `trellis.yaml` and introduce no import cycles.
+
+Before handing off code, run `pnpm check` and `pnpm smoke` unless the user
+narrowed the proof boundary or the environment prevents them. Use browser or
+live validation when the requested outcome depends on real interaction or
+external delivery, within the task's authorization. Report what ran, what it
+proves, and what remains unverified. Available commands live in `package.json`.
+
+After repeated failure at the same seam, collect the failure evidence and
+change the approach. Stop after five same-file edit cycles without a passing
+check. Record costly repeatable failures as focused, dated local learnings
+with a `read_when` trigger and a stop rule.
+
+Inspect `git status --short` before editing and handoff; preserve unrelated
+work. Stage, commit, amend, push, create branches, or open PRs only when asked.
+When asked for **git golden**, run `scripts/git-golden.sh`, stop on failure,
+and report every `FAIL` line. Do not delete branches, worktrees, stashes, or
+dirty files unless that deletion was requested.
+
+Keep this file the portable project entry point. Store specialized workflows
+in focused, discoverable references; compatibility shims should link here
+rather than duplicate doctrine. Stop when the requested outcome is proven.

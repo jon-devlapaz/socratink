@@ -4,7 +4,6 @@ export type RequestControlElements = {
 	input: HTMLTextAreaElement;
 	button: HTMLButtonElement;
 	startOver: HTMLButtonElement;
-	core: HTMLButtonElement;
 	lockup: HTMLButtonElement;
 	activeTurn: HTMLElement;
 };
@@ -17,7 +16,6 @@ export function applyRequestControlState(
 	elements.input.disabled = controls.composerLocked;
 	elements.button.disabled = controls.composerLocked;
 	elements.startOver.disabled = controls.startOverDisabled;
-	elements.core.classList.toggle('is-working', controls.busy);
 	elements.lockup.classList.toggle('is-working', controls.busy);
 }
 
@@ -39,8 +37,7 @@ export function focusAfterRequestStatePaint(
 
 export function buildRequestStateTurn(
 	state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
-	action: () => Promise<ChatRequestState>,
-	runRequestCommand: (result: Promise<ChatRequestState>) => void,
+	onAction: () => void,
 ): HTMLElement {
 	const wrap = document.createElement('div');
 	wrap.className = `turn request-state ${state.kind === 'terminal' ? state.outcome : 'recovery'}`;
@@ -67,7 +64,7 @@ export function buildRequestStateTurn(
 		for (const actionButton of button.parentElement?.querySelectorAll('button') ?? []) {
 			actionButton.disabled = true;
 		}
-		runRequestCommand(action());
+		onAction();
 	});
 	actions.append(button);
 	wrap.append(label, body, actions);

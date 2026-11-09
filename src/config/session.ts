@@ -1,23 +1,17 @@
+import { isHostedEnvironment, type HostedEnvironment } from './hosted.ts';
 import { appConfig } from './app.config.ts';
 
 export const sessionCookieName = 'socratink-session';
 
-export type SessionEnvironment = Readonly<{
+export type SessionEnvironment = HostedEnvironment & Readonly<{
 	SESSION_SECRET?: string;
-	NF_PROJECT_ID?: string;
-	NODE_ENV?: string;
-	VERCEL?: string;
 }>;
 
 export function resolveSessionSecret(environment: SessionEnvironment): string {
 	const secret = environment.SESSION_SECRET?.trim();
 	if (secret) return secret;
 
-	if (
-		environment.NODE_ENV === 'production' ||
-		environment.NF_PROJECT_ID ||
-		environment.VERCEL === '1'
-	) {
+	if (isHostedEnvironment(environment)) {
 		throw new Error('SESSION_SECRET is required for hosted learner sessions.');
 	}
 
@@ -25,11 +19,7 @@ export function resolveSessionSecret(environment: SessionEnvironment): string {
 }
 
 export function sessionUsesSecureCookie(environment: SessionEnvironment): boolean {
-	return Boolean(
-		environment.NODE_ENV === 'production' ||
-		environment.NF_PROJECT_ID ||
-		environment.VERCEL === '1',
-	);
+	return isHostedEnvironment(environment);
 }
 
 export function isSessionUserId(value: unknown): value is string {

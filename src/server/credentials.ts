@@ -7,12 +7,7 @@ export const missingUserKeyError = {
 	message: 'No credential is stored for this user and name.',
 } as const;
 
-export const foreignUserKeyError = {
-	type: 'foreign_user_key',
-	message: 'This credential does not belong to the current session.',
-} as const;
-
-type UserKeyErrorBody = typeof missingUserKeyError | typeof foreignUserKeyError;
+type UserKeyErrorBody = typeof missingUserKeyError;
 
 export class UserKeyError extends Error {
 	readonly type: UserKeyErrorBody['type'];
@@ -31,7 +26,6 @@ export type CredentialStore = {
 		value: string;
 	}): Promise<{ credentialRef: string }>;
 	getUserKey(params: { userId: string; name: string }): Promise<string>;
-	getUserKeyByRef(params: { userId: string; credentialRef: string }): Promise<string>;
 	hasUserKey(params: { userId: string; name: string }): Promise<boolean>;
 	deleteUserKey(params: { userId: string; name: string }): Promise<void>;
 	rekeyUser(params: { fromUserId: string; toUserId: string }): Promise<void>;
@@ -65,15 +59,6 @@ export function createCredentialStore(options: {
 			const name = requireName(params.name);
 			const row = await db.getByName({ userId, name });
 			if (!row) throw new UserKeyError(missingUserKeyError);
-			return decryptSecret(row.ciphertext, key);
-		},
-
-		async getUserKeyByRef(params) {
-			const userId = requireUserId(params.userId);
-			const credentialRef = requireCredentialRef(params.credentialRef);
-			const row = await db.getByRef(credentialRef);
-			if (!row) throw new UserKeyError(missingUserKeyError);
-			if (row.userId !== userId) throw new UserKeyError(foreignUserKeyError);
 			return decryptSecret(row.ciphertext, key);
 		},
 
@@ -114,12 +99,6 @@ function requireName(value: string): string {
 		throw new Error('A credential name is required.');
 	}
 	return name;
-}
-
-function requireCredentialRef(value: string): string {
-	const credentialRef = value.trim();
-	if (!credentialRef) throw new UserKeyError(missingUserKeyError);
-	return credentialRef;
 }
 
 function requireSecretValue(value: string): string {

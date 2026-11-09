@@ -1,10 +1,9 @@
 import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
-import { unauthorizedChatError } from './chat-access.ts';
 import { learnerChatStatusResponse } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
 import { openaiCredentialName } from './learner-key.ts';
-import { sessionFromContext } from './session.ts';
+import { sessionFromContext, unauthorizedSessionError } from './session.ts';
 
 export const invalidOpenaiKeyError = {
 	type: 'invalid_openai_key',
@@ -29,7 +28,7 @@ export function mountOpenaiKeyRoutes(
 
 async function writeOpenaiKey(context: Context, options: { store: OpenaiKeyStore }) {
 	const userId = sessionFromContext(context)?.userId;
-	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
+	if (!userId) return context.json({ error: unauthorizedSessionError }, 401);
 	const apiKey = await readPastedKey(context);
 	if (!apiKey) return context.json({ error: invalidOpenaiKeyError }, 400);
 	await options.store.updateUserKey({
@@ -42,7 +41,7 @@ async function writeOpenaiKey(context: Context, options: { store: OpenaiKeyStore
 
 async function clearOpenaiKey(context: Context, options: { store: OpenaiKeyStore }) {
 	const userId = sessionFromContext(context)?.userId;
-	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
+	if (!userId) return context.json({ error: unauthorizedSessionError }, 401);
 	await options.store.deleteUserKey({ userId, name: openaiCredentialName });
 	return learnerChatStatusResponse(context, options);
 }

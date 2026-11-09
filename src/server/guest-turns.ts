@@ -26,22 +26,6 @@ export async function readGuestTurnCount(
 	return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
 }
 
-export async function incrementGuestTurns(
-	context: Context,
-	secret: string,
-	environment: SessionEnvironment = {},
-): Promise<number> {
-	const current = await readGuestTurnCount(context, secret);
-	const next = current + 1;
-	await setSignedCookie(context, guestTurnsCookieName, String(next), secret, {
-		path: '/',
-		httpOnly: true,
-		sameSite: 'Lax',
-		secure: sessionUsesSecureCookie(environment),
-	});
-	return next;
-}
-
 export function clearGuestTurns(
 	context: Context,
 	environment: SessionEnvironment = {},
@@ -57,7 +41,6 @@ export function guestTurnGateMiddleware(options: {
 	authDb: AuthDb;
 }): MiddlewareHandler {
 	return async (context, next) => {
-		// Only gate POST requests that submit a new turn (not aborts or reads).
 		if (context.req.method !== 'POST') return next();
 		if (context.req.path.endsWith('/abort')) return next();
 
@@ -69,8 +52,15 @@ export function guestTurnGateMiddleware(options: {
 			return context.json({ error: guestTurnLimitError }, 403);
 		}
 
-		const updated = await incrementGuestTurns(context, options.secret, process.env);
+		const updated = count + 1;
+		await next();
+		// Flue returns a raw Response, so attach the counter to the finalized response.
+		await setSignedCookie(context, guestTurnsCookieName, String(updated), options.secret, {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'Lax',
+			secure: sessionUsesSecureCookie(process.env),
+		});
 		context.header(guestTurnsHeader, String(updated));
-		return next();
 	};
 }

@@ -92,7 +92,6 @@ test('resolveAuthStoreTarget uses postgres when DATABASE_URL is set, sqlite othe
 
 test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 	await withAuthDb(async (db) => {
-		// 1. User operations
 		const userA = await db.createUser('user-1', 'alice@example.com');
 		assert.equal(userA.id, 'user-1');
 		assert.equal(userA.email, 'alice@example.com');
@@ -107,7 +106,6 @@ test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 		const missingUser = await db.findUserById('nonexistent');
 		assert.equal(missingUser, undefined);
 
-		// 2. OAuth accounts
 		await db.upsertOAuthAccount('google', 'google-sub-123', 'user-1', 'alice@example.com');
 		const oauthAccount = await db.findOAuthAccount('google', 'google-sub-123');
 		assert.ok(oauthAccount);
@@ -116,7 +114,6 @@ test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 		assert.equal(oauthAccount.userId, 'user-1');
 		assert.equal(oauthAccount.email, 'alice@example.com');
 
-		// 3. User aliases
 		await db.createAlias('guest-uuid-1', 'user-1');
 		await db.createAlias('guest-uuid-2', 'user-1');
 

@@ -35,18 +35,11 @@ const QuestionnaireItemSchema = v.pipe(
 	),
 );
 
-export const QuestionnaireSchema = v.pipe(
-	v.strictObject({
-		kind: v.picklist(['question', 'quiz']),
-		submitLabel: boundedString(80),
-		items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(1)),
-	}),
-	v.check(
-		(questionnaire) =>
-			new Set(questionnaire.items.map((item) => item.name)).size === questionnaire.items.length,
-		'Question names must be unique.',
-	),
-);
+export const QuestionnaireSchema = v.strictObject({
+	kind: v.picklist(['question', 'quiz']),
+	submitLabel: boundedString(80),
+	items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(1)),
+});
 
 export type QuestionnaireDefinition = v.InferOutput<typeof QuestionnaireSchema>;
 export type QuestionnaireItem = QuestionnaireDefinition['items'][number];
@@ -116,10 +109,55 @@ function uniqueChoiceValue(label: string, used: ReadonlySet<string>): string {
 			.replace(/^-+|-+$/g, '')
 			.slice(0, 120) || 'choice';
 	if (!used.has(base)) return base;
-	for (let index = 2; index < 100; index += 1) {
+	for (let index = 2; ; index += 1) {
 		const suffix = `-${index}`;
 		const value = `${base.slice(0, 120 - suffix.length)}${suffix}`;
 		if (!used.has(value)) return value;
 	}
-	return `${base.slice(0, 110)}-${used.size + 1}`;
+}
+
+export type QuestionnaireAnswer = {
+	name: string;
+	values: string[];
+	freeform?: string;
+	skipped?: boolean;
+};
+
+export function questionnaireFromReplyData(
+	data: Record<string, unknown[]> | undefined,
+): QuestionnaireDefinition | undefined {
+	const writes = data?.[questionnaireDataName];
+	return writes?.length ? parseQuestionnaireDefinition(writes.at(-1)) : undefined;
+}
+
+export function questionnaireFromParts(
+	parts: readonly { type: string; data?: unknown }[],
+): QuestionnaireDefinition | undefined {
+	const part = parts.findLast((candidate) => candidate.type === `data-${questionnaireDataName}`);
+	return part ? parseQuestionnaireDefinition(part.data) : undefined;
+}
+
+export const questionnaireDataName = 'questionnaire';
+export const questionnaireAnswerPrefix = 'Questionnaire answers:';
+export const questionnaireToolName = 'present_question';
+
+export function isQuestionnaireTool(name: string): boolean {
+	return name === questionnaireToolName;
+}
+
+export function formatQuestionnaireAnswers(
+	definition: QuestionnaireDefinition,
+	answers: QuestionnaireAnswer[],
+): string {
+	const byName = new Map(answers.map((answer) => [answer.name, answer]));
+	const lines = definition.items.map((item) => {
+		const answer = byName.get(item.name);
+		if (!answer || answer.skipped) return `- ${item.prompt}: Skipped.`;
+		const labels = answer.values.map(
+			(value) => item.choices.find((choice) => choice.value === value)?.label ?? value,
+		);
+		if (answer.freeform) labels.push(answer.freeform);
+		return `- ${item.prompt}: ${labels.join(', ')}`;
+	});
+	return `${questionnaireAnswerPrefix}\n${lines.join('\n')}`;
 }

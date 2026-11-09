@@ -10,6 +10,7 @@ import {
 	type SessionCookieKind,
 	type SessionEnvironment,
 } from '../config/session.ts';
+import { appConfig } from '../config/app.config.ts';
 import type { AuthDb } from './auth-db.ts';
 
 export const unauthorizedSessionError = {
@@ -20,7 +21,7 @@ export const unauthorizedSessionError = {
 type SessionEnv = { Variables: { socratinkSession?: SessionCookie | null } };
 
 export function mountSessionRoutes(app: Hono, options: { secret: string; authDb: AuthDb }): void {
-	app.get('/api/session', async (context) => {
+	app.get(appConfig.sessionPath, async (context) => {
 		const session = await readSession(context, options.secret, options.authDb);
 		if (!session) {
 			return context.json({ error: unauthorizedSessionError }, 401);
@@ -28,7 +29,7 @@ export function mountSessionRoutes(app: Hono, options: { secret: string; authDb:
 		const aliases = await options.authDb.findAliases(session.userId);
 		return context.json({ userId: session.userId, aliases, kind: session.kind });
 	});
-	app.post('/api/session', async (context) => {
+	app.post(appConfig.sessionPath, async (context) => {
 		const userId = await mintSessionUserId(context, options.secret, process.env, options.authDb);
 		const aliases = await options.authDb.findAliases(userId);
 		const session = sessionFromContext(context);
@@ -37,7 +38,7 @@ export function mountSessionRoutes(app: Hono, options: { secret: string; authDb:
 		}
 		return context.json({ userId, aliases, kind: session.kind });
 	});
-	app.get('/api/session/logout', (context) => {
+	app.get(`${appConfig.sessionPath}/logout`, (context) => {
 		clearSessionCookie(context, process.env);
 		return context.redirect('/login.html');
 	});

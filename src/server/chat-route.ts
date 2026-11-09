@@ -2,8 +2,7 @@ import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
 import type { CredentialStore } from './credentials.ts';
 import { learnerChatStatusForUser } from './learner-key.ts';
-import { unauthorizedChatError } from './chat-access.ts';
-import { sessionFromContext } from './session.ts';
+import { sessionFromContext, unauthorizedSessionError } from './session.ts';
 
 type ChatRouteStore = Pick<CredentialStore, 'hasUserKey'>;
 
@@ -23,6 +22,6 @@ export async function learnerChatStatusResponse(
 	options: { store: ChatRouteStore },
 ) {
 	const userId = sessionFromContext(context)?.userId;
-	if (!userId) return context.json({ error: unauthorizedChatError }, 401);
+	if (!userId) return context.json({ error: unauthorizedSessionError }, 401);
 	return context.json(await learnerChatStatusForUser({ store: options.store, userId }));
 }

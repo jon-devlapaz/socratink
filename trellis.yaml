@@ -1,7 +1,6 @@
 source:
   exclude:
     - "research/**"
-    - "agent-tools/**"
     - "specs/**"
     - "vite.config*.ts"
   classify:

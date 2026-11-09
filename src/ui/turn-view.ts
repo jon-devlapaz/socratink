@@ -2,13 +2,14 @@ import { markSuppliedCopy } from './reveal-mark.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { createMarkdownRenderer, type MarkdownRenderer } from './chat-markdown.ts';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
-import { createQuestionnaire, type QuestionnaireAnswer } from './questionnaire.ts';
+import { createQuestionnaire } from './questionnaire.ts';
+import type { QuestionnaireAnswer } from '../questionnaire.ts';
 import { createSteeringBar, type SteeringKind } from './steering.ts';
 import { visibleThinkingStep } from './thinking.ts';
-import { createToolCard, createToolList, type DisplayedToolCall } from './tool-card.ts';
+import { createToolCard, createToolList } from './tool-card.ts';
+import type { DisplayedToolCall } from './tool-state.ts';
 
 const exceptionalLatencyMs = 10_000;
-const streamGapMs = 60;
 
 export type TurnStreamSinks = {
 	trackRenderer: (renderer: MarkdownRenderer) => void;
@@ -233,7 +234,7 @@ function createStopIcon() {
 	return svg;
 }
 
-export function createThinkingOrbs(): HTMLElement {
+function createThinkingOrbs(): HTMLElement {
 	const wrap = document.createElement('span');
 	wrap.className = 'thinking-orbs';
 	wrap.setAttribute('aria-hidden', 'true');
@@ -308,7 +309,7 @@ function appendTurnCopy(
 	if (item.role === 'Assistant') {
 		const renderer = createMarkdownRenderer();
 		sinks.trackRenderer(renderer);
-		renderer.update(item.text, { stream, streamGapMs });
+		renderer.update(item.text, { stream });
 		if (item.text.trim() && item.reveal) markSuppliedCopy(renderer.element, item.reveal);
 		parent.append(renderer.element);
 		return;

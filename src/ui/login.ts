@@ -1,7 +1,6 @@
 import { loadAuthProviders } from './session.ts';
 import './login.css';
 
-// Durable sign-in is OAuth only until magic-link ships. No email field.
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
 	button.addEventListener('click', () => {
 		const provider = button.dataset.provider;

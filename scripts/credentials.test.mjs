@@ -15,7 +15,6 @@ import {
 } from '../src/server/credential-db.ts';
 import {
 	createCredentialStore,
-	foreignUserKeyError,
 	missingUserKeyError,
 	UserKeyError,
 } from '../src/server/credentials.ts';
@@ -85,7 +84,7 @@ test('uses Postgres when DATABASE_URL is set and a product SQLite file locally',
 	assert.notEqual(localCredentialsFilename, '.cache/flue/local.db');
 });
 
-test('owner can get a stored key by name and by credentialRef', async () => {
+test('owner can get a stored key by name', async () => {
 	await withStore(async (store) => {
 		const { credentialRef } = await store.updateUserKey({
 			userId: ownerId,
@@ -95,7 +94,6 @@ test('owner can get a stored key by name and by credentialRef', async () => {
 		assert.equal(typeof credentialRef, 'string');
 		assert.notEqual(credentialRef, plaintext);
 		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), plaintext);
-		assert.equal(await store.getUserKeyByRef({ userId: ownerId, credentialRef }), plaintext);
 		assert.equal(await store.hasUserKey({ userId: ownerId, name: keyName }), true);
 		assert.equal(await store.hasUserKey({ userId: foreignId, name: keyName }), false);
 	});
@@ -154,9 +152,9 @@ test('postgres rekeyUser writes $1 SQL with durable id first', async () => {
 	await db.close();
 });
 
-test('foreign user cannot read by name or credentialRef', async () => {
+test('foreign user cannot read a stored key by name', async () => {
 	await withStore(async (store) => {
-		const { credentialRef } = await store.updateUserKey({
+		await store.updateUserKey({
 			userId: ownerId,
 			name: keyName,
 			value: plaintext,
@@ -166,13 +164,6 @@ test('foreign user cannot read by name or credentialRef', async () => {
 			store.getUserKey({ userId: foreignId, name: keyName }),
 			(error) => {
 				assertUserKeyError(error, missingUserKeyError);
-				return true;
-			},
-		);
-		await assert.rejects(
-			store.getUserKeyByRef({ userId: foreignId, credentialRef }),
-			(error) => {
-				assertUserKeyError(error, foreignUserKeyError);
 				return true;
 			},
 		);
@@ -191,7 +182,7 @@ test('missing and deleted keys fail closed with no jon-local fallback', async ()
 			},
 		);
 
-		const { credentialRef } = await store.updateUserKey({
+		await store.updateUserKey({
 			userId: ownerId,
 			name: keyName,
 			value: plaintext,
@@ -204,17 +195,10 @@ test('missing and deleted keys fail closed with no jon-local fallback', async ()
 				return true;
 			},
 		);
-		await assert.rejects(
-			store.getUserKeyByRef({ userId: ownerId, credentialRef }),
-			(error) => {
-				assertUserKeyError(error, missingUserKeyError);
-				return true;
-			},
-		);
 	});
 });
 
-test('overwrite rotates the secret and revokes the previous credentialRef', async () => {
+test('overwrite rotates the secret and its stored reference', async () => {
 	await withStore(async (store) => {
 		const first = await store.updateUserKey({
 			userId: ownerId,
@@ -229,17 +213,6 @@ test('overwrite rotates the secret and revokes the previous credentialRef', asyn
 		});
 		assert.notEqual(second.credentialRef, first.credentialRef);
 		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), rotated);
-		await assert.rejects(
-			store.getUserKeyByRef({ userId: ownerId, credentialRef: first.credentialRef }),
-			(error) => {
-				assertUserKeyError(error, missingUserKeyError);
-				return true;
-			},
-		);
-		assert.equal(
-			await store.getUserKeyByRef({ userId: ownerId, credentialRef: second.credentialRef }),
-			rotated,
-		);
 	});
 });
 
@@ -291,31 +264,22 @@ test('postgres adapter writes $1 SQL and serves typed rows without a live databa
 				}
 				return { rows: [] };
 			}
-			if (text.includes('SELECT') && text.includes('WHERE credential_ref = $1')) {
-				assert.doesNotMatch(text, /\?/);
-				if (stored && stored.credential_ref === values[0]) return { rows: [stored] };
-				return { rows: [] };
-			}
 			throw new Error(`unexpected postgres sql: ${text}`);
 		},
 		async end() {},
 	});
 	const store = createCredentialStore({ secret: testSecret, db });
 	try {
-		const { credentialRef } = await store.updateUserKey({
+		await store.updateUserKey({
 			userId: ownerId,
 			name: keyName,
 			value: plaintext,
 		});
 		assert.equal(await store.getUserKey({ userId: ownerId, name: keyName }), plaintext);
-		assert.equal(await store.getUserKeyByRef({ userId: ownerId, credentialRef }), plaintext);
-		await assert.rejects(
-			store.getUserKeyByRef({ userId: foreignId, credentialRef }),
-			(error) => {
-				assertUserKeyError(error, foreignUserKeyError);
-				return true;
-			},
-		);
+		await assert.rejects(store.getUserKey({ userId: foreignId, name: keyName }), (error) => {
+			assertUserKeyError(error, missingUserKeyError);
+			return true;
+		});
 		await store.deleteUserKey({ userId: ownerId, name: keyName });
 		await assert.rejects(
 			store.getUserKey({ userId: ownerId, name: keyName }),

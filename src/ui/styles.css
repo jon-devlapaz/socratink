@@ -37,8 +37,6 @@
 	--drawer: cubic-bezier(0.32, 0.72, 0, 1);
 	--drawer-ms: 500ms;
 	--dock-closed: 7.25rem;
-	--dock-glass: color-mix(in srgb, #ffffff 10%, transparent);
-	--dock-stroke: oklch(0 0 0 / 0.1);
 	--grab-bar-width: 36px;
 	--grab-bar-height: 5px;
 	--peek-bar-top: 0.55rem;
@@ -122,53 +120,14 @@ textarea {
 	flex-direction: column;
 	align-items: center;
 	overflow: hidden;
-	gap: clamp(0.75rem, 2vh, 1.6rem);
 	padding: clamp(3.75rem, 6vh, 6rem) 1.5rem calc(var(--dock-closed) + 1.25rem);
-	transition-property: padding-bottom, gap, padding-top;
+	transition-property: padding-bottom, padding-top;
 	transition-duration: 320ms;
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .encounter-active .stage {
 	padding-top: clamp(2.75rem, 5vh, 4.5rem);
-	gap: clamp(0.5rem, 1.5vh, 1rem);
-}
-
-.alive-core {
-	display: block;
-	position: relative;
-	width: 100%;
-	aspect-ratio: 1;
-	flex: none;
-	min-width: 0;
-	min-height: 0;
-	overflow: hidden;
-	padding: 0;
-	border: 0;
-	appearance: none;
-	color: inherit;
-	background: transparent;
-	cursor: pointer;
-	font: inherit;
-	transition-property: transform, scale;
-	transition-duration: 240ms, 150ms;
-	transition-timing-function: ease, var(--ease-out);
-}
-
-.alive-core:focus-visible {
-	outline: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-	outline-offset: 6px;
-	border-radius: 50%;
-}
-
-@media (any-hover: hover) {
-	.alive-core:hover:not(.is-working) {
-		scale: 1.025;
-	}
-}
-
-.alive-core:active:not(.is-working) {
-	scale: 0.96;
 }
 
 .stagger-item {
@@ -368,7 +327,6 @@ body.conversation-empty #chat:focus-within {
 
 @media (max-width: 560px) {
 	.stage {
-		gap: 0.65rem;
 		padding-top: 3.25rem;
 		padding-inline: 1rem;
 	}
@@ -390,7 +348,6 @@ body.conversation-empty #chat:focus-within {
 
 @media (max-height: 720px) {
 	.stage {
-		gap: 0.65rem;
 		padding-block: 3.25rem calc(var(--dock-closed) + 0.75rem);
 	}
 
@@ -402,7 +359,6 @@ body.conversation-empty #chat:focus-within {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.alive-core,
 	.active-node,
 	.trail-mark,
 	.app-canvas,
@@ -419,8 +375,7 @@ body.conversation-empty #chat:focus-within {
 		filter: none;
 	}
 
-	.composer-send button[type='submit']:active:not(:disabled),
-	.alive-core:active:not(.is-working) {
+	.composer-send button[type='submit']:active:not(:disabled) {
 		scale: none;
 	}
 }
@@ -455,8 +410,6 @@ body.conversation-empty #chat:focus-within {
 		0 0 0 1px rgba(206, 205, 195, 0.14),
 		0 1px 2px -1px rgba(0, 0, 0, 0.4),
 		0 2px 4px 0 rgba(0, 0, 0, 0.28);
-	--dock-glass: color-mix(in srgb, #000000 10%, transparent);
-	--dock-stroke: oklch(1 0 0 / 0.1);
 	color-scheme: dark;
 }
 
@@ -491,8 +444,6 @@ body.conversation-empty #chat:focus-within {
 			0 0 0 1px rgba(206, 205, 195, 0.14),
 			0 1px 2px -1px rgba(0, 0, 0, 0.4),
 			0 2px 4px 0 rgba(0, 0, 0, 0.28);
-		--dock-glass: color-mix(in srgb, #000000 10%, transparent);
-		--dock-stroke: oklch(1 0 0 / 0.1);
 		color-scheme: dark;
 	}
 }

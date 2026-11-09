@@ -202,7 +202,7 @@ test('cancel before observed admission stays unknown and never enables resend', 
 	assert.equal(state.kind, 'recovery');
 	assert.equal(state.admission, undefined);
 	assert.match(state.detail, /admission is still unknown/i);
-	assert.throws(() => coordinator.retry(), /confirmed terminal/);
+	assert.throws(() => coordinator.start('hello'), /already active/);
 	assert.equal(await running, state);
 	assert.equal((await coordinator.recheck()).kind, 'recovery');
 	assert.equal(sends, 1);
@@ -230,7 +230,7 @@ test('send interruption before observed admission recovers without resend', asyn
 	assert.equal(state.admission, undefined);
 	assert.match(state.detail, /interrupted before admission was confirmed/i);
 	assert.doesNotMatch(state.detail, /not admitted|was not admitted/i);
-	assert.throws(() => coordinator.retry(), /confirmed terminal/);
+	assert.throws(() => coordinator.start('hello'), /already active/);
 	assert.equal((await coordinator.recheck()).kind, 'recovery');
 	assert.equal(sends, 1);
 });
@@ -559,7 +559,7 @@ test('Retry resends exactly once only after an aborted settlement is confirmed',
 	await Promise.resolve();
 	await coordinator.cancel();
 	await running;
-	const retried = await coordinator.retry();
+	const retried = await coordinator.start('hello');
 
 	assert.equal(retried.kind, 'completed');
 	assert.equal(sends, 2);
@@ -586,7 +586,7 @@ test('a confirmed failed settlement can retry once', async () => {
 	const state = await coordinator.start('hello');
 	assert.equal(state.kind, 'terminal');
 	assert.equal(state.outcome, 'failed');
-	const retried = await coordinator.retry();
+	const retried = await coordinator.start('hello');
 	assert.equal(retried.kind, 'completed');
 	assert.equal(sends, 2);
 });
@@ -633,7 +633,7 @@ test('a confirmed not-admitted send can retry once', async () => {
 	const state = await coordinator.start('hello');
 	assert.equal(state.kind, 'terminal');
 	assert.equal(state.outcome, 'not-admitted');
-	const retried = await coordinator.retry();
+	const retried = await coordinator.start('hello');
 	assert.deepEqual(retried, { kind: 'completed', text: 'hello', reply });
 	assert.equal(sends, 2);
 });
@@ -754,143 +754,6 @@ test('recovery locks the composer; a confirmed stop leaves it open', () => {
 		}),
 		{ busy: false, composerLocked: false, startOverDisabled: false },
 	);
-});
-
-test('a recovery action focuses Recheck; a confirmed stop leaves the composer open', async (t) => {
-	class TestClassList {
-		#names = new Set();
-		toggle(name, force) {
-			if (force) this.#names.add(name);
-			else this.#names.delete(name);
-		}
-	}
-	class TestElement extends EventTarget {
-		children = [];
-		parentElement = null;
-		classList = new TestClassList();
-		className = '';
-		disabled = false;
-		textContent = '';
-		type = '';
-		append(...children) {
-			for (const child of children) {
-				child.parentElement = this;
-				this.children.push(child);
-			}
-		}
-		setAttribute() {}
-		replaceChildren(...children) {
-			this.children = [];
-			this.append(...children);
-		}
-		querySelector(selector) {
-			if (selector === '.request-actions .request-action') {
-				return this.descendants().find((node) => node.className === 'request-action') ?? null;
-			}
-			return null;
-		}
-		querySelectorAll(selector) {
-			return selector === 'button'
-				? this.descendants().filter((node) => node.type === 'button')
-				: [];
-		}
-		descendants() {
-			return this.children.flatMap((child) => [child, ...child.descendants()]);
-		}
-		focus() {
-			globalThis.document.activeElement = this;
-		}
-		click() {
-			this.dispatchEvent(new Event('click'));
-		}
-	}
-	const originalWindow = globalThis.window;
-	const originalDocument = globalThis.document;
-	globalThis.window = {
-		matchMedia: () => ({ matches: true }),
-	};
-	globalThis.document = {
-		activeElement: null,
-		createElement: () => new TestElement(),
-	};
-	t.after(() => {
-		if (originalWindow === undefined) delete globalThis.window;
-		else globalThis.window = originalWindow;
-		if (originalDocument === undefined) delete globalThis.document;
-		else globalThis.document = originalDocument;
-	});
-
-	const {
-		applyRequestControlState,
-		buildRequestStateTurn,
-		focusAfterRequestStatePaint,
-	} = await import('../src/ui/chat-request-view.ts');
-	const input = new TestElement();
-	const button = new TestElement();
-	const startOver = new TestElement();
-	const core = new TestElement();
-	const lockup = new TestElement();
-	const activeTurn = new TestElement();
-	const elements = { input, button, startOver, core, lockup, activeTurn };
-	const terminal = {
-		kind: 'terminal',
-		text: 'hello',
-		outcome: 'aborted',
-		detail: 'Socratink stopped this reply.',
-	};
-
-	function repaint(state) {
-		const action = state.kind === 'recovery'
-			? () => Promise.resolve(terminal)
-			: () => Promise.resolve(state);
-		activeTurn.replaceChildren(
-			buildRequestStateTurn(state, action, (result) => {
-				void result.then(repaint);
-			}),
-		);
-		applyRequestControlState(state, elements);
-		focusAfterRequestStatePaint(state, elements);
-	}
-
-	repaint({ kind: 'recovery', text: 'hello', detail: 'Outcome unknown.' });
-	const recheck = activeTurn.querySelector('.request-actions .request-action');
-	assert.equal(recheck.textContent, 'Recheck');
-	assert.equal(recheck.disabled, false);
-	assert.equal(document.activeElement, recheck);
-	assert.equal(input.disabled, true);
-	recheck.click();
-	await Promise.resolve();
-
-	const retry = activeTurn.querySelector('.request-actions .request-action');
-	assert.equal(retry.textContent, 'Retry');
-	assert.equal(retry.disabled, false);
-	assert.equal(document.activeElement, input);
-	assert.equal(input.disabled, false);
-	assert.equal(button.disabled, false);
-});
-
-test('Retry works after an oversized reject', async () => {
-	const conversation = {
-		async send() {
-			throw new Error('oversized messages must not be sent');
-		},
-		async read() {
-			throw new Error('oversized messages must not be read');
-		},
-		async abort() {
-			throw new Error('oversized messages must not abort');
-		},
-	};
-	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
-	const text = 'x'.repeat(16_001);
-	const rejected = await coordinator.start(text);
-
-	assert.equal(rejected.kind, 'terminal');
-	assert.equal(rejected.outcome, 'not-admitted');
-
-	const retried = await coordinator.retry();
-	assert.equal(retried.kind, 'terminal');
-	assert.equal(retried.outcome, 'not-admitted');
 });
 
 test('rejects oversized learner messages before admission', async () => {

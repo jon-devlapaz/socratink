@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { ProviderStreams, StreamOptions } from '@earendil-works/pi-ai';
-import { instrument } from '@flue/runtime';
+import { instrument, InstrumentationAlreadyInstalledError } from '@flue/runtime';
 import { routingFromHeaders } from '../config/model-route.ts';
 
 type RouteCapture = {
@@ -61,7 +61,7 @@ export function installModelRouteCapture(): void {
 			dispose() {},
 		});
 	} catch (error) {
-		if (!isInstrumentationAlreadyInstalled(error)) throw error;
+		if (!(error instanceof InstrumentationAlreadyInstalledError)) throw error;
 	}
 }
 
@@ -74,8 +74,4 @@ function withRouteOnResponse<T extends StreamOptions | undefined>(options: T): T
 			await previous?.(response, model);
 		},
 	} as T;
-}
-
-function isInstrumentationAlreadyInstalled(error: unknown): boolean {
-	return error instanceof Error && error.name === 'InstrumentationAlreadyInstalledError';
 }

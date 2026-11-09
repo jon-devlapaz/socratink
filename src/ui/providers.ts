@@ -4,17 +4,17 @@ import {
 	specifierForLearnerChat,
 	type LearnerChatStatus,
 } from '../config/chat-model.ts';
-import { storedLearnerChatSpecifier, writeLearnerChatSpecifier } from './chat-pick.ts';
-import { providersChatStatusCopy } from './chat-route.ts';
+import { learnerChatStatusFromStoredPick, storedLearnerChatSpecifier, writeLearnerChatSpecifier } from './chat-pick.ts';
+import { loadLearnerChatStatus, providersChatStatusCopy } from './chat-route.ts';
+import { mountOpenaiKey } from './openai-key.ts';
+import { requireElement } from './dom.ts';
 
 const providerKinds = ['operator', 'openai'] as const;
 
-export function paintProviders(status: LearnerChatStatus): void {
+function paintProviders(status: LearnerChatStatus): void {
 	const toggle = requireElement<HTMLButtonElement>('#providers-toggle');
 	const panel = requireElement<HTMLElement>('#providers-panel');
 	const statusNode = requireElement<HTMLElement>('#providers-status');
-	const clip = requireElement<HTMLElement>('.providers-panel-clip', panel);
-	const openai = requireElement<HTMLFormElement>('#openai-key', clip);
 
 	toggle.dataset.kind = status.kind;
 	panel.dataset.kind = status.kind;
@@ -24,18 +24,45 @@ export function paintProviders(status: LearnerChatStatus): void {
 	for (const kind of providerKinds) {
 		const line = requireElement<HTMLElement>(`.providers-status-line.is-${kind}`, statusNode);
 		const live = kind === status.kind;
+		if (live) line.textContent = providersChatStatusCopy(status);
 		line.classList.toggle('is-live', live);
 		line.toggleAttribute('aria-hidden', !live);
 	}
 
-	clip.append(openai);
 	paintProviderModels(status);
 }
 
-export function mountProviders(refresh: () => Promise<void>): void {
+export function mountProviders(): void {
 	const toggle = requireElement<HTMLButtonElement>('#providers-toggle');
 	const panel = requireElement<HTMLElement>('#providers-panel');
-	fillProviderModels('#openai-models');
+	const initialStatus = requireElement<HTMLElement>('#providers-status .is-live');
+	let statusKnown = false;
+	let revision = 0;
+	function showUnconfirmedStatus(message: string) {
+		initialStatus.textContent = message;
+		toggle.setAttribute('aria-label', `Providers. ${message}`);
+	}
+	showUnconfirmedStatus('Checking chat provider…');
+	const key = mountOpenaiKey(applyStatus);
+	function applyStatus(status: LearnerChatStatus) {
+		revision += 1;
+		statusKnown = true;
+		const selected = learnerChatStatusFromStoredPick(status);
+		paintProviders(selected);
+		key.paint(selected);
+	}
+	async function refresh() {
+		const currentRevision = ++revision;
+		try {
+			const status = await loadLearnerChatStatus();
+			if (revision === currentRevision) applyStatus(status);
+		} catch {
+			if (revision !== currentRevision) return;
+			if (!statusKnown) showUnconfirmedStatus('Chat provider unavailable.');
+			key.showError('Could not refresh the chat provider. Try again.');
+		}
+	}
+	fillProviderModels();
 	panel.addEventListener('click', (event) => {
 		const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>(
 			'button.provider-model',
@@ -51,10 +78,11 @@ export function mountProviders(refresh: () => Promise<void>): void {
 		setProvidersExpanded(toggle, panel, open);
 	});
 	setProvidersExpanded(toggle, panel, false);
+	void refresh();
 }
 
-function fillProviderModels(selector: string): void {
-	const list = requireElement<HTMLElement>(selector);
+function fillProviderModels(): void {
+	const list = requireElement<HTMLElement>('#openai-models');
 	if (list.childElementCount > 0) return;
 	for (const choice of learnerChatModelChoices) {
 		const button = document.createElement('button');
@@ -72,22 +100,11 @@ function fillProviderModels(selector: string): void {
 
 function paintProviderModels(status: LearnerChatStatus): void {
 	const stored = storedLearnerChatSpecifier();
-	paintProviderModelList(
-		'#openai-models',
-		status.openai,
-		status.kind === 'openai' ? (stored ?? specifierForLearnerChat({ kind: 'openai' })) : undefined,
-	);
-}
-
-function paintProviderModelList(
-	selector: string,
-	connected: boolean,
-	selected: string | undefined,
-): void {
-	const list = requireElement<HTMLElement>(selector);
-	list.hidden = !connected;
+	const selected = status.kind === 'openai' ? (stored ?? specifierForLearnerChat({ kind: 'openai' })) : undefined;
+	const list = requireElement<HTMLElement>('#openai-models');
+	list.hidden = !status.openai;
 	for (const button of list.querySelectorAll<HTMLButtonElement>('.provider-model')) {
-		const active = Boolean(connected && selected && button.dataset.specifier === selected);
+		const active = Boolean(status.openai && selected && button.dataset.specifier === selected);
 		button.classList.toggle('is-selected', active);
 		button.setAttribute('aria-selected', String(active));
 	}
@@ -102,10 +119,4 @@ function setProvidersExpanded(
 	panel.classList.toggle('is-open', open);
 	panel.inert = !open;
 	if (!open && panel.contains(document.activeElement)) toggle.focus();
-}
-
-function requireElement<T extends Element>(selector: string, root: ParentNode = document): T {
-	const node = root.querySelector<T>(selector);
-	if (!node) throw new Error('Socratink chat markup is missing required nodes.');
-	return node;
 }

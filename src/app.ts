@@ -4,7 +4,9 @@ import { Hono } from 'hono';
 import { Chat } from './agents/chat.ts';
 import { resolveAuthConfig } from './config/auth.ts';
 import { chatAutoModelHeader, chatAllowsAutoSelection } from './config/chat-auto.ts';
-import { chatModel, chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
+import { chatModelHeader, type LearnerChatRoute } from './config/chat-model.ts';
+import { chatModel } from './config/operator-model.ts';
+import { appConfig } from './config/app.config.ts';
 import { chatConversationIdFromPath, resolveSessionSecret } from './config/session.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
 import { requireChatSession, requireSignedSession } from './server/chat-access.ts';
@@ -12,7 +14,7 @@ import { rememberConversationAuto } from './server/chat-auto.ts';
 import { mountChatRoute } from './server/chat-route.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
 import { guestTurnGateMiddleware } from './server/guest-turns.ts';
-import { learnerChatRouteForUser, rememberConversationChatPick } from './server/learner-key.ts';
+import { learnerChatStatusForUser, rememberConversationChatPick } from './server/learner-key.ts';
 import { mountOAuthRoutes } from './server/oauth.ts';
 import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
 import {
@@ -59,17 +61,17 @@ if (authConfig) {
 	});
 }
 app.use(
-	'/api/agents/chat/*',
+	`${appConfig.chatAgentPath}/*`,
 	guestTurnGateMiddleware({ secret: sessionSecret, authDb }),
 );
 app.use(
-	'/api/agents/chat/*',
+	`${appConfig.chatAgentPath}/*`,
 	requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
 );
-app.use('/api/agents/chat/*', async (context, next) => {
+app.use(`${appConfig.chatAgentPath}/*`, async (context, next) => {
 	const userId = sessionFromContext(context)?.userId;
 	const route: LearnerChatRoute = userId
-		? await learnerChatRouteForUser({ store: credentialStore, userId })
+		? await learnerChatStatusForUser({ store: credentialStore, userId })
 		: { kind: 'operator' };
 	const conversationId = chatConversationIdFromPath(context.req.path);
 	if (route.kind === 'operator' && chatAllowsAutoSelection(chatModel.modelId)) {
@@ -78,7 +80,7 @@ app.use('/api/agents/chat/*', async (context, next) => {
 	rememberConversationChatPick(conversationId, context.req.header(chatModelHeader));
 	return next();
 });
-app.route('/api/agents/chat', createAgentRouter(Chat));
+app.route(appConfig.chatAgentPath, createAgentRouter(Chat));
 app.all('/api/*', (context) =>
 	context.json({ error: { type: 'not_found', message: 'API route not found.' } }, 404),
 );

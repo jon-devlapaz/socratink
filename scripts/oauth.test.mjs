@@ -49,7 +49,6 @@ test('OAuth login routes redirect with PKCE parameters and set oauth_state cooki
 			onRekey: async () => {},
 		});
 
-		// 1. Google login redirect
 		const googleRes = await app.request('/api/auth/google/login');
 		assert.equal(googleRes.status, 302);
 		const googleLocation = googleRes.headers.get('location');
@@ -66,7 +65,6 @@ test('OAuth login routes redirect with PKCE parameters and set oauth_state cooki
 		const googleCookie = cookiePairFromResponse(googleRes);
 		assert.match(googleCookie, /^socratink-oauth-state=/);
 
-		// 2. GitHub login redirect
 		const githubRes = await app.request('/api/auth/github/login');
 		assert.equal(githubRes.status, 302);
 		const githubLocation = githubRes.headers.get('location');
@@ -90,12 +88,10 @@ test('OAuth callback rejects missing or invalid state parameters', async () => {
 			onRekey: async () => {},
 		});
 
-		// Missing state
 		const resNoState = await app.request('/api/auth/google/callback?code=some-code');
 		assert.equal(resNoState.status, 302);
 		assert.match(resNoState.headers.get('location') ?? '', /\/login\.html\?error=auth_failed/);
 
-		// Provider error in query
 		const resError = await app.request('/api/auth/google/callback?error=access_denied');
 		assert.equal(resError.status, 302);
 		assert.match(resError.headers.get('location') ?? '', /\/login\.html\?error=auth_failed/);

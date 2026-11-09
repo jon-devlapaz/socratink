@@ -1,26 +1,20 @@
+import { isHostedEnvironment, type HostedEnvironment } from './hosted.ts';
 import { resolveDatabaseTarget, type DatabaseTarget } from './database.ts';
 
 export const localCredentialsFilename = '.cache/socratink/credentials.db';
 
 export const localCredentialsSecret = 'socratink-local-credentials-secret';
 
-export type CredentialsEnvironment = Readonly<{
+export type CredentialsEnvironment = HostedEnvironment & Readonly<{
 	CREDENTIALS_SECRET?: string;
 	DATABASE_URL?: string;
-	NF_PROJECT_ID?: string;
-	NODE_ENV?: string;
-	VERCEL?: string;
 }>;
 
 export function resolveCredentialsSecret(environment: CredentialsEnvironment): string {
 	const secret = environment.CREDENTIALS_SECRET?.trim();
 	if (secret) return secret;
 
-	if (
-		environment.NODE_ENV === 'production' ||
-		environment.NF_PROJECT_ID ||
-		environment.VERCEL === '1'
-	) {
+	if (isHostedEnvironment(environment)) {
 		throw new Error('CREDENTIALS_SECRET is required for hosted credential encryption.');
 	}
 
