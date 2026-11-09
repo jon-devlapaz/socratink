@@ -15,7 +15,7 @@
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"audit:trellis": "trellis audit .",
 		"audit:trellis:baseline": "mkdir -p .audit && trellis audit . --json --out .audit/baseline.json",
-		"check": "pnpm check:file-size && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:credentials && pnpm test:auth-db && pnpm test:guest-turns && pnpm test:oauth && pnpm test:learner-key && pnpm test:openai-key && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:conversation && pnpm test:chat-turns && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm build && pnpm test:static-routing",
+		"check": "pnpm check:file-size && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:chat-auto && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:credentials && pnpm test:auth-db && pnpm test:guest-turns && pnpm test:oauth && pnpm test:learner-key && pnpm test:openai-key && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:conversation && pnpm test:chat-turns && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm test:durable && pnpm build && pnpm test:static-routing",
 		"check:file-size": "node --test scripts/check-file-size.test.mjs && node scripts/check-file-size.mjs",
 		"check:types": "tsc --noEmit",
 		"smoke": "node scripts/smoke.mjs",
@@ -46,17 +46,26 @@
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:client-id": "node --test scripts/client-id.test.mjs",
 		"test:static-routing": "node --test scripts/static-routing.test.mjs",
-		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs"
+		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs",
+		"build:legacy": "vite build --config vite.config.legacy.ts",
+		"test:durable": "node --test src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs",
+		"test:durable:postgres": "DURABLE_TEST_POSTGRES=1 node --test scripts/durable-storage.test.mjs src/server/durable/browser-journal.test.ts",
+		"smoke:durable": "node scripts/durable-smoke.mjs",
+		"smoke:durable:postgres": "pnpm build:legacy && node scripts/durable-postgres-smoke.mjs"
 	},
 	"dependencies": {
+		"@earendil-works/chord": "1.5.0",
 		"@earendil-works/pi-ai": "^0.83.0",
+		"@earendil-works/pi-durable": "1.5.0",
 		"@flue/postgres": "2.0.3",
 		"@flue/runtime": "2.0.3",
 		"@flue/sdk": "2.0.3",
 		"@hono/node-server": "^2.0.3",
+		"@valibot/to-json-schema": "1.3.0",
 		"@vercel/functions": "3.9.5",
 		"hono": "4.12.34",
 		"pg": "^8.23.0",
+		"pi-ai-durable": "npm:@earendil-works/pi-ai@1.5.0",
 		"valibot": "^1.4.2"
 	},
 	"devDependencies": {

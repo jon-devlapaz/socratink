@@ -330,7 +330,7 @@ try {
 
 	const origin = `http://127.0.0.1:${appPort}`;
 	const health = await waitForServer(`${origin}/healthz`, appProcess);
-	assert.deepEqual(await health.json(), { status: 'ok' });
+	assert.deepEqual(await health.json(), { status: 'ok', harness: 'pi-durable' });
 
 	const root = await fetch(`${origin}/`);
 	assert.equal(root.status, 200);

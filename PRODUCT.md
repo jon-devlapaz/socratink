@@ -18,7 +18,12 @@ The app provides a single-learner conversation with an AI learning partner:
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
   ownership checks, rate limits, and encrypted learner API-key storage.
 
-The owning implementation is `src/agents/chat.ts`, `src/app.ts`, and their
+New conversations run through `src/server/durable/`.
+Existing conversations continue through Flue. Both use the same teaching policy
+in `src/learning/`; the current interface, authentication, and credential store
+are shared. See [migration scope and limits](docs/pi-durable-preview.md).
+
+The owning implementation is `src/learning/`, `src/app.ts`, and their
 linked UI, configuration, and server modules. Setup and software checks are
 in [README.md](README.md).
 
