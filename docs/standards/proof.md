@@ -2,7 +2,7 @@
 
 A check proves only what it exercises. The reviewer names what each new test covers and what it leaves unproven.
 
-**Production path.** A test enters through the code production runs. Fabricating the intermediate state by hand (a hand-built run fixture, a direct `runWithLearnerKey` call) proves the fixture. Drive the real entry point with a fake at the outermost seam (model provider, network, clock).
+**Production path.** A test enters through the code production runs. Fabricating the intermediate state by hand (a hand-built run fixture, a direct call into a resolver the HTTP path wraps) proves the fixture. Drive the real entry point with a fake at the outermost seam (model provider, network, clock).
 
 **Expensive backend runs.** The backend that costs most when wrong (hosted Postgres, live provider) has at least one test that executes its code path, even against a fake client that records the SQL. A suite that only constructs SQLite passes while Postgres is broken.
 

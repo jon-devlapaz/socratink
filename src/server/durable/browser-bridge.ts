@@ -9,6 +9,7 @@ import { DurableBusyError } from './engine.ts';
 import { project } from './browser-projection.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { chatAutoModelHeader } from '../../config/chat-auto.ts';
+import { InferenceUnavailableError } from '../../inference/index.ts';
 
 export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: string, requested?: string, requestedAuto?: string) => Promise<ModelSelection>, stream: BrowserStream) {
 	const path = '/:id';
@@ -23,10 +24,14 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 		const before = await engine.snapshot(id);
 		const { offset } = await stream.sync(project(id, before));
 		if (before.submissions.some((s) => !s.outcome)) return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);
-		const selected = await select(sessionFromContext(c)!.userId, c.req.header(chatModelHeader), c.req.header(chatAutoModelHeader));
 		let submissionId: string;
-		try { submissionId = await engine.submit(id, message.body, selected); }
-		catch (error) {
+		try {
+			const selected = await select(sessionFromContext(c)!.userId, c.req.header(chatModelHeader), c.req.header(chatAutoModelHeader));
+			submissionId = await engine.submit(id, message.body, selected);
+		} catch (error) {
+			if (error instanceof InferenceUnavailableError) {
+				return c.json({ error: { type: 'inference_unconfigured', message: 'No model provider is set up yet. Add your own key to start.' } }, 503);
+			}
 			// A second tab may admit work while model selection is being resolved.
 			if (error instanceof DurableBusyError) {
 				return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);

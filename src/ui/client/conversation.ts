@@ -475,6 +475,9 @@ export function chatTurnErrorMessage(error: unknown): string {
 	if (isLostConversationStream(error)) {
 		return 'This conversation was interrupted before a reply arrived. Send again or start over.';
 	}
+	if (envelopeType(error) === 'inference_unconfigured') {
+		return 'No model provider is set up yet. Add your own key to start.';
+	}
 	if (isOpenRouterCreditLimitError(error)) {
 		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.';
 	}

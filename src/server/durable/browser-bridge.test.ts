@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { mountBrowserBridge } from './browser-bridge.ts';
 import { openBrowserStream } from './browser-stream.ts';
 import type { Engine, Snapshot } from './contract.ts';
+import { InferenceUnavailableError } from '../../inference/index.ts';
 
 test('browser reads default to history and keep history, updates and HEAD private with matching cursors', async () => {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-browser-bridge-'));
@@ -51,6 +52,30 @@ test('browser reads default to history and keep history, updates and HEAD privat
 		assert.equal(head.headers.get('Cache-Control'), 'no-store');
 		assert.equal(head.headers.get('Stream-Next-Offset'), body.offset);
 		assert.equal(head.headers.get('Stream-Up-To-Date'), 'true');
+	} finally {
+		await stream.close();
+		await rm(directory, { recursive: true, force: true });
+	}
+});
+
+test('a send with no model provider is refused before admission, with a reason the browser can show', async () => {
+	const directory = await mkdtemp(join(tmpdir(), 'socratink-browser-bridge-'));
+	const stream = await openBrowserStream(join(directory, 'browser.sqlite'));
+	try {
+		const engine: Engine = {
+			exists: async () => false,
+			snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
+			submit: async () => { throw new Error('Unconfigured inference must not admit work'); },
+			abort: async () => {},
+			close: async () => {},
+		};
+		const app = new Hono();
+		app.use('*', async (c, next) => { c.set('socratinkSession' as never, { userId: 'guest' } as never); await next(); });
+		mountBrowserBridge(app, engine, async () => { throw new InferenceUnavailableError(); }, stream);
+		const response = await app.request('/guest:synthetic', { method: 'POST',
+			headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'user', body: 'Hello' }) });
+		assert.equal(response.status, 503);
+		assert.equal((await response.json()).error.type, 'inference_unconfigured');
 	} finally {
 		await stream.close();
 		await rm(directory, { recursive: true, force: true });

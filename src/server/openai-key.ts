@@ -2,7 +2,7 @@ import type { Context, Hono, MiddlewareHandler } from 'hono';
 import { appConfig } from '../config/app.config.ts';
 import { learnerChatStatusResponse } from './chat-route.ts';
 import type { CredentialStore } from './credentials.ts';
-import { openaiCredentialName } from './learner-key.ts';
+import { openaiCredentialName } from '../inference/learner.ts';
 import { sessionFromContext, unauthorizedSessionError } from './session.ts';
 
 export const invalidOpenaiKeyError = {

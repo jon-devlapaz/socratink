@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import pg from 'pg';
@@ -11,7 +10,7 @@ import { verifyDurableHistoryBrowser } from './durable-browser-smoke.mjs';
 // Failure cases: replacing auth/history instead of preserving it; guest aliases
 // lose their owner's key; two processes execute the same accepted turn; reads
 // contend with execution; an owner crash or remote cancel never settles; Pi
-// silently rewrites Flue history or persists provider credentials in its journal.
+// persists provider credentials in its journal.
 const out = resolve(process.env.DURABLE_POSTGRES_SMOKE_OUT || '.cache/durable-postgres-smoke');
 const report = { ok: false, syntheticOnly: true, checks: [], node: process.version,
 	limits: ['Disposable local PostgreSQL 17 and local processes; no hosted failover or deployment was tested.',
@@ -23,17 +22,6 @@ let pool;
 let fixture;
 let apps;
 
-async function flueDigest() {
-	const tables = (await pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'flue_%' ORDER BY tablename")).rows;
-	assert.ok(tables.length > 0, 'legacy Flue tables must actually exist');
-	const result = {};
-	for (const { tablename } of tables) {
-		const name = `"${tablename.replaceAll('"', '""')}"`;
-		const rows = (await pool.query(`SELECT row_to_json(t)::text AS row FROM ${name} t ORDER BY row_to_json(t)::text`)).rows;
-		result[tablename] = { rows: rows.length, sha256: createHash('sha256').update(JSON.stringify(rows)).digest('hex') };
-	}
-	return result;
-}
 function textOf(message) {
 	return message.parts.filter((part) => part.type === 'text').map((part) => part.text).join('');
 }
@@ -59,77 +47,54 @@ try {
 	pool = new pg.Pool({ connectionString: database.connectionString, max: 2 });
 	fixture = await startFixture();
 	apps = appFactory(fixture, { databaseUrl: database.connectionString });
-	stage = 'legacy-seed';
-	const legacy = await apps.start({ entry: 'legacy/server.mjs' });
-	const alpha = await oauth(legacy, await mintSessionFixture(legacy.origin), 'synthetic-alpha');
-	const aliasGuest = await mintSessionFixture(legacy.origin);
+	stage = 'account-continuity';
+	let first = await apps.start();
+	assert.deepEqual(await (await fetch(`${first.origin}/healthz`)).json(), { status: 'ok', inference: 'local' });
+	const alpha = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-alpha');
+	const aliasGuest = await mintSessionFixture(first.origin);
 	const aliasId = aliasGuest.userId;
 	const oldCookie = aliasGuest.cookie;
-	const legacyId = `${aliasId}:legacy-attributed`;
-	const legacyText = 'This synthetic hint was supplied by Socratink.';
-	const reveal = { kind: 'hint', target: 'Synthetic ownership recovery' };
-	const question = { prompt: 'Which synthetic action preserves the accepted request?', choices: ['Recheck', 'Resend'], reasoning: true };
-	fixture.plan('DURABLE_LEGACY', { text: legacyText, tools: [{ name: 'mark_reveal', arguments: reveal }] },
-		{ tools: [{ name: 'present_question', arguments: question }] });
-	const legacyClient = clientFor(legacy, aliasGuest, legacyId);
-	const old = await sendText(legacyClient, 'DURABLE_LEGACY');
-	const oldAssistant = old.history.messages.findLast((message) => message.role === 'assistant');
-	assert.deepEqual(oldAssistant.parts.filter((part) => part.type === 'data-reveal').map((part) => part.data), [reveal]);
-	assert.equal(oldAssistant.parts.filter((part) => part.type === 'data-questionnaire').length, 1);
-	assert.ok(textOf(oldAssistant).includes(legacyText));
 	const alphaKey = 'sk-synthetic-durable-postgres-alpha';
 	const betaKey = 'sk-synthetic-durable-postgres-beta';
 	const rotatedKey = 'sk-synthetic-durable-postgres-alpha-rotated';
 	fixture.secrets.set(alphaKey, 'alpha');
 	fixture.secrets.set(betaKey, 'beta');
 	fixture.secrets.set(rotatedKey, 'alpha-rotated');
-	await storeKey(legacy, aliasGuest, alphaKey);
-	const owner = await oauth(legacy, aliasGuest, 'synthetic-alpha');
+	await storeKey(first, aliasGuest, alphaKey);
+	const owner = await oauth(first, aliasGuest, 'synthetic-alpha');
 	assert.equal(owner.userId, alpha.userId, 'real OAuth callback must attach to the existing account');
 	assert.ok(owner.aliases.includes(aliasId));
-	assert.equal((await fetch(`${legacy.origin}/api/session`, { headers: { cookie: oldCookie } })).status, 401);
-	assert.deepEqual(await clientFor(legacy, owner, legacyId).history(), old.history);
-	await legacy.stop();
-	report.legacyBefore = await flueDigest();
-	report.checks.push('Explicit legacy server creates real Flue question/reveal history; actual HTTP OAuth preserves the account, rekeys guest credentials, and revokes its old cookie.');
-	stage = 'normal-app-legacy-read';
-	let first = await apps.start();
-	assert.deepEqual(await (await fetch(`${first.origin}/healthz`)).json(), { status: 'ok', harness: 'pi-durable' });
+	assert.equal((await fetch(`${first.origin}/api/session`, { headers: { cookie: oldCookie } })).status, 401);
 	await assertSession(first, owner);
-	const legacyThroughPi = clientFor(first, owner, legacyId);
-	assert.deepEqual(await legacyThroughPi.history(), old.history, 'every existing Flue message and structured part must survive the default server');
-	assert.deepEqual(await flueDigest(), report.legacyBefore, 'reading legacy history must not rewrite it');
-	const beta = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-beta');
-	await storeKey(first, beta, betaKey);
-	for (const method of ['GET', 'POST']) {
-		const denied = await fetch(legacyThroughPi.url, { method, headers: { cookie: beta.cookie, 'content-type': 'application/json' },
-			...(method === 'POST' ? { body: JSON.stringify({ kind: 'user', body: 'Foreign attempt' }) } : {}) });
-		assert.equal(denied.status, 403);
-	}
-	assert.equal((await fetch(legacyThroughPi.url)).status, 401);
-	assert.equal((await fetch(legacyThroughPi.url, { headers: { cookie: oldCookie } })).status, 401);
-	report.legacyBrowser = await verifyDurableHistoryBrowser({ app: first, session: owner, conversationId: legacyId,
-		expectedText: legacyText, question: question.prompt, reveal: true, out: join(out, 'legacy-browser') });
-	report.checks.push('Normal Pi app reads exact attributed Flue history through its alias; unchanged browser loads/reloads the question and hint; foreign and revoked cookies are denied.');
-	stage = 'legacy-continuation';
-	const continued = await completed(legacyThroughPi, 'DURABLE_LEGACY_CONTINUE', 'Existing Flue conversation still accepts its next turn.');
-	assert.equal(userMessages(continued.history).length, 2);
-	await expectCall('DURABLE_LEGACY_CONTINUE', 'alpha', '/v1/responses');
-	assert.notDeepEqual(await flueDigest(), report.legacyBefore, 'legacy continuation must persist through Flue');
-	report.legacyAfterContinuation = await flueDigest();
-	report.checks.push('Existing conversation continues through Flue on the normal API using its alias owner’s rekeyed credential.');
+	report.checks.push('Actual HTTP OAuth preserves the account, rekeys guest credentials, and revokes the old guest cookie.');
 	stage = 'new-pi-alias-and-metadata';
 	const piId = `${aliasId}:new-pi`;
 	let piClient = clientFor(first, owner, piId);
-	const fresh = await completed(piClient, 'DURABLE_PI_ALIAS', 'A new Pi conversation belongs to the same account alias.');
-	await expectCall('DURABLE_PI_ALIAS', 'alpha', '/v1/responses');
-	assert.deepEqual(fresh.history.messages.findLast((message) => message.role === 'assistant').metadata.socratink,
-		{ routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
-	assert.deepEqual(await flueDigest(), report.legacyAfterContinuation, 'new Pi history must not create or mutate Flue rows');
+	const piText = 'A new Pi conversation belongs to the same account alias. This synthetic hint was supplied by Socratink.';
+	const reveal = { kind: 'hint', target: 'Synthetic ownership recovery' };
+	const question = { prompt: 'Which synthetic action preserves the accepted request?', choices: ['Recheck', 'Resend'], reasoning: true };
+	fixture.plan('DURABLE_PI_ALIAS', { text: piText, tools: [{ name: 'mark_reveal', arguments: reveal }] },
+		{ tools: [{ name: 'present_question', arguments: question }] });
+	const fresh = await sendText(piClient, 'DURABLE_PI_ALIAS');
+	const freshAssistant = fresh.history.messages.findLast((message) => message.role === 'assistant');
+	assert.deepEqual(freshAssistant.parts.filter((part) => part.type === 'data-reveal').map((part) => part.data), [reveal]);
+	assert.equal(freshAssistant.parts.filter((part) => part.type === 'data-questionnaire').length, 1);
+	assert.ok(textOf(freshAssistant).includes(piText));
+	assert.equal(fixture.calls.filter((call) => call.marker === 'DURABLE_PI_ALIAS').every((call) => call.key === 'alpha'), true);
+	assert.deepEqual(freshAssistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
 	assert.equal((await pool.query('SELECT count(*)::int AS count FROM socratink_pi.commits')).rows[0].count > 0, true);
+	const beta = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-beta');
+	await storeKey(first, beta, betaKey);
+	for (const method of ['GET', 'POST']) {
+		const denied = await fetch(piClient.url, { method, headers: { cookie: beta.cookie, 'content-type': 'application/json' },
+			...(method === 'POST' ? { body: JSON.stringify({ kind: 'user', body: 'Foreign attempt' }) } : {}) });
+		assert.equal(denied.status, 403);
+	}
+	assert.equal((await fetch(piClient.url)).status, 401);
+	assert.equal((await fetch(piClient.url, { headers: { cookie: oldCookie } })).status, 401);
 	report.piBrowser = await verifyDurableHistoryBrowser({ app: first, session: owner, conversationId: piId,
-		expectedText: fresh.reply.text, out: join(out, 'pi-browser') });
-	report.checks.push('New alias conversation uses Pi PostgreSQL storage and fresh owner credentials; route metadata and browser history survive reload without touching Flue tables.');
+		expectedText: piText, question: question.prompt, reveal: true, out: join(out, 'pi-browser') });
+	report.checks.push('New alias conversation uses Pi PostgreSQL storage and the owner credential; question, hint and route metadata survive browser reload; foreign and revoked cookies are denied.');
 	stage = 'overlapping-learners';
 	const alphaGate = gate();
 	const betaGate = gate();
@@ -207,15 +172,12 @@ try {
 	first = await apps.start();
 	await assertSession(first, owner);
 	assert.deepEqual(await clientFor(first, owner, piId).history(), beforeRestart);
-	assert.deepEqual(await clientFor(first, owner, legacyId).history(), continued.history);
 	const signedInAgain = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-alpha');
 	assert.equal(signedInAgain.userId, owner.userId);
 	assert.ok(signedInAgain.aliases.includes(aliasId));
 	assert.deepEqual(await clientFor(first, signedInAgain, piId).history(), beforeRestart);
 	report.checks.push('Key rotation/revocation affect subsequent alias turns; all histories and signed identity survive full restart and fresh OAuth login to the same account.');
 	stage = 'persistence-safety';
-	report.legacyAfterPi = await flueDigest();
-	assert.deepEqual(report.legacyAfterPi, report.legacyAfterContinuation, 'all later Pi work must leave exact legacy Flue records unchanged');
 	const credentials = (await pool.query('SELECT ciphertext FROM socratink_credentials')).rows;
 	assert.equal(credentials.length, 1, 'only beta key remains after alpha revocation');
 	assert.match(credentials[0].ciphertext, /^v1\./);
@@ -227,7 +189,7 @@ try {
 	}
 	for (const secret of fixture.secrets.keys()) assert.equal(apps.hasRawLog(secret), false, 'application logs must not contain raw provider keys');
 	assert.deepEqual(fixture.errors, []);
-	report.checks.push('Exact legacy table digests remain unchanged by Pi; remaining credential is encrypted; Pi journal and application log contain no synthetic raw keys.');
+	report.checks.push('Remaining credential is encrypted; Pi journal and application log contain no synthetic raw keys.');
 	report.ok = true;
 } catch (error) {
 	report.failure = { stage, message: apps?.redact(error.stack ?? error) ?? String(error) };

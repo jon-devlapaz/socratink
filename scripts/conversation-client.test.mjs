@@ -690,6 +690,10 @@ test('maps user-facing errors without treating cancellation as a generic failure
 		'This conversation was interrupted before a reply arrived. Send again or start over.',
 	);
 	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
+	assert.equal(
+		chatTurnErrorMessage(new FlueApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
+		'No model provider is set up yet. Add your own key to start.',
+	);
 });
 
 test('maps OpenRouter credit 402s to a learner-readable Chat error', () => {

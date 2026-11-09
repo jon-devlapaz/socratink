@@ -1,9 +1,8 @@
 # Socratink
 
-Socratink is a single-learner AI conversation. New conversations use
-[Pi Durable](https://github.com/earendil-works/pi/tree/main/packages/durable)
-for new conversations and retains [Flue](https://github.com/withastro/flue)
-for existing conversations. It supports open dialogue, structured
+Socratink is a single-learner AI conversation that runs on
+[Pi Durable](https://github.com/earendil-works/pi/tree/main/packages/durable).
+It supports open dialogue, structured
 question cards, and records of assistance. See [PRODUCT.md](PRODUCT.md) for
 the current boundary and the Brain's
 [North Star](socratink-brain/NORTH-STAR.md) for the intended direction
@@ -28,7 +27,7 @@ and optionally `JON_LOCAL_MODEL_ID` for your endpoint. Do not commit values.
 
 Local conversation, authentication, and credential databases use separate
 SQLite files under `.cache/`. Configuration owners are `src/config/database.ts`,
-`auth.ts`, `session.ts`, `credentials.ts`, and `operator-model.ts`.
+`auth.ts`, `session.ts`, `credentials.ts`, and `src/inference/operator.ts`.
 
 ## Identity, models, and hosted configuration
 
@@ -41,20 +40,22 @@ for account linking and the limits of the guest allowance.
 Conversations are scoped to the session user and permitted aliases. Learner
 API keys are encrypted in the product credential store. The active model route
 depends on the connected credentials and selected model; otherwise it uses
-the operator provider. Model choices and routing are owned by
-`src/config/chat-model.ts` and `src/server/learner-key.ts`; operator environment
-settings are resolved separately in `src/config/operator-model.ts`.
+the operator provider. Model routing is owned by `src/inference/`: the learner's
+own key first, then the operator. A route the learner chose never falls back to
+the operator's key. Model choices are listed in `src/config/chat-model.ts`.
 
 Production, Vercel, and Northflank deployments require `DATABASE_URL`,
 `SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel/Northflank, a public HTTPS
 `JON_LOCAL_BASE_URL` with `JON_LOCAL_API_KEY` selects the operator endpoint;
 otherwise the app selects AI Gateway. Gateway credentials come from
-`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`; Northflank rejects a missing
-gateway credential. Inspect the configuration owners for exact resolution.
+`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`. With none of these, inference is
+unconfigured: `/healthz` returns 503 and a send is refused with
+`inference_unconfigured` unless the learner has connected their own key.
 
 The `Dockerfile` serves the built Node app on port `3000`, with `/healthz` for
-readiness. Retain the existing single-replica, recreate-deployment constraint
-until Flue's conversation ownership is verified for a different topology.
+readiness and the operator's inference route (`gateway` or `local`). Retain the
+single-replica, recreate-deployment constraint until multi-instance hosting is
+verified.
 Use private database connectivity. Local checks do not validate deployed
 identity settings, external providers, multi-instance hosting, or suitability
 for a particular learner population.
@@ -118,8 +119,7 @@ Enable email notifications for failed Actions runs in your GitHub settings.
 The application logs constant failure categories for failed chat submissions
 and recovery failures, including failures after an HTTP 202 admission. The
 monitor publishes counts only; it never copies Vercel error bodies, request
-paths, learner text, or credentials into public Actions logs. Existing Flue
-runtime logs may contain raw provider errors in Vercel.
+paths, learner text, or credentials into public Actions logs.
 
 Pi emits the same constant failure and recovery categories, including actual
 model retries and recovery of interrupted turns. It never logs provider error
