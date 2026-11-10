@@ -67,7 +67,6 @@ globalThis.fetch = async (input, options) => {
 			await writeFile(capture, '');
 			await writeFile(capture + '.canceled', '');
 			const env = { ...process.env, MONITOR_PREVIEW_DEPLOYMENT: '', VERCEL_TOKEN: 'synthetic-monitor-token',
-				VERCEL_API_URL: 'https://invalid.example', MONITOR_BASE_URL: 'https://invalid.example',
 				MONITOR_FAKE_ARGS: capture, MONITOR_FAKE_READS: JSON.stringify({ runtime, requests }),
 				MONITOR_FAKE_PRIVATE: privateText, MONITOR_FAKE_STATUS: '', MONITOR_FAKE_NETWORK: '', MONITOR_FAKE_OVERSIZE: '', ...extraEnv };
 			let status = 0, stdout, stderr = '';

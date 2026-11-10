@@ -1,7 +1,5 @@
 allowBuilds:
   '@google/genai': false
-  core-js-pure: false
-  esbuild: true
   protobufjs: false
 overrides:
   hono: 4.12.34

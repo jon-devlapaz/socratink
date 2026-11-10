@@ -1,7 +1,7 @@
 # Pi Durable migration and preview verification
 
 Conversations use Pi Durable. Conversations created before the switch to Pi
-are no longer served, and their old tables are dropped. The integration was verified in
+are no longer served; a one-time migration, since removed, dropped their tables. The integration was verified in
 an isolated preview before release. Merging to `main` automatically
 deploys the normal build to production; deploying a preview alone does not.
 
@@ -87,7 +87,6 @@ domains during this check. Do not put private environment files in proof output.
   would need a separate deployment/worker decision.
 - Synthetic contract tests establish software behavior, not learning outcomes,
   provider quality, production capacity, or universal fault tolerance.
-- The dependency audit still reports the same 36 advisories as merged main
-  (including one critical and twelve high). This change adds no advisory IDs;
-  it does not resolve those inherited findings or establish their reachability.
-  Dependency remediation remains part of production readiness.
+- `pnpm audit --prod` reported 7 advisories on 2026-11-10 (one high, six
+  moderate). Their reachability is not established; dependency remediation
+  remains part of production readiness.

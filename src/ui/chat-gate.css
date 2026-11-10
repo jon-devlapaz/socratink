@@ -2,8 +2,8 @@
 	margin-block-start: 1rem;
 	padding: 1.25rem 1.5rem;
 	border-radius: 0.75rem;
-	background: var(--surface-2, hsl(0 0% 12%));
-	border: 1px solid var(--border, hsl(0 0% 18%));
+	background: var(--card);
+	box-shadow: var(--shadow-border);
 	text-align: center;
 }
 
@@ -11,7 +11,7 @@
 	margin: 0 0 1rem;
 	font-size: 0.9375rem;
 	line-height: 1.5;
-	color: var(--text-2, hsl(0 0% 72%));
+	color: var(--muted);
 }
 
 .chat-gate-actions {
@@ -47,7 +47,7 @@
 .chat-gate-github {
 	background: hsl(0 0% 20%);
 	color: hsl(0 0% 92%);
-	border: 1px solid var(--border, hsl(0 0% 28%));
+	border: 1px solid hsl(0 0% 28%);
 }
 
 .chat-gate-github:hover {

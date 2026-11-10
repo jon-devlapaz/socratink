@@ -152,6 +152,21 @@ test('postgres rekeyUser writes $1 SQL with durable id first', async () => {
 	await db.close();
 });
 
+test('postgres credential store retries its table setup after a failed first attempt', async () => {
+	let setups = 0;
+	const db = createPostgresCredentialDb({
+		async query(text) {
+			if (text.startsWith('CREATE TABLE') && ++setups === 1) throw new Error('Authentication timed out');
+			return { rows: [] };
+		},
+		async end() {},
+	});
+	await assert.rejects(db.getByName({ userId: 'user-a', name: 'openai' }), /timed out/);
+	assert.equal(await db.getByName({ userId: 'user-a', name: 'openai' }), undefined);
+	assert.equal(setups, 2);
+	await db.close();
+});
+
 test('foreign user cannot read a stored key by name', async () => {
 	await withStore(async (store) => {
 		await store.updateUserKey({

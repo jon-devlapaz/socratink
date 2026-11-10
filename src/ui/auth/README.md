@@ -18,9 +18,9 @@
 
 ## Session Re-keying
 
-- **New signup**: guest UUID becomes the durable `users.id`. Zero re-keying.
+- **New signup**: guest UUID becomes the durable `socratink_users.id`. Zero re-keying.
 - **Returning user**: session cookie updates to the durable UUID. A
-  `user_aliases` row maps the guest UUID so existing conversations remain
+  `socratink_user_aliases` row maps the guest UUID so existing conversations remain
   accessible, `GET /api/session` reports the aliases so the client keeps the
   stored conversation id, and guest BYOK keys move to the durable UUID
   (names the durable user already owns keep the durable value).

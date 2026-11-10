@@ -1,7 +1,6 @@
 import { presentQuestionExample, questionnaireToolName } from '../questionnaire.ts';
 
 export const presentQuestionToolName = questionnaireToolName;
-export const presentQuestionSignalType = presentQuestionToolName;
 
 const presentQuestionExampleJson = JSON.stringify(presentQuestionExample);
 
@@ -32,8 +31,8 @@ export function looksLikeUnboxedChoices(text: string): boolean {
 	return /\b(?:which|choose|pick|select|would you rather|do you want)\b/i.test(lines.slice(0, start).join('\n'));
 }
 
-const letteredItem = /^( {0,3})[A-D][.)]\s+\S/;
-const listItem = /^( {0,3})(?:[A-D][.)]|[-*+]|\d{1,9}[.)])[ \t]+\S/;
+const letteredItem = /^( {0,3})[A-H][.)]\s+\S/;
+const listItem = /^( {0,3})(?:[A-H][.)]|[-*+]|\d{1,9}[.)])[ \t]+\S/;
 
 export function presentQuestionRetryReason(input: {
 	readonly toolCalls: readonly { tool: string; isError: boolean }[];
