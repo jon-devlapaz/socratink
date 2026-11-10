@@ -83,7 +83,11 @@ function openPostgresCredentialDb(connectionString: string): CredentialDb {
 
 export function createPostgresCredentialDb(client: CredentialPgClient): CredentialDb {
 	let ready: Promise<void> | undefined;
-	const ensure = () => (ready ??= client.query(CREATE_TABLE_SQL).then(() => undefined));
+	// A failed setup is forgotten so the next request retries it.
+	const ensure = () => (ready ??= client.query(CREATE_TABLE_SQL).then(() => undefined, (error) => {
+		ready = undefined;
+		throw error;
+	}));
 
 	return {
 		async upsert(row) {

@@ -20,8 +20,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-`pnpm dev:phone` exposes the development server to the local network and prints
-its URL. The operator model defaults to an OpenAI-compatible endpoint at
+`pnpm dev:phone` exposes the development server to the local network. The operator model defaults to an OpenAI-compatible endpoint at
 `http://127.0.0.1:3001/v1`. Configure `JON_LOCAL_BASE_URL`, `JON_LOCAL_API_KEY`,
 and optionally `JON_LOCAL_MODEL_ID` for your endpoint. Do not commit values.
 
@@ -78,7 +77,7 @@ it requires no external credentials. The complete command list is in
 `package.json`. Builds write generated output to `dist/` and `dist/client/`.
 
 Set `REVEAL_BROWSER=1` when running `pnpm smoke` to include browser interaction
-checks. They use installed Chrome and `playwright-core`; `CHROME_PATH` and
+checks. They use the `playwright` dev dependency; `CHROME_PATH` and
 `PLAYWRIGHT_MODULE` can point to existing installations. Screenshots and results
 are saved under `.cache/reveal/`.
 
@@ -103,8 +102,7 @@ transfer, mastery, or learning effectiveness.
 ## Runtime failure alerts
 
 The `Socratink runtime monitor` workflow checks production availability and
-queries Vercel runtime errors and HTTP 5xx responses approximately every 10 minutes
-after the workflow reaches `main`. Failed or
+queries Vercel runtime errors and HTTP 5xx responses on a 10-minute schedule. Failed or
 incomplete reads fail the job and use GitHub Actions failure notifications.
 The monitor uses Vercel's project log API and rejects responses with more
 pages or truncated messages.
@@ -124,10 +122,6 @@ Vercel project-scoped tokens are not read-only. For a controlled preview drill,
 use the separately reviewed `runtime-monitor-verification` environment and the
 workflow's `preview_deployment` input. Never place this credential in source,
 repository-wide secrets, or pull-request CI.
-
-Before merging, prove a real isolated-preview failure causes this workflow to
-fail and the matching notification reaches the operator. A local script test
-or a failed job without received notification is insufficient proof.
 
 GitHub schedules activate only on the default branch and can be delayed or
 dropped; public-repository schedules stop after 60 days without activity. The

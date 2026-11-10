@@ -122,7 +122,11 @@ function openPostgresAuthDb(connectionString: string): AuthDb {
 
 export function createPostgresAuthDb(client: AuthPgClient): AuthDb {
 	let ready: Promise<void> | undefined;
-	const ensure = () => (ready ??= client.query(CREATE_TABLES_SQL).then(() => undefined));
+	// A failed setup is forgotten so the next request retries it.
+	const ensure = () => (ready ??= client.query(CREATE_TABLES_SQL).then(() => undefined, (error) => {
+		ready = undefined;
+		throw error;
+	}));
 
 	return {
 		async findUserByEmail(email) {

@@ -210,12 +210,8 @@
 }
 
 .questionnaire-button-ghost {
-	color: var(--ink);
 	background: var(--chip);
 	box-shadow: var(--shadow-border);
-}
-
-.questionnaire-button-ghost {
 	margin-right: auto;
 	color: var(--muted);
 }

@@ -486,8 +486,7 @@ function collectedErrorText(error: unknown): string {
 
 function envelopeType(error: unknown): string | undefined {
 	if (typeof error !== 'object' || error === null) return undefined;
-	const record = error as { json?: unknown; body?: unknown };
-	const payload = record.json ?? record.body;
+	const payload = (error as { body?: unknown }).body;
 	if (typeof payload !== 'object' || payload === null) return undefined;
 	const envelope = 'error' in payload ? (payload as { error: unknown }).error : payload;
 	if (typeof envelope !== 'object' || envelope === null || !('type' in envelope)) return undefined;

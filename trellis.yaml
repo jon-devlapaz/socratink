@@ -1,7 +1,6 @@
 source:
   exclude:
     - "research/**"
-    - "specs/**"
     - "vite.config*.ts"
   classify:
     "scripts/**": "test"

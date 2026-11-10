@@ -8,7 +8,7 @@ import {
 	resolveAuthConfig,
 	resolveAuthStoreTarget,
 } from '../src/config/auth.ts';
-import { createSqliteAuthDb } from '../src/server/auth-db.ts';
+import { createPostgresAuthDb, createSqliteAuthDb } from '../src/server/auth-db.ts';
 
 async function withAuthDb(run) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-auth-'));
@@ -130,4 +130,20 @@ test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 		assert.equal(await db.findAliasOwner('guest-unknown'), undefined);
 		assert.equal(await db.findAliasOwner('user-1'), undefined);
 	});
+});
+
+test('postgres auth store retries its table setup after a failed first attempt', async () => {
+	let setups = 0;
+	const db = createPostgresAuthDb({
+		async query(text) {
+			if (text.startsWith('CREATE TABLE') && ++setups === 1) throw new Error('Authentication timed out');
+			return { rows: [] };
+		},
+		async end() {},
+	});
+	await assert.rejects(db.findUserById('user-a'), /timed out/);
+	assert.equal(await db.findUserById('user-a'), undefined);
+	assert.equal(await db.findUserById('user-a'), undefined);
+	assert.equal(setups, 2);
+	await db.close();
 });

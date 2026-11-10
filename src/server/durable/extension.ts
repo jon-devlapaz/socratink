@@ -4,7 +4,7 @@ import {
 } from '@earendil-works/pi-durable';
 import type { Context } from '@earendil-works/chord/context';
 import type { JsonValue } from '@earendil-works/chord';
-import type { AssistantMessage, Message } from '@earendil-works/pi-ai';
+import type { Message } from '@earendil-works/pi-ai';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies as retryBodies, presentQuestionRetryReason as retryReason } from '../../learning/present-question.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
@@ -51,7 +51,7 @@ export function productRegistry() {
 				const reason = retryReason({
 					toolCalls: messages.flatMap((message) => message.role === 'toolResult'
 						? [{ tool: message.toolName, isError: message.isError }] : []),
-					assistantText: assistantText(answer),
+					assistantText: messageText(answer),
 					alreadyRetried: correctionTaken(entries),
 				});
 				return reason ? { continue: retryBodies[reason] } : undefined;
@@ -87,5 +87,3 @@ export function messageText(message: Message): string {
 	if (typeof message.content === 'string') return message.content;
 	return message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
 }
-
-export function assistantText(message: AssistantMessage): string { return messageText(message); }
