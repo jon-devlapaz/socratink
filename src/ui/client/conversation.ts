@@ -19,8 +19,10 @@ import {
 	namespacedConversationId,
 } from '../../config/session.ts';
 import { randomId } from './random-id.ts';
+import { createStreamClient } from './conversation-stream.ts';
 
 type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
+export type ChatConversationClient = Pick<FlueClient, 'send' | 'read' | 'abort' | 'history'>;
 type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
 
 export const abortRequestTimeoutMs = 5_000;
@@ -87,20 +89,21 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: ConversationStreamChunk) => void;
 };
 
-export function openChatConversation(userId: string, aliases: readonly string[] = []) {
+export function openChatConversation(userId: string, aliases: readonly string[] = []): ChatConversationClient {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
 			: namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
-	return createFlueClient({
+	const options = {
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 		headers: (): Record<string, string> => {
 			const specifier = storedLearnerChatSpecifier();
 			return specifier ? { [chatModelHeader]: specifier } : {};
 		},
-	});
+	};
+	return localStorage.getItem(appConfig.chatStreamStorageKey) === 'sse' ? createStreamClient(options) : createFlueClient(options);
 }
 
 export function startNewChatConversation(userId: string) {
