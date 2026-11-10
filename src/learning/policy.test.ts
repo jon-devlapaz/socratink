@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
+import { steeringPrefix } from '../config/chat-message.ts';
+import { questionnaireAnswerPrefix } from '../questionnaire.ts';
 import { systemPrompt } from './chat-policy.ts';
+import { socraticTutorSkill } from './socratic-tutor.ts';
 import { presentQuestionRetryReason } from './present-question.ts';
 import { executeLearningTool, learningToolDefinitions } from './tools.ts';
 
-test('moving the teaching policy preserves the current prompt byte for byte', () => {
-	assert.equal(createHash('sha256').update(systemPrompt).digest('hex'),
-		'54d54706908d9d08b117374fa322d82be14e22ab5981d1dc658d9176a320a91b');
+test('the teaching policy is the vendored socratic-tutor skill followed by Socratink bindings', () => {
+	// Upstream SKILL.md body at the pinned commit, frontmatter removed.
+	assert.equal(createHash('sha256').update(socraticTutorSkill).digest('hex'),
+		'ebad4b06102a4449b7acb3be606a0b726890f10fdfdfadc67795ca94c3f33fda');
+	assert.ok(systemPrompt.startsWith(socraticTutorSkill));
+	for (const binding of ['present_question', 'mark_reveal', 'Skip the intent guard', steeringPrefix, questionnaireAnswerPrefix, 'retention is untested']) {
+		assert.ok(systemPrompt.includes(binding), binding);
+	}
 });
 
 test('questions use current validation and presentation; reveals retain provenance without ending the turn', () => {
