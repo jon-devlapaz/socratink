@@ -5,6 +5,7 @@ import { sessionFromContext } from '../session.ts';
 import type { Engine, ModelSelection } from './contract.ts';
 import type { BrowserStream } from './browser-events.ts';
 import { DurableBusyError } from './engine.ts';
+import { conversationEvents } from './browser-sse.ts';
 
 import { project } from './browser-projection.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
@@ -47,6 +48,9 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 		await engine.abort(id);
 		return c.json({ aborted });
 	});
+	app.get(`${path}/events`, (c) => new Response(conversationEvents(engine, c.req.param('id'), c.req.raw.signal), {
+		headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' },
+	}));
 	app.on(['GET', 'HEAD'], path, async (c) => {
 		const id = c.req.param('id');
 		let observed = await stream.sync(project(id, await engine.snapshot(id)));

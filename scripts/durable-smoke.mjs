@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { mintSessionFixture } from './session-fixture.mjs';
 import { appFactory, clientFor, gate, sendText, startFixture, storeKey, until, userMessages } from './durable-smoke-support.mjs';
 import { verifyDurableBrowser } from './durable-browser-smoke.mjs';
+import { measureTurn, streamClientFor, timingHoldMs, verifyStreamClient } from './durable-stream-smoke.mjs';
 
 // Failure cases: default still Flue; reasoning/tool events missing or replayed;
 // observation loss duplicates a learner; cancellation fails to settle; process
@@ -103,9 +104,21 @@ try {
 	assert.equal(JSON.stringify(cancelledHistory).includes('Must not become an answer.'), false);
 	cancelGate.release();
 	report.checks.push('Cancellation durably settles aborted and does not become an assistant answer.');
+	stage = 'timing';
+	report.timing = { providerHoldMs: timingHoldMs,
+		sdk: await measureTurn(() => clientFor(app, session, 'timing-sdk'), fixture, 'DURABLE_TIMING_SDK'),
+		sse: await measureTurn(() => streamClientFor(app, session, 'timing-sse'), fixture, 'DURABLE_TIMING_SSE'),
+	};
+	report.checks.push('One plain turn is timed on both clients: 202 to first delta, 202 to settled, and GETs per turn.');
+	stage = 'sse-client';
+	report.sse = await verifyStreamClient({ app, session, fixture });
+	report.checks.push('The SSE client streams live reasoning, reattaches a dropped read by id without resending, reads the same history, and settles a cancel as aborted.');
 	stage = 'browser';
 	report.browser = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser') });
 	report.checks.push('Unchanged browser displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
+	stage = 'browser-sse';
+	report.browserSse = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser-sse'), stream: true });
+	report.checks.push('The same browser check passes with the SSE client switched on.');
 	assert.deepEqual(fixture.errors, []);
 	const failureRecords = apps.logs.join('').split('\n').filter((line) => line.includes('socratink_failure'))
 		.map((line) => JSON.parse(line.slice(line.indexOf('{'))));
@@ -124,6 +137,6 @@ try {
 	await mkdir(out, { recursive: true });
 	await writeFile(join(out, 'proof.json'), `${JSON.stringify(report, null, 2)}\n`);
 	await writeFile(join(out, 'app.log'), apps?.logs.join('') ?? '');
-	console.log(JSON.stringify({ ok: report.ok, checks: report.checks.length, stage, evidence: out }));
+	console.log(JSON.stringify({ ok: report.ok, checks: report.checks.length, stage, timing: report.timing, evidence: out }));
 	if (report.failure) console.error(report.failure.message);
 }
