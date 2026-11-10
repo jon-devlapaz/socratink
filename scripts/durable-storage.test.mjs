@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { createServer } from 'node:net';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
@@ -28,6 +29,22 @@ test('a Neon pooled URL uses only its matching direct endpoint for execution own
 	for (const key of ['username', 'password', 'pathname', 'search', 'port']) assert.equal(direct[key], original[key]);
 	assert.equal(postgresOwnerConnectionString('postgresql://localhost:5432/test'), 'postgresql://localhost:5432/test');
 	assert.throws(() => postgresOwnerConnectionString('postgresql://user:synthetic@aws.pooler.supabase.com/test'), /direct|session/i);
+});
+
+test('Postgres storage connects on first use and retries after a failed start', async () => {
+	let connections = 0;
+	const server = createServer((socket) => { connections += 1; socket.destroy(); });
+	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+	const manager = createDurableStorage({ kind: 'postgres', connectionString: `postgresql://synthetic@127.0.0.1:${server.address().port}/synthetic` });
+	try {
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		assert.equal(connections, 0, 'creating storage opens no connection');
+		await assert.rejects(manager.exists('anything'));
+		const first = connections;
+		assert.ok(first >= 1);
+		await assert.rejects(manager.exists('anything'));
+		assert.ok(connections > first, 'a failed start is retried, not cached');
+	} finally { await manager.close(); await new Promise((resolve) => server.close(resolve)); }
 });
 
 for (const dialect of ['sqlite', ...(process.env.DURABLE_TEST_POSTGRES === '1' ? ['postgres'] : [])]) {
