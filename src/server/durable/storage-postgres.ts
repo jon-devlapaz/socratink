@@ -23,8 +23,11 @@ export function postgresLog(connectionString: string): LogBackend {
 	const ownerConnectionString = postgresOwnerConnectionString(connectionString);
 	const pool = new pg.Pool({ connectionString, max: 3, idleTimeoutMillis: 1_000, allowExitOnIdle: true });
 	attachDatabasePool(pool);
-	const ready = initialize();
-	void ready.catch(() => {});
+	// Initialize on first use, inside a request that awaits it: a handshake
+	// started at module load can stall while the function is frozen between
+	// requests. A failed attempt is forgotten so the next request retries.
+	let initialized: Promise<void> | undefined;
+	const ready = () => initialized ??= initialize().catch((error) => { initialized = undefined; throw error; });
 	async function initialize() {
 		const client = await pool.connect();
 		try {
@@ -58,11 +61,11 @@ export function postgresLog(connectionString: string): LogBackend {
 	}
 	return {
 		async exists(namespace) {
-			await ready;
+			await ready();
 			return (await pool.query(`SELECT 1 FROM ${schema}.namespaces WHERE namespace=$1`, [namespace])).rowCount === 1;
 		},
 		async read(namespace) {
-			await ready;
+			await ready();
 			const client = await pool.connect();
 			try {
 				await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
@@ -73,7 +76,7 @@ export function postgresLog(connectionString: string): LogBackend {
 			finally { client.release(); }
 		},
 		async claim(namespace) {
-			await ready;
+			await ready();
 			const client = new pg.Client({ connectionString: ownerConnectionString, connectionTimeoutMillis: 5_000, statement_timeout: 30_000 });
 			let failure: unknown;
 			let closed = false;
@@ -114,9 +117,9 @@ export function postgresLog(connectionString: string): LogBackend {
 			} catch (error) { await client.end().catch(() => {}); throw error; }
 		},
 		async cancel(namespace, through) {
-			await ready;
+			await ready();
 			await pool.query(`UPDATE ${schema}.namespaces SET abort_through=GREATEST(abort_through,$2) WHERE namespace=$1`, [namespace, through]);
 		},
-		async close() { await ready.catch(() => {}); await pool.end(); },
+		async close() { await initialized?.catch(() => {}); await pool.end(); },
 	};
 }
