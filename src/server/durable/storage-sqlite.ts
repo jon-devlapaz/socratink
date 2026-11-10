@@ -15,8 +15,7 @@ export function sqliteLog(filename: string): LogBackend {
 		CREATE TABLE IF NOT EXISTS pi_namespaces (namespace TEXT PRIMARY KEY, format INTEGER NOT NULL,
 			next_id INTEGER NOT NULL, abort_through INTEGER NOT NULL DEFAULT 0);
 		CREATE TABLE IF NOT EXISTS pi_commits (namespace TEXT NOT NULL, seq INTEGER NOT NULL, writes TEXT NOT NULL,
-			PRIMARY KEY(namespace,seq));
-		DROP TABLE IF EXISTS pi_browser_events; DROP TABLE IF EXISTS pi_browser_progress;`);
+			PRIMARY KEY(namespace,seq));`);
 	function state(namespace: string): LogState {
 		const metadata = db.prepare('SELECT * FROM pi_namespaces WHERE namespace=?').get(namespace) as Metadata | undefined;
 		return metadata ? { format: metadata.format, nextId: metadata.next_id,
