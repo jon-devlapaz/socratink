@@ -47,7 +47,7 @@ test('native transports preserve keys, limits, live route headers and persisted 
 		const configs: Record<string, ModelConfig> = {
 			alice: { provider: 'openai', modelId: 'gpt-5-mini', apiKey: 'alice-synthetic', baseUrl },
 			bob: { provider: 'openrouter', modelId: 'openai/gpt-5-mini', apiKey: 'bob-synthetic', baseUrl },
-			operator: { provider: 'jon-local', modelId: 'auto', autoModel: 'auto:fast', apiKey: 'operator-synthetic', baseUrl,
+			operator: { provider: 'jon-local', modelId: 'auto', apiKey: 'operator-synthetic', baseUrl,
 				reasoning: true, contextWindow: 1048576, maxTokens: 131100 },
 		};
 		const options: EngineOptions = { target: { kind: 'sqlite', filename: ':memory:' }, resolveModel: async (id) => configs[id]! };
@@ -71,7 +71,7 @@ test('native transports preserve keys, limits, live route headers and persisted 
 		assert.equal(byKey('alice-synthetic').body.model, 'gpt-5-mini');
 		assert.equal(byKey('bob-synthetic').path, '/v1/chat/completions');
 		assert.equal(byKey('bob-synthetic').body.max_tokens ?? byKey('bob-synthetic').body.max_completion_tokens, 8192);
-		assert.equal(byKey('operator-synthetic').body.model, 'auto:fast');
+		assert.equal(byKey('operator-synthetic').body.model, 'auto');
 		assert.equal(byKey('operator-synthetic').body.max_tokens ?? byKey('operator-synthetic').body.max_completion_tokens, 131100);
 		assert.equal(byKey('operator-synthetic').body.reasoning_effort, undefined);
 		const file = join(directory, 'metadata.sqlite');

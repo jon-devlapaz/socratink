@@ -1,4 +1,3 @@
-import { chatAllowsAutoSelection, parseFreeLlmAutoModelId } from '../config/chat-auto.ts';
 import {
 	learnerChatRoute,
 	parseLearnerChatSpecifier,
@@ -34,7 +33,7 @@ export function createInference(options: {
 		return { state: 'ready', route: operator.baseUrl === appConfig.vercelAiGatewayBaseUrl ? 'gateway' : 'local' };
 	}
 
-	async function selection(userId: string, requested?: string, requestedAuto?: string): Promise<ModelSelection> {
+	async function selection(userId: string, requested?: string): Promise<ModelSelection> {
 		const route = learnerChatRoute(await learnerChatStatusForUser({ store: options.store, userId }), requested);
 		if (route.kind !== 'operator') {
 			const specifier = specifierForLearnerChat(route);
@@ -43,8 +42,7 @@ export function createInference(options: {
 		}
 		const operator = options.operator();
 		if (!operator) throw new InferenceUnavailableError();
-		const autoModel = chatAllowsAutoSelection(operator.modelId) ? parseFreeLlmAutoModelId(requestedAuto) : undefined;
-		return { provider: operator.providerId, modelId: operator.modelId, ...(autoModel ? { autoModel } : {}) };
+		return { provider: operator.providerId, modelId: operator.modelId };
 	}
 
 	return {

@@ -20,13 +20,12 @@ function storeWith(keys: Map<string, string>) {
 	} as Pick<CredentialStore, 'hasUserKey' | 'getUserKey'>;
 }
 
-test('current selection rules preserve learner choice and restrict automatic selection to the operator', async () => {
+test('current selection rules preserve learner choice and fall back to the operator', async () => {
 	const store = storeWith(new Map([['alice:openai', 'alice-key'], ['alice:openrouter', 'router-key']]));
 	const routes = createInference({ authDb: noAliases, store, operator: () => local });
-	assert.deepEqual(await routes.selection('alice', 'openai/gpt-5-mini', 'auto:fast'), { provider: 'openai', modelId: 'gpt-5-mini' });
+	assert.deepEqual(await routes.selection('alice', 'openai/gpt-5-mini'), { provider: 'openai', modelId: 'gpt-5-mini' });
 	assert.deepEqual(await routes.selection('alice'), { provider: 'openrouter', modelId: 'openai/gpt-5-nano' });
-	assert.deepEqual(await routes.selection('guest', undefined, 'auto:fast'), { provider: 'jon-local', modelId: 'auto', autoModel: 'auto:fast' });
-	assert.deepEqual(await routes.selection('guest', undefined, 'unrecognized'), { provider: 'jon-local', modelId: 'auto' });
+	assert.deepEqual(await routes.selection('guest'), { provider: 'jon-local', modelId: 'auto' });
 	const config = await routes.resolveModel('guest:conversation', await routes.selection('guest'));
 	assert.equal(config.maxTokens, 131100);
 	assert.equal(config.contextWindow, 204800);

@@ -4,7 +4,7 @@ Applies to `src/server/`, `src/inference/`, `src/config/session.ts`, credential 
 
 **Fail closed.** Authorization input that cannot be parsed denies. A Chat path with no parseable conversation id returns 403; `if (conversationId && !belongs(...))` lets it through. Compare any new `??` or optional parameter on an identity or credential path against this rule: an optional `credentialName` that defaults to `openai` mixes keys, and a missing user falling back to the operator specifier is fail-open. Require the name; make the miss loud.
 
-**Identity owner.** Identity helpers live beside `namespacedConversationId` in `src/config/session.ts`. A feature module (the auto-model picker, a provider route) imports them and never owns them. One predicate (`isSessionUserId`) holds each invariant, such as the colon delimiter; cookie read, ownership check, and client parse all call it.
+**Identity owner.** Identity helpers live beside `namespacedConversationId` in `src/config/session.ts`. A feature module (such as a provider route) imports them and never owns them. One predicate (`isSessionUserId`) holds each invariant, such as the colon delimiter; cookie read, ownership check, and client parse all call it.
 
 **Learner, not sniff.** The learner comes from the namespaced conversation id (`userId:nonce`), resolved through `userIdFromConversationId` and the alias owner. Helpers that guess between two id shapes are a finding.
 
@@ -16,4 +16,4 @@ Applies to `src/server/`, `src/inference/`, `src/config/session.ts`, credential 
 
 **Hotel-safety proof.** Two overlapping learners must never see each other's key. A test counts only when it enters through the real path (the HTTP conversation id and the built server, as in `pnpm smoke:durable:postgres`).
 
-**One truth for provider routing.** `LearnerChatRoute` is the single Chat-driver value. Specifier, auto-model skip, credential name, and every connection widget read it. A widget that claims "Chat uses your key" checks `kind` first; a stored-but-idle key gets different copy.
+**One truth for provider routing.** `LearnerChatRoute` is the single Chat-driver value. Specifier, credential name, and every connection widget read it. A widget that claims "Chat uses your key" checks `kind` first; a stored-but-idle key gets different copy.
