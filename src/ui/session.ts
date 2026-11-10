@@ -41,6 +41,17 @@ export type AuthProviders = {
 	github: boolean;
 };
 
+export function loginErrorCopy(code: string | null): string | undefined {
+	switch (code) {
+		case 'auth_failed':
+			return "Sign-in didn't complete. Please try again.";
+		case 'unverified_email':
+			return "That account's email isn't verified. Verify it with the provider, then try again.";
+		default:
+			return undefined;
+	}
+}
+
 const noAuthProviders: AuthProviders = { google: false, github: false };
 
 export async function loadAuthProviders(): Promise<AuthProviders> {

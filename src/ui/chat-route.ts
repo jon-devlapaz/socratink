@@ -19,7 +19,7 @@ export async function readLearnerChatStatus(response: Response): Promise<Learner
 export function providersChatStatusCopy(status: LearnerChatStatus): string {
 	switch (status.kind) {
 		case 'operator':
-			return 'Chat uses the local Socratink model.';
+			return 'Chat uses the Socratink model.';
 		case 'openai':
 			return 'Chat uses your OpenAI key.';
 		case 'openrouter':

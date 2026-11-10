@@ -617,7 +617,7 @@ test('maps OpenRouter credit 402s to a learner-readable Chat error', () => {
 	assert.equal(isOpenRouterCreditLimitError(live), true);
 	assert.equal(
 		chatTurnErrorMessage(live),
-		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.',
+		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the Socratink model.',
 	);
 
 	const nested = new ChatTurnError({ submissionId: 'sub-1',
@@ -629,7 +629,7 @@ test('maps OpenRouter credit 402s to a learner-readable Chat error', () => {
 	assert.equal(isOpenRouterCreditLimitError(nested), true);
 	assert.equal(
 		chatTurnErrorMessage(nested),
-		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.',
+		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the Socratink model.',
 	);
 
 	assert.equal(isOpenRouterCreditLimitError(new Error('provider rejected')), false);

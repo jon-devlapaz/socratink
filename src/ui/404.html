@@ -3,9 +3,27 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="theme-color" content="#fffcf0" />
+		<meta name="theme-color" id="theme-color" content="#fffcf0" />
 		<meta name="robots" content="noindex" />
 		<title>Page not found · Socratink</title>
+		<script>
+			(function () {
+				var key = 'socratink-theme';
+				var stored = localStorage.getItem(key);
+				var dark =
+					stored === 'dark' ||
+					(stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+				if (stored === 'light' || stored === 'dark') {
+					document.documentElement.dataset.theme = stored;
+				}
+				var meta = document.getElementById('theme-color');
+				if (meta) meta.setAttribute('content', dark ? '#100f0f' : '#fffcf0');
+				var typeSize = localStorage.getItem('socratink-type-size');
+				if (typeSize === 'big' || typeSize === 'medium' || typeSize === 'small') {
+					document.documentElement.dataset.typeSize = typeSize;
+				}
+			})();
+		</script>
 		<link rel="stylesheet" href="/not-found.css" />
 	</head>
 	<body class="not-found-page">
