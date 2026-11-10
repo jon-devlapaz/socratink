@@ -95,12 +95,16 @@ async function respond(route, { origin, session, definition, sent }) {
 		sent.push(route.request().postDataJSON().body);
 		return json({ submissionId, streamUrl: `${origin}${url.pathname}`, offset: '-1' }, 202);
 	}
-	if (url.searchParams.get('view') === 'history') return json({
-		messages: [{
-			role: 'assistant', display: 'visible', submissionId,
-			parts: sent.length ? [{ type: 'text', text: 'Recorded reply' }] : [{ type: 'data-questionnaire', data: definition }],
-		}], settlements: [],
-	});
+	const messages = [{
+		role: 'assistant', display: 'visible', submissionId,
+		parts: sent.length ? [{ type: 'text', text: 'Recorded reply' }] : [{ type: 'data-questionnaire', data: definition }],
+	}];
+	if (url.searchParams.get('view') === 'history') return json({ messages, settlements: [] });
+	if (url.pathname.endsWith('/events')) {
+		const snapshot = { v: 1, conversationId: 'saved-card', offset: '0', messages, settlements: [{ submissionId, outcome: 'completed' }] };
+		const frame = { type: 'conversation-reset', conversationId: 'saved-card', snapshot, position: { batch: 0, index: 0 } };
+		return route.fulfill({ status: 200, contentType: 'text/event-stream', body: `data: ${JSON.stringify(frame)}\n\n` });
+	}
 	if (url.searchParams.get('view') === 'updates') return json([{
 		type: 'submission-settled', conversationId: 'saved-card', submissionId,
 		outcome: 'completed', position: { batch: 1, index: 0 },

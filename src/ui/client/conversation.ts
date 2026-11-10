@@ -103,7 +103,7 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 			return specifier ? { [chatModelHeader]: specifier } : {};
 		},
 	};
-	return localStorage.getItem(appConfig.chatStreamStorageKey) === 'sse' ? createStreamClient(options) : createFlueClient(options);
+	return localStorage.getItem(appConfig.chatStreamStorageKey) === 'sdk' ? createFlueClient(options) : createStreamClient(options);
 }
 
 export function startNewChatConversation(userId: string) {

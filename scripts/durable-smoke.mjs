@@ -115,10 +115,10 @@ try {
 	report.checks.push('The SSE client streams live reasoning, reattaches a dropped read by id without resending, reads the same history, and settles a cancel as aborted.');
 	stage = 'browser';
 	report.browser = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser') });
-	report.checks.push('Unchanged browser displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
-	stage = 'browser-sse';
-	report.browserSse = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser-sse'), stream: true });
-	report.checks.push('The same browser check passes with the SSE client switched on.');
+	report.checks.push('The browser, on the default SSE client, displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
+	stage = 'browser-sdk';
+	report.browserSdk = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser-sdk'), sdk: true });
+	report.checks.push('The same browser check passes on the SDK fallback flag.');
 	assert.deepEqual(fixture.errors, []);
 	const failureRecords = apps.logs.join('').split('\n').filter((line) => line.includes('socratink_failure'))
 		.map((line) => JSON.parse(line.slice(line.indexOf('{'))));
