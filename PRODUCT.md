@@ -10,6 +10,9 @@ This file describes the current application, not the full ambition.
 The app provides a single-learner conversation with an AI learning partner:
 
 - Streamed explanations, questions, and feedback in a persistent conversation.
+- Socratic tutoring by Jane Street's MIT-licensed socratic-tutor skill: a
+  diagnostic, a skill map with levels 0-5, one question at a time, in-session
+  spaced review, and a final assessment.
 - Structured `present_question` cards with choices and optional reasoning.
 - Records of hints, worked examples, partial explanations, and full answers
   through `mark_reveal`, keeping assistance distinguishable from learner work.
@@ -18,8 +21,8 @@ The app provides a single-learner conversation with an AI learning partner:
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
   ownership checks, rate limits, and encrypted learner API-key storage.
 
-Conversations run through `src/server/durable/` with the teaching policy in
-`src/learning/` and model routing in `src/inference/`. See [migration scope and limits](docs/pi-durable-preview.md).
+Conversations run through `src/server/durable/` with the teaching policy
+(the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`. See [migration scope and limits](docs/pi-durable-preview.md).
 
 The owning implementation is `src/learning/`, `src/app.ts`, and their
 linked UI, configuration, and server modules. Setup and software checks are
@@ -31,10 +34,11 @@ Personal practice is one part of the North Star. Dialogue rooms, simulated
 audiences, one-on-one and group debates, shared projects, teacher workflows,
 and delayed independent demonstrations remain proposed capabilities.
 
-The current app does not establish learning effectiveness, durable mastery,
+The tutor rates subskill levels and mastery inside a conversation by the
+skill's strict evaluation rules. That rating is the tutor's judgment, not an
+external measurement, and the app does not establish learning effectiveness
 or readiness for a particular learner population. It must describe observed
-work and assistance accurately, without turning model interpretations into
-facts about a learner. Provider data-use and privacy claims require evidence
+work and assistance accurately. Provider data-use and privacy claims require evidence
 for the configured service; the app uses essential session cookies.
 
 Use the North Star to choose future work. Keep implementation and validation

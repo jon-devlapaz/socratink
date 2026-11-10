@@ -33,4 +33,5 @@ describe the existing interface, not future capabilities.
 Use adjacent components before inventing a new visual pattern. Change DOM
 contracts together with their consumers and relevant checks. UI wording must
 describe the actual state and must not imply learning or mastery from an
-animation, completion state, or model response.
+animation or completion state. Mastery ratings come only from the tutor's
+skill map.

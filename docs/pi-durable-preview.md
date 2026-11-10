@@ -7,7 +7,7 @@ deploys the normal build to production; deploying a preview alone does not.
 
 ## What stays the same
 
-The interface, learner controls, teaching prompt, question validation and retry
+The interface, learner controls, question validation and retry
 rules, assistance provenance, model picker, native provider APIs, and failure
 monitoring remain. The teaching policy lives in `src/learning/` and model routing
 in `src/inference/`.

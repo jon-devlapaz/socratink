@@ -48,6 +48,31 @@ test('treats lettered or cued lists as unboxed choices, not explanatory traces',
 	);
 });
 
+test('ignores skill maps, subskill lists before an open question, and command lists', () => {
+	assert.equal(
+		looksLikeUnboxedChoices(
+			'Here is the map:\n\n```text\nTopic: SQL joins\n- inner joins  [##..]  1/5\n- outer joins  [#...]  0/5\n```\n\nWhich join have you used most?',
+		),
+		false,
+	);
+	assert.equal(
+		looksLikeUnboxedChoices(
+			'I split joins into:\n- inner joins\n- outer joins\n- self joins\n\nWhich rows does an inner join drop, and why?',
+		),
+		false,
+	);
+	assert.equal(
+		looksLikeUnboxedChoices(
+			'Which commands work anytime?\n\n```text\n- show progress\n- harder\n```\n\nWhat would you predict this query returns?',
+		),
+		false,
+	);
+	assert.equal(
+		looksLikeUnboxedChoices('Which should we start with?\n\n- inner joins\n- outer joins'),
+		true,
+	);
+});
+
 test('retries once for a schema error or an unboxed choice list', () => {
 	assert.equal(
 		presentQuestionRetryReason({

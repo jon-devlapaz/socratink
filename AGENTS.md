@@ -50,9 +50,10 @@ caches, logs, artifacts, and environment files as generated or local data.
 
 Keep learner-authored work distinct from AI output and assistance. Use
 `present_question` for choices or diagnostics with defined options, and
-preserve reveal provenance. A correct response, synthetic run, or passing
-software test does not establish retention, transfer, mastery, or production
-readiness. Keep secrets and learner data out of source and logs; use synthetic
+preserve reveal provenance. Inside a conversation the tutor rates subskills
+and mastery by the socratic-tutor policy in `src/learning/`. Outside it, a
+synthetic run or passing software test does not establish retention,
+transfer, mastery, or production readiness. Keep secrets and learner data out of source and logs; use synthetic
 data for external-service checks.
 
 ## Prove and finish

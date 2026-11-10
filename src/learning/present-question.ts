@@ -15,19 +15,25 @@ export const presentQuestionRetryBodies = {
 
 export type PresentQuestionRetryReason = keyof typeof presentQuestionRetryBodies;
 
+// Choices only count when the turn ends on the list: a skill map in a fence,
+// or a subskill list followed by an open question, is not a pick.
 export function looksLikeUnboxedChoices(text: string): boolean {
-	const source = text.trim();
-	if (!source) return false;
-	const lettered = countMatches(source, /^( {0,3})[A-D][.)]\s+\S/gm);
+	const lines = text.replace(/^ {0,3}```[^\n]*\n[\s\S]*?^ {0,3}```[ \t]*$/gm, '').trimEnd().split('\n');
+	let start = lines.length;
+	while (start > 0) {
+		const line = lines[start - 1] ?? '';
+		if (!listItem.test(line) && !(line.trim() === '' && start < lines.length)) break;
+		start -= 1;
+	}
+	const list = lines.slice(start).filter((line) => line.trim() !== '');
+	const lettered = list.filter((line) => letteredItem.test(line)).length;
 	if (lettered >= 2) return true;
-	const items = countMatches(source, /^( {0,3})(?:[-*+]|\d{1,9}[.)])[ \t]+\S/gm);
-	if (items < 2 || items > 8) return false;
-	return /\b(?:which|choose|pick|select|would you rather|do you want)\b/i.test(source);
+	if (list.length < 2 || list.length > 8) return false;
+	return /\b(?:which|choose|pick|select|would you rather|do you want)\b/i.test(lines.slice(0, start).join('\n'));
 }
 
-function countMatches(source: string, pattern: RegExp): number {
-	return [...source.matchAll(pattern)].length;
-}
+const letteredItem = /^( {0,3})[A-D][.)]\s+\S/;
+const listItem = /^( {0,3})(?:[A-D][.)]|[-*+]|\d{1,9}[.)])[ \t]+\S/;
 
 export function presentQuestionRetryReason(input: {
 	readonly toolCalls: readonly { tool: string; isError: boolean }[];
