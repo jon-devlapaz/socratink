@@ -1,7 +1,7 @@
 # Pi Durable migration and preview verification
 
-Conversations use Pi Durable. Flue is retired as a runtime; conversations
-created before the switch are no longer served. The integration was verified in
+Conversations use Pi Durable. Conversations created before the switch to Pi
+are no longer served, and their old tables are dropped. The integration was verified in
 an isolated preview before release. Merging to `main` automatically
 deploys the normal build to production; deploying a preview alone does not.
 
@@ -19,9 +19,9 @@ looking up a key. Provider keys are resolved afresh, never copied into
 Pi execution records. Keeping the database, `SESSION_SECRET`, and
 `CREDENTIALS_SECRET` preserves users, cookies, encrypted keys, and history.
 
-Every authenticated, ownership-checked request goes to Pi. No Flue package
-remains: the server is a plain Hono app built by Vite, and the browser speaks
-the local wire format in `src/config/chat-wire.ts`.
+Every authenticated, ownership-checked request goes to Pi. The server is a
+plain Hono app built by Vite, and the browser speaks the local wire format in
+`src/config/chat-wire.ts`.
 
 ## Storage and hosting
 
@@ -74,9 +74,9 @@ domains during this check. Do not put private environment files in proof output.
 
 ## Operational limits
 
-- Old `flue_*` tables are left in place and unread. Dropping them is a separate,
-  explicit data decision. The retired browser journal tables
-  (`socratink_pi.browser_*`, SQLite `pi_browser_*`) are dropped when storage opens.
+- Pre-Pi conversation tables (`public.flue_*`) and the retired browser journal
+  (`socratink_pi.browser_*`, SQLite `pi_browser_*`) are dropped when storage
+  opens. Local SQLite now lives at `.cache/socratink/local.db`.
 - An events stream ends at 250 seconds; the client reconnects and resumes from
   a fresh snapshot.
 - The Postgres adapter replays the full commit log. Pi context compaction is

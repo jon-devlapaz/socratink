@@ -9,7 +9,7 @@ import {
 	visibleToolOutput,
 } from '../src/ui/tool-state.ts';
 
-test('projects Flue dynamic-tool parts into name, state, and output', () => {
+test('projects dynamic-tool parts into name, state, and output', () => {
 	assert.deepEqual(
 		toolsFromParts([
 			{ type: 'text', text: 'aside', state: 'done' },

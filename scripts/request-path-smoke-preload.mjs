@@ -1,4 +1,4 @@
-// Redirect the real provider's HTTP transport; routing, credentials, and Flue run unchanged.
+// Redirect the real provider's HTTP transport; routing, credentials, and Pi run unchanged.
 const providerOrigin = new URL(process.env.REQUEST_PATH_SMOKE_PROVIDER_ORIGIN);
 if (providerOrigin.hostname !== '127.0.0.1' || providerOrigin.protocol !== 'http:') {
 	throw new Error('Request-path smoke requires a loopback fake provider.');

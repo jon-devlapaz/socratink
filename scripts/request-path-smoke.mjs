@@ -269,7 +269,7 @@ try {
 		...(failure ? { failure: failure.message } : {}),
 		limits: ['Synthetic signed guest sessions, not OAuth login.', 'SQLite storage; PostgreSQL has a separate check.',
 			'Fake provider HTTP responses; no live model or provider account was used.', 'Revocation applies to later admissions, not already admitted work.',
-			'Published Flue may separately print raw provider errors to stderr; payload-free assertions cover only the added Socratink failure records.',
+			'Dependencies may separately print raw provider errors to stderr; payload-free assertions cover only the added Socratink failure records.',
 			'OpenAI Responses does not expose responseModel in the installed provider SDK; optional saved route metadata is absent. Model selection is verified at the HTTP transport.'],
 	}, null, 2)}\n`);
 }

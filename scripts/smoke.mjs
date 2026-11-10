@@ -452,7 +452,7 @@ try {
 		],
 		'completed loop should restore the learner-visible turns in order',
 	);
-	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'Flue cannot unsay the unboxed list');
+	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'history cannot unsay the unboxed list');
 	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
 	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);
