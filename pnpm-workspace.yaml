@@ -2,4 +2,5 @@ allowBuilds:
   '@google/genai': false
   protobufjs: false
 overrides:
-  hono: 4.12.34
+  hono: 4.13.17
+  zod@>=4.0.0 <4.6.6: ^4.6.6
