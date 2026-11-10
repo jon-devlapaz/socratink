@@ -10,7 +10,7 @@ import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { ROOT_CONVERSATION_ID, type EntryId } from '@earendil-works/pi-durable';
 import { commitWrites } from '@earendil-works/pi-durable/testing';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
-import { isRetryableAssistantError } from 'pi-ai-durable/utils/retry';
+import { isRetryableAssistantError } from '@earendil-works/pi-ai/utils/retry';
 import { conversationModels, messageRoute, modelRef } from './provider.ts';
 import { openEngine } from './engine.ts';
 import type { EngineOptions, ModelConfig } from './contract.ts';

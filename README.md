@@ -104,8 +104,8 @@ transfer, mastery, or learning effectiveness.
 
 Socratink was extracted from [Flue](https://github.com/withastro/flue) v2.0.3 at
 source commit [`bf86b872`](https://github.com/withastro/flue/commit/bf86b872).
-The product consumes published `@flue/*` packages and preserves their names,
-this provenance statement, and the original [Apache License 2.0](LICENSE).
+Only the browser wire format from `@flue/sdk` remains as a dependency. The product
+preserves this provenance statement and the original [Apache License 2.0](LICENSE).
 
 ## Runtime failure alerts
 

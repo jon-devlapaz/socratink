@@ -9,8 +9,8 @@
 		"pnpm": ">=11 <12"
 	},
 	"scripts": {
-		"dev": "vite build --config vite.config.ui.ts && vite dev",
-		"dev:phone": "vite build --config vite.config.ui.ts && vite dev --host",
+		"dev": "vite build --config vite.config.ui.ts && node --watch src/server.ts",
+		"dev:phone": "vite build --config vite.config.ui.ts && HOST=0.0.0.0 node --watch src/server.ts",
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"audit:trellis": "trellis audit .",
@@ -53,22 +53,17 @@
 	},
 	"dependencies": {
 		"@earendil-works/chord": "1.5.0",
-		"@earendil-works/pi-ai": "^0.83.0",
+		"@earendil-works/pi-ai": "1.5.0",
 		"@earendil-works/pi-durable": "1.5.0",
-		"@flue/postgres": "2.0.3",
-		"@flue/runtime": "2.0.3",
 		"@flue/sdk": "2.0.3",
 		"@hono/node-server": "^2.0.3",
 		"@valibot/to-json-schema": "1.3.0",
 		"@vercel/functions": "3.9.5",
 		"hono": "4.12.34",
 		"pg": "^8.23.0",
-		"pi-ai-durable": "npm:@earendil-works/pi-ai@1.5.0",
 		"valibot": "^1.4.2"
 	},
 	"devDependencies": {
-		"@flue/cli": "2.0.3",
-		"@flue/vite": "2.0.3",
 		"@types/node": "^26.1.1",
 		"@types/pg": "^8.23.1",
 		"playwright": "1.65.0",

@@ -2,10 +2,10 @@ import {
 	createAssistantMessageEventStream, createModels, createProvider,
 	type Api, type AssistantMessage, type AssistantMessageEventStream, type Message,
 	type Model, type ProviderStreams, type SimpleStreamOptions, type StreamOptions,
-} from 'pi-ai-durable';
-import { openAICompletionsApi } from 'pi-ai-durable/api/openai-completions.lazy';
-import { openaiProvider } from 'pi-ai-durable/providers/openai';
-import { openrouterProvider } from 'pi-ai-durable/providers/openrouter';
+} from '@earendil-works/pi-ai';
+import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
+import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../../config/app.config.ts';
 import { capOpenrouterChatMaxTokens } from '../../config/chat-model.ts';
 import { modelRouteFromMetadata, routingFromHeaders, type ModelRouteRecord } from '../../config/model-route.ts';

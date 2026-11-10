@@ -4,7 +4,7 @@ import {
 } from '@earendil-works/pi-durable';
 import type { Context } from '@earendil-works/chord/context';
 import type { JsonValue } from '@earendil-works/chord';
-import type { AssistantMessage, Message } from 'pi-ai-durable';
+import type { AssistantMessage, Message } from '@earendil-works/pi-ai';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies as retryBodies, presentQuestionRetryReason as retryReason } from '../../learning/present-question.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';

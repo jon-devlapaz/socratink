@@ -21,7 +21,7 @@ export function resolveCredentialsSecret(environment: CredentialsEnvironment): s
 	return localCredentialsSecret;
 }
 
-// Flue owns `.cache/flue/local.db` and `flue_*` tables.
+// Keep credentials apart from the conversation store (`.cache/flue/local.db` locally).
 export function resolveCredentialStoreTarget(environment: CredentialsEnvironment): DatabaseTarget {
 	const database = resolveDatabaseTarget(environment);
 	switch (database.kind) {

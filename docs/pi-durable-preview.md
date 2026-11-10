@@ -73,8 +73,9 @@ domains during this check. Do not put private environment files in proof output.
 
 - Old `flue_*` tables are left in place and unread. Dropping them is a separate,
   explicit data decision.
-- `@flue/vite` (server build) and `@flue/sdk` (browser wire format) are still
-  dependencies. Replacing them is the remaining Flue removal step.
+- `@flue/sdk` is the only Flue package left. The browser client uses it for the
+  conversation wire format, stream reduction, and reconnects; the server only
+  imports its types. The server is a plain Hono app built by Vite.
 - The Postgres adapter replays the full commit log. Pi context compaction is
   disabled here; long conversations and storage growth need bounded testing and
   a deliberate retention/compaction design before a broad rollout.
@@ -89,7 +90,3 @@ domains during this check. Do not put private environment files in proof output.
   (including one critical and twelve high). This change adds no advisory IDs;
   it does not resolve those inherited findings or establish their reachability.
   Dependency remediation remains part of production readiness.
-
-`pi-ai-durable` is an npm alias for Pi AI 1.5.0. It keeps Pi Durable's native
-provider API separate from the older Pi AI version that `@flue/*` still pulls in.
-Remove that version split together with the last `@flue/*` package.
