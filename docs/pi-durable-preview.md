@@ -74,10 +74,9 @@ domains during this check. Do not put private environment files in proof output.
 
 ## Operational limits
 
-- Old `flue_*` tables, and the retired browser journal tables
-  (`socratink_pi.browser_progress`, `socratink_pi.browser_events`, and SQLite
-  `pi_browser_*`), are left in place and unread. Dropping them is a separate,
-  explicit data decision.
+- Old `flue_*` tables are left in place and unread. Dropping them is a separate,
+  explicit data decision. The retired browser journal tables
+  (`socratink_pi.browser_*`, SQLite `pi_browser_*`) are dropped when storage opens.
 - An events stream ends at 250 seconds; the client reconnects and resumes from
   a fresh snapshot.
 - The Postgres adapter replays the full commit log. Pi context compaction is

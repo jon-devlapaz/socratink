@@ -121,3 +121,32 @@ if (process.env.DURABLE_TEST_POSTGRES === '1') test('Postgres SQL failure rolls 
 		assert.equal(await storage.mintId(), 3);
 	} finally { await storage.close(context); await client.end(); await manager.close(); }
 });
+
+test('opening storage drops the retired browser journal tables', async () => {
+	const { DatabaseSync } = await import('node:sqlite');
+	const filename = join(directory, `${randomUUID()}.sqlite`);
+	const seed = new DatabaseSync(filename);
+	seed.exec('CREATE TABLE pi_browser_progress (conversation TEXT); CREATE TABLE pi_browser_events (sequence INTEGER)');
+	seed.close();
+	const manager = createDurableStorage({ kind: 'sqlite', filename });
+	await manager.exists('anything');
+	const check = new DatabaseSync(filename);
+	try {
+		assert.deepEqual(check.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'pi_browser%'").all(), []);
+	} finally { check.close(); await manager.close(); }
+});
+
+if (process.env.DURABLE_TEST_POSTGRES === '1') test('Postgres storage drops the retired browser journal tables', async () => {
+	const client = new pg.Client({ connectionString: postgres.connectionString });
+	await client.connect();
+	try {
+		await client.query(`CREATE SCHEMA IF NOT EXISTS socratink_pi;
+			CREATE TABLE IF NOT EXISTS socratink_pi.browser_progress (conversation TEXT PRIMARY KEY);
+			CREATE TABLE IF NOT EXISTS socratink_pi.browser_events (sequence BIGSERIAL PRIMARY KEY)`);
+		const manager = createDurableStorage({ kind: 'postgres', connectionString: postgres.connectionString });
+		try { await manager.exists('anything'); } finally { await manager.close(); }
+		const left = await client.query(`SELECT table_name FROM information_schema.tables
+			WHERE table_schema='socratink_pi' AND table_name LIKE 'browser_%'`);
+		assert.deepEqual(left.rows, []);
+	} finally { await client.end(); }
+});
