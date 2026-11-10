@@ -463,7 +463,7 @@ export function chatTurnErrorMessage(error: unknown): string {
 		return 'No model provider is set up yet. Add your own key to start.';
 	}
 	if (isOpenRouterCreditLimitError(error)) {
-		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.';
+		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the Socratink model.';
 	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
 }

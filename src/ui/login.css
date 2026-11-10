@@ -136,6 +136,16 @@ body.login-page {
 	gap: 1.25rem;
 }
 
+.login-error {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	text-align: center;
+	color: var(--error);
+	text-wrap: pretty;
+	user-select: text;
+}
+
 .login-oauth {
 	display: grid;
 	grid-template-columns: 1fr 1fr;

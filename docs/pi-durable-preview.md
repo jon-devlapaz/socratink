@@ -87,6 +87,5 @@ domains during this check. Do not put private environment files in proof output.
   would need a separate deployment/worker decision.
 - Synthetic contract tests establish software behavior, not learning outcomes,
   provider quality, production capacity, or universal fault tolerance.
-- `pnpm audit --prod` reported 7 advisories on 2026-11-10 (one high, six
-  moderate). Their reachability is not established; dependency remediation
-  remains part of production readiness.
+- `pnpm audit --prod` reported no known advisories on 2026-11-10. That is a
+  point-in-time reading; re-run it before relying on it.

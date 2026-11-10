@@ -6,10 +6,9 @@ import { DurableBusyError } from './engine.ts';
 import { conversationEvents } from './browser-sse.ts';
 import { project } from './browser-projection.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
-import { chatAutoModelHeader } from '../../config/chat-auto.ts';
 import { InferenceUnavailableError } from '../../inference/index.ts';
 
-export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: string, requested?: string, requestedAuto?: string) => Promise<ModelSelection>) {
+export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: string, requested?: string) => Promise<ModelSelection>) {
 	const path = '/:id';
 	app.post(path, async (c) => {
 		const message = await c.req.json().catch(() => null);
@@ -23,7 +22,7 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 		if (before.submissions.some((s) => !s.outcome)) return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);
 		let submissionId: string;
 		try {
-			const selected = await select(sessionFromContext(c)!.userId, c.req.header(chatModelHeader), c.req.header(chatAutoModelHeader));
+			const selected = await select(sessionFromContext(c)!.userId, c.req.header(chatModelHeader));
 			submissionId = await engine.submit(id, message.body, selected);
 		} catch (error) {
 			if (error instanceof InferenceUnavailableError) {

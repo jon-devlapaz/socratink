@@ -37,7 +37,7 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			throw new Error('The operator model requires its configured endpoint and limits.');
 		}
 		const model: Model<'openai-completions'> = {
-			id: config.autoModel ?? config.modelId, name: config.modelId, api: 'openai-completions',
+			id: config.modelId, name: config.modelId, api: 'openai-completions',
 			provider: config.provider, baseUrl: config.baseUrl, reasoning: config.reasoning ?? false,
 			compat: { supportsReasoningEffort: config.baseUrl === appConfig.vercelAiGatewayBaseUrl },
 			input: ['text'], contextWindow: config.contextWindow, maxTokens: config.maxTokens,
