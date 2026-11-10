@@ -74,9 +74,7 @@ domains during this check. Do not put private environment files in proof output.
 
 ## Operational limits
 
-- Pre-Pi conversation tables (`public.flue_*`) and the retired browser journal
-  (`socratink_pi.browser_*`, SQLite `pi_browser_*`) are dropped when storage
-  opens. Local SQLite now lives at `.cache/socratink/local.db`.
+- Local SQLite lives at `.cache/socratink/local.db`.
 - An events stream ends at 250 seconds; the client reconnects and resumes from
   a fresh snapshot.
 - The Postgres adapter replays the full commit log. Pi context compaction is
