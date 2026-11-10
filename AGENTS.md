@@ -43,8 +43,7 @@ behavior. New modes, room systems, routes, storage, evaluation machinery, and
 other product capabilities require an explicit request. An unexpectedly large
 diff is a reason to reconsider the approach, not expand the scope.
 
-The product owns `src/`. Preserve the Flue attribution and Apache licensing
-in the README. Treat `dist/`, dependencies,
+The product owns `src/`. Treat `dist/`, dependencies,
 caches, logs, artifacts, and environment files as generated or local data.
 
 Keep learner-authored work distinct from AI output and assistance. Use

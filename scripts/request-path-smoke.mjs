@@ -4,7 +4,7 @@ import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createFlueClient } from '@flue/sdk';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { chatModelHeader } from '../src/config/chat-model.ts';
 import { chatAutoModelHeader } from '../src/config/chat-auto.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
@@ -120,7 +120,7 @@ async function turn(origin, session, nonce, marker, model) {
 	assert.equal(response.status, 202, `${marker} must be admitted`);
 	session.cookie = mergeCookies(response, session.cookie);
 	const admission = await response.json();
-	const client = createFlueClient({ url, headers });
+	const client = createStreamClient({ url, headers });
 	const reply = await client.read(admission, { signal: AbortSignal.timeout(15_000) });
 	assert.equal(reply.text, `${replyText} ${marker}`);
 	return { url, marker, model, headers, client };
@@ -197,7 +197,7 @@ try {
 	assert.equal(appError.includes('socratink_failure'), false, 'successful turns must not log a failure');
 	const abortSession = await mintSessionFixture(origin);
 	const abortUrl = `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(abortSession.userId, 'abort'))}`;
-	const abortClient = createFlueClient({ url: abortUrl, headers: { cookie: abortSession.cookie } });
+	const abortClient = createStreamClient({ url: abortUrl, headers: { cookie: abortSession.cookie } });
 	const abortAdmission = await abortClient.send({ message: { kind: 'user', body: 'synthetic-abort-check' } });
 	for (let attempt = 0; attempt < 100 && !calls.some((call) => call.marker === 'aborted'); attempt += 1) {
 		await new Promise((resolve) => setTimeout(resolve, 25));
@@ -212,7 +212,7 @@ try {
 	checks.push('successful turns and learner cancellation do not emit failure logs');
 	const failureSession = await mintSessionFixture(origin);
 	const failureUrl = `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(failureSession.userId, 'failure'))}`;
-	const failureClient = createFlueClient({ url: failureUrl, headers: { cookie: failureSession.cookie } });
+	const failureClient = createStreamClient({ url: failureUrl, headers: { cookie: failureSession.cookie } });
 	const failedAdmission = await failureClient.send({ message: { kind: 'user', body: privatePrompt } });
 	let didFail = false;
 	try {
@@ -269,7 +269,7 @@ try {
 		...(failure ? { failure: failure.message } : {}),
 		limits: ['Synthetic signed guest sessions, not OAuth login.', 'SQLite storage; PostgreSQL has a separate check.',
 			'Fake provider HTTP responses; no live model or provider account was used.', 'Revocation applies to later admissions, not already admitted work.',
-			'Published Flue may separately print raw provider errors to stderr; payload-free assertions cover only the added Socratink failure records.',
+			'Dependencies may separately print raw provider errors to stderr; payload-free assertions cover only the added Socratink failure records.',
 			'OpenAI Responses does not expose responseModel in the installed provider SDK; optional saved route metadata is absent. Model selection is verified at the HTTP transport.'],
 	}, null, 2)}\n`);
 }

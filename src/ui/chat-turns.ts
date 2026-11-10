@@ -1,5 +1,5 @@
 import { revealFromParts, type RevealDefinition } from '../reveal.ts';
-import type { FlueConversationSnapshot } from '@flue/sdk';
+import type { WireSnapshot } from '../config/chat-wire.ts';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import { assistantTurnHasVisibleContent, learnerVisibleAssistantText } from './assistant-text.ts';
@@ -81,7 +81,7 @@ export function displayLabel(role: ChatMessageRole): string {
 }
 
 export function visibleTurnsFromHistory(
-	history: Pick<FlueConversationSnapshot, 'messages' | 'settlements'>,
+	history: Pick<WireSnapshot, 'messages' | 'settlements'>,
 ): DisplayedTurn[] {
 	const visible: DisplayedTurn[] = [];
 	const supersededSubmissionIds = supersededFailedSubmissionIds(history);
@@ -109,7 +109,7 @@ export function visibleTurnsFromHistory(
 }
 
 function supersededFailedSubmissionIds(
-	history: Pick<FlueConversationSnapshot, 'messages' | 'settlements'>,
+	history: Pick<WireSnapshot, 'messages' | 'settlements'>,
 ): Set<string> {
 	const failed = new Set(
 		history.settlements
@@ -146,7 +146,7 @@ function supersededFailedSubmissionIds(
 	return superseded;
 }
 
-function visibleText(message: FlueConversationSnapshot['messages'][number]): string {
+function visibleText(message: WireSnapshot['messages'][number]): string {
 	return message.parts
 		.filter((part) => part.type === 'text')
 		.map((part) => part.text)

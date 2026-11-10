@@ -36,7 +36,15 @@ export function postgresLog(connectionString: string): LogBackend {
 					next_id BIGINT NOT NULL CHECK(next_id >= 2), abort_through BIGINT NOT NULL DEFAULT 0);
 				CREATE TABLE IF NOT EXISTS ${schema}.commits (
 					namespace TEXT NOT NULL REFERENCES ${schema}.namespaces(namespace),
-					seq BIGINT NOT NULL CHECK(seq > 0), writes TEXT NOT NULL, PRIMARY KEY(namespace, seq));`);
+					seq BIGINT NOT NULL CHECK(seq > 0), writes TEXT NOT NULL, PRIMARY KEY(namespace, seq));
+				-- Retired tables: the browser journal (replaced by SSE) and pre-Pi
+				-- conversations. Remove these lines once prod has run them.
+				DROP TABLE IF EXISTS ${schema}.browser_events, ${schema}.browser_progress;
+				DO $$ DECLARE retired text; BEGIN
+					FOR retired IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'flue\\_%' LOOP
+						EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', retired);
+					END LOOP;
+				END $$;`);
 			await client.query('COMMIT');
 		} catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
 		finally { client.release(); }

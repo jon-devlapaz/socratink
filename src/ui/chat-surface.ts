@@ -1,7 +1,4 @@
-import {
-	FlueApiError,
-	type AgentReadResult,
-} from '@flue/sdk';
+import { ChatApiError, type WireReply } from '../config/chat-wire.ts';
 import { createAuthGateCard, hasAuthProvider } from './chat-gate.ts';
 import './chat-gate.css';
 import { loadAuthProviders, type AuthProviders } from './session.ts';
@@ -357,7 +354,7 @@ export function mountChatSurface(options: Readonly<{
 		await applyRequestState(await result);
 	}
 
-	async function appendAssistantReply(reply: AgentReadResult) {
+	async function appendAssistantReply(reply: WireReply) {
 		const turn = displayedAssistantTurn({
 			text: reply.text,
 			questionnaire: questionnaireFromReplyData(reply.data),
@@ -435,7 +432,7 @@ export function mountChatSurface(options: Readonly<{
 			} catch (error) {
 				requests.finishRestore();
 				requestState = requests.state;
-				if (!(error instanceof FlueApiError && error.status === 404)) {
+				if (!(error instanceof ChatApiError && error.status === 404)) {
 					turns = [
 						{
 							role: 'Error',

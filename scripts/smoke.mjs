@@ -4,7 +4,7 @@ import { cp, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createFlueClient } from '@flue/sdk';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { revealExample } from '../src/reveal.ts';
@@ -405,7 +405,7 @@ try {
 	});
 
 	const conversationId = namespacedConversationId(session.userId, 'smoke');
-	const client = createFlueClient({
+	const client = createStreamClient({
 		url: `${origin}/api/agents/chat/${encodeURIComponent(conversationId)}`,
 		headers: { cookie: session.cookie },
 	});
@@ -452,7 +452,7 @@ try {
 		],
 		'completed loop should restore the learner-visible turns in order',
 	);
-	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'Flue cannot unsay the unboxed list');
+	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'history cannot unsay the unboxed list');
 	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
 	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);

@@ -4,9 +4,9 @@ import { join, resolve } from 'node:path';
 import { mintSessionFixture } from './session-fixture.mjs';
 import { appFactory, clientFor, gate, sendText, startFixture, storeKey, until, userMessages } from './durable-smoke-support.mjs';
 import { verifyDurableBrowser } from './durable-browser-smoke.mjs';
-import { measureTurn, streamClientFor, timingHoldMs, verifyStreamClient } from './durable-stream-smoke.mjs';
+import { measureTurn, timingHoldMs } from './durable-timing.mjs';
 
-// Failure cases: default still Flue; reasoning/tool events missing or replayed;
+// Failure cases: reasoning/tool events missing or replayed;
 // observation loss duplicates a learner; cancellation fails to settle; process
 // death loses an accepted turn; metadata/assistance is lost after reload.
 const out = resolve(process.env.DURABLE_SMOKE_OUT || '.cache/durable-smoke');
@@ -59,7 +59,7 @@ try {
 	assert.ok(allEvents.some((event) => event.type === 'tool-output'));
 	for (const collection of [events, reattachedEvents]) {
 		const positions = collection.filter((event) => event.position).map((event) => JSON.stringify(event.position));
-		assert.equal(new Set(positions).size, positions.length, 'one SDK reader must never deliver a position twice');
+		assert.equal(new Set(positions).size, positions.length, 'one reader must never deliver a position twice');
 	}
 	const history = await client.history();
 	assert.equal(userMessages(history).length, 1);
@@ -67,14 +67,14 @@ try {
 	assert.equal(assistant.parts.filter((part) => part.type === 'text').map((part) => part.text).join(''), text);
 	assert.deepEqual(assistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
 	assert.equal(fixture.calls[0].path, '/v1/responses');
-	report.checks.push('Native Responses reasoning and tool events reach the existing SDK live; lost read reattaches without duplicate learner input.');
+	report.checks.push('Native Responses reasoning and tool events reach the browser client live; lost read reattaches without duplicate learner input.');
 	report.checks.push('Reply preserves reveal provenance and routed-model/fallback metadata, with reasoning kept out of answer text.');
 	stage = 'restart-history';
 	await app.stop();
 	app = await apps.start({ directory: app.directory });
 	assert.deepEqual(await clientFor(app, session, 'events').history(), history);
 	assert.equal(apps.logs.join('').includes('socratink_failure'), false, 'success, read loss, and completed restart must not log a failure');
-	report.checks.push('Process restart preserves exact SDK history, structured parts, metadata, and signed session.');
+	report.checks.push('Process restart preserves exact history, structured parts, metadata, and signed session.');
 	stage = 'crash-recovery';
 	const crashGate = gate();
 	fixture.plan('DURABLE_CRASH', { before: crashGate, text: 'Uncheckpointed reply.' }, { text: 'Recovered accepted reply.' });
@@ -106,19 +106,11 @@ try {
 	report.checks.push('Cancellation durably settles aborted and does not become an assistant answer.');
 	stage = 'timing';
 	report.timing = { providerHoldMs: timingHoldMs,
-		sdk: await measureTurn(() => clientFor(app, session, 'timing-sdk'), fixture, 'DURABLE_TIMING_SDK'),
-		sse: await measureTurn(() => streamClientFor(app, session, 'timing-sse'), fixture, 'DURABLE_TIMING_SSE'),
-	};
-	report.checks.push('One plain turn is timed on both clients: 202 to first delta, 202 to settled, and GETs per turn.');
-	stage = 'sse-client';
-	report.sse = await verifyStreamClient({ app, session, fixture });
-	report.checks.push('The SSE client streams live reasoning, reattaches a dropped read by id without resending, reads the same history, and settles a cancel as aborted.');
+		...await measureTurn(() => clientFor(app, session, 'timing'), fixture, 'DURABLE_TIMING') };
+	report.checks.push('One plain turn is timed: 202 to first delta, 202 to settled, and GETs per turn.');
 	stage = 'browser';
 	report.browser = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser') });
-	report.checks.push('The browser, on the default SSE client, displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
-	stage = 'browser-sdk';
-	report.browserSdk = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser-sdk'), sdk: true });
-	report.checks.push('The same browser check passes on the SDK fallback flag.');
+	report.checks.push('The browser displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
 	assert.deepEqual(fixture.errors, []);
 	const failureRecords = apps.logs.join('').split('\n').filter((line) => line.includes('socratink_failure'))
 		.map((line) => JSON.parse(line.slice(line.indexOf('{'))));

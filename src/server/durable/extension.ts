@@ -27,7 +27,7 @@ export function productRegistry() {
 		})),
 		hooks: [
 			hook(ToolTask, { afterTool: async (_call, result, api, context) => {
-				// Flue stops on any successful question. Pi requires every call of a
+				// A successful question ends the turn. Pi requires every call of a
 				// mixed tool round to request termination, including a reveal beside it.
 				const entries = await currentInputEntries(api, context);
 				const assistantIndex = entries.findLastIndex((entry) => entry.kind === 'pi.assistant');

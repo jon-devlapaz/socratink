@@ -1,18 +1,15 @@
-import { setTimeout as delay } from 'node:timers/promises';
 import type { Hono } from 'hono';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
 import { sessionFromContext } from '../session.ts';
 import type { Engine, ModelSelection } from './contract.ts';
-import type { BrowserStream } from './browser-events.ts';
 import { DurableBusyError } from './engine.ts';
 import { conversationEvents } from './browser-sse.ts';
-
 import { project } from './browser-projection.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { chatAutoModelHeader } from '../../config/chat-auto.ts';
 import { InferenceUnavailableError } from '../../inference/index.ts';
 
-export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: string, requested?: string, requestedAuto?: string) => Promise<ModelSelection>, stream: BrowserStream) {
+export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: string, requested?: string, requestedAuto?: string) => Promise<ModelSelection>) {
 	const path = '/:id';
 	app.post(path, async (c) => {
 		const message = await c.req.json().catch(() => null);
@@ -23,7 +20,6 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 		if (lengthError) return c.json({ error: { type: 'invalid_message', message: lengthError } }, 400);
 		const id = c.req.param('id');
 		const before = await engine.snapshot(id);
-		const { offset } = await stream.sync(project(id, before));
 		if (before.submissions.some((s) => !s.outcome)) return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);
 		let submissionId: string;
 		try {
@@ -39,8 +35,7 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 			}
 			throw error;
 		}
-		return c.json({ submissionId, streamUrl: new URL(c.req.path, c.req.url).href,
-			offset, uid: id }, 202);
+		return c.json({ submissionId }, 202);
 	});
 	app.post(`${path}/abort`, async (c) => {
 		const id = c.req.param('id');
@@ -51,22 +46,9 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 	app.get(`${path}/events`, (c) => new Response(conversationEvents(engine, c.req.param('id'), c.req.raw.signal), {
 		headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' },
 	}));
-	app.on(['GET', 'HEAD'], path, async (c) => {
-		const id = c.req.param('id');
-		let observed = await stream.sync(project(id, await engine.snapshot(id)));
+	app.get(path, async (c) => {
+		const { sourceRevision: _, ...snapshot } = project(c.req.param('id'), await engine.snapshot(c.req.param('id')));
 		c.header('Cache-Control', 'no-store');
-		c.header('Stream-Next-Offset', observed.offset);
-		c.header('Stream-Up-To-Date', 'true');
-		if (c.req.method === 'HEAD') return c.body(null, 200);
-		if ((c.req.query('view') ?? 'history') === 'history') return c.json({ ...observed.snapshot, offset: observed.offset });
-		const requested = c.req.query('offset') ?? '-1';
-		const deadline = Date.now() + 20_000;
-		while (observed.offset === requested && Date.now() < deadline && !c.req.raw.signal.aborted) {
-			await delay(200);
-			observed = await stream.sync(project(id, await engine.snapshot(id)));
-		}
-		c.header('Stream-Next-Offset', observed.offset);
-		// A conversation remains open for later submissions.
-		return c.json(await stream.read(id, requested, observed.offset));
+		return c.json(snapshot);
 	});
 }

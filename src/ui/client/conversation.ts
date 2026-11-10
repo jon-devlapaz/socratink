@@ -1,13 +1,11 @@
 import {
-	createFlueClient,
-	FlueApiError,
-	FlueExecutionError,
-	type AgentReadResult,
-	type AgentSendResult,
-	type ConversationStreamChunk,
-	type FlueClient,
-	type FlueConversationSnapshot,
-} from '@flue/sdk';
+	ChatApiError,
+	ChatTurnError,
+	type WireAdmission,
+	type WireEvent,
+	type WireReply,
+	type WireSnapshot,
+} from '../../config/chat-wire.ts';
 import { appConfig } from '../../config/app.config.ts';
 import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
@@ -19,15 +17,14 @@ import {
 	namespacedConversationId,
 } from '../../config/session.ts';
 import { randomId } from './random-id.ts';
-import { createStreamClient } from './conversation-stream.ts';
+import { createStreamClient, type StreamClient } from './conversation-stream.ts';
 
-type ChatTurnClient = Pick<FlueClient, 'send' | 'read' | 'abort'>;
-export type ChatConversationClient = Pick<FlueClient, 'send' | 'read' | 'abort' | 'history'>;
-type SubmissionReference = Pick<AgentSendResult, 'submissionId'>;
+type ChatTurnClient = Pick<StreamClient, 'send' | 'read' | 'abort'>;
+type SubmissionReference = WireAdmission;
 
 export const abortRequestTimeoutMs = 5_000;
 // Recheck and reload follow an already-admitted turn. 8s cut a live
-// FreeLLMAPI teaching reply off mid-stream; 90s matches Flue's stale-stream window.
+// FreeLLMAPI teaching reply off mid-stream; 90s leaves room for a slow model.
 export const settlementReadTimeoutMs = 90_000;
 
 export type ChatRequestState =
@@ -48,7 +45,7 @@ export type ChatRequestState =
 			detail: string;
 			code?: string;
 	  }
-	| { kind: 'completed'; text: string; reply: AgentReadResult };
+	| { kind: 'completed'; text: string; reply: WireReply };
 
 export function chatRequestControls(state: ChatRequestState): {
 	busy: boolean;
@@ -86,24 +83,23 @@ type PendingRequest = {
 type ChatRequestCoordinatorOptions = {
 	abortSignal?: () => AbortSignal;
 	settlementSignal?: () => AbortSignal;
-	onEvent?: (event: ConversationStreamChunk) => void;
+	onEvent?: (event: WireEvent) => void;
 };
 
-export function openChatConversation(userId: string, aliases: readonly string[] = []): ChatConversationClient {
+export function openChatConversation(userId: string, aliases: readonly string[] = []): StreamClient {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
 			: namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
-	const options = {
+	return createStreamClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 		headers: (): Record<string, string> => {
 			const specifier = storedLearnerChatSpecifier();
 			return specifier ? { [chatModelHeader]: specifier } : {};
 		},
-	};
-	return localStorage.getItem(appConfig.chatStreamStorageKey) === 'sdk' ? createFlueClient(options) : createStreamClient(options);
+	});
 }
 
 export function startNewChatConversation(userId: string) {
@@ -124,7 +120,7 @@ export function watchChatConversationReset(onReset: () => void): () => void {
 }
 
 export function unsettledSubmissionFromHistory(
-	history: Pick<FlueConversationSnapshot, 'messages' | 'settlements'>,
+	history: Pick<WireSnapshot, 'messages' | 'settlements'>,
 ): { text: string; submissionId: string } | undefined {
 	const settled = new Set(history.settlements.map((settlement) => settlement.submissionId));
 	for (let index = history.messages.length - 1; index >= 0; index -= 1) {
@@ -156,7 +152,7 @@ export class ChatRequestCoordinator {
 	private readonly abortSignal: () => AbortSignal;
 	private readonly settlementSignal: () => AbortSignal;
 	private readonly streamTools: DisplayedToolCall[] = [];
-	private readonly onEvent?: (event: ConversationStreamChunk) => void;
+	private readonly onEvent?: (event: WireEvent) => void;
 
 	constructor(
 		conversation: ChatTurnClient,
@@ -169,7 +165,7 @@ export class ChatRequestCoordinator {
 		this.onEvent = options.onEvent;
 	}
 
-	private observeStreamEvent(event: ConversationStreamChunk): void {
+	private observeStreamEvent(event: WireEvent): void {
 		applyToolStreamEvent(this.streamTools, event);
 		this.onEvent?.(event);
 	}
@@ -328,14 +324,17 @@ export class ChatRequestCoordinator {
 			});
 			pending.admission = admission;
 			pending.admissionResult.resolve(admission);
-			const reply = await this.readWithLostStreamFallback(admission, pending.controller.signal);
+			const reply = await this.conversation.read(admission, {
+				signal: pending.controller.signal,
+				onEvent: (event) => this.observeStreamEvent(event),
+			});
 			if (pending.canceling) return pending.cancelResult.promise;
 			return this.completedState(pending, reply);
 		} catch (error) {
 			pending.admissionResult.resolve(pending.admission);
 			if (pending.canceling) return pending.cancelResult.promise;
 			if (pending.admission) return this.errorAfterAdmission(pending, error);
-			if (error instanceof FlueApiError) {
+			if (error instanceof ChatApiError) {
 				return this.terminalState(
 					pending,
 					'not-admitted',
@@ -347,21 +346,6 @@ export class ChatRequestCoordinator {
 				pending,
 				`Sending may have been interrupted before admission was confirmed. ${chatTurnErrorMessage(error)}`,
 			);
-		}
-	}
-
-	private async readWithLostStreamFallback(admission: AgentSendResult, signal: AbortSignal) {
-		const onEvent = (event: ConversationStreamChunk) => this.observeStreamEvent(event);
-		try {
-			return await this.conversation.read(admission, {
-				signal,
-				onEvent,
-			});
-		} catch (error) {
-			if (!isLostConversationStream(error)) throw error;
-			return this.conversation.read(admission.submissionId, {
-				signal,
-			});
 		}
 	}
 
@@ -377,10 +361,10 @@ export class ChatRequestCoordinator {
 	}
 
 	private errorAfterAdmission(pending: PendingRequest, error: unknown): ChatRequestState {
-		if (error instanceof FlueExecutionError && error.failure === 'aborted') {
+		if (error instanceof ChatTurnError && error.failure === 'aborted') {
 			return this.terminalState(pending, 'aborted', 'Socratink stopped this reply.');
 		}
-		if (error instanceof FlueExecutionError && error.failure === 'failed') {
+		if (error instanceof ChatTurnError && error.failure === 'failed') {
 			return this.terminalState(pending, 'failed', chatTurnErrorMessage(error));
 		}
 		return this.recoveryState(
@@ -390,7 +374,7 @@ export class ChatRequestCoordinator {
 		);
 	}
 
-	private completedState(pending: PendingRequest, reply: AgentReadResult): ChatRequestState {
+	private completedState(pending: PendingRequest, reply: WireReply): ChatRequestState {
 		if (!assistantTurnHasVisibleContent({
 			text: reply.text,
 			data: reply.data,
@@ -475,9 +459,6 @@ function awaitWithSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T
 }
 
 export function chatTurnErrorMessage(error: unknown): string {
-	if (isLostConversationStream(error)) {
-		return 'This conversation was interrupted before a reply arrived. Send again or start over.';
-	}
 	if (envelopeType(error) === 'inference_unconfigured') {
 		return 'No model provider is set up yet. Add your own key to start.';
 	}
@@ -501,15 +482,6 @@ function collectedErrorText(error: unknown): string {
 	if ('message' in error && typeof error.message === 'string') parts.push(error.message);
 	if ('error' in error && error.error !== error) parts.push(collectedErrorText(error.error));
 	return parts.join('\n');
-}
-
-export function isLostConversationStream(error: unknown): boolean {
-	if (!hasStatus(error, 404)) return false;
-	return envelopeType(error) === 'stream_not_found';
-}
-
-function hasStatus(error: unknown, status: number): boolean {
-	return typeof error === 'object' && error !== null && 'status' in error && error.status === status;
 }
 
 function envelopeType(error: unknown): string | undefined {

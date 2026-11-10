@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { clientFor, gate, until } from './durable-smoke-support.mjs';
 
-async function openBrowser(app, session, conversationId, out, sdk = false) {
+async function openBrowser(app, session, conversationId, out) {
 	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 	const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, headless: true });
 	const context = await browser.newContext({ viewport: { width: 1000, height: 900 }, reducedMotion: 'reduce' });
@@ -12,7 +12,6 @@ async function openBrowser(app, session, conversationId, out, sdk = false) {
 		return { name: pair.slice(0, equals).trim(), value: pair.slice(equals + 1), url: app.origin };
 	}));
 	await context.addInitScript((id) => localStorage.setItem('socratink-chat-conversation-id', id), conversationId);
-	if (sdk) await context.addInitScript(() => localStorage.setItem('socratink-chat-stream', 'sdk'));
 	await context.route('**/*', (route) => new URL(route.request().url()).origin === app.origin ? route.continue() : route.abort());
 	const page = await context.newPage();
 	const errors = [];
@@ -24,14 +23,14 @@ async function openBrowser(app, session, conversationId, out, sdk = false) {
 	return { browser, page, errors, paths };
 }
 
-export async function verifyDurableBrowser({ app, session, fixture, out, sdk = false }) {
-	const marker = sdk ? 'DURABLE_BROWSER_SDK' : 'DURABLE_BROWSER';
+export async function verifyDurableBrowser({ app, session, fixture, out }) {
+	const marker = 'DURABLE_BROWSER';
 	const reasoning = 'I am comparing this synthetic learner response with the earlier evidence.';
 	const text = 'The synthetic browser reply is complete.';
 	const held = gate();
 	fixture.plan(marker, { reasoning, text, afterReasoning: held });
-	const id = `${session.userId}:durable-browser${sdk ? '-sdk' : ''}`;
-	const { browser, page, errors, paths } = await openBrowser(app, session, id, out, sdk);
+	const id = `${session.userId}:durable-browser`;
+	const { browser, page, errors, paths } = await openBrowser(app, session, id, out);
 	try {
 		await page.goto(app.origin);
 		await page.locator('#message').fill(marker);
@@ -59,7 +58,7 @@ export async function verifyDurableBrowser({ app, session, fixture, out, sdk = f
 		assert.equal(fixture.count(marker), 1);
 		assert.equal((await clientFor(app, session, id).history()).settlements.at(-1).outcome, 'completed');
 		await page.screenshot({ path: join(out, 'reasoning-reloaded.png') });
-		assert.equal(paths.some((path) => path.endsWith('/events')), !sdk, 'SSE by default; the sdk flag alone falls back');
+		assert.ok(paths.some((path) => path.endsWith('/events')), 'the browser follows turns over SSE');
 		assert.deepEqual(errors, []);
 		return { browser: browser.version(), liveReasoningBeforeCompletion: true, pendingReloadNoResubmit: true,
 			completedReload: true, screenshots: 4 };

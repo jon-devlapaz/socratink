@@ -81,7 +81,7 @@ test('uses Postgres when DATABASE_URL is set and a product SQLite file locally',
 		kind: 'sqlite',
 		filename: localCredentialsFilename,
 	});
-	assert.notEqual(localCredentialsFilename, '.cache/flue/local.db');
+	assert.notEqual(localCredentialsFilename, '.cache/socratink/local.db');
 });
 
 test('owner can get a stored key by name', async () => {
@@ -227,7 +227,6 @@ test('on-disk credential rows never store the secret', async () => {
 		const onDisk = await readFile(filename);
 		assert.doesNotMatch(onDisk.toString('utf8'), /sk-secret-should-never-appear-in-logs/);
 		assert.match(onDisk.toString('utf8'), /socratink_credentials/);
-		assert.doesNotMatch(onDisk.toString('utf8'), /flue_/);
 	});
 });
 

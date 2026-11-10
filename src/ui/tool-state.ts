@@ -1,4 +1,4 @@
-import type { ConversationStreamChunk, FlueConversationPart } from '@flue/sdk';
+import type { WireEvent, WirePart } from '../config/chat-wire.ts';
 import { revealToolName } from '../reveal.ts';
 import { isQuestionnaireTool } from '../questionnaire.ts';
 
@@ -16,7 +16,7 @@ export type DisplayedToolCall = {
 	durationMs?: number;
 };
 
-export function toolsFromParts(parts: readonly FlueConversationPart[]): DisplayedToolCall[] {
+export function toolsFromParts(parts: readonly WirePart[]): DisplayedToolCall[] {
 	const tools: DisplayedToolCall[] = [];
 	for (const part of parts) {
 		if (part.type !== 'dynamic-tool') continue;
@@ -38,7 +38,7 @@ export function visibleCardTools(
 
 export function applyToolStreamEvent(
 	calls: DisplayedToolCall[],
-	event: ConversationStreamChunk,
+	event: WireEvent,
 ): boolean {
 	switch (event.type) {
 		case 'tool-input': {
@@ -101,7 +101,7 @@ export function visibleToolOutput(call: DisplayedToolCall): string | undefined {
 }
 
 function displayedToolFromPart(
-	part: Extract<FlueConversationPart, { type: 'dynamic-tool' }>,
+	part: Extract<WirePart, { type: 'dynamic-tool' }>,
 ): DisplayedToolCall {
 	const base = { id: part.toolCallId, name: part.toolName };
 	switch (part.state) {

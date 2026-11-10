@@ -15,5 +15,5 @@ export function resolveDatabaseTarget(environment: DatabaseEnvironment): Databas
 		throw new Error('DATABASE_URL is required for durable hosted conversations.');
 	}
 
-	return { kind: 'sqlite', filename: '.cache/flue/local.db' };
+	return { kind: 'sqlite', filename: '.cache/socratink/local.db' };
 }

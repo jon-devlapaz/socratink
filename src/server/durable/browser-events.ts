@@ -1,46 +1,18 @@
-import type { ConversationStreamChunk, FlueConversationSnapshot } from '@flue/sdk';
-import type { BrowserSnapshot } from './browser-projection.ts';
+import type { WireEventBody, WireSnapshot } from '../../config/chat-wire.ts';
 
 export type Progress = {
-	hash: string; text: Record<string, string>; reasoning: Record<string, string>;
+	text: Record<string, string>; reasoning: Record<string, string>;
 	started: string[]; tools: Record<string, string>; settled: string[];
-	snapshot?: BrowserSnapshot;
 };
-type WithoutPosition<T> = T extends unknown ? Omit<T, 'conversationId' | 'position'> : never;
-export type NewEvent = WithoutPosition<ConversationStreamChunk>;
-export type BrowserObservation = { offset: string; snapshot: BrowserSnapshot };
-export type BrowserStream = {
-	sync(snapshot: BrowserSnapshot): BrowserObservation | Promise<BrowserObservation>;
-	read(conversationId: string, offset: string, through: string): ConversationStreamChunk[] | Promise<ConversationStreamChunk[]>;
-	close(): void | Promise<void>;
-};
+export type NewEvent = WireEventBody;
 
 export function initialProgress(): Progress {
-	return { hash: '', text: {}, reasoning: {}, started: [], tools: {}, settled: [] };
+	return { text: {}, reasoning: {}, started: [], tools: {}, settled: [] };
 }
 
-export function alreadyObserved(snapshot: BrowserSnapshot, state: Progress): boolean {
-	if (!Number.isSafeInteger(snapshot.sourceRevision) || snapshot.sourceRevision < 0) throw new Error('Invalid conversation revision.');
-	return !!state.snapshot && snapshot.sourceRevision <= state.snapshot.sourceRevision;
-}
-
-export function canonicalObservation(snapshot: BrowserSnapshot, state: Progress, offset: string): BrowserObservation {
-	state.snapshot = { ...snapshot, offset };
-	return { offset, snapshot: state.snapshot };
-}
-
-export function stampEvent(event: NewEvent, offset: string): NewEvent {
-	return event.type === 'conversation-reset' ? { ...event, snapshot: { ...event.snapshot, offset } } : event;
-}
-
-export function boundedCursor(value: string): string {
-	if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) throw new Error('Invalid browser cursor.');
-	return value;
-}
-
-/** Monotone observation journal: retries and older concurrent reads cannot
- * repeat tool results or settlements, or erase already observed reasoning. */
-export function progressEvents(snapshot: FlueConversationSnapshot, state: Progress): NewEvent[] {
+/** Diff one snapshot against what a connection already sent: tool results and
+ * settlements are never repeated, and observed reasoning is never erased. */
+export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEvent[] {
 	const events: NewEvent[] = [];
 	let settled = false;
 	for (const message of snapshot.messages) {
@@ -77,8 +49,7 @@ export function progressEvents(snapshot: FlueConversationSnapshot, state: Progre
 		state.settled.push(settlement.submissionId);
 		settled = true;
 	}
-	// SDK observers need final user rows, tool data, metadata and completed parts.
+	// The final reset carries user rows, tool data, metadata and completed parts.
 	if (settled) events.push({ type: 'conversation-reset', snapshot });
-	state.hash = snapshot.offset;
 	return events;
 }

@@ -21,7 +21,7 @@ export function resolveCredentialsSecret(environment: CredentialsEnvironment): s
 	return localCredentialsSecret;
 }
 
-// Keep credentials apart from the conversation store (`.cache/flue/local.db` locally).
+// Keep credentials apart from the conversation store (`.cache/socratink/local.db` locally).
 export function resolveCredentialStoreTarget(environment: CredentialsEnvironment): DatabaseTarget {
 	const database = resolveDatabaseTarget(environment);
 	switch (database.kind) {
