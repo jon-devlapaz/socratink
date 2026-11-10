@@ -100,13 +100,6 @@ restoration. Check assistance markings when the tutor supplies target content.
 These checks establish only the covered software behavior, not retention,
 transfer, mastery, or learning effectiveness.
 
-## Foundation and attribution
-
-Socratink was extracted from [Flue](https://github.com/withastro/flue) v2.0.3 at
-source commit [`bf86b872`](https://github.com/withastro/flue/commit/bf86b872).
-No Flue package remains as a dependency. The product
-preserves this provenance statement and the original [Apache License 2.0](LICENSE).
-
 ## Runtime failure alerts
 
 The `Socratink runtime monitor` workflow checks production availability and
