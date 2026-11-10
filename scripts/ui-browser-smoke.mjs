@@ -224,13 +224,11 @@ function createServices(origin, session) {
 					return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 				}
 				submissionId = `browser-submission-${fixture.sent.length}`;
-				return json({ submissionId, streamUrl: `${origin}${url.pathname}`, offset: '-1' }, 202);
+				return json({ submissionId }, 202);
 			}
-			if (url.searchParams.get('view') === 'history') {
+			if (!url.pathname.endsWith('/events')) {
 				return json({ messages: completed ? [{ role: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply' }] }] : [], settlements: [] });
 			}
-			const events = url.pathname.endsWith('/events');
-			if (!events && url.searchParams.get('view') !== 'updates') throw new Error(`Unexpected chat request: ${url}`);
 			reads += 1;
 			if (fixture.mode === 'recovery' && reads === 1) return json({ error: { type: 'interrupted', message: 'Read interrupted.' } }, 400);
 			const failed = fixture.mode === 'stream-failure' && fixture.sent.length === 1;
@@ -242,16 +240,11 @@ function createServices(origin, session) {
 			] : [];
 			const settlement = { submissionId, outcome: fixture.mode === 'recovery' ? 'aborted' : failed ? 'failed' : 'completed' };
 			chunks.push({ type: 'submission-settled', ...settlement });
-			const positioned = (list) => list.map((event, index) => ({ ...event, conversationId: 'browser-conversation', position: { batch: 1, index } }));
-			if (events) {
-				const snapshot = (settlements, messages = []) => ({ v: 1, conversationId: 'browser-conversation', offset: '0', messages, settlements });
-				const reply = completed ? [{ id: `${submissionId}:assistant`, role: 'assistant', purpose: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply', state: 'done' }] }] : [];
-				const frames = positioned([{ type: 'conversation-reset', snapshot: snapshot([]) }, ...chunks, { type: 'conversation-reset', snapshot: snapshot([settlement], reply) }]);
-				return route.fulfill({ status: 200, contentType: 'text/event-stream', body: frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join('') });
-			}
-			return json(positioned(chunks), 200, {
-				'Stream-Next-Offset': '1', 'Stream-Closed': 'true', 'Stream-Up-To-Date': 'true',
-			});
+			const snapshot = (settlements, messages = []) => ({ v: 1, conversationId: 'browser-conversation', offset: '0', messages, settlements });
+			const reply = completed ? [{ id: `${submissionId}:assistant`, role: 'assistant', purpose: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply', state: 'done' }] }] : [];
+			const frames = [{ type: 'conversation-reset', snapshot: snapshot([]) }, ...chunks, { type: 'conversation-reset', snapshot: snapshot([settlement], reply) }]
+				.map((event, index) => ({ ...event, conversationId: 'browser-conversation', position: { batch: 1, index } }));
+			return route.fulfill({ status: 200, contentType: 'text/event-stream', body: frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join('') });
 		},
 	};
 	return fixture;

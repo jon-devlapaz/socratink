@@ -4,7 +4,7 @@ import { cp, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createFlueClient } from '@flue/sdk';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { revealExample } from '../src/reveal.ts';
@@ -405,7 +405,7 @@ try {
 	});
 
 	const conversationId = namespacedConversationId(session.userId, 'smoke');
-	const client = createFlueClient({
+	const client = createStreamClient({
 		url: `${origin}/api/agents/chat/${encodeURIComponent(conversationId)}`,
 		headers: { cookie: session.cookie },
 	});

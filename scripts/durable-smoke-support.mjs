@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createFlueClient } from '@flue/sdk';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { mergeCookies } from './session-fixture.mjs';
 
 export const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -222,7 +222,7 @@ export function appFactory(fixture, { databaseUrl, secrets: suppliedSecrets,
 
 export function clientFor(app, session, nonce, headers = {}) {
 	const id = nonce.includes(':') ? nonce : `${session.userId}:${nonce}`;
-	return createFlueClient({ url: `${app.origin}/api/agents/chat/${encodeURIComponent(id)}`,
+	return createStreamClient({ url: `${app.origin}/api/agents/chat/${encodeURIComponent(id)}`,
 		headers: { cookie: session.cookie, ...headers } });
 }
 export async function sendText(client, text, options = {}) {

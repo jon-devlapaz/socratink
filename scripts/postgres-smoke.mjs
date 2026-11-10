@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { createFlueClient } from '@flue/sdk';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import pg from 'pg';
 import { mergeCookies, mintSessionFixture } from './session-fixture.mjs';
 import { writeModelResponse } from './request-path-smoke-transport.mjs';
@@ -134,7 +134,7 @@ async function startApp(root, database) {
 }
 
 function clientFor(origin, session) {
-	return createFlueClient({
+	return createStreamClient({
 		url: `${origin}/api/agents/chat/${encodeURIComponent(`${session.userId}:postgres-proof`)}`,
 		headers: { cookie: session.cookie },
 	});

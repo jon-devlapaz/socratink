@@ -1,4 +1,4 @@
-import type { ConversationStreamChunk } from '@flue/sdk';
+import type { WireEvent } from '../config/chat-wire.ts';
 
 export const pendingThinkingFallback = 'Working from what you wrote';
 const reasoningLimit = 8_000;
@@ -19,7 +19,7 @@ export function resetLiveReasoning(buffer: LiveReasoning): void {
 
 export function applyReasoningStreamEvent(
 	buffer: LiveReasoning,
-	event: ConversationStreamChunk,
+	event: WireEvent,
 ): boolean {
 	if (event.type !== 'message-delta' || event.kind !== 'reasoning') return false;
 	if (!event.delta || buffer.truncated) return false;

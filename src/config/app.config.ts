@@ -7,7 +7,6 @@ export const appConfig = {
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatConversationResetKey: 'socratink-chat-conversation-reset',
 	chatModelStorageKey: 'socratink-chat-model',
-	chatStreamStorageKey: 'socratink-chat-stream', // 'sdk' falls back to the @flue/sdk client
 	themeStorageKey: 'socratink-theme', // keep in sync with the boot script in src/ui/index.html
 	typeSizeStorageKey: 'socratink-type-size', // keep in sync with the boot script in src/ui/index.html
 	defaultLocalBaseUrl: 'http://127.0.0.1:3001/v1',

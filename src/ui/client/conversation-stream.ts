@@ -1,7 +1,4 @@
-// The error classes stay shared with the SDK client until it is removed, so the
-// request coordinator handles both clients the same way.
-import { FlueApiError, FlueExecutionError } from '@flue/sdk';
-import { replyFrom, type WireAdmission, type WireEvent, type WireReply, type WireSnapshot } from './wire.ts';
+import { ChatApiError, ChatTurnError, replyFrom, type WireAdmission, type WireEvent, type WireReply, type WireSnapshot } from '../../config/chat-wire.ts';
 
 type Headers = Record<string, string> | (() => Record<string, string>);
 type ReadOptions = { signal?: AbortSignal; onEvent?: (event: WireEvent) => void | Promise<void> };
@@ -23,6 +20,7 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 	};
 
 	return {
+		url,
 		send({ message, signal }: { message: { kind: 'user'; body: string }; signal?: AbortSignal }) {
 			return json<WireAdmission>('', { method: 'POST', body: JSON.stringify(message), signal });
 		},
@@ -30,11 +28,10 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 			return json<{ aborted: boolean }>('/abort', { method: 'POST', signal });
 		},
 		history({ signal }: { signal?: AbortSignal } = {}) {
-			return json<WireSnapshot>('?view=history', { signal });
+			return json<WireSnapshot>('', { signal });
 		},
-		async read(target: Pick<WireAdmission, 'submissionId'> & { uid?: string } | string, { signal, onEvent }: ReadOptions = {}): Promise<WireReply> {
+		async read(target: WireAdmission | string, { signal, onEvent }: ReadOptions = {}): Promise<WireReply> {
 			const submissionId = typeof target === 'string' ? target : target.submissionId;
-			const uid = typeof target === 'string' ? undefined : target.uid;
 			const fresh = deduplicator();
 			let retryMs = firstRetryMs;
 			for (let connection = 0; ; connection += 1) {
@@ -54,17 +51,16 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 					}
 				} catch (error) {
 					if (signal?.aborted) throw signal.reason;
-					if (error instanceof FlueApiError) throw error;
+					if (error instanceof ChatApiError) throw error;
 					// A dropped connection reconnects below.
 				}
 				const settlement = latest?.settlements.find((s) => s.submissionId === submissionId);
 				if (latest && settlement) {
-					if (settlement.outcome === 'completed') return { ...replyFrom(latest, submissionId), submissionId, ...(uid ? { uid } : {}) };
-					throw new FlueExecutionError({ target: 'agent_submission', targetId: submissionId,
-						failure: settlement.outcome, error: settlement.error });
+					if (settlement.outcome === 'completed') return { ...replyFrom(latest, submissionId), submissionId };
+					throw new ChatTurnError({ submissionId, failure: settlement.outcome, error: settlement.error });
 				}
 				if (latest && !hasPendingTurn(latest) && !latest.messages.some((m) => m.submissionId === submissionId)) {
-					throw new FlueExecutionError({ target: 'agent_submission', targetId: submissionId, failure: 'terminal_event_missing' });
+					throw new ChatTurnError({ submissionId, failure: 'terminal_event_missing' });
 				}
 				if (!latest) {
 					await pause(retryMs, signal);
@@ -77,11 +73,11 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 
 export type StreamClient = ReturnType<typeof createStreamClient>;
 
-async function apiError(response: Response): Promise<FlueApiError> {
+async function apiError(response: Response): Promise<ChatApiError> {
 	const text = await response.text();
 	let body: unknown = text;
 	try { body = JSON.parse(text); } catch { /* keep the text */ }
-	return new FlueApiError(response.status, body);
+	return new ChatApiError(response.status, body);
 }
 
 async function* serverEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<WireEvent> {

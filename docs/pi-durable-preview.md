@@ -19,9 +19,9 @@ looking up a key. Provider keys are resolved afresh, never copied into
 Pi execution records. Keeping the database, `SESSION_SECRET`, and
 `CREDENTIALS_SECRET` preserves users, cookies, encrypted keys, and history.
 
-Every authenticated, ownership-checked request goes to Pi. The published
-`@flue/vite` build and `@flue/sdk` browser wire format remain as dependencies
-until they are replaced; no Flue runtime executes conversations.
+Every authenticated, ownership-checked request goes to Pi. No Flue package
+remains: the server is a plain Hono app built by Vite, and the browser speaks
+the local wire format in `src/config/chat-wire.ts`.
 
 ## Storage and hosting
 
@@ -29,8 +29,11 @@ Pi 1.5 owns execution, tools, live progress, retry, and replay. The application
 adapts its native storage contract to a committed log in `socratink_pi` in
 Postgres, or separate `pi_*` tables in local SQLite. Native conformance tests
 cover both stores. Reads reconstruct one consistent committed snapshot without
-taking execution ownership. Browser events have persistent cursors and canonical
-snapshots, including live reasoning, tool results, and settlement.
+taking execution ownership. The browser POSTs a turn, then follows it over one
+Server-Sent Events GET (`/api/agents/chat/:id/events`). Each connection opens
+with a snapshot and streams reasoning, tool results, and settlement diffed in
+memory from engine snapshots; nothing extra is stored, and a reconnect simply
+starts from a fresh snapshot.
 
 Only an active turn holds a dedicated owner connection. A Postgres advisory lock
 prevents a second process from executing the same conversation. Neon pooled URLs
@@ -71,11 +74,12 @@ domains during this check. Do not put private environment files in proof output.
 
 ## Operational limits
 
-- Old `flue_*` tables are left in place and unread. Dropping them is a separate,
+- Old `flue_*` tables, and the retired browser journal tables
+  (`socratink_pi.browser_progress`, `socratink_pi.browser_events`, and SQLite
+  `pi_browser_*`), are left in place and unread. Dropping them is a separate,
   explicit data decision.
-- `@flue/sdk` is the only Flue package left. The browser client uses it for the
-  conversation wire format, stream reduction, and reconnects; the server only
-  imports its types. The server is a plain Hono app built by Vite.
+- An events stream ends at 250 seconds; the client reconnects and resumes from
+  a fresh snapshot.
 - The Postgres adapter replays the full commit log. Pi context compaction is
   disabled here; long conversations and storage growth need bounded testing and
   a deliberate retention/compaction design before a broad rollout.

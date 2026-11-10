@@ -3,11 +3,9 @@ import test from 'node:test';
 import { Hono } from 'hono';
 import { mountBrowserBridge } from './browser-bridge.ts';
 import { conversationEvents } from './browser-sse.ts';
-import type { BrowserStream } from './browser-events.ts';
 import type { Engine, Snapshot } from './contract.ts';
 
 const fast = { pollMs: 1, heartbeatMs: 60_000, maxMs: 5_000 };
-const unusedStream = {} as BrowserStream;
 
 function engineOf(states: Snapshot[]): Engine & { calls: number } {
 	const engine = {
@@ -83,7 +81,7 @@ test('a dropped client stops the snapshot loop', async () => {
 test('the bridge serves events as an uncached event stream', async () => {
 	const app = new Hono();
 	mountBrowserBridge(app, engineOf([{ revision: 1, messages: [earlier, earlierReply], submissions: [done] }]),
-		async () => { throw new Error('Event reads must not resolve credentials'); }, unusedStream);
+		async () => { throw new Error('Event reads must not resolve credentials'); });
 	const response = await app.request('/c/events');
 	assert.equal(response.status, 200);
 	assert.equal(response.headers.get('Content-Type'), 'text/event-stream');

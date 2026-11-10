@@ -20,9 +20,6 @@ importers:
       '@earendil-works/pi-durable':
         specifier: 1.5.0
         version: 1.5.0(@aws-sdk/credential-provider-node@3.972.94)(@smithy/signature-v4@5.7.5)(zod@4.1.11)
-      '@flue/sdk':
-        specifier: 2.0.3
-        version: 2.0.3
       '@hono/node-server':
         specifier: ^2.0.3
         version: 2.1.1(hono@4.12.34)
@@ -153,11 +150,6 @@ packages:
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
-  '@durable-streams/client@0.2.6':
-    resolution: {integrity: sha512-uHKKbWpsKLhFMeGjG0PgM6LXE3oEIi7FHKlJZkmYGxcqd4Yjjd/QEvnQnDzteRP4Av1uJVM8qjTL7kfKsgeS/w==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
-
   '@earendil-works/chord@1.5.0':
     resolution: {integrity: sha512-jf555zbCM21E03DVBDPD/Tuae0lz64YjaHx/athUxNZ/H7phVVb0dWfZsaYnxaXPQ1odW8iHEoVLOlE/prvUPg==}
     engines: {node: '>=22.19.0'}
@@ -191,9 +183,6 @@ packages:
     resolution: {integrity: sha512-VW3tcVdnNfl/Vk8wHPTzZdKkxcsCOM12ppiO4DXnd9wMxUCmOfLt/wvUnWeKWbTVlVSRg0uqKtnnhE2UCsG2Bw==}
     engines: {node: '>=22.19.0'}
 
-  '@flue/sdk@2.0.3':
-    resolution: {integrity: sha512-ZD5HZGeVxWu0/G6KYrpOh1RGGBpvk/i9QojWMykNzVrH0w4g3nTPdZN9kY4JvYh/+aRtqTrwb3c1Tb3hUm8BIg==}
-
   '@google/genai@2.21.0':
     resolution: {integrity: sha512-+PDtco2/Z0ONdzCGekCoCT+O1VJS9xJQNN4XzQpXG/t3El/SWWMkCWlFRO1KmivOHPa4Q0VjUYu1HBKCZ/v33Q==}
     engines: {node: '>=20.0.0'}
@@ -208,9 +197,6 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       hono: 4.12.34
-
-  '@microsoft/fetch-event-source@2.0.1':
-    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@oxc-project/types@0.144.0':
     resolution: {integrity: sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==}
@@ -584,9 +570,6 @@ packages:
   fast-sha256@1.3.0:
     resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
-  fastq@1.20.1:
-    resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
-
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
     engines: {node: '>=12.0.0'}
@@ -910,10 +893,6 @@ packages:
   retry@0.13.1:
     resolution: {integrity: sha512-XQBQ3I8W1Cge0Seh+6gjj03LbmRFWuoszgK9ooCpwYIrhhoO80pfq4cUkU5DkknwfOfFteRwlZ56PYOGYyFWdg==}
     engines: {node: '>= 4'}
-
-  reusify@1.1.0:
-    resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
-    engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
   rolldown@1.2.4:
     resolution: {integrity: sha512-rSr7irW0K7QRWzjdJXqZowkcRdDtjRduh43rBltnVKd0VFq839l1lJoDvGJb6gl7+4rTTCrPWu+YfujUL8Ug7w==}
@@ -1247,11 +1226,6 @@ snapshots:
 
   '@babel/runtime@7.29.7': {}
 
-  '@durable-streams/client@0.2.6':
-    dependencies:
-      '@microsoft/fetch-event-source': 2.0.1
-      fastq: 1.20.1
-
   '@earendil-works/chord@1.5.0':
     dependencies:
       '@earendil-works/pi-schema': 1.5.0
@@ -1313,10 +1287,6 @@ snapshots:
 
   '@earendil-works/pi-telemetry@1.5.0': {}
 
-  '@flue/sdk@2.0.3':
-    dependencies:
-      '@durable-streams/client': 0.2.6
-
   '@google/genai@2.21.0':
     dependencies:
       google-auth-library: 10.9.1
@@ -1331,8 +1301,6 @@ snapshots:
   '@hono/node-server@2.1.1(hono@4.12.34)':
     dependencies:
       hono: 4.12.34
-
-  '@microsoft/fetch-event-source@2.0.1': {}
 
   '@oxc-project/types@0.144.0': {}
 
@@ -1587,10 +1555,6 @@ snapshots:
   extend@3.0.2: {}
 
   fast-sha256@1.3.0: {}
-
-  fastq@1.20.1:
-    dependencies:
-      reusify: 1.1.0
 
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
@@ -1866,8 +1830,6 @@ snapshots:
   quickjs-wasi@3.6.2: {}
 
   retry@0.13.1: {}
-
-  reusify@1.1.0: {}
 
   rolldown@1.2.4:
     dependencies:

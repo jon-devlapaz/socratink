@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FlueApiError, FlueExecutionError } from '@flue/sdk';
+import { ChatApiError, ChatTurnError } from '../src/config/chat-wire.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
 	chatTurnErrorMessage,
-	isLostConversationStream,
 	isOpenRouterCreditLimitError,
 	openChatConversation,
 	settlementReadTimeoutMs,
@@ -15,12 +14,7 @@ import {
 	watchChatConversationReset,
 } from '../src/ui/client/conversation.ts';
 
-const admission = {
-	streamUrl: 'http://localhost/conversation',
-	offset: '1',
-	submissionId: 'sub-1',
-	uid: 'instance-1',
-};
+const admission = { submissionId: 'sub-1' };
 const reply = { text: 'recovered', data: {}, submissionId: 'sub-1' };
 const coordinatorOptions = {
 	abortSignal: () => new AbortController().signal,
@@ -28,22 +22,9 @@ const coordinatorOptions = {
 };
 
 function executionError(failure) {
-	return new FlueExecutionError({
-		target: 'agent_submission',
-		targetId: 'sub-1',
+	return new ChatTurnError({ submissionId: 'sub-1',
 		failure,
 	});
-}
-
-function streamNotFound(source) {
-	const error = new Error('HTTP Error 404 at http://localhost/conversation?view=updates');
-	error.status = 404;
-	if (source === 'json') {
-		error.json = { error: { type: 'stream_not_found', message: 'Event stream was not found.' } };
-	} else {
-		error.body = { error: { type: 'stream_not_found', message: 'Event stream was not found.' } };
-	}
-	return error;
 }
 
 function abortablePendingRead(signal) {
@@ -54,69 +35,6 @@ function abortablePendingRead(signal) {
 
 test('recheck waits longer than a mid-stream FreeLLMAPI teaching reply', () => {
 	assert.ok(settlementReadTimeoutMs >= 90_000);
-});
-
-test('detects only durable-stream 404 stream_not_found envelopes', () => {
-	assert.equal(isLostConversationStream(streamNotFound('json')), true);
-	assert.equal(isLostConversationStream(streamNotFound('body')), true);
-	const other = new Error('missing');
-	other.status = 404;
-	other.json = { error: { type: 'agent_instance_not_found' } };
-	assert.equal(isLostConversationStream(other), false);
-	assert.equal(isLostConversationStream(new Error('network')), false);
-});
-
-test('a lost admission stream falls back to the same submissionId without sending again', async () => {
-	let sends = 0;
-	const reads = [];
-	const conversation = {
-		async send() {
-			sends += 1;
-			return admission;
-		},
-		async read(target) {
-			reads.push(target);
-			if (target === admission) throw streamNotFound('json');
-			return reply;
-		},
-		async abort() {
-			throw new Error('should not abort');
-		},
-	};
-	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
-	const state = await coordinator.start('hello');
-
-	assert.deepEqual(state, { kind: 'completed', text: 'hello', reply });
-	assert.equal(sends, 1);
-	assert.deepEqual(reads, [admission, admission.submissionId]);
-});
-
-test('lost-stream fallback does not observe tools from origin replay', async () => {
-	const priorToolChunk = {
-		type: 'tool-input',
-		toolCallId: 'call-old',
-		toolName: 'lookup',
-		input: {},
-	};
-	const conversation = {
-		async send() {
-			return admission;
-		},
-		async read(target, options) {
-			if (target === admission) throw streamNotFound('json');
-			options?.onEvent?.(priorToolChunk);
-			return { text: '«STATION_IDENT»', data: {}, submissionId: 'sub-1' };
-		},
-		async abort() {
-			throw new Error('should not abort');
-		},
-	};
-	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
-	const state = await coordinator.start('hello');
-
-	assert.equal(state.kind, 'terminal');
-	assert.equal(state.outcome, 'failed');
-	assert.match(state.detail, /without a reply/i);
 });
 
 test('forwards admission-read stream events to the conversation listener', async () => {
@@ -149,7 +67,7 @@ test('forwards admission-read stream events to the conversation listener', async
 	assert.deepEqual(seen, [chunk]);
 });
 
-test('a non-stream 404 does not fall back from the admission handle', async () => {
+test('a 404 read leaves the admission in recovery without resending', async () => {
 	let sends = 0;
 	const reads = [];
 	const other = new Error('missing');
@@ -594,7 +512,7 @@ test('a confirmed failed settlement can retry once', async () => {
 test('not-admitted terminal state carries the envelope error code', async () => {
 	const conversation = {
 		async send() {
-			throw new FlueApiError(403, {
+			throw new ChatApiError(403, {
 				error: { type: 'guest_turn_limit', message: 'Sign in to continue this conversation.' },
 			});
 		},
@@ -618,7 +536,7 @@ test('a confirmed not-admitted send can retry once', async () => {
 		async send() {
 			sends += 1;
 			if (sends === 1) {
-				throw new FlueApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
+				throw new ChatApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
 			}
 			return admission;
 		},
@@ -644,7 +562,7 @@ test('a confirmed stop can send a different message without retrying the old one
 		async send({ message }) {
 			sent.push(message.body);
 			if (sent.length === 1) {
-				throw new FlueApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
+				throw new ChatApiError(400, { error: { type: 'bad_request', message: 'rejected' } });
 			}
 			return { ...admission, submissionId: `sub-${sent.length}` };
 		},
@@ -685,13 +603,9 @@ test('rejects every overlapping admission attempt', async () => {
 });
 
 test('maps user-facing errors without treating cancellation as a generic failure', () => {
-	assert.equal(
-		chatTurnErrorMessage(streamNotFound('json')),
-		'This conversation was interrupted before a reply arrived. Send again or start over.',
-	);
 	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
 	assert.equal(
-		chatTurnErrorMessage(new FlueApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
+		chatTurnErrorMessage(new ChatApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
 		'No model provider is set up yet. Add your own key to start.',
 	);
 });
@@ -706,9 +620,7 @@ test('maps OpenRouter credit 402s to a learner-readable Chat error', () => {
 		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.',
 	);
 
-	const nested = new FlueExecutionError({
-		target: 'agent_submission',
-		targetId: 'sub-1',
+	const nested = new ChatTurnError({ submissionId: 'sub-1',
 		failure: 'failed',
 		error: {
 			message: '402 from OpenRouter: "You requested up to 128000 tokens, but can only afford 100000."',

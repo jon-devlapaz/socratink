@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
-import type { FlueConversationPart, FlueConversationSnapshot } from '@flue/sdk';
+import type { WirePart, WireSnapshot } from '../../config/chat-wire.ts';
 import type { ProductTool, Snapshot } from './contract.ts';
 
-export type BrowserSnapshot = FlueConversationSnapshot & { sourceRevision: number };
+export type BrowserSnapshot = WireSnapshot & { sourceRevision: number };
 
-/** Keep the shipped browser protocol while Pi owns new conversation execution. */
+/** The browser's view of a Pi conversation. */
 export function project(conversationId: string, state: Snapshot): BrowserSnapshot {
 	const pending = new Set(state.submissions.filter((s) => !s.outcome).map((s) => s.id));
-	const messages: FlueConversationSnapshot['messages'] = state.messages.map((m) => ({
+	const messages: WireSnapshot['messages'] = state.messages.map((m) => ({
 		id: `${m.submissionId}:${m.role}`, role: m.role, purpose: m.role, display: 'visible',
 		submissionId: m.submissionId, ...(m.metadata ? { metadata: m.metadata } : {}),
 		parts: [
@@ -23,7 +23,7 @@ export function project(conversationId: string, state: Snapshot): BrowserSnapsho
 	return { v: 1, conversationId, offset, messages, settlements, sourceRevision: state.revision };
 }
 
-function toolPart(tool: ProductTool): FlueConversationPart {
+function toolPart(tool: ProductTool): WirePart {
 	const base = { type: 'dynamic-tool' as const, toolName: tool.name, toolCallId: tool.id, input: tool.input };
 	if (tool.state === 'running') return { ...base, state: 'input-available' };
 	return tool.isError
