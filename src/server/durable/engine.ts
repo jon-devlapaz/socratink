@@ -10,7 +10,7 @@ import { createDurableStorage, type OwnedStorage } from './storage.ts';
 export class DurableBusyError extends Error {
 	constructor() { super('This conversation is busy.'); this.name = 'DurableBusyError'; }
 }
-type Owner = { storage: OwnedStorage; harness: Harness; root: Conversation;
+type Owner = { storage: OwnedStorage; harness: Harness; root: Conversation; modelId: () => string | undefined;
 	stop: () => Promise<void>; done?: Promise<void>; interrupted: boolean };
 
 /** Execution ownership lasts only for an active turn. Readers use committed
@@ -72,7 +72,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					const turn = await readSnapshot(owner.storage);
 					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
 					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
-					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel };
+					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
 					if (submission?.outcome === 'failed') reportFailed();
 				}
 			} catch { ended = { status: 'error' }; reportFailed(); }
@@ -152,6 +152,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 
 async function openOwner(id: string, storage: OwnedStorage, options: EngineOptions, reportRetry: () => void): Promise<Owner> {
 	let root: Conversation;
+	let modelId: string | undefined;
 	const models = conversationModels(options, id, async (): Promise<ModelSelection | undefined> => {
 		let cursor: Cursor | undefined;
 		do {
@@ -161,7 +162,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 			cursor = page.next;
 		} while (cursor);
 		return undefined;
-	});
+	}, (config) => { modelId = config.modelId; });
 	const harness = await Harness.open(storage, { models, registry: productRegistry(),
 		settings: { compaction: { enabled: false }, stream: { maxRetries: 0 },
 			retry: { maxRetries: 2, baseDelayMs: 50 }, progress: { persistWithinMs: 50 } },
@@ -194,6 +195,6 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 	}
 	catch (error) { await harness.close(context); throw error; }
 	let closing: Promise<void> | undefined;
-	return { storage, harness, root, interrupted: false,
+	return { storage, harness, root, interrupted: false, modelId: () => modelId,
 		stop: () => closing ??= harness.close(context) };
 }

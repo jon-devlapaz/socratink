@@ -139,6 +139,7 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 			: ['submission_recovery', 'submission_recovery', 'submission_failed']);
 		if (failures === 3) assert.equal(completed.submissions[0].error, 'The model request could not complete.');
 		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
+		assert.equal(turns[0].model, failures === 1 ? 'synthetic-route' : 'synthetic', 'a turn without a routed reply logs the configured model');
 		assert.equal(JSON.stringify(turns).includes('Synthetic private'), false, 'turn records carry no learner or provider text');
 	} finally { await engine.close(); }
 }, failures));
