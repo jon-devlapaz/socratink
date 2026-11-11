@@ -32,7 +32,15 @@ test('production build ships branded recovery and existing static entries', asyn
 	assert.match(notFound, /<h1[^>]*>Page not found<\/h1>/);
 	assert.match(notFound, /href="\/"[^>]*>Home<\/a>/);
 	assert.match(notFound, /href="\/login"[^>]*>Log in<\/a>/);
-	assert.doesNotMatch(notFound, /<script/, 'recovery does not require JavaScript');
+	assert.doesNotMatch(notFound, /<script[^>]*\b(?:src|type)=/, 'recovery does not require JavaScript');
+	const index = await readFile('dist/client/index.html', 'utf8');
+	const boot = /<script>\s*\(function \(\) \{[\s\S]*?<\/script>/;
+	assert.ok(notFound.match(boot), 'stored theme and type size apply before paint');
+	assert.equal(
+		notFound.match(boot)[0].replace(/\s+/g, ' '),
+		index.match(boot)?.[0].replace(/\s+/g, ' '),
+		'404 boot script matches the app boot script',
+	);
 	const assets = [...notFound.matchAll(/(?:src|href)="(\/assets\/[^"?#]+)"/g)];
 	assert.ok(assets.length >= 2, 'built styles and wordmark use root-relative URLs');
 	for (const [, path] of assets) {

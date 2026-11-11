@@ -1,5 +1,17 @@
-import { loadAuthProviders } from './session.ts';
+import { loadAuthProviders, loginErrorCopy } from './session.ts';
 import './login.css';
+
+const url = new URL(location.href);
+if (url.searchParams.has('error')) {
+	const copy = loginErrorCopy(url.searchParams.get('error'));
+	const message = document.querySelector<HTMLElement>('#login-error');
+	if (copy && message) {
+		message.textContent = copy;
+		message.hidden = false;
+	}
+	url.searchParams.delete('error');
+	history.replaceState(history.state, '', url);
+}
 
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-provider]')) {
 	button.addEventListener('click', () => {

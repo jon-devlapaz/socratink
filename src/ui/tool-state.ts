@@ -2,8 +2,6 @@ import type { WireEvent, WirePart } from '../config/chat-wire.ts';
 import { revealToolName } from '../reveal.ts';
 import { isQuestionnaireTool } from '../questionnaire.ts';
 
-export const inkToolName = 'ink_express';
-
 const outputLimit = 8_000;
 
 export type ToolCallState = 'running' | 'done' | 'failed';
@@ -164,5 +162,5 @@ function stringifyOutput(value: unknown): string {
 }
 
 function isQuietTool(name: string): boolean {
-	return name === revealToolName || name === inkToolName;
+	return name === revealToolName;
 }

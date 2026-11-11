@@ -19,11 +19,9 @@ export async function readLearnerChatStatus(response: Response): Promise<Learner
 export function providersChatStatusCopy(status: LearnerChatStatus): string {
 	switch (status.kind) {
 		case 'operator':
-			return 'Chat uses the local Socratink model.';
+			return 'Chat uses the Socratink model.';
 		case 'openai':
 			return 'Chat uses your OpenAI key.';
-		case 'openrouter':
-			return 'Chat uses your OpenRouter key.';
 		default: {
 			const exhaustive: never = status.kind;
 			throw new Error(`Unexpected chat route: ${JSON.stringify(exhaustive)}`);
@@ -36,7 +34,6 @@ export function openaiChatStatusCopy(status: LearnerChatStatus): string {
 	switch (status.kind) {
 		case 'openai':
 			return 'Connected. Chat uses your OpenAI key.';
-		case 'openrouter':
 		case 'operator':
 			return 'OpenAI key stored.';
 		default: {

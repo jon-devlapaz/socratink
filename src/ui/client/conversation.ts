@@ -462,26 +462,7 @@ export function chatTurnErrorMessage(error: unknown): string {
 	if (envelopeType(error) === 'inference_unconfigured') {
 		return 'No model provider is set up yet. Add your own key to start.';
 	}
-	if (isOpenRouterCreditLimitError(error)) {
-		return 'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.';
-	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
-}
-
-export function isOpenRouterCreditLimitError(error: unknown): boolean {
-	const text = collectedErrorText(error);
-	if (/can only afford/i.test(text)) return true;
-	if (/requires more credits/i.test(text) && /openrouter/i.test(text)) return true;
-	return /\b402\b/.test(text) && /openrouter/i.test(text);
-}
-
-function collectedErrorText(error: unknown): string {
-	if (typeof error === 'string') return error;
-	if (typeof error !== 'object' || error === null) return '';
-	const parts: string[] = [];
-	if ('message' in error && typeof error.message === 'string') parts.push(error.message);
-	if ('error' in error && error.error !== error) parts.push(collectedErrorText(error.error));
-	return parts.join('\n');
 }
 
 function envelopeType(error: unknown): string | undefined {

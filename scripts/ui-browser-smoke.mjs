@@ -145,7 +145,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses your OpenAI key.');
 		await page.locator('#openai-key-disconnect').click();
 		await page.locator('#openai-key-connect').waitFor();
-		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses the local Socratink model.');
+		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses the Socratink model.');
 	});
 
 	await check('provider-ignores-older-status-read', async (page, fixture) => {
@@ -187,7 +187,7 @@ function createServices(origin, session) {
 	const replyReady = new Promise((resolve) => { releaseReply = resolve; });
 	let releaseStatus;
 	const statusReady = new Promise((resolve) => { releaseStatus = resolve; });
-	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected, openrouter: false });
+	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected });
 	const fixture = {
 		mode: 'success',
 		statusFailure: undefined,

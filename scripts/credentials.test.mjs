@@ -102,12 +102,12 @@ test('owner can get a stored key by name', async () => {
 test('rekeyUser moves guest keys to the durable user without re-encryption', async () => {
 	await withStore(async (store) => {
 		await store.updateUserKey({ userId: 'guest-a', name: 'openai', value: plaintext });
-		await store.updateUserKey({ userId: 'guest-a', name: 'openrouter', value: 'guest-router-key' });
+		await store.updateUserKey({ userId: 'guest-a', name: 'other', value: 'guest-other-key' });
 		await store.rekeyUser({ fromUserId: 'guest-a', toUserId: 'durable-b' });
 		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openai' }), plaintext);
-		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openrouter' }), 'guest-router-key');
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'other' }), 'guest-other-key');
 		assert.equal(await store.hasUserKey({ userId: 'guest-a', name: 'openai' }), false);
-		assert.equal(await store.hasUserKey({ userId: 'guest-a', name: 'openrouter' }), false);
+		assert.equal(await store.hasUserKey({ userId: 'guest-a', name: 'other' }), false);
 	});
 });
 
@@ -115,10 +115,10 @@ test('rekeyUser keeps the durable user key on name conflict and migrates the res
 	await withStore(async (store) => {
 		await store.updateUserKey({ userId: 'durable-b', name: keyName, value: 'durable-key' });
 		await store.updateUserKey({ userId: 'guest-a', name: keyName, value: 'guest-key' });
-		await store.updateUserKey({ userId: 'guest-a', name: 'openrouter', value: 'guest-router-key' });
+		await store.updateUserKey({ userId: 'guest-a', name: 'other', value: 'guest-other-key' });
 		await store.rekeyUser({ fromUserId: 'guest-a', toUserId: 'durable-b' });
 		assert.equal(await store.getUserKey({ userId: 'durable-b', name: keyName }), 'durable-key');
-		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'openrouter' }), 'guest-router-key');
+		assert.equal(await store.getUserKey({ userId: 'durable-b', name: 'other' }), 'guest-other-key');
 		assert.equal(await store.getUserKey({ userId: 'guest-a', name: keyName }), 'guest-key');
 	});
 });

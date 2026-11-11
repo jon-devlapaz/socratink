@@ -6,7 +6,6 @@ import {
 	ChatRequestCoordinator,
 	chatRequestControls,
 	chatTurnErrorMessage,
-	isOpenRouterCreditLimitError,
 	openChatConversation,
 	settlementReadTimeoutMs,
 	startNewChatConversation,
@@ -608,32 +607,6 @@ test('maps user-facing errors without treating cancellation as a generic failure
 		chatTurnErrorMessage(new ChatApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
 		'No model provider is set up yet. Add your own key to start.',
 	);
-});
-
-test('maps OpenRouter credit 402s to a learner-readable Chat error', () => {
-	const live = new Error(
-		'Agent submission failed: 402 from OpenRouter: "You requested up to 128000 tokens, but can only afford 100000."',
-	);
-	assert.equal(isOpenRouterCreditLimitError(live), true);
-	assert.equal(
-		chatTurnErrorMessage(live),
-		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.',
-	);
-
-	const nested = new ChatTurnError({ submissionId: 'sub-1',
-		failure: 'failed',
-		error: {
-			message: '402 from OpenRouter: "You requested up to 128000 tokens, but can only afford 100000."',
-		},
-	});
-	assert.equal(isOpenRouterCreditLimitError(nested), true);
-	assert.equal(
-		chatTurnErrorMessage(nested),
-		'OpenRouter could not start this reply because remaining credits are too low. Add credits, or disconnect OpenRouter so Chat uses the local Socratink model.',
-	);
-
-	assert.equal(isOpenRouterCreditLimitError(new Error('provider rejected')), false);
-	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
 });
 
 test('recovery locks the composer; a confirmed stop leaves it open', () => {

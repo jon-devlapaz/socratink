@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { loadAuthProviders, readOrCreateSession } from '../src/ui/session.ts';
+import { loadAuthProviders, loginErrorCopy, readOrCreateSession } from '../src/ui/session.ts';
 
 async function withFetch(handler, run) {
 	const original = globalThis.fetch;
@@ -51,4 +51,15 @@ test('readOrCreateSession mints a guest session when none exists', async () => {
 			assert.equal(await readOrCreateSession(), undefined);
 		},
 	);
+});
+
+test('loginErrorCopy explains known OAuth failures and ignores unknown codes', () => {
+	assert.equal(loginErrorCopy('auth_failed'), "Sign-in didn't complete. Please try again.");
+	assert.equal(
+		loginErrorCopy('unverified_email'),
+		"That account's email isn't verified. Verify it with the provider, then try again.",
+	);
+	assert.equal(loginErrorCopy('<script>'), undefined);
+	assert.equal(loginErrorCopy(''), undefined);
+	assert.equal(loginErrorCopy(null), undefined);
 });

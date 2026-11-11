@@ -6,7 +6,6 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { chatModelHeader } from '../src/config/chat-model.ts';
-import { chatAutoModelHeader } from '../src/config/chat-auto.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { mergeCookies, mintSessionFixture } from './session-fixture.mjs';
 import { writeModelResponse } from './request-path-smoke-transport.mjs';
@@ -114,7 +113,7 @@ async function keyRequest(origin, session, method, apiKey) {
 
 async function turn(origin, session, nonce, marker, model) {
 	const url = `${origin}/api/agents/chat/${encodeURIComponent(namespacedConversationId(session.userId, nonce))}`;
-	const headers = () => ({ cookie: session.cookie, [chatModelHeader]: model, [chatAutoModelHeader]: 'auto:smart' });
+	const headers = () => ({ cookie: session.cookie, [chatModelHeader]: model });
 	const response = await fetch(url, { method: 'POST', headers: { ...headers(), 'content-type': 'application/json' },
 		body: JSON.stringify({ kind: 'user', body: `Synthetic check ${marker}.` }), signal: AbortSignal.timeout(15_000) });
 	assert.equal(response.status, 202, `${marker} must be admitted`);
@@ -153,7 +152,7 @@ try {
 	assert.notEqual(alice.userId, bob.userId);
 	for (const [owner, session] of [['alice', alice], ['bob', bob]]) {
 		assert.deepEqual(await keyRequest(origin, session, 'PUT', syntheticKeys[owner]),
-			{ kind: 'openai', openai: true, openrouter: false });
+			{ kind: 'openai', openai: true });
 	}
 	checks.push('two real signed sessions saved distinct keys through PUT');
 	const first = await Promise.all([
@@ -175,13 +174,13 @@ try {
 	}
 	assert.equal(calls.length, 2, 'foreign reads and writes must not reach the provider');
 	checks.push('foreign-owner reads and writes rejected without another model call');
-	assert.deepEqual(await keyRequest(origin, alice, 'DELETE'), { kind: 'operator', openai: false, openrouter: false });
+	assert.deepEqual(await keyRequest(origin, alice, 'DELETE'), { kind: 'operator', openai: false });
 	const status = await fetch(`${origin}/api/chat-route`, { headers: { cookie: alice.cookie } });
-	assert.deepEqual(await status.json(), { kind: 'operator', openai: false, openrouter: false });
+	assert.deepEqual(await status.json(), { kind: 'operator', openai: false });
 	await turn(origin, alice, 'first', 'alice-revoked', 'openai/gpt-5-mini');
 	await turn(origin, bob, 'first', 'bob-after-revoke', 'openai/gpt-5');
 	assert.deepEqual(calls.slice(2), [
-		{ owner: 'operator', model: 'auto:smart', path: '/v1/chat/completions', marker: 'alice-revoked' },
+		{ owner: 'operator', model: 'auto', path: '/v1/chat/completions', marker: 'alice-revoked' },
 		{ owner: 'bob', model: 'gpt-5', path: '/v1/responses', marker: 'bob-after-revoke' },
 	]);
 	checks.push('DELETE removes Alice’s key; her next turn in the same conversation uses operator selection; Bob retains his own key');

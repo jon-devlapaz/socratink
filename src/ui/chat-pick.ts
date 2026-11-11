@@ -24,8 +24,7 @@ export function learnerChatStatusFromStoredPick(status: LearnerChatStatus): Lear
 		if (stored) localStorage.removeItem(appConfig.chatModelStorageKey);
 		return status;
 	}
-	const connected = pick.kind === 'openai' ? status.openai : status.openrouter;
-	if (!connected) {
+	if (!status[pick.kind]) {
 		localStorage.removeItem(appConfig.chatModelStorageKey);
 		return status;
 	}

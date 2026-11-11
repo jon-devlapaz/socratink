@@ -1,8 +1,7 @@
-import type { FreeLlmAutoModelId } from '../../config/chat-auto.ts';
 import type { DatabaseTarget } from '../../config/database.ts';
 import type { ModelRouteRecord } from '../../config/model-route.ts';
 
-export type ModelSelection = { provider: string; modelId: string; autoModel?: FreeLlmAutoModelId };
+export type ModelSelection = { provider: string; modelId: string };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;
 };

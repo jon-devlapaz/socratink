@@ -9,7 +9,6 @@ import { presentQuestionRetryBodies } from '../src/learning/present-question.ts'
 import { namespacedConversationId } from '../src/config/session.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
-import { inkToolName } from '../src/ui/tool-state.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
 
 const initialMessage =
@@ -264,8 +263,6 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.equal(payload.stream, true);
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
-	assert.equal(payload.tools.some((tool) => tool.function?.name === inkToolName), false,
-		'legacy cosmetic tool must not be advertised');
 
 	const turn = scriptedProviderTurns[providerTurns];
 	assert.ok(turn, 'the smoke should use exactly eight provider calls');
@@ -341,7 +338,6 @@ try {
 	assert.match(html, /id="providers-status"/);
 	assert.match(html, /OpenAI platform API key/);
 	assert.match(html, /id="openai-models"/);
-	assert.doesNotMatch(html, /id="auto-model"/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
 	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);
@@ -389,7 +385,6 @@ try {
 	assert.deepEqual(await disconnectedRoute.json(), {
 		kind: 'operator',
 		openai: false,
-		openrouter: false,
 	});
 
 	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
@@ -488,7 +483,7 @@ try {
 			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
 	}
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, no cosmetic tool advertisement, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);

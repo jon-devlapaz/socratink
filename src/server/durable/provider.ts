@@ -5,9 +5,7 @@ import {
 } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
-import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { appConfig } from '../../config/app.config.ts';
-import { capOpenrouterChatMaxTokens } from '../../config/chat-model.ts';
 import { modelRouteFromMetadata, routingFromHeaders, type ModelRouteRecord } from '../../config/model-route.ts';
 import type { EngineOptions, ModelConfig, ModelSelection } from './contract.ts';
 
@@ -19,25 +17,21 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 	selection: () => Promise<ModelSelection | undefined>) {
 	const models = createModels();
 	const openai = openaiProvider();
-	const openrouter = openrouterProvider();
 	const compatible = openAICompletionsApi();
 	let current: { config: ModelConfig; model: Model<Api>; streams: ProviderStreams } | undefined;
 	const catalogModel = openai.getModels().find((model) => model.id === 'gpt-5-nano');
 	if (!catalogModel) throw new Error('The installed Pi catalog lacks the default learner model.');
 	function select(config: ModelConfig): NonNullable<typeof current> {
-		if (config.provider === 'openai' || config.provider === 'openrouter') {
-			const provider = config.provider === 'openai' ? openai : openrouter;
-			const catalog: readonly Model<Api>[] = config.provider === 'openrouter'
-				? capOpenrouterChatMaxTokens(openrouter.getModels()) : openai.getModels();
-			const model = catalog.find((entry) => entry.id === config.modelId);
+		if (config.provider === 'openai') {
+			const model = openai.getModels().find((entry) => entry.id === config.modelId);
 			if (!model) throw new Error('The installed Pi catalog lacks the selected learner model.');
-			return { config, model: { ...model, ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}) }, streams: provider };
+			return { config, model: { ...model, ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}) }, streams: openai };
 		}
 		if (config.provider !== 'jon-local' || !config.baseUrl || !config.contextWindow || !config.maxTokens) {
 			throw new Error('The operator model requires its configured endpoint and limits.');
 		}
 		const model: Model<'openai-completions'> = {
-			id: config.autoModel ?? config.modelId, name: config.modelId, api: 'openai-completions',
+			id: config.modelId, name: config.modelId, api: 'openai-completions',
 			provider: config.provider, baseUrl: config.baseUrl, reasoning: config.reasoning ?? false,
 			compat: { supportsReasoningEffort: config.baseUrl === appConfig.vercelAiGatewayBaseUrl },
 			input: ['text'], contextWindow: config.contextWindow, maxTokens: config.maxTokens,

@@ -13,7 +13,7 @@ Disclosed standards, read when the diff touches the named area:
 
 **Real size.** An imported or copied module carries only what a caller here uses. A stub that always returns `null`, an options bag no caller passes, and shader branches no uniform selects are a fake contract. Delete them and restore the narrow signature.
 
-**Typed discriminant.** Control flow reads a typed field (`body: 'orb' | 'glyph'`, `kind: 'openrouter' | 'openai'`), never a name prefix, a `Record<string, unknown>` row, or a pair of mutually exclusive booleans. One origin enum replaces two flags.
+**Typed discriminant.** Control flow reads a typed field (`body: 'orb' | 'glyph'`, `kind: 'operator' | 'openai'`), never a name prefix, a `Record<string, unknown>` row, or a pair of mutually exclusive booleans. One origin enum replaces two flags.
 
 **One verb per intent.** A second way to do one thing (disable beside delete, DELETE beside GET logout) is a finding. Keep the verb the spec names; leave the extra for the day a caller needs it.
 

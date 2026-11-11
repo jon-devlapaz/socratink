@@ -1,5 +1,5 @@
-import { chatAllowsAutoSelection, parseFreeLlmAutoModelId } from '../config/chat-auto.ts';
 import {
+	chatProviderId,
 	learnerChatRoute,
 	parseLearnerChatSpecifier,
 	specifierForLearnerChat,
@@ -13,7 +13,7 @@ import type { ModelConfig, ModelSelection } from '../server/durable/contract.ts'
 import { learnerChatStatusForUser } from './learner.ts';
 
 /** Where a learner's next model call goes. */
-export type InferenceRoute = 'learner-openai' | 'learner-openrouter' | 'gateway' | 'local';
+export type InferenceRoute = 'learner-openai' | 'gateway' | 'local';
 export type InferenceStatus = { state: 'ready'; route: InferenceRoute } | { state: 'unconfigured' };
 
 export class InferenceUnavailableError extends Error {
@@ -34,7 +34,7 @@ export function createInference(options: {
 		return { state: 'ready', route: operator.baseUrl === appConfig.vercelAiGatewayBaseUrl ? 'gateway' : 'local' };
 	}
 
-	async function selection(userId: string, requested?: string, requestedAuto?: string): Promise<ModelSelection> {
+	async function selection(userId: string, requested?: string): Promise<ModelSelection> {
 		const route = learnerChatRoute(await learnerChatStatusForUser({ store: options.store, userId }), requested);
 		if (route.kind !== 'operator') {
 			const specifier = specifierForLearnerChat(route);
@@ -43,8 +43,7 @@ export function createInference(options: {
 		}
 		const operator = options.operator();
 		if (!operator) throw new InferenceUnavailableError();
-		const autoModel = chatAllowsAutoSelection(operator.modelId) ? parseFreeLlmAutoModelId(requestedAuto) : undefined;
-		return { provider: operator.providerId, modelId: operator.modelId, ...(autoModel ? { autoModel } : {}) };
+		return { provider: operator.providerId, modelId: operator.modelId };
 	}
 
 	return {
@@ -52,14 +51,17 @@ export function createInference(options: {
 		selection,
 		async status(userId: string): Promise<InferenceStatus> {
 			const learner = await learnerChatStatusForUser({ store: options.store, userId });
-			if (learner.kind === 'openai' || learner.kind === 'openrouter') return { state: 'ready', route: `learner-${learner.kind}` };
+			if (learner.kind === 'openai') return { state: 'ready', route: 'learner-openai' };
 			return operatorStatus();
 		},
 		async resolveModel(conversationId: string, chosen?: ModelSelection): Promise<ModelConfig> {
 			const originalId = userIdFromConversationId(conversationId);
 			if (!originalId) throw new Error('Conversation must belong to a learner.');
 			const userId = await options.authDb.findAliasOwner(originalId) ?? originalId;
-			const selected = chosen ?? await selection(userId);
+			// A turn saved for a provider Socratink no longer offers follows today's route.
+			const retired = chosen && chosen.provider !== chatProviderId
+				&& !parseLearnerChatSpecifier(`${chosen.provider}/${chosen.modelId}`);
+			const selected = chosen && !retired ? chosen : await selection(userId);
 			const pick = parseLearnerChatSpecifier(`${selected.provider}/${selected.modelId}`);
 			if (pick) {
 				// Never store keys in Pi history or silently switch to the operator after revoke.
