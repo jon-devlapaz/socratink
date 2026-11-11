@@ -21,15 +21,28 @@ function storeWith(keys: Map<string, string>) {
 }
 
 test('current selection rules preserve learner choice and fall back to the operator', async () => {
-	const store = storeWith(new Map([['alice:openai', 'alice-key'], ['alice:openrouter', 'router-key']]));
+	const store = storeWith(new Map([['alice:openai', 'alice-key']]));
 	const routes = createInference({ authDb: noAliases, store, operator: () => local });
 	assert.deepEqual(await routes.selection('alice', 'openai/gpt-5-mini'), { provider: 'openai', modelId: 'gpt-5-mini' });
-	assert.deepEqual(await routes.selection('alice'), { provider: 'openrouter', modelId: 'openai/gpt-5-nano' });
+	assert.deepEqual(await routes.selection('alice'), { provider: 'openai', modelId: 'gpt-5-nano' });
 	assert.deepEqual(await routes.selection('guest'), { provider: 'jon-local', modelId: 'auto' });
 	const config = await routes.resolveModel('guest:conversation', await routes.selection('guest'));
 	assert.equal(config.maxTokens, 131100);
 	assert.equal(config.contextWindow, 204800);
 	assert.equal(config.reasoning, true);
+});
+
+test('a stored retired provider row or saved turn selection follows the current route', async () => {
+	const store = storeWith(new Map([['alice:openai', 'alice-key'], ['alice:openrouter', 'router-key'], ['bob:openrouter', 'router-key']]));
+	const routes = createInference({ authDb: noAliases, store, operator: () => local });
+	assert.deepEqual(await routes.status('bob'), { state: 'ready', route: 'local' });
+	assert.deepEqual(await routes.selection('alice', 'openrouter/openai/gpt-5'), { provider: 'openai', modelId: 'gpt-5-nano' });
+	assert.deepEqual(await routes.selection('bob', 'openrouter/openai/gpt-5'), { provider: 'jon-local', modelId: 'auto' });
+	const saved = { provider: 'openrouter', modelId: 'openai/gpt-5-mini' };
+	assert.deepEqual(await routes.resolveModel('alice:c', saved), { provider: 'openai', modelId: 'gpt-5-nano', apiKey: 'alice-key' });
+	const operatorConfig = await routes.resolveModel('bob:c', saved);
+	assert.equal(operatorConfig.provider, 'jon-local');
+	assert.equal(operatorConfig.apiKey, 'operator-key');
 });
 
 test('each generation resolves the aliased owner’s current key and revoke fails closed', async () => {

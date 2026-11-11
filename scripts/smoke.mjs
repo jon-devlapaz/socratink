@@ -385,7 +385,6 @@ try {
 	assert.deepEqual(await disconnectedRoute.json(), {
 		kind: 'operator',
 		openai: false,
-		openrouter: false,
 	});
 
 	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);

@@ -152,7 +152,7 @@ try {
 	assert.notEqual(alice.userId, bob.userId);
 	for (const [owner, session] of [['alice', alice], ['bob', bob]]) {
 		assert.deepEqual(await keyRequest(origin, session, 'PUT', syntheticKeys[owner]),
-			{ kind: 'openai', openai: true, openrouter: false });
+			{ kind: 'openai', openai: true });
 	}
 	checks.push('two real signed sessions saved distinct keys through PUT');
 	const first = await Promise.all([
@@ -174,9 +174,9 @@ try {
 	}
 	assert.equal(calls.length, 2, 'foreign reads and writes must not reach the provider');
 	checks.push('foreign-owner reads and writes rejected without another model call');
-	assert.deepEqual(await keyRequest(origin, alice, 'DELETE'), { kind: 'operator', openai: false, openrouter: false });
+	assert.deepEqual(await keyRequest(origin, alice, 'DELETE'), { kind: 'operator', openai: false });
 	const status = await fetch(`${origin}/api/chat-route`, { headers: { cookie: alice.cookie } });
-	assert.deepEqual(await status.json(), { kind: 'operator', openai: false, openrouter: false });
+	assert.deepEqual(await status.json(), { kind: 'operator', openai: false });
 	await turn(origin, alice, 'first', 'alice-revoked', 'openai/gpt-5-mini');
 	await turn(origin, bob, 'first', 'bob-after-revoke', 'openai/gpt-5');
 	assert.deepEqual(calls.slice(2), [

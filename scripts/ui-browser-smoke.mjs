@@ -187,7 +187,7 @@ function createServices(origin, session) {
 	const replyReady = new Promise((resolve) => { releaseReply = resolve; });
 	let releaseStatus;
 	const statusReady = new Promise((resolve) => { releaseStatus = resolve; });
-	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected, openrouter: false });
+	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected });
 	const fixture = {
 		mode: 'success',
 		statusFailure: undefined,

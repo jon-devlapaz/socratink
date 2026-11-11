@@ -88,7 +88,7 @@ async function respond(route, { origin, session, definition, sent }) {
 	const json = (body, status = 200, headers = {}) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers });
 	if (url.pathname === appConfig.sessionPath) return json({ userId: session.userId, aliases: [], kind: 'registered' });
 	if (url.pathname === appConfig.authProvidersPath) return json({ google: false, github: false });
-	if (url.pathname === appConfig.chatRoutePath) return json({ kind: 'operator', openai: false, openrouter: false });
+	if (url.pathname === appConfig.chatRoutePath) return json({ kind: 'operator', openai: false });
 	if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
 	const submissionId = 'saved-card-answer';
 	if (route.request().method() === 'POST') {
