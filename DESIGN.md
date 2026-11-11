@@ -10,8 +10,10 @@ describe the existing interface, not future capabilities.
   vertical spacing without hiding required context or interactive controls.
 - Use the existing paper/ink palette and jade action accent. The actual theme
   tokens live in `src/ui/styles.css`; reuse them instead of copying color values.
-- Use Inter/system sans-serif for dialogue and controls, monospace for code,
-  and the existing display serif only for introductory or empty-state copy.
+- Use Paper Mono for dialogue and controls. It is bundled in `src/ui/fonts/`
+  under the SIL Open Font License 1.1 (`OFL.txt` there). It has no italic,
+  so the browser slants emphasis. Use monospace for code, and the existing
+  display serif only for introductory or empty-state copy.
 - Keep code, tables, and mathematics readable without forcing the whole page
   to scroll horizontally. Preserve light/dark themes and adjustable text size.
 - Preserve keyboard focus, accessible control names, reduced-motion behavior,
