@@ -35,9 +35,12 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 		await page.goto(app.origin);
 		await page.locator('#message').fill(marker);
 		await page.locator('#chat').evaluate((form) => form.requestSubmit());
-		await until(async () => (await page.locator('#active-turn .pending .thinking-step-copy').allTextContents()).join('') === reasoning,
-			'actual browser receives live reasoning while provider remains held');
-		assert.equal(fixture.count(marker), 1);
+		await until(async () => fixture.count(marker) === 1
+			&& (await page.locator('#active-turn .pending .thinking-step-copy').allTextContents()).join('') === 'Working from what you wrote',
+			'the browser shows a status line while the provider remains held');
+		await until(async () => (await clientFor(app, session, id).history()).messages.some((m) => m.role === 'assistant'),
+			'the held reply has started on the server');
+		assert.equal((await page.locator('body').innerText()).includes(reasoning), false, 'raw reasoning never shows to the learner');
 		assert.equal(await page.locator('#active-turn .assistant').count(), 0);
 		assert.equal(await page.locator('#active-turn .you p').innerText(), marker);
 		await page.screenshot({ path: join(out, 'reasoning-pending.png') });
@@ -60,7 +63,7 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 		await page.screenshot({ path: join(out, 'reasoning-reloaded.png') });
 		assert.ok(paths.some((path) => path.endsWith('/events')), 'the browser follows turns over SSE');
 		assert.deepEqual(errors, []);
-		return { browser: browser.version(), liveReasoningBeforeCompletion: true, pendingReloadNoResubmit: true,
+		return { browser: browser.version(), statusInsteadOfReasoning: true, pendingReloadNoResubmit: true,
 			completedReload: true, screenshots: 4 };
 	} finally {
 		held.release();

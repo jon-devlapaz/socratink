@@ -8,12 +8,12 @@ import { getAuthDb } from './server/auth-runtime.ts';
 import { getCredentialStore } from './server/credential-runtime.ts';
 import { mountBrowserBridge } from './server/durable/browser-bridge.ts';
 import { openEngine } from './server/durable/engine.ts';
-import { reportFailure } from './server/failure-logging.ts';
+import { logTurn, reportFailure } from './server/logging.ts';
 
 const target = resolveDatabaseTarget(process.env);
 const inference = createInference({ authDb: getAuthDb(), store: getCredentialStore(),
 	operator: () => resolveChatModel(process.env) });
-const engine = await openEngine({ target, resolveModel: inference.resolveModel, keepAlive: waitUntil, report: reportFailure });
+const engine = await openEngine({ target, resolveModel: inference.resolveModel, keepAlive: waitUntil, report: reportFailure, logTurn });
 const chat = new Hono();
 
 mountBrowserBridge(chat, engine, inference.selection);

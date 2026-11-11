@@ -1,17 +1,17 @@
 import type { WireEventBody, WireSnapshot } from '../../config/chat-wire.ts';
 
 export type Progress = {
-	text: Record<string, string>; reasoning: Record<string, string>;
+	text: Record<string, string>;
 	started: string[]; tools: Record<string, string>; settled: string[];
 };
 export type NewEvent = WireEventBody;
 
 export function initialProgress(): Progress {
-	return { text: {}, reasoning: {}, started: [], tools: {}, settled: [] };
+	return { text: {}, started: [], tools: {}, settled: [] };
 }
 
 /** Diff one snapshot against what a connection already sent: tool results and
- * settlements are never repeated, and observed reasoning is never erased. */
+ * settlements are never repeated, and observed text is never erased. */
 export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEvent[] {
 	const events: NewEvent[] = [];
 	let settled = false;
@@ -21,13 +21,12 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 			events.push({ type: 'message-started', messageId: message.id, submissionId: message.submissionId });
 			state.started.push(message.id);
 		}
-		for (const kind of ['reasoning', 'text'] as const) {
-			const text = message.parts.flatMap((part) => (part.type === 'text' || part.type === 'reasoning') && part.type === kind ? [part.text] : []).join('\n\n');
-			const previous = state[kind][message.id] ?? '';
-			if (!text || text === previous || previous.startsWith(text)) continue;
+		const text = message.parts.flatMap((part) => part.type === 'text' ? [part.text] : []).join('\n\n');
+		const previous = state.text[message.id] ?? '';
+		if (text && text !== previous && !previous.startsWith(text)) {
 			const delta = text.startsWith(previous) ? text.slice(previous.length) : `\n\n${text}`;
-			events.push({ type: 'message-delta', messageId: message.id, kind, delta });
-			state[kind][message.id] = text;
+			events.push({ type: 'message-delta', messageId: message.id, kind: 'text', delta });
+			state.text[message.id] = text;
 		}
 		for (const part of message.parts) {
 			if (part.type !== 'dynamic-tool') continue;

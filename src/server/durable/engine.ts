@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import type { Engine, EngineOptions, ModelSelection, Snapshot } from './contract.ts';
+import type { Engine, EngineOptions, ModelSelection, Snapshot, TurnRecord } from './contract.ts';
 import { inputKind, productRegistry } from './extension.ts';
 import { readSnapshot, type InputData } from './projection.ts';
 import { conversationModels, modelRef } from './provider.ts';
@@ -50,6 +50,8 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		let cancelled = false;
 		let failed = false;
 		const reportFailed = () => { if (!failed && !owner.interrupted) { failed = true; report('submission_failed'); } };
+		const started = Date.now();
+		let ended: Pick<TurnRecord, 'status' | 'model'> = { status: 'unsettled' };
 		const checkCancellation = () => {
 			if (cancellation || cancelled || owner.interrupted) return;
 			cancellation = (async () => {
@@ -67,12 +69,19 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				checkCancellation();
 				await owner.root.waitForIdle(context);
 				if (!owner.interrupted) {
-					const settled = await owner.storage.submission(submissionId, context);
-					if (settled?.status === 'unanswered' && settled.reason !== 'aborted') reportFailed();
+					const turn = await readSnapshot(owner.storage);
+					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
+					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
+					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel };
+					if (submission?.outcome === 'failed') reportFailed();
 				}
-			} catch { reportFailed(); }
+			} catch { ended = { status: 'error' }; reportFailed(); }
 			finally {
 				clearInterval(poll); clearTimeout(timer);
+				try {
+					options.logTurn?.({ conversationId: id, submissionId: String(submissionId), latencyMs: Date.now() - started,
+						...ended, ...(owner.interrupted ? { status: 'interrupted' } : {}) });
+				} catch { /* Logging cannot undo accepted work. */ }
 				await cancellation?.catch(() => {});
 				await owner.stop().catch(reportFailed);
 				if (active.get(id) === owner) active.delete(id);

@@ -44,8 +44,10 @@ async function until(read, predicate) {
 
 test('another instance reads live reasoning, rejects a competing turn, and ownership closes after settlement', async () => fixture(async ({ target, responses, options }) => {
 	const reports = [];
+	const turns = [];
 	const background = [];
-	const first = await openEngine({ ...options, keepAlive: (work) => background.push(work), report: (category) => reports.push(category) });
+	const first = await openEngine({ ...options, keepAlive: (work) => background.push(work), report: (category) => reports.push(category),
+		logTurn: (turn) => turns.push(turn) });
 	const second = await openEngine(options);
 	const manager = createDurableStorage(target);
 	try {
@@ -68,6 +70,10 @@ test('another instance reads live reasoning, rejects a competing turn, and owner
 		assert.ok(owner, 'a settled conversation must not retain execution ownership');
 		await owner.close(context);
 		assert.deepEqual(reports, []);
+		assert.equal(turns.length, 1, 'one log record per executed turn');
+		const { latencyMs, ...turn } = turns[0];
+		assert.ok(Number.isInteger(latencyMs) && latencyMs >= 0);
+		assert.deepEqual(turn, { conversationId: 'learner:one', submissionId: id, status: 'completed', model: 'synthetic-route' });
 	} finally { await first.close(); await second.close(); await manager.close(); }
 }));
 
@@ -91,8 +97,10 @@ test('cross-instance cancellation persists and does not abort the next admission
 test('an execution slice leaves accepted work pending, releases ownership, and a later request recovers it', async () => fixture(async ({ target, responses, options }) => {
 	const background = [];
 	const reports = [];
-	const first = await openEngine({ ...options, executionMs: 180, keepAlive: (work) => background.push(work), report: (category) => reports.push(category) });
-	const second = await openEngine({ ...options, report: (category) => reports.push(category) });
+	const turns = [];
+	const first = await openEngine({ ...options, executionMs: 180, keepAlive: (work) => background.push(work), report: (category) => reports.push(category),
+		logTurn: (turn) => turns.push(turn.status) });
+	const second = await openEngine({ ...options, report: (category) => reports.push(category), logTurn: (turn) => turns.push(turn.status) });
 	const manager = createDurableStorage(target);
 	try {
 		const id = await first.submit('learner:slice', 'Continue after interruption.');
@@ -109,13 +117,17 @@ test('an execution slice leaves accepted work pending, releases ownership, and a
 		assert.equal(recovered.submissions[0].id, id);
 		assert.equal(recovered.messages.filter((message) => message.role === 'user').length, 1);
 		assert.deepEqual(reports, ['submission_recovery']);
+		await until(async () => turns.length, (count) => count === 2);
+		assert.deepEqual(turns, ['interrupted', 'completed'], 'the stopped slice and its recovery each log once');
 	} finally { await first.close(); await second.close(); await manager.close(); }
 }));
 
 for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ? 'transient failure recovers' : 'exhausted retries settle once'}`, async () => fixture(async ({ responses, options }) => {
 	const reports = [];
+	const turns = [];
 	const background = [];
-	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work), report: (category) => reports.push(category) });
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work), report: (category) => reports.push(category),
+		logTurn: (turn) => turns.push(turn) });
 	try {
 		await engine.submit('learner:failure', 'Synthetic private learner text.');
 		if (failures === 1) { await until(async () => responses.length, (count) => count === 2); finish(responses[1]); }
@@ -126,6 +138,8 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		assert.deepEqual(reports, failures === 1 ? ['submission_recovery']
 			: ['submission_recovery', 'submission_recovery', 'submission_failed']);
 		if (failures === 3) assert.equal(completed.submissions[0].error, 'The model request could not complete.');
+		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
+		assert.equal(JSON.stringify(turns).includes('Synthetic private'), false, 'turn records carry no learner or provider text');
 	} finally { await engine.close(); }
 }, failures));
 
@@ -153,3 +167,22 @@ for (const retryAfterCrash of [false, true]) test(`SIGKILL recovery logs once${r
 		assert.deepEqual(reports, retryAfterCrash ? ['submission_recovery', 'submission_recovery'] : ['submission_recovery']);
 	} finally { child.kill('SIGKILL'); await engine.close(); }
 }, retryAfterCrash ? [2] : 0));
+
+test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
+	const { logTurn } = await import('../src/server/logging.ts');
+	const lines = [];
+	const log = console.log;
+	console.log = (line) => lines.push(line);
+	try {
+		logTurn({ conversationId: 'guest-user:nonce', submissionId: '4', latencyMs: 812, model: 'synthetic/model', status: 'completed' });
+		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed' });
+	} finally { console.log = log; }
+	const [completed, failed] = lines.map((line) => JSON.parse(line));
+	assert.deepEqual(Object.keys(completed), ['event', 'route', 'session', 'submission', 'model', 'latencyMs', 'status']);
+	assert.equal(completed.event, 'socratink_turn');
+	assert.equal(completed.route, '/api/agents/chat');
+	assert.match(completed.session, /^[0-9a-f]{12}$/);
+	assert.equal(failed.session, completed.session, 'turns of one conversation share a session hash');
+	assert.equal(lines.join('').includes('guest-user'), false);
+	assert.deepEqual({ model: failed.model, status: failed.status, error: failed.error }, { model: null, status: 'failed', error: 'model_request_failed' });
+});

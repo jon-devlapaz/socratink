@@ -40,8 +40,9 @@ try {
 	const dropped = new AbortController();
 	const firstRead = client.read(admission, { signal: dropped.signal, onEvent: (event) => events.push(event) })
 		.then(() => ({ unexpectedlyCompleted: true }), (error) => ({ error }));
-	await until(() => events.some((event) => event.type === 'message-delta' && event.kind === 'reasoning' && event.delta === reasoning),
-		'live reasoning before provider completion');
+	// The assistant row starts once the provider's reasoning is committed; the reasoning itself stays server-side.
+	await until(() => events.some((event) => event.type === 'message-started'), 'live reply start before provider completion');
+	assert.equal(JSON.stringify(events).includes(reasoning), false, 'raw reasoning never reaches the browser client');
 	assert.equal(fixture.count('DURABLE_EVENTS'), 1);
 	assert.equal(userMessages(await client.history()).length, 1);
 	dropped.abort();
@@ -49,12 +50,15 @@ try {
 	const reattachedEvents = [];
 	const secondRead = client.read(admission.submissionId, { signal: AbortSignal.timeout(20_000),
 		onEvent: (event) => reattachedEvents.push(event) });
+	// Release only once the reattached read is following, or the turn can settle before it opens.
+	await until(() => reattachedEvents.some((event) => event.type === 'message-started'), 'reattached read follows the pending reply');
 	held.release();
 	const reply = await secondRead;
 	assert.equal(reply.text, text);
 	assert.deepEqual(reply.data.reveal, [reveal]);
 	assert.equal(fixture.count('DURABLE_EVENTS'), 2, 'one tool step and one final step, with no resubmission');
 	const allEvents = [...events, ...reattachedEvents];
+	assert.equal(JSON.stringify(allEvents).includes(reasoning), false, 'raw reasoning never reaches the browser client');
 	assert.ok(allEvents.some((event) => event.type === 'tool-input' && event.toolName === 'mark_reveal'));
 	assert.ok(allEvents.some((event) => event.type === 'tool-output'));
 	for (const collection of [events, reattachedEvents]) {
@@ -67,7 +71,7 @@ try {
 	assert.equal(assistant.parts.filter((part) => part.type === 'text').map((part) => part.text).join(''), text);
 	assert.deepEqual(assistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
 	assert.equal(fixture.calls[0].path, '/v1/responses');
-	report.checks.push('Native Responses reasoning and tool events reach the browser client live; lost read reattaches without duplicate learner input.');
+	report.checks.push('Native Responses tool events reach the browser client live and raw reasoning never does; lost read reattaches without duplicate learner input.');
 	report.checks.push('Reply preserves reveal provenance and routed-model/fallback metadata, with reasoning kept out of answer text.');
 	stage = 'restart-history';
 	await app.stop();
@@ -110,7 +114,7 @@ try {
 	report.checks.push('One plain turn is timed: 202 to first delta, 202 to settled, and GETs per turn.');
 	stage = 'browser';
 	report.browser = await verifyDurableBrowser({ app, session, fixture, out: join(out, 'browser') });
-	report.checks.push('The browser displays pending reasoning, reloads an accepted turn without resending, and restores its completed answer.');
+	report.checks.push('The browser shows a status line instead of raw reasoning, reloads an accepted turn without resending, and restores its completed answer.');
 	assert.deepEqual(fixture.errors, []);
 	const failureRecords = apps.logs.join('').split('\n').filter((line) => line.includes('socratink_failure'))
 		.map((line) => JSON.parse(line.slice(line.indexOf('{'))));
