@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import type { Engine, EngineOptions, ModelSelection, Snapshot } from './contract.ts';
+import type { Engine, EngineOptions, ModelSelection, Snapshot, TurnRecord } from './contract.ts';
 import { inputKind, productRegistry } from './extension.ts';
 import { readSnapshot, type InputData } from './projection.ts';
 import { conversationModels, modelRef } from './provider.ts';
@@ -10,7 +10,7 @@ import { createDurableStorage, type OwnedStorage } from './storage.ts';
 export class DurableBusyError extends Error {
 	constructor() { super('This conversation is busy.'); this.name = 'DurableBusyError'; }
 }
-type Owner = { storage: OwnedStorage; harness: Harness; root: Conversation;
+type Owner = { storage: OwnedStorage; harness: Harness; root: Conversation; modelId: () => string | undefined;
 	stop: () => Promise<void>; done?: Promise<void>; interrupted: boolean };
 
 /** Execution ownership lasts only for an active turn. Readers use committed
@@ -50,6 +50,8 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		let cancelled = false;
 		let failed = false;
 		const reportFailed = () => { if (!failed && !owner.interrupted) { failed = true; report('submission_failed'); } };
+		const started = Date.now();
+		let ended: Pick<TurnRecord, 'status' | 'model'> = { status: 'unsettled' };
 		const checkCancellation = () => {
 			if (cancellation || cancelled || owner.interrupted) return;
 			cancellation = (async () => {
@@ -67,12 +69,19 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				checkCancellation();
 				await owner.root.waitForIdle(context);
 				if (!owner.interrupted) {
-					const settled = await owner.storage.submission(submissionId, context);
-					if (settled?.status === 'unanswered' && settled.reason !== 'aborted') reportFailed();
+					const turn = await readSnapshot(owner.storage);
+					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
+					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
+					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
+					if (submission?.outcome === 'failed') reportFailed();
 				}
-			} catch { reportFailed(); }
+			} catch { ended = { status: 'error' }; reportFailed(); }
 			finally {
 				clearInterval(poll); clearTimeout(timer);
+				try {
+					options.logTurn?.({ conversationId: id, submissionId: String(submissionId), latencyMs: Date.now() - started,
+						...ended, ...(owner.interrupted ? { status: 'interrupted' } : {}) });
+				} catch { /* Logging cannot undo accepted work. */ }
 				await cancellation?.catch(() => {});
 				await owner.stop().catch(reportFailed);
 				if (active.get(id) === owner) active.delete(id);
@@ -143,6 +152,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 
 async function openOwner(id: string, storage: OwnedStorage, options: EngineOptions, reportRetry: () => void): Promise<Owner> {
 	let root: Conversation;
+	let modelId: string | undefined;
 	const models = conversationModels(options, id, async (): Promise<ModelSelection | undefined> => {
 		let cursor: Cursor | undefined;
 		do {
@@ -152,7 +162,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 			cursor = page.next;
 		} while (cursor);
 		return undefined;
-	});
+	}, (config) => { modelId = config.modelId; });
 	const harness = await Harness.open(storage, { models, registry: productRegistry(),
 		settings: { compaction: { enabled: false }, stream: { maxRetries: 0 },
 			retry: { maxRetries: 2, baseDelayMs: 50 }, progress: { persistWithinMs: 50 } },
@@ -185,6 +195,6 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 	}
 	catch (error) { await harness.close(context); throw error; }
 	let closing: Promise<void> | undefined;
-	return { storage, harness, root, interrupted: false,
+	return { storage, harness, root, interrupted: false, modelId: () => modelId,
 		stop: () => closing ??= harness.close(context) };
 }

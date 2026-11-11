@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { resolveAuthConfig } from './config/auth.ts';
@@ -16,7 +17,7 @@ import {
 	createRateLimiter,
 } from './server/rate-limit.ts';
 import { mountSessionRoutes } from './server/session.ts';
-import { reportFailure } from './server/failure-logging.ts';
+import { reportFailure } from './server/logging.ts';
 import type { Inference } from './inference/index.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
@@ -79,8 +80,12 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 		context.json({ error: { type: 'not_found', message: 'API route not found.' } }, 404),
 	);
 	app.get('/login', (context) => context.redirect('/login.html'));
-	app.use('*', serveStatic({ root: './dist/client' }));
-	app.get('*', serveStatic({ path: './dist/client/index.html' }));
+	// Vercel serves the built UI from its CDN, and its function bundle has no
+	// dist/client. Mounting there only logs a missing-root error on every cold start.
+	if (existsSync('./dist/client')) {
+		app.use('*', serveStatic({ root: './dist/client' }));
+		app.get('*', serveStatic({ path: './dist/client/index.html' }));
+	}
 
 	return app;
 }

@@ -4,14 +4,14 @@ import type { ProductTool, Snapshot } from './contract.ts';
 
 export type BrowserSnapshot = WireSnapshot & { sourceRevision: number };
 
-/** The browser's view of a Pi conversation. */
+/** The browser's view of a Pi conversation. Raw model reasoning stays on the
+ * server: learners never receive it, live or in history. */
 export function project(conversationId: string, state: Snapshot): BrowserSnapshot {
 	const pending = new Set(state.submissions.filter((s) => !s.outcome).map((s) => s.id));
 	const messages: WireSnapshot['messages'] = state.messages.map((m) => ({
 		id: `${m.submissionId}:${m.role}`, role: m.role, purpose: m.role, display: 'visible',
 		submissionId: m.submissionId, ...(m.metadata ? { metadata: m.metadata } : {}),
 		parts: [
-			...(m.reasoning ? [{ type: 'reasoning' as const, text: m.reasoning, state: pending.has(m.submissionId) ? 'streaming' as const : 'done' as const }] : []),
 			...(m.text ? [{ type: 'text' as const, text: m.text, state: pending.has(m.submissionId) ? 'streaming' as const : 'done' as const }] : []),
 			...(m.tools ?? []).map(toolPart),
 			...Object.entries(m.data ?? {}).flatMap(([name, values]) => values.map((data) => ({ type: `data-${name}` as const, data }))),

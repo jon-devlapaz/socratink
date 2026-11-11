@@ -3,7 +3,6 @@
 
 export type WirePart =
 	| { type: 'text'; text: string; state: 'streaming' | 'done' }
-	| { type: 'reasoning'; text: string; state: 'streaming' | 'done' }
 	| { type: `data-${string}`; data: unknown }
 	| ({ type: 'dynamic-tool'; toolName: string; toolCallId: string; durationMs?: number } & (
 		| { state: 'input-available'; input: unknown }
@@ -37,7 +36,7 @@ export type WireSnapshot = {
 export type WireEventBody =
 	| { type: 'conversation-reset'; snapshot: WireSnapshot }
 	| { type: 'message-started'; messageId: string; submissionId?: string }
-	| { type: 'message-delta'; messageId: string; kind: 'text' | 'reasoning'; delta: string }
+	| { type: 'message-delta'; messageId: string; kind: 'text'; delta: string }
 	| { type: 'tool-input'; messageId: string; toolCallId: string; toolName: string; input: unknown }
 	| { type: 'tool-output'; toolCallId: string; output: unknown; durationMs?: number }
 	| { type: 'tool-output-error'; toolCallId: string; errorText: string; durationMs?: number }

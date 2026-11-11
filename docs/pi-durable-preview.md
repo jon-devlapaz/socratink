@@ -31,9 +31,9 @@ Postgres, or separate `pi_*` tables in local SQLite. Native conformance tests
 cover both stores. Reads reconstruct one consistent committed snapshot without
 taking execution ownership. The browser POSTs a turn, then follows it over one
 Server-Sent Events GET (`/api/agents/chat/:id/events`). Each connection opens
-with a snapshot and streams reasoning, tool results, and settlement diffed in
+with a snapshot and streams reply text, tool results, and settlement diffed in
 memory from engine snapshots; nothing extra is stored, and a reconnect simply
-starts from a fresh snapshot.
+starts from a fresh snapshot. Raw model reasoning never leaves the server.
 
 Only an active turn holds a dedicated owner connection. A Postgres advisory lock
 prevents a second process from executing the same conversation. Neon pooled URLs

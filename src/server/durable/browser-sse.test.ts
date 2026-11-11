@@ -45,18 +45,18 @@ test('a settled conversation sends one reset with every reply, then ends', async
 test('a pending reply streams from its start after the reset, then settles and ends', async () => {
 	const open = { id: 's2', text: 'Synthetic question' };
 	const engine = engineOf([
-		{ revision: 4, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An', reasoning: 'Thinking' }], submissions: [done, open] },
-		{ revision: 5, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An answer', reasoning: 'Thinking' }], submissions: [done, open] },
-		{ revision: 6, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An answer.', reasoning: 'Thinking' }], submissions: [done, { ...open, outcome: 'completed' }] },
+		{ revision: 4, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An', reasoning: 'Private verdict' }], submissions: [done, open] },
+		{ revision: 5, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An answer', reasoning: 'Private verdict' }], submissions: [done, open] },
+		{ revision: 6, messages: [earlier, earlierReply, question, { role: 'assistant', submissionId: 's2', text: 'An answer.', reasoning: 'Private verdict' }], submissions: [done, { ...open, outcome: 'completed' }] },
 	]);
 	const { events } = await frames(conversationEvents(engine, 'c', new AbortController().signal, fast));
 	assert.deepEqual(events.map((e) => e.type), ['conversation-reset', 'message-started', 'message-delta', 'message-delta',
-		'message-delta', 'message-delta', 'submission-settled', 'conversation-reset']);
+		'message-delta', 'submission-settled', 'conversation-reset']);
 	assert.deepEqual(events[0].snapshot.messages.map((m: any) => m.id), ['s1:user', 's1:assistant', 's2:user'],
 		'the opening reset leaves out the pending reply so its deltas are not applied twice');
 	const text = events.filter((e) => e.type === 'message-delta' && e.kind === 'text').map((e) => e.delta).join('');
 	assert.equal(text, 'An answer.');
-	assert.equal(events.find((e) => e.kind === 'reasoning').delta, 'Thinking');
+	assert.equal(JSON.stringify(events).includes('Private verdict'), false, 'raw reasoning never reaches the browser');
 	assert.equal(events.at(-1).snapshot.messages.at(-1).parts.at(-1).text, 'An answer.');
 	assert.deepEqual(events.map((e) => e.position.index), events.map((_, i) => i));
 });

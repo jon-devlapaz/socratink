@@ -15,11 +15,17 @@ export type ProductMessage = {
 };
 export type Submission = { id: string; text: string; outcome?: Outcome; error?: string };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };
+/** How one execution of a turn ended, for logs: no learner text. */
+export type TurnRecord = {
+	conversationId: string; submissionId: string; latencyMs: number; model?: string;
+	status: Outcome | 'interrupted' | 'error' | 'unsettled';
+};
 export type EngineOptions = {
 	target: DatabaseTarget;
 	resolveModel: (conversationId: string, selection?: ModelSelection) => Promise<ModelConfig>;
 	keepAlive?: (promise: Promise<void>) => void;
 	report?: (category: 'submission_failed' | 'submission_recovery') => void;
+	logTurn?: (turn: TurnRecord) => void;
 	executionMs?: number;
 };
 export type Engine = {

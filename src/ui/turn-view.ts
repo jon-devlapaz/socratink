@@ -5,7 +5,6 @@ import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import { createQuestionnaire } from './questionnaire.ts';
 import type { QuestionnaireAnswer } from '../questionnaire.ts';
 import { createSteeringBar, type SteeringKind } from './steering.ts';
-import { visibleThinkingStep } from './thinking.ts';
 import { createToolCard, createToolList } from './tool-card.ts';
 import type { DisplayedToolCall } from './tool-state.ts';
 
@@ -32,13 +31,11 @@ export type PendingTurnOptions = {
 	cancelDisabled: boolean;
 	onCancel: () => void;
 	tools?: readonly DisplayedToolCall[];
-	reasoning?: string;
 };
 
 export type PendingTurnSession = {
 	readonly element: HTMLElement;
 	dispose(): void;
-	setReasoning(text: string): void;
 	setTools(calls: readonly DisplayedToolCall[]): void;
 	setCancelDisabled(disabled: boolean): void;
 };
@@ -112,7 +109,6 @@ export function createPendingTurn({
 	cancelDisabled,
 	onCancel,
 	tools = [],
-	reasoning = '',
 }: PendingTurnOptions): PendingTurnSession {
 	const wrap = document.createElement('div');
 	wrap.className = 'turn pending';
@@ -170,7 +166,8 @@ export function createPendingTurn({
 	list.className = 'thinking-steps-list';
 	const working = document.createElement('li');
 	working.className = 'thinking-step-copy';
-	working.textContent = visibleThinkingStep(reasoning);
+	// A status, never the model's raw reasoning: that can leak a verdict early.
+	working.textContent = 'Working from what you wrote';
 	const latency = document.createElement('li');
 	latency.className = 'pending-latency';
 	latency.textContent = 'Taking longer than usual.';
@@ -196,9 +193,6 @@ export function createPendingTurn({
 		element: wrap,
 		dispose() {
 			window.clearTimeout(timer);
-		},
-		setReasoning(text) {
-			working.textContent = visibleThinkingStep(text);
 		},
 		setTools(calls) {
 			const host = wrap.querySelector('.tool-list');

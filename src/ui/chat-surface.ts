@@ -33,11 +33,6 @@ import {
 	applyToolStreamEvent,
 	type DisplayedToolCall,
 } from './tool-state.ts';
-import {
-	applyReasoningStreamEvent,
-	createLiveReasoning,
-	resetLiveReasoning,
-} from './thinking.ts';
 import { mountDictation } from './dictation.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
 import {
@@ -113,13 +108,8 @@ export function mountChatSurface(options: Readonly<{
 	const conversation = openChatConversation(options.userId, options.aliases);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
-	const liveReasoning = createLiveReasoning();
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
-			if (applyReasoningStreamEvent(liveReasoning, event)) {
-				pendingSession?.setReasoning(liveReasoning.text);
-				return;
-			}
 			if (isQuietToolStreamEvent(event, quietToolIds)) return;
 			if (!applyToolStreamEvent(liveTools, event)) return;
 			pendingSession?.setTools(liveTools);
@@ -249,14 +239,12 @@ export function mountChatSurface(options: Readonly<{
 					pendingSession = createPendingTurn({
 						cancelDisabled: requestState.kind === 'canceling',
 						tools: liveTools,
-						reasoning: liveReasoning.text,
 						onCancel: () => {
 							void runRequestCommand(requests.cancel());
 						},
 					});
 				} else {
 					pendingSession.setCancelDisabled(requestState.kind === 'canceling');
-					pendingSession.setReasoning(liveReasoning.text);
 					pendingSession.setTools(liveTools);
 				}
 				activeTurn.append(pendingSession.element);
@@ -335,7 +323,6 @@ export function mountChatSurface(options: Readonly<{
 	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
-		resetLiveReasoning(liveReasoning);
 		releasePending();
 		const result = requests.start(text);
 		requestState = requests.state;
@@ -364,7 +351,6 @@ export function mountChatSurface(options: Readonly<{
 		});
 		liveTools.length = 0;
 		quietToolIds.clear();
-		resetLiveReasoning(liveReasoning);
 		if (turn) turns = [...turns, turn];
 		await paint('hold');
 	}

@@ -12,9 +12,10 @@ import type { EngineOptions, ModelConfig, ModelSelection } from './contract.ts';
 export const modelRef = { provider: 'socratink', modelId: 'selected' };
 type RoutedMessage = AssistantMessage & { socratinkRoute?: ModelRouteRecord };
 
-/** Each conversation owns its resolver; keys never enter model history. */
+/** Each conversation owns its resolver; keys never enter model history.
+ * onResolved sees each resolved config, for logs; it must not keep the key. */
 export function conversationModels(options: EngineOptions, conversationId: string,
-	selection: () => Promise<ModelSelection | undefined>) {
+	selection: () => Promise<ModelSelection | undefined>, onResolved?: (config: ModelConfig) => void) {
 	const models = createModels();
 	const openai = openaiProvider();
 	const compatible = openAICompletionsApi();
@@ -63,6 +64,7 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 		models: [{ ...catalogModel, id: modelRef.modelId, name: 'Selected Socratink model', provider: modelRef.provider }],
 		auth: { apiKey: { name: 'Socratink learner or operator credential', resolve: async () => {
 			current = select(await options.resolveModel(conversationId, await selection()));
+			onResolved?.(current.config);
 			return { auth: { apiKey: current.config.apiKey } };
 		} } },
 		api: {
