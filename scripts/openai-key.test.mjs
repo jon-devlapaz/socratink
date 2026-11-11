@@ -86,11 +86,11 @@ test('openai key routes require a session and never echo the secret', async () =
 		});
 		assert.equal(connected.status, 200);
 		const connectedBody = await connected.json();
-		assert.deepEqual(connectedBody, { kind: 'openai', openai: true, openrouter: false });
+		assert.deepEqual(connectedBody, { kind: 'openai', openai: true });
 		assert.equal(JSON.stringify(connectedBody).includes(fixtureKey), false);
 
 		const status = await app.request(appConfig.chatRoutePath, { headers: { cookie } });
-		assert.deepEqual(await status.json(), { kind: 'openai', openai: true, openrouter: false });
+		assert.deepEqual(await status.json(), { kind: 'openai', openai: true });
 
 		const { cookie: otherCookie } = await mintCookie(app);
 		const other = await app.request(appConfig.chatRoutePath, { headers: { cookie: otherCookie } });

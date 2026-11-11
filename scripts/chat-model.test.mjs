@@ -1,17 +1,14 @@
 import assert from 'node:assert/strict';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
-import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { resolveChatModel } from '../src/inference/operator.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import {
 	applyLearnerChatPick,
 	specifierForLearnerChatFromStatus,
-	capOpenrouterChatMaxTokens,
 	chatProviderId,
 	learnerChatModelChoices,
 	openaiChatModelId,
-	openrouterChatMaxTokens,
-	openrouterChatModelId,
+	parseLearnerChatSpecifier,
 } from '../src/config/chat-model.ts';
 
 {
@@ -133,12 +130,6 @@ import {
 			.some((model) => model.id === openaiChatModelId),
 		true,
 	);
-	assert.equal(
-		openrouterProvider()
-			.getModels()
-			.some((model) => model.id === openrouterChatModelId),
-		true,
-	);
 	for (const choice of learnerChatModelChoices) {
 		assert.equal(
 			openaiProvider()
@@ -146,56 +137,25 @@ import {
 				.some((model) => model.id === choice.openaiModelId),
 			true,
 		);
-		assert.equal(
-			openrouterProvider()
-				.getModels()
-				.some((model) => model.id === choice.openrouterModelId),
-			true,
-		);
 	}
-}
-
-{
-	const catalog = openrouterProvider().getModels();
-	assert.equal(openrouterChatMaxTokens, 8192);
-	assert.ok(openrouterChatMaxTokens < 100000);
-
-	const capped = capOpenrouterChatMaxTokens(catalog);
-	const cappedNano = capped.find((model) => model.id === openrouterChatModelId);
-	assert.equal(cappedNano?.maxTokens, openrouterChatMaxTokens);
-	for (const choice of learnerChatModelChoices) {
-		assert.equal(
-			capped.find((model) => model.id === choice.openrouterModelId)?.maxTokens,
-			openrouterChatMaxTokens,
-		);
-	}
-	const allowlisted = new Set(
-		learnerChatModelChoices.map((choice) => choice.openrouterModelId),
-	);
-	const other = catalog.find((model) => !allowlisted.has(model.id));
-	assert.ok(other);
-	assert.equal(
-		capped.find((model) => model.id === other.id)?.maxTokens,
-		other.maxTokens,
-	);
 }
 
 const operator = { providerId: 'jon-local', modelId: 'auto' };
 for (const [status, requested, expected] of [
-	[{ openai: false, openrouter: false }, 'openai/gpt-5', 'jon-local/auto'],
-	[{ openai: true, openrouter: false }, 'openrouter/openai/gpt-5', 'openai/gpt-5-nano'],
-	[{ openai: false, openrouter: true }, 'openai/gpt-5', 'openrouter/openai/gpt-5-nano'],
-	[{ openai: true, openrouter: true }, undefined, 'openrouter/openai/gpt-5-nano'],
-	[{ openai: true, openrouter: true }, 'openai/gpt-5', 'openai/gpt-5'],
-	[{ openai: true, openrouter: true }, 'openrouter/openai/gpt-5-mini', 'openrouter/openai/gpt-5-mini'],
-	[{ openai: true, openrouter: true }, 'openai/unlisted', 'openrouter/openai/gpt-5-nano'],
+	[{ openai: false }, 'openai/gpt-5', 'jon-local/auto'],
+	[{ openai: true }, undefined, 'openai/gpt-5-nano'],
+	[{ openai: true }, 'openai/gpt-5', 'openai/gpt-5'],
+	[{ openai: true }, 'openai/unlisted', 'openai/gpt-5-nano'],
+	// A pick saved for a retired provider follows the learner's current route.
+	[{ openai: true }, 'openrouter/openai/gpt-5', 'openai/gpt-5-nano'],
+	[{ openai: false }, 'openrouter/openai/gpt-5', 'jon-local/auto'],
 ]) {
 	assert.equal(specifierForLearnerChatFromStatus(status, operator, requested), expected);
 }
-const selected = { kind: 'openai', openai: true, openrouter: true };
-assert.deepEqual(applyLearnerChatPick(selected, 'openrouter/openai/gpt-5'), {
-	kind: 'openrouter', openai: true, openrouter: true,
-});
+assert.equal(parseLearnerChatSpecifier('openrouter/openai/gpt-5'), undefined);
+const selected = { kind: 'openai', openai: true };
+assert.deepEqual(applyLearnerChatPick({ kind: 'operator', openai: true }, 'openai/gpt-5'), selected);
+assert.deepEqual(applyLearnerChatPick(selected, 'openrouter/openai/gpt-5'), selected);
 assert.deepEqual(applyLearnerChatPick(selected, 'unlisted'), selected);
 assert.equal(resolveChatModel({ NODE_ENV: 'production' }).baseUrl, appConfig.defaultLocalBaseUrl);
 
