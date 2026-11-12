@@ -61,10 +61,6 @@ try {
 	assert.equal(JSON.stringify(allEvents).includes(reasoning), false, 'raw reasoning never reaches the browser client');
 	assert.ok(allEvents.some((event) => event.type === 'tool-input' && event.toolName === 'mark_reveal'));
 	assert.ok(allEvents.some((event) => event.type === 'tool-output'));
-	for (const collection of [events, reattachedEvents]) {
-		const positions = collection.filter((event) => event.position).map((event) => JSON.stringify(event.position));
-		assert.equal(new Set(positions).size, positions.length, 'one reader must never deliver a position twice');
-	}
 	const history = await client.history();
 	assert.equal(userMessages(history).length, 1);
 	const assistant = history.messages.findLast((message) => message.role === 'assistant');

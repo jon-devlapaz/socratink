@@ -34,7 +34,7 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 			const submissionId = typeof target === 'string' ? target : target.submissionId;
 			const fresh = deduplicator();
 			let retryMs = firstRetryMs;
-			for (let connection = 0; ; connection += 1) {
+			for (;;) {
 				signal?.throwIfAborted();
 				let latest: WireSnapshot | undefined;
 				try {
@@ -46,7 +46,7 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 							retryMs = firstRetryMs;
 							if (event.type === 'conversation-reset') latest = event.snapshot;
 							const forward = fresh(event);
-							if (forward) await onEvent?.({ ...forward, position: { batch: connection, index: event.position.index } });
+							if (forward) await onEvent?.(forward);
 						}
 					}
 				} catch (error) {

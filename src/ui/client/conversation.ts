@@ -125,13 +125,7 @@ export function unsettledSubmissionFromHistory(
 	const settled = new Set(history.settlements.map((settlement) => settlement.submissionId));
 	for (let index = history.messages.length - 1; index >= 0; index -= 1) {
 		const message = history.messages[index];
-		if (
-			message?.display !== 'visible'
-			|| message.role !== 'user'
-			|| !message.submissionId
-		) {
-			continue;
-		}
+		if (message?.role !== 'user' || !message.submissionId) continue;
 		if (settled.has(message.submissionId)) return undefined;
 		return {
 			submissionId: message.submissionId,

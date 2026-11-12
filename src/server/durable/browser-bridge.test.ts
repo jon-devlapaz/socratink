@@ -12,7 +12,6 @@ test('a GET reads the private history snapshot without submitting work', async (
 		submissions: [{ id: 'submission', text: 'Synthetic question', outcome: 'completed' }],
 	};
 	const engine: Engine = {
-		exists: async () => true,
 		snapshot: async () => snapshot,
 		submit: async () => { throw new Error('Read requests must not submit work'); },
 		abort: async () => { throw new Error('Read requests must not abort work'); },
@@ -32,7 +31,6 @@ test('a GET reads the private history snapshot without submitting work', async (
 
 test('a send with no model provider is refused before admission, with a reason the browser can show', async () => {
 	const engine: Engine = {
-		exists: async () => false,
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => { throw new Error('Unconfigured inference must not admit work'); },
 		abort: async () => {},
@@ -49,7 +47,6 @@ test('a send with no model provider is refused before admission, with a reason t
 
 test('an admitted send answers with only its submission id', async () => {
 	const engine: Engine = {
-		exists: async () => false,
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => 'submission-1',
 		abort: async () => {},

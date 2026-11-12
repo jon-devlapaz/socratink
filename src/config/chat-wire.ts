@@ -4,16 +4,16 @@
 export type WirePart =
 	| { type: 'text'; text: string; state: 'streaming' | 'done' }
 	| { type: `data-${string}`; data: unknown }
-	| ({ type: 'dynamic-tool'; toolName: string; toolCallId: string; durationMs?: number } & (
+	| ({ type: 'dynamic-tool'; toolName: string; toolCallId: string } & (
 		| { state: 'input-available'; input: unknown }
 		| { state: 'output-available'; input: unknown; output: unknown }
 		| { state: 'output-error'; input: unknown; errorText: string }));
 
 export type WireMessage = {
 	id: string;
-	role: 'user' | 'assistant' | 'system';
-	purpose: 'user' | 'assistant' | 'dispatch' | 'advisory';
-	display: 'visible' | 'hidden' | 'diagnostic';
+	role: 'user' | 'assistant';
+	// Nothing current reads it: a tab still running an older bundle hides a message without it.
+	display: 'visible';
 	submissionId?: string;
 	parts: WirePart[];
 	metadata?: Record<string, unknown>;
@@ -28,7 +28,6 @@ export type WireSettlement = {
 export type WireSnapshot = {
 	v: 1;
 	conversationId: string;
-	offset: string;
 	messages: WireMessage[];
 	settlements: WireSettlement[];
 };
@@ -38,11 +37,11 @@ export type WireEventBody =
 	| { type: 'message-started'; messageId: string; submissionId?: string }
 	| { type: 'message-delta'; messageId: string; kind: 'text'; delta: string }
 	| { type: 'tool-input'; messageId: string; toolCallId: string; toolName: string; input: unknown }
-	| { type: 'tool-output'; toolCallId: string; output: unknown; durationMs?: number }
-	| { type: 'tool-output-error'; toolCallId: string; errorText: string; durationMs?: number }
+	| { type: 'tool-output'; toolCallId: string; output: unknown }
+	| { type: 'tool-output-error'; toolCallId: string; errorText: string }
 	| ({ type: 'submission-settled' } & WireSettlement);
 
-export type WireEvent = WireEventBody & { conversationId: string; position: { batch: number; index: number } };
+export type WireEvent = WireEventBody & { conversationId: string };
 
 export type WireAdmission = { submissionId: string };
 

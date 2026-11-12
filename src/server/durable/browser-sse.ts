@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import type { Engine, Snapshot } from './contract.ts';
-import { project, type BrowserSnapshot } from './browser-projection.ts';
+import type { WireSnapshot } from '../../config/chat-wire.ts';
+import { project } from './browser-projection.ts';
 import { initialProgress, progressEvents, type NewEvent } from './browser-events.ts';
 
 export const sseTiming = { pollMs: 200, heartbeatMs: 15_000, maxMs: 250_000 };
@@ -17,6 +18,7 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 	const stopped = AbortSignal.any([signal, stop.signal]);
 	return new ReadableStream({
 		async start(controller) {
+			// Nothing current reads position: a tab still running an older bundle needs it.
 			let index = 0;
 			const write = (text: string) => { if (!stopped.aborted) controller.enqueue(encoder.encode(text)); };
 			const send = (event: NewEvent) => write(`data: ${JSON.stringify({ ...event, conversationId: id, position: { batch: 0, index: index++ } })}\n\n`);
@@ -51,7 +53,7 @@ function pending(state: Snapshot): Set<string> {
 	return new Set(state.submissions.filter((s) => !s.outcome).map((s) => s.id));
 }
 
-function withoutPendingReplies(snapshot: BrowserSnapshot, state: Snapshot): BrowserSnapshot {
+function withoutPendingReplies(snapshot: WireSnapshot, state: Snapshot): WireSnapshot {
 	const open = pending(state);
 	return { ...snapshot, messages: snapshot.messages.filter((m) => m.role !== 'assistant' || !open.has(m.submissionId ?? '')) };
 }

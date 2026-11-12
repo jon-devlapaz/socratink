@@ -102,7 +102,7 @@ transfer, mastery, or learning effectiveness.
 ## Runtime failure alerts
 
 The `Socratink runtime monitor` workflow checks production availability and
-queries Vercel runtime errors and HTTP 5xx responses on a 10-minute schedule. Failed or
+queries Vercel runtime errors and HTTP 5xx responses each time it runs. Failed or
 incomplete reads fail the job and use GitHub Actions failure notifications.
 The monitor uses Vercel's project log API and rejects responses with more
 pages or truncated messages.
@@ -122,6 +122,24 @@ Vercel project-scoped tokens are not read-only. For a controlled preview drill,
 use the separately reviewed `runtime-monitor-verification` environment and the
 workflow's `preview_deployment` input. Never place this credential in source,
 repository-wide secrets, or pull-request CI.
+
+GitHub's own schedule is a fallback, not the clock. From 2026-11-09 to
+2026-11-12 it started this workflow about three times a day, so most
+45-minute windows went unread. An outside scheduler should start the workflow
+every 10 minutes instead:
+
+```
+POST https://api.github.com/repos/jon-devlapaz/socratink/actions/workflows/runtime-monitor.yml/dispatches
+Authorization: Bearer <token>
+Accept: application/vnd.github+json
+
+{"ref":"main"}
+```
+
+GitHub answers 204. Use a fine-grained token limited to this repository with
+only `Actions: read and write`, and store it only in the scheduler. That token
+can start and cancel this repository's workflows; it cannot read code or
+secrets. Any scheduler that sends a POST with headers works.
 
 GitHub schedules activate only on the default branch and can be delayed or
 dropped; public-repository schedules stop after 60 days without activity. The

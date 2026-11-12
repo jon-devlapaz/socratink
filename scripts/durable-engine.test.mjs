@@ -51,9 +51,9 @@ test('another instance reads live reasoning, rejects a competing turn, and owner
 	const second = await openEngine(options);
 	const manager = createDurableStorage(target);
 	try {
-		assert.equal(await first.exists('learner:one'), false);
+		assert.equal(await manager.exists('learner:one'), false);
 		assert.deepEqual(await first.snapshot('learner:one'), { revision: 0, messages: [], submissions: [] });
-		assert.equal(await first.exists('learner:one'), false);
+		assert.equal(await manager.exists('learner:one'), false);
 		const id = await first.submit('learner:one', 'Help.');
 		const live = await until(() => second.snapshot('learner:one'), (value) => !!value.messages[1]?.reasoning);
 		assert.equal(live.submissions[0].id, id);

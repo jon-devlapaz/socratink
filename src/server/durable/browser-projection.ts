@@ -1,15 +1,12 @@
-import { createHash } from 'node:crypto';
 import type { WirePart, WireSnapshot } from '../../config/chat-wire.ts';
 import type { ProductTool, Snapshot } from './contract.ts';
 
-export type BrowserSnapshot = WireSnapshot & { sourceRevision: number };
-
 /** The browser's view of a Pi conversation. Raw model reasoning stays on the
  * server: learners never receive it, live or in history. */
-export function project(conversationId: string, state: Snapshot): BrowserSnapshot {
+export function project(conversationId: string, state: Snapshot): WireSnapshot {
 	const pending = new Set(state.submissions.filter((s) => !s.outcome).map((s) => s.id));
 	const messages: WireSnapshot['messages'] = state.messages.map((m) => ({
-		id: `${m.submissionId}:${m.role}`, role: m.role, purpose: m.role, display: 'visible',
+		id: `${m.submissionId}:${m.role}`, role: m.role, display: 'visible',
 		submissionId: m.submissionId, ...(m.metadata ? { metadata: m.metadata } : {}),
 		parts: [
 			...(m.text ? [{ type: 'text' as const, text: m.text, state: pending.has(m.submissionId) ? 'streaming' as const : 'done' as const }] : []),
@@ -19,8 +16,7 @@ export function project(conversationId: string, state: Snapshot): BrowserSnapsho
 	}));
 	const settlements = state.submissions.flatMap((s) => s.outcome ? [{ submissionId: s.id, outcome: s.outcome,
 		...(s.error ? { error: { message: s.error } } : {}) }] : []);
-	const offset = createHash('sha256').update(JSON.stringify({ messages, settlements })).digest('hex');
-	return { v: 1, conversationId, offset, messages, settlements, sourceRevision: state.revision };
+	return { v: 1, conversationId, messages, settlements };
 }
 
 function toolPart(tool: ProductTool): WirePart {

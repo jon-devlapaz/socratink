@@ -11,7 +11,6 @@ export type DisplayedToolCall = {
 	name: string;
 	state: ToolCallState;
 	output?: string;
-	durationMs?: number;
 };
 
 export function toolsFromParts(parts: readonly WirePart[]): DisplayedToolCall[] {
@@ -54,7 +53,6 @@ export function applyToolStreamEvent(
 				name: existingName(calls, event.toolCallId),
 				state: 'done',
 				output: formatToolOutput(event.output),
-				...(event.durationMs == null ? {} : { durationMs: event.durationMs }),
 			});
 		case 'tool-output-error':
 			return upsertTool(calls, {
@@ -62,7 +60,6 @@ export function applyToolStreamEvent(
 				name: existingName(calls, event.toolCallId),
 				state: 'failed',
 				output: event.errorText,
-				...(event.durationMs == null ? {} : { durationMs: event.durationMs }),
 			});
 		default:
 			return false;
@@ -110,14 +107,12 @@ function displayedToolFromPart(
 				...base,
 				state: 'done',
 				output: formatToolOutput(part.output),
-				...(part.durationMs == null ? {} : { durationMs: part.durationMs }),
 			};
 		case 'output-error':
 			return {
 				...base,
 				state: 'failed',
 				output: part.errorText,
-				...(part.durationMs == null ? {} : { durationMs: part.durationMs }),
 			};
 		default: {
 			const exhaustive: never = part;
@@ -138,7 +133,6 @@ function upsertTool(calls: DisplayedToolCall[], next: DisplayedToolCall): boolea
 		&& previous.name === next.name
 		&& previous.state === next.state
 		&& previous.output === next.output
-		&& previous.durationMs === next.durationMs
 	) {
 		return false;
 	}

@@ -10,7 +10,6 @@ const fast = { pollMs: 1, heartbeatMs: 60_000, maxMs: 5_000 };
 function engineOf(states: Snapshot[]): Engine & { calls: number } {
 	const engine = {
 		calls: 0,
-		exists: async () => true,
 		snapshot: async () => states[Math.min(engine.calls++, states.length - 1)]!,
 		submit: async () => { throw new Error('SSE must not submit work'); },
 		abort: async () => { throw new Error('SSE must not abort work'); },
