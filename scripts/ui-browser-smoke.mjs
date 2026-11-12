@@ -102,7 +102,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
 		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 		assert.equal(await page.locator('#active-turn .request-state').count(), 1);
-		assert.equal(await page.locator('#active-turn .request-state .turn-label').innerText(), 'Canceled');
+		assert.equal(await page.locator('#active-turn .request-state .turn-label').textContent(), 'Canceled');
 		assert.equal(fixture.aborts, 1);
 		assert.deepEqual(fixture.sent, ['Stop this reply']);
 	});
