@@ -198,7 +198,6 @@ export function mountChatSurface(options: Readonly<{
 
 	async function paint(kind: PaintKind) {
 		const render = async () => {
-			clearStream();
 			const { earlier, current } = splitCurrentTurns(turns);
 			messages.replaceChildren(
 				...groupEarlierSteps(earlier).map((step, index) => createHistoryStep(step, index)),
@@ -210,7 +209,12 @@ export function mountChatSurface(options: Readonly<{
 				await wait(150);
 				activeTurn.classList.remove('is-exiting');
 			}
+			// Every await comes before the active turn changes: a start and a
+			// cancel can settle on the same state and paint it twice at once.
+			const stateElement = requestState.kind === 'recovery' || requestState.kind === 'terminal'
+				? await requestStateElement(requestState) : undefined;
 
+			clearStream();
 			activeTurn.replaceChildren(
 				...current.map((item, index) => {
 					const isLast = index === current.length - 1;
@@ -251,9 +255,7 @@ export function mountChatSurface(options: Readonly<{
 			} else {
 				releasePending();
 			}
-			if (requestState.kind === 'recovery' || requestState.kind === 'terminal') {
-				activeTurn.append(await requestStateElement(requestState));
-			}
+			if (stateElement) activeTurn.append(stateElement);
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
