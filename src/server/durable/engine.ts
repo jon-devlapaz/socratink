@@ -5,7 +5,7 @@ import type { Engine, EngineOptions, ModelSelection, Snapshot, TurnRecord } from
 import { inputKind, productRegistry } from './extension.ts';
 import { readSnapshot, type InputData } from './projection.ts';
 import { conversationModels, modelRef } from './provider.ts';
-import { createDurableStorage, type OwnedStorage } from './storage.ts';
+import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
 
 export class DurableBusyError extends Error {
 	constructor() { super('This conversation is busy.'); this.name = 'DurableBusyError'; }
@@ -28,6 +28,20 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 	async function snapshot(id: string): Promise<Snapshot> {
 		const reader = await manager.read(id);
 		try { return await readSnapshot(reader); } finally { await reader.close(context); }
+	}
+	function follow(id: string) {
+		let reader: Promise<ReadStorage> | undefined;
+		return {
+			async snapshot() {
+				if (reader) await (await reader).refresh();
+				else reader = manager.read(id);
+				const value = await readSnapshot(await reader);
+				// A snapshot also recovers work a dead process left pending.
+				if (value.submissions.some((entry) => !entry.outcome)) await recover(id);
+				return value;
+			},
+			async close() { await (await reader?.catch(() => undefined))?.close(context); },
+		};
 	}
 	function claim(id: string): Promise<Owner | undefined> {
 		if (closed) return Promise.reject(new Error('Engine is closed.'));
@@ -124,10 +138,10 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			}
 		},
 		async snapshot(id) {
-			const value = await snapshot(id);
-			if (value.submissions.some((entry) => !entry.outcome)) await recover(id);
-			return value;
+			const follower = follow(id);
+			try { return await follower.snapshot(); } finally { await follower.close(); }
 		},
+		follow,
 		async abort(id) {
 			const pending = (await snapshot(id)).submissions.filter((entry) => !entry.outcome);
 			if (!pending.length) return;

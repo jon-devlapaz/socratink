@@ -77,6 +77,32 @@ test('another instance reads live reasoning, rejects a competing turn, and owner
 	} finally { await first.close(); await second.close(); await manager.close(); }
 }));
 
+test('a follower opened before the conversation exists matches a fresh snapshot at every step of a turn', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const first = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	const second = await openEngine(options);
+	const follower = second.follow('learner:follow');
+	// Commits may land between the two reads; compare only at one revision.
+	const matched = async () => {
+		for (;;) {
+			const followed = await follower.snapshot();
+			const full = await second.snapshot('learner:follow');
+			if (followed.revision === full.revision) { assert.deepEqual(followed, full); return followed; }
+		}
+	};
+	try {
+		assert.deepEqual(await matched(), { revision: 0, messages: [], submissions: [] });
+		await first.submit('learner:follow', 'Help.');
+		await until(matched, (value) => !!value.messages[1]?.reasoning);
+		finish(responses[0]);
+		await Promise.all(background);
+		const settled = await matched();
+		assert.equal(settled.submissions[0].outcome, 'completed');
+		assert.equal(settled.messages[1].text, 'Completed reply.');
+		assert.deepEqual(await follower.snapshot(), settled, 'a poll with no new commits returns the same state');
+	} finally { await follower.close(); await first.close(); await second.close(); }
+}));
+
 test('cross-instance cancellation persists and does not abort the next admission', async () => fixture(async ({ responses, options }) => {
 	const first = await openEngine(options);
 	const second = await openEngine(options);

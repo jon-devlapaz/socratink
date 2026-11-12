@@ -8,10 +8,13 @@ import { logFormat, maximumId, type LogLease, type LogState } from './storage-ty
 
 export type CommittedStorage = Storage & { readonly revision: number };
 export type OwnedStorage = CommittedStorage & { cancelThrough: () => Promise<number> };
+export type ReadStorage = CommittedStorage & { refresh: () => Promise<void> };
+type Replayed = { memory: MemoryStorage; seq: number; minimumId: number };
 
 /** Pi 1.5 validates native records; dialect-specific logs commit them before
- * publication. Preview reads replay the full history into memory. No connection
- * or execution ownership is retained for an idle conversation.
+ * publication. Preview reads replay the full history into memory, and refresh
+ * then applies only later commits. No connection or execution ownership is
+ * retained for an idle conversation.
  */
 export function createDurableStorage(target: DatabaseTarget) {
 	const backend = target.kind === 'postgres' ? postgresLog(target.connectionString) : sqliteLog(target.filename);
@@ -20,35 +23,34 @@ export function createDurableStorage(target: DatabaseTarget) {
 		async acquire(id: string): Promise<OwnedStorage | undefined> {
 			const lease = await backend.claim(id);
 			if (!lease) return undefined;
-			try { return own(replay(lease.state), lease); }
+			try { return own(replay(lease.state).memory, lease); }
 			catch (error) { await lease.close(); throw error; }
 		},
-		async read(id: string): Promise<CommittedStorage> {
-			const state = await backend.read(id);
-			const memory = replay(state);
+		async read(id: string): Promise<ReadStorage> {
+			const log = replay(await backend.read(id));
 			const refuse = async (): Promise<never> => { throw new Error('Storage is read-only.'); };
-			return { revision: state.commits.length, ...readMethods(memory, (read) => read()), commit: refuse, mintId: refuse,
-				close: (context) => memory.close(context) };
+			return { get revision() { return log.seq; }, ...readMethods(log.memory, (read) => read()), commit: refuse, mintId: refuse,
+				refresh: async () => { replay(await backend.read(id, log.seq), log); },
+				close: (context) => log.memory.close(context) };
 		},
 		cancel: backend.cancel,
 		close: backend.close,
 	};
 }
 
-function replay(state: LogState): MemoryStorage {
+/** Applies `state.commits` onto `into`, which must end exactly where they begin. */
+function replay(state: LogState, into: Replayed = { memory: new MemoryStorage(), seq: 0, minimumId: 2 }): Replayed {
 	if (state.format !== logFormat) throw new Error('Unsupported Pi storage format.');
 	if (state.nextId < 2 || (!Number.isSafeInteger(state.nextId) && state.nextId !== maximumId + 1)) throw new Error('Invalid Pi ID counter.');
-	const memory = new MemoryStorage();
-	let expectedSeq = 1;
-	let minimumId = 2;
 	for (const record of state.commits) {
-		if (record.seq !== expectedSeq++ || !Number.isSafeInteger(record.seq)) throw new Error('Pi storage history has a gap.');
+		if (record.seq !== into.seq + 1 || !Number.isSafeInteger(record.seq)) throw new Error('Pi storage history has a gap.');
 		const writes: StorageWrite[] = JSON.parse(record.writes);
-		memory.prepareCommit(writes, record.seq as Seq).apply();
-		minimumId = Math.max(minimumId, nextIdAfter(writes));
+		into.memory.prepareCommit(writes, record.seq as Seq).apply();
+		into.seq = record.seq;
+		into.minimumId = Math.max(into.minimumId, nextIdAfter(writes));
 	}
-	if (state.nextId < minimumId) throw new Error('Pi ID counter is behind committed records.');
-	return memory;
+	if (state.nextId < into.minimumId) throw new Error('Pi ID counter is behind committed records.');
+	return into;
 }
 
 function own(memory: MemoryStorage, lease: LogLease): OwnedStorage {

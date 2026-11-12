@@ -56,8 +56,16 @@ export function postgresLog(connectionString: string): LogBackend {
 			await ready();
 			return (await pool.query(`SELECT 1 FROM ${schema}.namespaces WHERE namespace=$1`, [namespace])).rowCount === 1;
 		},
-		async read(namespace) {
+		async read(namespace, after) {
 			await ready();
+			if (after !== undefined) {
+				// One statement is one snapshot, so no transaction or held connection.
+				const rows = (await pool.query(`SELECT n.format, n.next_id, c.seq, c.writes FROM ${schema}.namespaces n
+					LEFT JOIN ${schema}.commits c ON c.namespace=n.namespace AND c.seq>$2 WHERE n.namespace=$1 ORDER BY c.seq`, [namespace, after])).rows;
+				if (!rows[0]) return emptyLog();
+				return { format: rows[0].format, nextId: Number(rows[0].next_id),
+					commits: rows.filter((row) => row.seq !== null).map((row) => ({ seq: Number(row.seq), writes: row.writes })) };
+			}
 			const client = await pool.connect();
 			try {
 				await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');

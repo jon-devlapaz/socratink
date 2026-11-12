@@ -16,10 +16,10 @@ export function sqliteLog(filename: string): LogBackend {
 			next_id INTEGER NOT NULL, abort_through INTEGER NOT NULL DEFAULT 0);
 		CREATE TABLE IF NOT EXISTS pi_commits (namespace TEXT NOT NULL, seq INTEGER NOT NULL, writes TEXT NOT NULL,
 			PRIMARY KEY(namespace,seq));`);
-	function state(namespace: string): LogState {
+	function state(namespace: string, after = 0): LogState {
 		const metadata = db.prepare('SELECT * FROM pi_namespaces WHERE namespace=?').get(namespace) as Metadata | undefined;
 		return metadata ? { format: metadata.format, nextId: metadata.next_id,
-			commits: db.prepare('SELECT seq,writes FROM pi_commits WHERE namespace=? ORDER BY seq').all(namespace) as LogState['commits'] } : emptyLog();
+			commits: db.prepare('SELECT seq,writes FROM pi_commits WHERE namespace=? AND seq>? ORDER BY seq').all(namespace, after) as LogState['commits'] } : emptyLog();
 	}
 	function transaction<T>(run: () => T): T {
 		db.exec('BEGIN');
@@ -28,7 +28,7 @@ export function sqliteLog(filename: string): LogBackend {
 	}
 	return {
 		async exists(namespace) { return !!db.prepare('SELECT 1 FROM pi_namespaces WHERE namespace=?').get(namespace); },
-		async read(namespace) { return transaction(() => state(namespace)); },
+		async read(namespace, after) { return transaction(() => state(namespace, after)); },
 		async claim(namespace) {
 			// Separate per-conversation lock files allow other conversations to run.
 			// The OS releases this transaction if its owning process dies.

@@ -7,10 +7,15 @@ import type { Engine, Snapshot } from './contract.ts';
 
 const fast = { pollMs: 1, heartbeatMs: 60_000, maxMs: 5_000 };
 
-function engineOf(states: Snapshot[]): Engine & { calls: number } {
+function engineOf(states: Snapshot[], fail = false): Engine & { calls: number; follows: number; closes: number } {
+	const next = async () => {
+		if (fail && engine.calls) throw new Error('Synthetic storage failure.');
+		return states[Math.min(engine.calls++, states.length - 1)]!;
+	};
 	const engine = {
-		calls: 0,
-		snapshot: async () => states[Math.min(engine.calls++, states.length - 1)]!,
+		calls: 0, follows: 0, closes: 0,
+		snapshot: async () => { throw new Error('SSE reads through one follower'); },
+		follow: () => { engine.follows++; return { snapshot: next, close: async () => { engine.closes++; } }; },
 		submit: async () => { throw new Error('SSE must not submit work'); },
 		abort: async () => { throw new Error('SSE must not abort work'); },
 		close: async () => {},
@@ -39,6 +44,7 @@ test('a settled conversation sends one reset with every reply, then ends', async
 	assert.deepEqual(events[0].snapshot.messages.map((m: any) => m.id), ['s1:user', 's1:assistant']);
 	assert.equal(events[0].conversationId, 'c');
 	assert.equal(engine.calls, 1);
+	assert.deepEqual([engine.follows, engine.closes], [1, 1], 'the follower is closed when the stream ends');
 });
 
 test('a pending reply streams from its start after the reset, then settles and ends', async () => {
@@ -58,6 +64,7 @@ test('a pending reply streams from its start after the reset, then settles and e
 	assert.equal(JSON.stringify(events).includes('Private verdict'), false, 'raw reasoning never reaches the browser');
 	assert.equal(events.at(-1).snapshot.messages.at(-1).parts.at(-1).text, 'An answer.');
 	assert.deepEqual(events.map((e) => e.position.index), events.map((_, i) => i));
+	assert.deepEqual([engine.calls, engine.follows, engine.closes], [3, 1, 1], 'every poll reuses one follower, closed at the end');
 });
 
 test('a long pending turn gets heartbeats and ends at the time cap', async () => {
@@ -65,6 +72,13 @@ test('a long pending turn gets heartbeats and ends at the time cap', async () =>
 	const { events, comments } = await frames(conversationEvents(engine, 'c', new AbortController().signal, { pollMs: 5, heartbeatMs: 10, maxMs: 60 }));
 	assert.deepEqual(events.map((e) => e.type), ['conversation-reset']);
 	assert.ok(comments.length >= 2, `expected heartbeats, got ${comments.length}`);
+	assert.equal(engine.closes, 1, 'the time cap closes the follower');
+});
+
+test('a failed poll errors the stream and still closes the follower', async () => {
+	const engine = engineOf([{ revision: 1, messages: [question], submissions: [{ id: 's2', text: 'Synthetic question' }] }], true);
+	await assert.rejects(frames(conversationEvents(engine, 'c', new AbortController().signal, fast)), /Synthetic storage failure/);
+	assert.equal(engine.closes, 1);
 });
 
 test('a dropped client stops the snapshot loop', async () => {
@@ -75,6 +89,7 @@ test('a dropped client stops the snapshot loop', async () => {
 	const calls = engine.calls;
 	await new Promise((resolve) => setTimeout(resolve, 30));
 	assert.ok(engine.calls <= calls + 1, 'no polling after cancel');
+	assert.deepEqual([engine.follows, engine.closes], [1, 1], 'a dropped client closes the follower');
 });
 
 test('the bridge serves events as an uncached event stream', async () => {

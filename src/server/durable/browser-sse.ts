@@ -24,8 +24,10 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 			const send = (event: NewEvent) => write(`data: ${JSON.stringify({ ...event, conversationId: id, position: { batch: 0, index: index++ } })}\n\n`);
 			const opened = Date.now();
 			let beat = opened;
+			// One replayed log per connection: each poll reads only new commits.
+			const follower = engine.follow(id);
 			try {
-				let state = await engine.snapshot(id);
+				let state = await follower.snapshot();
 				const progress = initialProgress();
 				const settledView = withoutPendingReplies(project(id, state), state);
 				progressEvents(settledView, progress);
@@ -37,12 +39,12 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 					await delay(timing.pollMs, undefined, { signal: stopped }).catch(() => {});
 					if (stopped.aborted) break;
 					// snapshot() also recovers work a dead process left pending.
-					state = await engine.snapshot(id);
+					state = await follower.snapshot();
 				}
 			} catch (error) {
 				if (!stopped.aborted) controller.error(error);
 				return;
-			}
+			} finally { await follower.close(); }
 			if (!stop.signal.aborted) controller.close();
 		},
 		cancel() { stop.abort(); },

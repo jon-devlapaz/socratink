@@ -10,6 +10,7 @@ import { ROOT_CONVERSATION_ID } from '@earendil-works/pi-durable';
 import { commitWrites, createStorageConformance } from '@earendil-works/pi-durable/testing';
 import { createDurableStorage } from '../src/server/durable/storage.ts';
 import { postgresOwnerConnectionString } from '../src/server/durable/storage-postgres.ts';
+import { DatabaseSync } from 'node:sqlite';
 import pg from 'pg';
 import { startDisposablePostgres } from './durable-postgres-fixture.mjs';
 
@@ -97,6 +98,54 @@ for (const dialect of ['sqlite', ...(process.env.DURABLE_TEST_POSTGRES === '1' ?
 			await reader?.close(context); await owner?.close(context);
 			await first.close(); await second.close();
 		}
+	});
+
+	test(`${dialect}: a refreshed reader applies only later commits and refuses a gap`, async () => {
+		const selected = target();
+		const manager = createDurableStorage(selected);
+		const id = `learner:${randomUUID()}`;
+		// Writes straight to the log, bypassing the manager, to tamper with history.
+		const raw = selected.kind === 'sqlite' ? (() => { const db = new DatabaseSync(selected.filename);
+			return { run: async (sql, ...values) => { db.prepare(sql.replaceAll('socratink_pi.commits', 'pi_commits').replace(/\$\d/g, '?')).run(...values); },
+				end: async () => db.close() }; })()
+			: await (async () => { const client = new pg.Client({ connectionString: postgres.connectionString }); await client.connect();
+				return { run: async (sql, ...values) => { await client.query(sql, values); }, end: () => client.end() }; })();
+		const view = async (reader) => ({ revision: reader.revision, conversation: await reader.conversation(ROOT_CONVERSATION_ID, context),
+			entries: await reader.conversation(ROOT_CONVERSATION_ID, context)
+				? (await reader.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'ascending' }, 100, undefined, context)).items : [] });
+		const fresh = async () => {
+			const reader = await manager.read(id);
+			try { return await view(reader); } finally { await reader.close(context); }
+		};
+		let owner;
+		const follower = await manager.read(id);
+		try {
+			assert.equal(follower.revision, 0, 'opened before the conversation exists');
+			await follower.refresh();
+			assert.deepEqual(await view(follower), await fresh());
+			owner = await manager.acquire(id);
+			await commitWrites(owner, [{ type: 'conversation', value: { id: ROOT_CONVERSATION_ID } }], context);
+			for (let step = 0; step < 3; step++) {
+				const entryId = await owner.mintId();
+				await commitWrites(owner, [{ type: 'entry', value: { id: entryId, conversationId: ROOT_CONVERSATION_ID, kind: `step-${step}` } }], context);
+				await follower.refresh();
+				assert.deepEqual(await view(follower), await fresh());
+			}
+			assert.equal(follower.revision, 4, 'revision counts every applied commit');
+			// Rows already applied are never fetched again: corrupting them changes nothing for the follower.
+			await raw.run(`UPDATE socratink_pi.commits SET writes='not json' WHERE namespace=$1`, id);
+			const before = await view(follower);
+			await follower.refresh();
+			assert.deepEqual(await view(follower), before, 'a poll with no new commits fetches nothing');
+			await assert.rejects(manager.read(id), 'a full read would have parsed the corrupted rows');
+			const entryId = await owner.mintId();
+			await commitWrites(owner, [{ type: 'entry', value: { id: entryId, conversationId: ROOT_CONVERSATION_ID, kind: 'later' } }], context);
+			await follower.refresh();
+			assert.equal(follower.revision, 5);
+			assert.equal((await follower.entry(entryId, context)).entry.kind, 'later');
+			await raw.run(`INSERT INTO socratink_pi.commits(namespace,seq,writes) VALUES ($1,$2,'[]')`, id, 7);
+			await assert.rejects(follower.refresh(), /gap/);
+		} finally { await follower.close(context); await owner?.close(context); await raw.end(); await manager.close(); }
 	});
 
 	test(`${dialect}: ownership is released on close and unused IDs remain reserved`, async () => {
