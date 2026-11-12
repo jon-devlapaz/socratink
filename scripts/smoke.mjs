@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
+import { markRevealRetryBodies } from '../src/learning/mark-reveal.ts';
+import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
@@ -31,6 +33,10 @@ const transferPresent = {
 	choices: ['A retry of the same payment', 'A second, separate purchase'],
 	reasoning: true,
 };
+const hintRequest = formatQuestionnaireAnswers(
+	{ items: [{ name: 'item', prompt: transferPresent.prompt, choices: [] }] }, [{ name: 'item', values: [], help: 'hint' }]);
+const hintText = 'Think about which request the payment provider has already seen.';
+const scaffoldReveal = { kind: 'hint' };
 const unsureReply = 'Honestly no idea, I do not know where to start.';
 const scaffoldText = 'Picture paying twice for one coffee. What would the server need to remember?';
 const unboxedBaseline =
@@ -244,9 +250,20 @@ const scriptedProviderTurns = [
 		finishReason: 'tool_calls',
 	},
 	{
+		expectedMessages: [hintRequest],
+		text: hintText,
+		tools: [presentQuestionCall('call_transfer_again', transferPresent)],
+		finishReason: 'tool_calls',
+	},
+	{
 		expectedMessages: [unsureReply],
 		text: scaffoldText,
 		finishReason: 'stop',
+	},
+	{
+		expectedMessages: [unsureReply, markRevealRetryBodies.unmarked],
+		tools: [{ id: 'call_scaffold_reveal', name: 'mark_reveal', arguments: scaffoldReveal }],
+		finishReason: 'tool_calls',
 	},
 ];
 
@@ -265,7 +282,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the smoke should use exactly eight provider calls');
+	assert.ok(turn, 'the smoke should use exactly ten provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -470,11 +487,26 @@ try {
 		await client.send({ message: { kind: 'user', body: answerRequest } }),
 	);
 	questionnaireFromReply(transfer, transferQuestionnaire, 'transfer');
+	const hinted = await client.read(
+		await client.send({ message: { kind: 'user', body: hintRequest } }),
+	);
+	assert.equal(hinted.text, hintText);
+	questionnaireFromReply(hinted, transferQuestionnaire, 'card asked again after a hint');
+	assert.deepEqual(hinted.data?.reveal?.at(-1), { kind: 'hint', target: transferPresent.prompt },
+		'card help counts as assistance even when the tutor skips mark_reveal');
 	const scaffold = await client.read(
 		await client.send({ message: { kind: 'user', body: unsureReply } }),
 	);
-	assert.equal(scaffold.text, scaffoldText);
-	assert.equal(providerTurns, 8, 'each reply should take one provider call');
+	assert.equal(scaffold.text, scaffoldText, 'the correction labels the reply without repeating it');
+	assert.deepEqual(scaffold.data?.reveal?.at(-1), scaffoldReveal, 'an unmarked reply to a plea for help gets one correction');
+	assert.equal(providerTurns, 10, 'only the unmarked reply takes a second provider call');
+	const relabeled = visibleTurnsFromHistory(await client.history()).slice(-4);
+	assert.deepEqual(relabeled.map(({ role, text, reveal }) => ({ role, text, reveal })), [
+		{ role: 'You', text: hintRequest, reveal: undefined },
+		{ role: 'Assistant', text: hintText, reveal: { kind: 'hint', target: transferPresent.prompt } },
+		{ role: 'You', text: unsureReply, reveal: undefined },
+		{ role: 'Assistant', text: scaffoldText, reveal: scaffoldReveal },
+	], 'help labels survive a history read');
 
 	if (process.env.REVEAL_BROWSER === '1') {
 		providerTurns = 0;
@@ -483,7 +515,7 @@ try {
 			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
 	}
 	console.log(
-		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, learning exchange, restart persistence`,
+		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, card help, reveal correction, learning exchange, restart persistence`,
 	);
 } catch (error) {
 	if (stderr) process.stderr.write(`\nSocratink server stderr:\n${stderr}`);
