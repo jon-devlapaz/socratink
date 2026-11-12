@@ -25,7 +25,8 @@ describe the existing interface, not future capabilities.
   own the active turn and earlier-step trail. Pending, cancel, recovery, and
   error feedback stays visible in the conversation.
 - **Question cards:** `questionnaire.ts` and `questionnaire.css` render
-  structured choices and learner reasoning within the flow.
+  structured choices, learner reasoning, and the Hint and "I don't know"
+  buttons within the flow.
 - **Dictation:** `dictation.ts` and `dictation.css` provide input states; do
   not describe dictation as an autonomous voice tutor.
 - **Sign-in:** `login.html`, `login.ts`, and `login.css` show configured OAuth

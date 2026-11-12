@@ -1,4 +1,4 @@
-import type { QuestionnaireAnswer, QuestionnaireDefinition, QuestionnaireItem } from '../questionnaire.ts';
+import type { QuestionnaireAnswer, QuestionnaireDefinition, QuestionnaireHelp, QuestionnaireItem } from '../questionnaire.ts';
 
 function createButton(label: string, className: string): HTMLButtonElement {
 	const button = document.createElement('button');
@@ -52,8 +52,15 @@ export function createQuestionnaire(
 	actions.className = 'questionnaire-actions';
 	const skip = createButton('Skip', 'questionnaire-button questionnaire-button-ghost');
 	skip.hidden = item.required !== false;
+	// Help is always offered: a card must never force a guess. The answer
+	// text tells the tutor, and the server records the turn as assistance.
+	const help = (['hint', 'unknown'] as const satisfies readonly QuestionnaireHelp[]).map((kind) => {
+		const button = createButton(kind === 'hint' ? 'Hint' : "I don't know", 'questionnaire-button questionnaire-button-ghost');
+		button.addEventListener('click', () => onSubmit([{ name: item.name, values: [], help: kind }]));
+		return button;
+	});
 	const submit = createButton(definition.submitLabel, 'questionnaire-button questionnaire-button-primary');
-	actions.append(skip, submit);
+	actions.append(skip, ...help, submit);
 	form.append(actions);
 
 	skip.addEventListener('click', () => {

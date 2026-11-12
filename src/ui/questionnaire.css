@@ -216,6 +216,10 @@
 	color: var(--muted);
 }
 
+.questionnaire-button-ghost:has(+ .questionnaire-button-ghost) {
+	margin-right: 0;
+}
+
 @media (max-width: 560px) {
 	.questionnaire {
 		padding: 0.85rem;
