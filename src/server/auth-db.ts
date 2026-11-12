@@ -2,8 +2,8 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { Pool } from 'pg';
 import type { DatabaseTarget } from '../config/database.ts';
+import { sharedPostgresPool } from './postgres-pool.ts';
 
 export type UserRow = Readonly<{
 	id: string;
@@ -113,10 +113,11 @@ export function createAuthDb(target: DatabaseTarget): AuthDb {
 }
 
 function openPostgresAuthDb(connectionString: string): AuthDb {
-	const pool = new Pool({ connectionString, max: 2 });
+	const pool = sharedPostgresPool(connectionString);
 	return createPostgresAuthDb({
 		query: (text, values) => pool.query(text, values),
-		end: () => pool.end(),
+		// The shared pool outlives this store; see sharedPostgresPool.
+		end: async () => {},
 	});
 }
 
