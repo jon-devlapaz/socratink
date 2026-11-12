@@ -86,9 +86,6 @@ export function visibleTurnsFromHistory(
 	const visible: DisplayedTurn[] = [];
 	const supersededSubmissionIds = supersededFailedSubmissionIds(history);
 	for (const message of history.messages) {
-		if (message.display !== 'visible' || (message.role !== 'user' && message.role !== 'assistant')) {
-			continue;
-		}
 		if (message.submissionId && supersededSubmissionIds.has(message.submissionId)) continue;
 		const text = visibleText(message);
 		if (message.role === 'user') {
@@ -117,12 +114,8 @@ function supersededFailedSubmissionIds(
 			.map((settlement) => settlement.submissionId),
 	);
 	const superseded = new Set<string>();
-	const visibleChat = history.messages.filter(
-		(message) =>
-			message.display === 'visible' && (message.role === 'user' || message.role === 'assistant'),
-	);
-	const groups: Array<{ submissionId?: string; messages: typeof visibleChat }> = [];
-	for (const message of visibleChat) {
+	const groups: Array<{ submissionId?: string; messages: typeof history.messages }> = [];
+	for (const message of history.messages) {
 		const previous = groups.at(-1);
 		if (message.submissionId && previous?.submissionId === message.submissionId) {
 			previous.messages.push(message);

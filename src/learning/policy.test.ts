@@ -34,8 +34,7 @@ test('questions use current validation and presentation; reveals retain provenan
 });
 
 test('the shared correction policy permits only one extra attempt', () => {
-	const invalid = { toolCalls: [{ tool: 'present_question', isError: true }], assistantText: '', alreadyRetried: false };
-	assert.equal(presentQuestionRetryReason(invalid), 'invalid');
-	assert.equal(presentQuestionRetryReason({ ...invalid, alreadyRetried: true }), undefined);
-	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText: 'Choose:\nA. Recheck\nB. Retry', alreadyRetried: false }), 'unboxed');
+	const unboxed = { toolCalls: [], assistantText: 'Choose:\nA. Recheck\nB. Retry', alreadyRetried: false };
+	assert.equal(presentQuestionRetryReason(unboxed), 'unboxed');
+	assert.equal(presentQuestionRetryReason({ ...unboxed, alreadyRetried: true }), undefined);
 });

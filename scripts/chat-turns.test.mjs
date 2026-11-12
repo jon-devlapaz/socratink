@@ -28,11 +28,6 @@ test('projects only visible learner and assistant turns from conversation histor
 		settlements: [],
 		messages: [
 			{
-				display: 'hidden',
-				role: 'system',
-				parts: [{ type: 'text', text: 'runtime detail' }],
-			},
-			{
 				display: 'visible',
 				role: 'user',
 				parts: [

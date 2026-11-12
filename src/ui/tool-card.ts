@@ -22,12 +22,6 @@ export function createToolCard(call: DisplayedToolCall): HTMLElement {
 	state.className = 'tool-card-state';
 	state.textContent = toolStateLabel(call.state);
 	head.append(name, state);
-	if (call.durationMs != null) {
-		const duration = document.createElement('span');
-		duration.className = 'tool-card-duration';
-		duration.textContent = formatDuration(call.durationMs);
-		head.append(duration);
-	}
 	card.append(head);
 	const outputText = visibleToolOutput(call);
 	if (outputText) {
@@ -37,9 +31,4 @@ export function createToolCard(call: DisplayedToolCall): HTMLElement {
 		card.append(output);
 	}
 	return card;
-}
-
-function formatDuration(durationMs: number): string {
-	if (durationMs < 1000) return `${Math.round(durationMs)}ms`;
-	return `${(durationMs / 1000).toFixed(1)}s`;
 }

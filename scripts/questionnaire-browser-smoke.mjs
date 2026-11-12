@@ -100,7 +100,7 @@ async function respond(route, { origin, session, definition, sent }) {
 		parts: sent.length ? [{ type: 'text', text: 'Recorded reply' }] : [{ type: 'data-questionnaire', data: definition }],
 	}];
 	if (url.pathname.endsWith('/events')) {
-		const snapshot = { v: 1, conversationId: 'saved-card', offset: '0', messages, settlements: [{ submissionId, outcome: 'completed' }] };
+		const snapshot = { v: 1, conversationId: 'saved-card', messages, settlements: [{ submissionId, outcome: 'completed' }] };
 		const frame = { type: 'conversation-reset', conversationId: 'saved-card', snapshot, position: { batch: 0, index: 0 } };
 		return route.fulfill({ status: 200, contentType: 'text/event-stream', body: `data: ${JSON.stringify(frame)}\n\n` });
 	}

@@ -31,8 +31,7 @@
 	white-space: nowrap;
 }
 
-.tool-card-state,
-.tool-card-duration {
+.tool-card-state {
 	flex: none;
 	color: var(--quiet);
 	font-size: 0.67rem;
@@ -42,8 +41,7 @@
 	text-transform: lowercase;
 }
 
-.tool-card-state::before,
-.tool-card-duration::before {
+.tool-card-state::before {
 	content: '·';
 	margin-right: 0.4rem;
 	opacity: 0.7;
@@ -56,10 +54,6 @@
 .tool-card[data-state='failed'] .tool-card-state,
 .tool-card[data-state='failed'] .tool-card-output {
 	color: var(--error);
-}
-
-.tool-card-duration {
-	font-variant-numeric: tabular-nums;
 }
 
 .tool-card-output {

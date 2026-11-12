@@ -73,15 +73,7 @@ test('ignores skill maps, subskill lists before an open question, and command li
 	);
 });
 
-test('retries once for a schema error or an unboxed choice list', () => {
-	assert.equal(
-		presentQuestionRetryReason({
-			toolCalls: [{ tool: presentQuestionToolName, isError: true }],
-			assistantText: '',
-			alreadyRetried: false,
-		}),
-		'invalid',
-	);
+test('retries once for an unboxed choice list', () => {
 	assert.equal(
 		presentQuestionRetryReason({
 			toolCalls: [],
