@@ -4,7 +4,8 @@ import { appConfig } from '../src/config/app.config.ts';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
-// a card offers no way to ask for help instead of guessing.
+// a card offers no way to ask for help instead of guessing; the learner turn
+// shows the protocol header or the question instead of the learner's answer.
 export async function verifyQuestionnaireBrowser({ browser, origin, session, out }) {
 	await mkdir(out, { recursive: true });
 	const results = [];
@@ -53,6 +54,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
 				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
+				assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
 				assert.deepEqual(errors, []);
 				results.push({ kind, width, passed: true, submitted: sent[0] });
 			} catch (error) {

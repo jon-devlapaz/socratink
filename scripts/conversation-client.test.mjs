@@ -175,7 +175,7 @@ test('cancel after admission waits for an aborted settlement before saying Cance
 
 	assert.equal(state.kind, 'terminal');
 	assert.equal(state.outcome, 'aborted');
-	assert.equal(state.detail, 'Socratink stopped this reply.');
+	assert.equal(state.detail, 'You stopped this reply.');
 	assert.equal(await running, state);
 });
 

@@ -3,12 +3,12 @@ import type { WireSnapshot } from '../config/chat-wire.ts';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import { assistantTurnHasVisibleContent, learnerVisibleAssistantText } from './assistant-text.ts';
-import { compactMarkdownText } from './chat-markdown-parse.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
 } from '../questionnaire.ts';
 import { steeringPrefix } from '../config/chat-message.ts';
+import { steeringSaidText } from './steering.ts';
 import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
@@ -19,7 +19,8 @@ export type DisplayedTurn = {
 	role: ChatMessageRole;
 	text: string;
 	learnerKind?: LearnerTurnKind;
-	trailText?: string;
+	/** What a learner turn shows when its sent text is a message for the tutor. */
+	shownText?: string;
 	questionnaire?: QuestionnaireDefinition;
 	modelRoute?: string;
 	tools?: DisplayedToolCall[];
@@ -44,15 +45,21 @@ export function displayedAssistantTurn(input: {
 	};
 }
 
-export function displayedLearnerTurn(text: string): DisplayedTurn {
+/** Shows a learner turn in the learner's own words. A card answer drops the
+ * protocol header and the question it answers; a steering control shows its
+ * short line. `text` stays exactly what was sent. */
+export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition): DisplayedTurn {
 	if (text.startsWith(questionnaireAnswerPrefix)) {
+		const lines = text.slice(questionnaireAnswerPrefix.length).trim().split('\n').map((line) => {
+			const answer = line.replace(/^- /, '');
+			const prompt = answered?.items.find((item) => answer.startsWith(`${item.prompt}: `))?.prompt;
+			return prompt === undefined ? answer : answer.slice(prompt.length + 2);
+		});
 		return {
 			role: 'You',
 			text,
 			learnerKind: 'questionnaire-reply',
-			trailText: compactMarkdownText(
-				text.slice(questionnaireAnswerPrefix.length).replace(/^- /gm, '').trim(),
-			),
+			shownText: lines.join('\n'),
 		};
 	}
 	if (text.startsWith(steeringPrefix)) {
@@ -60,7 +67,7 @@ export function displayedLearnerTurn(text: string): DisplayedTurn {
 			role: 'You',
 			text,
 			learnerKind: 'steering',
-			trailText: compactMarkdownText(text.slice(steeringPrefix.length).trim()),
+			shownText: steeringSaidText(text) ?? text.slice(steeringPrefix.length).trim(),
 		};
 	}
 	return { role: 'You', text };
@@ -90,7 +97,7 @@ export function visibleTurnsFromHistory(
 		const text = visibleText(message);
 		if (message.role === 'user') {
 			if (!text) continue;
-			visible.push(displayedLearnerTurn(text));
+			visible.push(displayedLearnerTurn(text, visible.at(-1)?.questionnaire));
 			continue;
 		}
 		const turn = displayedAssistantTurn({

@@ -83,7 +83,10 @@ export function createActiveTurn(
 	wrap.className = `turn ${item.role.toLowerCase()}`;
 	if (announce) wrap.setAttribute('aria-live', 'polite');
 	if (stagger) wrap.classList.add('stagger-item');
-	appendTurnCopy(wrap, item, stream, sinks);
+	// An answered card is gone, so a card-only turn shows the question it asked.
+	const asked = item.questionnaire && !interactive
+		? item.questionnaire.items.map((question) => question.prompt).join('\n\n') : undefined;
+	appendTurnCopy(wrap, item, stream, sinks, asked);
 	if (item.tools?.length) wrap.append(createToolList(item.tools));
 	if (item.questionnaire && interactive) {
 		const questionnaire = item.questionnaire;
@@ -285,6 +288,7 @@ function appendTurnCopy(
 	item: DisplayedTurn,
 	stream: boolean,
 	sinks: TurnStreamSinks,
+	asked?: string,
 ) {
 	const head = document.createElement('div');
 	head.className = 'turn-head';
@@ -303,21 +307,23 @@ function appendTurnCopy(
 	if (item.role === 'Assistant') {
 		const renderer = createMarkdownRenderer();
 		sinks.trackRenderer(renderer);
-		renderer.update(item.text, { stream });
+		renderer.update(item.text.trim() || !asked ? item.text : asked, { stream });
 		if (item.text.trim() && item.reveal) markSuppliedCopy(renderer.element, item.reveal);
 		parent.append(renderer.element);
 		return;
 	}
 	const body = document.createElement('p');
-	if (!item.text) body.hidden = true;
-	else body.textContent = item.text;
+	const shown = item.shownText ?? item.text;
+	if (!shown) body.hidden = true;
+	else body.textContent = shown;
 	parent.append(body);
 }
 
 function historyBodyText(item: DisplayedTurn): string {
-	if (item.trailText) return item.trailText;
-	const compact = compactMarkdownText(item.text);
+	const compact = compactMarkdownText(item.shownText ?? item.text);
 	if (compact) return compact;
+	// A card-only turn shows the question it asked.
+	if (item.questionnaire) return item.questionnaire.items.map((question) => question.prompt).join(' ');
 	if (item.tools?.length) return item.tools.map((call) => call.name).join(', ');
 	return '';
 }

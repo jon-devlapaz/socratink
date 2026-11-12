@@ -356,7 +356,7 @@ export class ChatRequestCoordinator {
 
 	private errorAfterAdmission(pending: PendingRequest, error: unknown): ChatRequestState {
 		if (error instanceof ChatTurnError && error.failure === 'aborted') {
-			return this.terminalState(pending, 'aborted', 'Socratink stopped this reply.');
+			return this.terminalState(pending, 'aborted', 'You stopped this reply.');
 		}
 		if (error instanceof ChatTurnError && error.failure === 'failed') {
 			return this.terminalState(pending, 'failed', chatTurnErrorMessage(error));
