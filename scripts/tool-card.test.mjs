@@ -27,7 +27,6 @@ test('projects dynamic-tool parts into name, state, and output', () => {
 				state: 'output-available',
 				input: { path: 'app.ts' },
 				output: { ok: true },
-				durationMs: 12,
 			},
 			{
 				type: 'dynamic-tool',
@@ -36,7 +35,6 @@ test('projects dynamic-tool parts into name, state, and output', () => {
 				state: 'output-error',
 				input: {},
 				errorText: 'timeout',
-				durationMs: 1500,
 			},
 		]),
 		[
@@ -46,14 +44,12 @@ test('projects dynamic-tool parts into name, state, and output', () => {
 				name: 'trace_code',
 				state: 'done',
 				output: '{\n  "ok": true\n}',
-				durationMs: 12,
 			},
 			{
 				id: 'call_3',
 				name: 'verify',
 				state: 'failed',
 				output: 'timeout',
-				durationMs: 1500,
 			},
 		],
 	);
@@ -69,7 +65,6 @@ test('stream events advance one tool from running to done or failed', () => {
 			toolCallId: 'call_1',
 			toolName: 'present_question',
 			input: {},
-			position: { batch: 1, index: 0 },
 		}),
 		true,
 	);
@@ -80,8 +75,6 @@ test('stream events advance one tool from running to done or failed', () => {
 			conversationId: 'c',
 			toolCallId: 'call_1',
 			output: 'Question presented on the card.',
-			durationMs: 4,
-			position: { batch: 2, index: 0 },
 		}),
 		true,
 	);
@@ -91,7 +84,6 @@ test('stream events advance one tool from running to done or failed', () => {
 			name: 'present_question',
 			state: 'done',
 			output: 'Question presented on the card.',
-			durationMs: 4,
 		},
 	]);
 	assert.equal(
@@ -101,7 +93,6 @@ test('stream events advance one tool from running to done or failed', () => {
 			messageId: 'm',
 			kind: 'text',
 			delta: 'hi',
-			position: { batch: 3, index: 0 },
 		}),
 		false,
 	);
@@ -119,7 +110,6 @@ test('a late input event does not reopen a settled tool', () => {
 			toolCallId: 'call_1',
 			toolName: 'present_question',
 			input: {},
-			position: { batch: 1, index: 0 },
 		}),
 		false,
 	);

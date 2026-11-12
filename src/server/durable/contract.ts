@@ -29,7 +29,6 @@ export type EngineOptions = {
 	executionMs?: number;
 };
 export type Engine = {
-	exists: (conversationId: string) => Promise<boolean>;
 	submit: (conversationId: string, text: string, selection?: ModelSelection) => Promise<string>;
 	snapshot: (conversationId: string) => Promise<Snapshot>;
 	abort: (conversationId: string) => Promise<void>;

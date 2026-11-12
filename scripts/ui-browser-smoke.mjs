@@ -240,8 +240,8 @@ function createServices(origin, session) {
 			] : [];
 			const settlement = { submissionId, outcome: fixture.mode === 'recovery' ? 'aborted' : failed ? 'failed' : 'completed' };
 			chunks.push({ type: 'submission-settled', ...settlement });
-			const snapshot = (settlements, messages = []) => ({ v: 1, conversationId: 'browser-conversation', offset: '0', messages, settlements });
-			const reply = completed ? [{ id: `${submissionId}:assistant`, role: 'assistant', purpose: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply', state: 'done' }] }] : [];
+			const snapshot = (settlements, messages = []) => ({ v: 1, conversationId: 'browser-conversation', messages, settlements });
+			const reply = completed ? [{ id: `${submissionId}:assistant`, role: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply', state: 'done' }] }] : [];
 			const frames = [{ type: 'conversation-reset', snapshot: snapshot([]) }, ...chunks, { type: 'conversation-reset', snapshot: snapshot([settlement], reply) }]
 				.map((event, index) => ({ ...event, conversationId: 'browser-conversation', position: { batch: 1, index } }));
 			return route.fulfill({ status: 200, contentType: 'text/event-stream', body: frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join('') });

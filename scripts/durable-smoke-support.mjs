@@ -232,7 +232,7 @@ export async function sendText(client, text, options = {}) {
 	return { admission, reply, history: await client.history({ signal }) };
 }
 export function userMessages(history) {
-	return history.messages.filter((message) => message.role === 'user' && message.purpose === 'user');
+	return history.messages.filter((message) => message.role === 'user');
 }
 export async function storeKey(app, session, key) {
 	const response = await fetch(`${app.origin}/api/openai-key`, { method: 'PUT',

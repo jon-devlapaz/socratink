@@ -46,7 +46,7 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: (userId: s
 		headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' },
 	}));
 	app.get(path, async (c) => {
-		const { sourceRevision: _, ...snapshot } = project(c.req.param('id'), await engine.snapshot(c.req.param('id')));
+		const snapshot = project(c.req.param('id'), await engine.snapshot(c.req.param('id')));
 		c.header('Cache-Control', 'no-store');
 		return c.json(snapshot);
 	});

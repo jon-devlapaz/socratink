@@ -104,7 +104,6 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		} catch (error) { await owner.stop(); active.delete(id); throw error; }
 	}
 	return {
-		exists: manager.exists,
 		async submit(id, text, selection) {
 			const owner = await claim(id);
 			if (!owner) throw new DurableBusyError();
