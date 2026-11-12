@@ -44,6 +44,32 @@ for (const [kind, word] of Object.entries(kinds)) {
 	});
 }
 
+// Failure cases: an answered card-only turn shows an empty body, or a learner
+// turn shows the message sent to the tutor instead of the learner's words.
+test('an answered card shows its question and the answer shows as the learner\'s', () => {
+	const card = { kind: 'question', submitLabel: 'Submit', items: [{
+		name: 'q', prompt: 'Which request has the provider seen?', required: true, multiple: false,
+		choices: [{ value: 'a', label: 'The first' }, { value: 'b', label: 'The retry' }],
+	}] };
+	const turns = visibleTurnsFromHistory({ settlements: [], messages: [
+		{ display: 'visible', role: 'assistant', parts: [{ type: 'data-questionnaire', data: card }] },
+		message('user', 'Questionnaire answers:\n- Which request has the provider seen?: The first, it arrived'),
+	] });
+	withDocument(() => {
+		const sinks = { trackRenderer() {} };
+		const handlers = { onQuestionnaireSubmit() {}, onSteer() {} };
+		const text = (root) => descendants(root).map((node) => node.textContent).join(' ');
+		for (const root of [createActiveTurn(turns[0], {}, sinks, handlers), createHistoryStep([turns[0]], 0)]) {
+			assert.match(text(root), /Which request has the provider seen\?/);
+			assert.equal(descendants(root).filter((node) => node.className === 'reveal-mark').length, 0);
+		}
+		for (const root of [createActiveTurn(turns[1], {}, sinks, handlers), createHistoryStep([turns[1]], 0)]) {
+			assert.match(text(root), /The first, it arrived/);
+			assert.doesNotMatch(text(root), /Questionnaire answers|Which request/);
+		}
+	});
+});
+
 test('completed replies use the last validated reveal write', () => {
 	assert.equal(revealFromReply(undefined), undefined);
 	assert.equal(revealFromReply({ reveal: [] }), undefined);

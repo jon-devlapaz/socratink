@@ -8,6 +8,7 @@ import {
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
 import { learnerVisibleAssistantText } from '../src/ui/assistant-text.ts';
+import { formatSteeringMessage } from '../src/ui/steering.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -131,16 +132,34 @@ test('keeps mark_reveal off the card and skips a reveal-only empty turn', () => 
 	);
 });
 
-test('projects questionnaire and steering learner turns for trail copy', () => {
-	assert.deepEqual(
-		displayedLearnerTurn('Questionnaire answers:\n- Path: Worked example'),
-		{
-			role: 'You',
-			text: 'Questionnaire answers:\n- Path: Worked example',
-			learnerKind: 'questionnaire-reply',
-			trailText: 'Path: Worked example',
-		},
-	);
+// Failure cases: the protocol header or the tutor's instruction shows as the
+// learner's words; the answered question repeats inside the learner turn; the
+// sent text changes, which breaks retry matching.
+test('shows card answers and steering in the learner\'s own words', () => {
+	const answer = 'Questionnaire answers:\n- How should we begin?: Worked example, I learn from cases';
+	assert.deepEqual(displayedLearnerTurn(answer, questionnaire), {
+		role: 'You',
+		text: answer,
+		learnerKind: 'questionnaire-reply',
+		shownText: 'Worked example, I learn from cases',
+	});
+	assert.equal(displayedLearnerTurn('Questionnaire answers:\n- Path: Worked example').shownText, 'Path: Worked example');
+	assert.equal(displayedLearnerTurn(formatSteeringMessage('smaller-step')).shownText, 'Smaller step, please.');
+	assert.equal(displayedLearnerTurn(formatSteeringMessage('try-unaided')).shownText, 'Let me try this unaided.');
+	assert.equal(displayedLearnerTurn(formatSteeringMessage('smaller-step')).text, formatSteeringMessage('smaller-step'));
+	assert.equal(displayedLearnerTurn('Steering: an older wording').shownText, 'an older wording');
+	assert.deepEqual(displayedLearnerTurn('My own words'), { role: 'You', text: 'My own words' });
+});
+
+test('history pairs a card answer with the card it answers', () => {
+	const turns = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{ role: 'assistant', display: 'visible', parts: [{ type: 'data-questionnaire', data: questionnaire }] },
+			{ role: 'user', display: 'visible', parts: [{ type: 'text', text: 'Questionnaire answers:\n- How should we begin?: Asked for a hint.' }] },
+		],
+	});
+	assert.equal(turns.at(-1).shownText, 'Asked for a hint.');
 });
 
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {

@@ -91,6 +91,22 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.deepEqual(fixture.sent, ['Recheck this admission']);
 	});
 
+	// Failure cases: a start and a cancel that settle on the same state paint
+	// two blocks; the block says Socratink stopped what the learner stopped.
+	await check('cancel-shows-one-block', async (page, fixture) => {
+		fixture.mode = 'cancel';
+		await page.goto(origin);
+		await send(page, 'Stop this reply');
+		await page.locator('.turn.pending').waitFor();
+		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
+		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+		assert.equal(await page.locator('#active-turn .request-state').count(), 1);
+		assert.equal(await page.locator('#active-turn .request-state .turn-label').innerText(), 'Canceled');
+		assert.equal(fixture.aborts, 1);
+		assert.deepEqual(fixture.sent, ['Stop this reply']);
+	});
+
 	for (const failure of ['http', 'invalid', 'network']) {
 		await check(`provider-status-${failure}`, async (page, fixture) => {
 			fixture.statusFailure = failure;
@@ -164,7 +180,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	});
 
 	assert.equal(results.filter((result) => !result.passed).length, 0, JSON.stringify(results.filter((result) => !result.passed)));
-	console.log(`UI browser passed: ${results.length} retry/provider scenarios.`);
+	console.log(`UI browser passed: ${results.length} retry/cancel/provider scenarios.`);
 }
 
 async function send(page, text) {
@@ -185,6 +201,8 @@ function createServices(origin, session) {
 	let statusReads = 0;
 	let releaseReply;
 	const replyReady = new Promise((resolve) => { releaseReply = resolve; });
+	let releaseAbort;
+	const abortRequested = new Promise((resolve) => { releaseAbort = resolve; });
 	let releaseStatus;
 	const statusReady = new Promise((resolve) => { releaseStatus = resolve; });
 	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected });
@@ -194,6 +212,7 @@ function createServices(origin, session) {
 		keyFailure: false,
 		holdInitialStatus: false,
 		sent: [],
+		aborts: 0,
 		keyMethods: [],
 		finishReply() { releaseReply(); },
 		releaseStatusRead() { releaseStatus(); },
@@ -218,6 +237,11 @@ function createServices(origin, session) {
 				return json(chatStatus());
 			}
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
+			if (url.pathname.endsWith('/abort')) {
+				fixture.aborts += 1;
+				releaseAbort();
+				return json({ aborted: true });
+			}
 			if (route.request().method() === 'POST') {
 				fixture.sent.push(route.request().postDataJSON().body);
 				if (fixture.mode === 'admission-failure' && fixture.sent.length === 1) {
@@ -231,6 +255,14 @@ function createServices(origin, session) {
 			}
 			reads += 1;
 			if (fixture.mode === 'recovery' && reads === 1) return json({ error: { type: 'interrupted', message: 'Read interrupted.' } }, 400);
+			if (fixture.mode === 'cancel') {
+				// The first read is held until the learner cancels; the page drops it.
+				if (!fixture.aborts) return abortRequested.then(() => route.abort()).catch(() => {});
+				const settlement = { submissionId, outcome: 'aborted' };
+				const frame = { type: 'conversation-reset', conversationId: 'browser-conversation', position: { batch: 1, index: 0 },
+					snapshot: { v: 1, conversationId: 'browser-conversation', messages: [], settlements: [settlement] } };
+				return route.fulfill({ status: 200, contentType: 'text/event-stream', body: `data: ${JSON.stringify(frame)}\n\n` });
+			}
 			const failed = fixture.mode === 'stream-failure' && fixture.sent.length === 1;
 			if (fixture.mode === 'stream-failure' && !failed) await replyReady;
 			completed = !failed;

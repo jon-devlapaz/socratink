@@ -2,17 +2,21 @@ import { steeringPrefix } from '../config/chat-message.ts';
 
 export type SteeringKind = 'smaller-step' | 'try-unaided';
 
-const steeringCopy: Record<SteeringKind, { label: string; ariaLabel: string; body: string; icon: string[] }> = {
+// `body` is what the tutor reads. `said` is what the learner sees they sent,
+// so the transcript never puts the instruction in the learner's mouth.
+const steeringCopy: Record<SteeringKind, { label: string; ariaLabel: string; body: string; said: string; icon: string[] }> = {
 	'smaller-step': {
 		label: 'Smaller step',
 		ariaLabel: 'Too fast: need a smaller step',
 		body: 'smaller step. The last turn moved too fast or assumed more footing than I have. Slow down to one smaller step, and check a missing assumption before continuing.',
+		said: 'Smaller step, please.',
 		icon: ['M3 13h3.5v3.5H3V13Zm5-4.5H11.5V12H8V8.5Zm5-4.5H16.5V7.5H13V4Z'],
 	},
 	'try-unaided': {
 		label: 'Try unaided',
 		ariaLabel: 'I want to try unaided',
 		body: 'try unaided. I have enough footing. Withhold the next reveal and let me attempt the target.',
+		said: 'Let me try this unaided.',
 		icon: ['M8 5.75a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Z', 'M3.75 14.25c0-1.4 1.9-2.5 4.25-2.5s4.25 1.1 4.25 2.5'],
 	},
 };
@@ -27,6 +31,13 @@ export function formatSteeringMessage(kind: SteeringKind): string {
 			return exhaustive;
 		}
 	}
+}
+
+/** The short line a sent steering message shows as, or undefined when the
+ * text is not one of these controls' messages. */
+export function steeringSaidText(text: string): string | undefined {
+	const kind = steeringKinds.find((candidate) => formatSteeringMessage(candidate) === text);
+	return kind && steeringCopy[kind].said;
 }
 
 export function turnSnippetToCopy(sourceText: string, selectedText = ''): string {

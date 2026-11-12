@@ -23,7 +23,10 @@ describe the existing interface, not future capabilities.
 
 - **Conversation:** `chat-surface.ts`, `turn-view.ts`, and `transcript.css`
   own the active turn and earlier-step trail. Pending, cancel, recovery, and
-  error feedback stays visible in the conversation.
+  error feedback stays visible in the conversation, one block per request.
+  Learner turns show the learner's own words: a card answer shows the answer,
+  and a steering control shows its short line, while the tutor receives the
+  full message. An answered card-only turn shows the question it asked.
 - **Question cards:** `questionnaire.ts` and `questionnaire.css` render
   structured choices, learner reasoning, and the Hint and "I don't know"
   buttons within the flow.

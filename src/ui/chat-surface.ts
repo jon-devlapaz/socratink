@@ -336,7 +336,8 @@ export function mountChatSurface(options: Readonly<{
 		if (!retryOf || retryOf.outcome === 'not-admitted') input.value = '';
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
-		turns = [...(replacesAttempt ? turns.slice(0, -1) : turns), displayedLearnerTurn(text)];
+		const before = replacesAttempt ? turns.slice(0, -1) : turns;
+		turns = [...before, displayedLearnerTurn(text, before.at(-1)?.questionnaire)];
 		await paint('new-turn');
 		await applyRequestState(await result);
 	}
