@@ -31,6 +31,9 @@ export type EngineOptions = {
 export type Engine = {
 	submit: (conversationId: string, text: string, selection?: ModelSelection) => Promise<string>;
 	snapshot: (conversationId: string) => Promise<Snapshot>;
+	/** Repeated snapshots of one conversation that read only new commits. Call
+	 * snapshot() one at a time, and close() when done. */
+	follow: (conversationId: string) => { snapshot: () => Promise<Snapshot>; close: () => Promise<void> };
 	abort: (conversationId: string) => Promise<void>;
 	close: () => Promise<void>;
 };

@@ -10,7 +10,8 @@ export type LogLease = {
 };
 export type LogBackend = {
 	exists: (namespace: string) => Promise<boolean>;
-	read: (namespace: string) => Promise<LogState>;
+	/** With `after`, only commits whose seq is greater: the log is append-only. */
+	read: (namespace: string, after?: number) => Promise<LogState>;
 	claim: (namespace: string) => Promise<LogLease | undefined>;
 	cancel: (namespace: string, through: number) => Promise<void>;
 	close: () => Promise<void>;

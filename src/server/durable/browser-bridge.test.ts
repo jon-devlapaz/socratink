@@ -15,6 +15,7 @@ test('a GET reads the private history snapshot without submitting work', async (
 		snapshot: async () => snapshot,
 		submit: async () => { throw new Error('Read requests must not submit work'); },
 		abort: async () => { throw new Error('Read requests must not abort work'); },
+		follow: () => { throw new Error('Plain requests must not follow'); },
 		close: async () => {},
 	};
 	const app = new Hono();
@@ -34,6 +35,7 @@ test('a send with no model provider is refused before admission, with a reason t
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => { throw new Error('Unconfigured inference must not admit work'); },
 		abort: async () => {},
+		follow: () => { throw new Error('Plain requests must not follow'); },
 		close: async () => {},
 	};
 	const app = new Hono();
@@ -50,6 +52,7 @@ test('an admitted send answers with only its submission id', async () => {
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => 'submission-1',
 		abort: async () => {},
+		follow: () => { throw new Error('Plain requests must not follow'); },
 		close: async () => {},
 	};
 	const app = new Hono();
