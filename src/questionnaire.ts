@@ -116,11 +116,22 @@ function uniqueChoiceValue(label: string, used: ReadonlySet<string>): string {
 	}
 }
 
+export type QuestionnaireHelp = 'hint' | 'unknown';
+
 export type QuestionnaireAnswer = {
 	name: string;
 	values: string[];
 	freeform?: string;
 	skipped?: boolean;
+	/** The learner asked the card for help instead of answering. */
+	help?: QuestionnaireHelp;
+};
+
+/** The answer text for each card help request. The server reads these back to
+ * record the turn as assistance, so they are the one owner of that wording. */
+export const questionnaireHelpText: Record<QuestionnaireHelp, string> = {
+	hint: 'Asked for a hint.',
+	unknown: "I don't know.",
 };
 
 export function questionnaireFromReplyData(
@@ -152,6 +163,7 @@ export function formatQuestionnaireAnswers(
 	const byName = new Map(answers.map((answer) => [answer.name, answer]));
 	const lines = definition.items.map((item) => {
 		const answer = byName.get(item.name);
+		if (answer?.help) return `- ${item.prompt}: ${questionnaireHelpText[answer.help]}`;
 		if (!answer || answer.skipped) return `- ${item.prompt}: Skipped.`;
 		const labels = answer.values.map(
 			(value) => item.choices.find((choice) => choice.value === value)?.label ?? value,

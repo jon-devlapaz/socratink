@@ -145,14 +145,16 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.evaluate(id => localStorage.setItem('socratink-chat-conversation-id', id), savedConversationId);
 		await page.reload();
 		await page.locator('#trail-toggle').click();
+		// The saved smoke conversation also holds a card hint and a corrected
+		// reply to "no idea", which is the active turn.
 		const earlier = page.locator('#messages .reveal-copy');
-		await earlier.waitFor();
-		assert.equal(await earlier.locator('.reveal-mark').innerText(), 'answer');
-		assert.equal(await page.locator('#active-turn .reveal-mark').count(), 0);
+		await earlier.first().waitFor();
+		assert.deepEqual(await earlier.locator('.reveal-mark').allInnerTexts(), ['answer', 'hint']);
+		assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');
 		assert.equal(await page.locator('.you .reveal-mark').count(), 0);
 		for (const width of [390, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
-			await earlier.scrollIntoViewIfNeeded();
+			await earlier.first().scrollIntoViewIfNeeded();
 			await page.screenshot({ path: `${out}/${width}-trail.png` });
 		}
 		artifacts.push({ kind: 'saved-history', earlierRevealAttributed: true });

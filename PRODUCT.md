@@ -13,9 +13,13 @@ The app provides a single-learner conversation with an AI learning partner:
 - Socratic tutoring by Jane Street's MIT-licensed socratic-tutor skill: a
   diagnostic, a skill map with levels 0-5, one question at a time, in-session
   spaced review, and a final assessment.
-- Structured `present_question` cards with choices and optional reasoning.
+- Structured `present_question` cards with choices, optional reasoning, and
+  Hint and "I don't know" buttons, so a card never forces a guess.
 - Records of hints, worked examples, partial explanations, and full answers
   through `mark_reveal`, keeping assistance distinguishable from learner work.
+  A card help request always counts as assistance. A reply that answers a
+  request for help, or looks like it supplies content, without `mark_reveal`
+  gets one correction where the tutor decides whether to mark it.
 - Learner controls for pacing, an unaided attempt, cancellation, and recovery.
 - Voice dictation as an input option, plus theme and text-size controls.
 - Signed guest sessions, configured Google/GitHub sign-in, conversation

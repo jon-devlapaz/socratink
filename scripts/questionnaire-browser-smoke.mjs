@@ -3,12 +3,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { appConfig } from '../src/config/app.config.ts';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
-// breaks; skip leaks an earlier selection; submitted text loses reasoning.
+// breaks; skip leaks an earlier selection; submitted text loses reasoning;
+// a card offers no way to ask for help instead of guessing.
 export async function verifyQuestionnaireBrowser({ browser, origin, session, out }) {
 	await mkdir(out, { recursive: true });
 	const results = [];
 	for (const width of [390, 1280]) {
-		for (const kind of ['required', 'skip', 'multiple']) {
+		for (const kind of ['required', 'skip', 'multiple', 'hint', 'unknown']) {
 			const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width, height: 900 } });
 			await context.tracing.start({ screenshots: true, snapshots: true });
 			const page = await context.newPage();
@@ -27,6 +28,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				assert.equal(await form.getByText('First saved choice', { exact: true }).count(), 1);
 				assert.equal(await form.getByRole('button', { name: 'Previous', exact: true }).isVisible(), false);
 				assert.equal(await form.getByRole('button', { name: 'Next', exact: true }).isVisible(), false);
+				assert.equal(await form.getByRole('button', { name: 'Hint', exact: true }).isVisible(), true);
+				assert.equal(await form.getByRole('button', { name: "I don't know", exact: true }).isVisible(), true);
 				if (kind === 'required') {
 					await form.getByRole('button', { name: 'Continue', exact: true }).click();
 					assert.equal(await form.locator('[aria-invalid="true"]').count(), 1);
@@ -44,9 +47,11 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 				await page.screenshot({ path: `${out}/${kind}-${width}.png` });
 				if (kind === 'required') await form.getByLabel('Your reason', { exact: true }).press('Enter');
+				else if (kind in help) await form.getByRole('button', { name: help[kind].button, exact: true }).click();
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
 				await page.getByText('Recorded reply', { exact: true }).waitFor();
-				const answer = kind === 'skip' ? 'Skipped.' : `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
+				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
+					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
 				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
 				assert.deepEqual(errors, []);
 				results.push({ kind, width, passed: true, submitted: sent[0] });
@@ -64,14 +69,20 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 			}
 		}
 	}
-	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; shortcuts, reasoning, Enter, validation and narrow/wide screens.');
+	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; hint and I don\'t know; shortcuts, reasoning, Enter, validation and narrow/wide screens.');
 }
+
+// A help request replaces any selection or reasoning on the card.
+const help = {
+	hint: { button: 'Hint', answer: 'Asked for a hint.' },
+	unknown: { button: "I don't know", answer: "I don't know." },
+};
 
 function legacyQuestion(kind) {
 	return {
 		kind: kind === 'multiple' ? 'quiz' : 'question', submitLabel: 'Continue', items: [{
 			name: 'saved', prompt: 'Saved question?', description: 'Saved card context',
-			required: kind === 'required', multiple: kind === 'multiple',
+			required: kind === 'required' || kind in help, multiple: kind === 'multiple',
 			choices: [
 				{ value: 'first', label: 'First', description: 'First saved choice', shortcut: 'a' },
 				{ value: 'second', label: 'Second', shortcut: 'b' },

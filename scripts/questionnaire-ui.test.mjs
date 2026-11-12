@@ -86,7 +86,7 @@ test('fails closed on malformed or oversized structured questionnaire data', () 
 	);
 });
 
-test('formats selected, freeform, and skipped answers as explicit learner text', () => {
+test('formats selected, freeform, skipped and help answers as explicit learner text', () => {
 	const questionnaire = parseQuestionnaireDefinition(validDefinition);
 	assert.ok(questionnaire);
 	assert.equal(
@@ -98,5 +98,14 @@ test('formats selected, freeform, and skipped answers as explicit learner text',
 	assert.match(
 		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], skipped: true }]),
 		/- How should we begin\?: Skipped\.$/,
+	);
+	assert.equal(
+		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: ['trace'], freeform: 'ignored', help: 'hint' }]),
+		'Questionnaire answers:\n- How should we begin?: Asked for a hint.',
+		'a help request replaces any selection',
+	);
+	assert.match(
+		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], help: 'unknown' }]),
+		/- How should we begin\?: I don't know\.$/,
 	);
 });
