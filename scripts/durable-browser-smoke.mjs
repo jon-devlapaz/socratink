@@ -61,14 +61,61 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 		assert.equal(fixture.count(marker), 1);
 		assert.equal((await clientFor(app, session, id).history()).settlements.at(-1).outcome, 'completed');
 		await page.screenshot({ path: join(out, 'reasoning-reloaded.png') });
+		await verifyLiveText(page, fixture, out);
 		assert.ok(paths.some((path) => path.endsWith('/events')), 'the browser follows turns over SSE');
 		assert.deepEqual(errors, []);
 		return { browser: browser.version(), statusInsteadOfReasoning: true, pendingReloadNoResubmit: true,
-			completedReload: true, screenshots: 4 };
+			completedReload: true, liveTextBeforeSettlement: true, liveRevealMarked: true, screenshots: 6 };
 	} finally {
 		held.release();
 		await browser.close();
 	}
+}
+
+// Failure cases: reply text waits for settlement; the settled turn repeats it.
+async function verifyLiveText(page, fixture, out) {
+	const marker = 'DURABLE_LIVE_TEXT';
+	const words = 'The live reply arrives while the model is still writing.';
+	const held = gate();
+	fixture.plan(marker, { text: 'The **live** reply arrives while the model is still writing.', afterText: held });
+	await page.locator('#message').fill(marker);
+	await page.locator('#chat').evaluate((form) => form.requestSubmit());
+	const live = page.locator('#active-turn .turn.pending .turn-markdown');
+	await until(async () => (await live.isVisible()) && (await live.innerText()) === words, 'reply text shows while the provider is held');
+	assert.equal(await live.locator('strong').innerText(), 'live', 'live text renders as markdown');
+	assert.equal(await live.getAttribute('aria-hidden'), 'true', 'streaming text is not announced word by word');
+	assert.equal(await page.locator('#active-turn .assistant').filter({ hasText: words }).count(), 0, 'the turn has not settled');
+	await page.screenshot({ path: join(out, 'live-text-pending.png') });
+	held.release();
+	await page.locator('#active-turn .assistant').filter({ hasText: words }).waitFor();
+	assert.equal(await page.locator('#active-turn .turn.pending').count(), 0);
+	const shown = await page.locator('#active-turn').innerText();
+	assert.equal(shown.split(words).length - 1, 1, 'the settled reply shows its text exactly once');
+	await page.screenshot({ path: join(out, 'live-text-settled.png') });
+	await verifyLiveReveal(page, fixture);
+}
+
+// Failure case: supplied text shows live before its reveal mark.
+async function verifyLiveReveal(page, fixture) {
+	const marker = 'DURABLE_LIVE_REVEAL';
+	const supplied = 'A synthetic hint, supplied live.';
+	const held = gate();
+	fixture.plan(marker, { tools: [{ name: 'mark_reveal', arguments: { kind: 'hint' } }] }, { text: supplied, afterText: held });
+	await page.evaluate(() => {
+		window.unmarkedLiveText = [];
+		new MutationObserver(() => {
+			const live = document.querySelector('#active-turn .turn.pending .turn-markdown');
+			if (live && !live.hidden && !live.classList.contains('reveal-copy')) window.unmarkedLiveText.push(live.textContent);
+		}).observe(document.querySelector('#active-turn'), { childList: true, subtree: true, characterData: true, attributes: true });
+	});
+	await page.locator('#message').fill(marker);
+	await page.locator('#chat').evaluate((form) => form.requestSubmit());
+	const live = page.locator('#active-turn .turn.pending .turn-markdown.reveal-copy');
+	await until(async () => (await live.isVisible()) && (await live.innerText()).includes(supplied), 'supplied text shows live with its mark');
+	assert.equal(await live.locator('.reveal-mark').innerText(), 'hint');
+	held.release();
+	await page.locator('#active-turn .assistant .reveal-copy').filter({ hasText: supplied }).waitFor();
+	assert.deepEqual(await page.evaluate(() => window.unmarkedLiveText), [], 'supplied text never showed live without its mark');
 }
 
 export async function verifyDurableHistoryBrowser({ app, session, conversationId, expectedText, question, reveal, out }) {

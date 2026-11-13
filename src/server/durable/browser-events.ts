@@ -21,13 +21,8 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 			events.push({ type: 'message-started', messageId: message.id, submissionId: message.submissionId });
 			state.started.push(message.id);
 		}
-		const text = message.parts.flatMap((part) => part.type === 'text' ? [part.text] : []).join('\n\n');
-		const previous = state.text[message.id] ?? '';
-		if (text && text !== previous && !previous.startsWith(text)) {
-			const delta = text.startsWith(previous) ? text.slice(previous.length) : `\n\n${text}`;
-			events.push({ type: 'message-delta', messageId: message.id, kind: 'text', delta });
-			state.text[message.id] = text;
-		}
+		// Tool calls go first: a mark_reveal call must reach the browser before
+		// the supplied text it labels, even when both arrive in one poll.
 		for (const part of message.parts) {
 			if (part.type !== 'dynamic-tool') continue;
 			const previous = state.tools[part.toolCallId];
@@ -40,6 +35,13 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 				events.push({ type: 'tool-output-error', toolCallId: part.toolCallId, errorText: part.errorText });
 			}
 			if (!previous || previous === 'input-available') state.tools[part.toolCallId] = part.state;
+		}
+		const text = message.parts.flatMap((part) => part.type === 'text' ? [part.text] : []).join('\n\n');
+		const previous = state.text[message.id] ?? '';
+		if (text && text !== previous && !previous.startsWith(text)) {
+			const delta = text.startsWith(previous) ? text.slice(previous.length) : `\n\n${text}`;
+			events.push({ type: 'message-delta', messageId: message.id, kind: 'text', delta });
+			state.text[message.id] = text;
 		}
 	}
 	for (const settlement of snapshot.settlements) {

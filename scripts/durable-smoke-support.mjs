@@ -70,6 +70,7 @@ export async function startFixture() {
 			assert.ok(secrets.has(key), 'Provider must receive a known synthetic key');
 			calls.push({ marker, path: request.url, key: secrets.get(key), model: body.model });
 			if (step.afterReasoning) held.add(step.afterReasoning);
+			if (step.afterText) held.add(step.afterText);
 			if (step.before) held.add(step.before);
 			if (step.before) await step.before.promise;
 			if (step.fail) {
@@ -95,7 +96,7 @@ export async function startFixture() {
 }
 
 async function writePlannedResponse(response, step) {
-	const { path, id, model, reasoning, tools = [], text = '', afterReasoning } = step;
+	const { path, id, model, reasoning, tools = [], text = '', afterReasoning, afterText } = step;
 	response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache',
 		'x-routed-via': encodeURIComponent('synthetic/routed-model'), 'x-fallback-attempts': '1' });
 	const emit = (event) => response.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -106,6 +107,7 @@ async function writePlannedResponse(response, step) {
 		if (reasoning) delta({ reasoning_content: reasoning });
 		if (afterReasoning) await afterReasoning.promise;
 		if (text) delta({ content: text });
+		if (afterText) await afterText.promise;
 		if (tools.length) delta({ tool_calls: tools.map((tool, index) => ({ index,
 			id: `call_${id}_${index}`, type: 'function', function: { name: tool.name, arguments: JSON.stringify(tool.arguments) } })) });
 		delta({}, tools.length ? 'tool_calls' : 'stop');
@@ -137,6 +139,7 @@ async function writePlannedResponse(response, step) {
 		const output_index = output.length;
 		emit({ type: 'response.output_item.added', output_index, item: { ...item, content: [] } });
 		emit({ type: 'response.output_text.delta', output_index, content_index: 0, delta: text });
+		if (afterText) await afterText.promise;
 		emit({ type: 'response.output_item.done', output_index, item });
 		output.push(item);
 	}

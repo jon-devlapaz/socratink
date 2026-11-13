@@ -8,36 +8,28 @@ import {
 	type MarkdownBlock,
 } from './chat-markdown-parse.ts';
 
-export type MarkdownRenderOptions = Readonly<{
-	stream?: boolean;
-}>;
-
 type CopyState = { active: boolean; timers: Map<HTMLButtonElement, number> };
-const streamGapMs = 60;
 
 export type MarkdownRenderer = {
 	readonly element: HTMLElement;
-	update(markdown: string, options?: MarkdownRenderOptions): void;
+	update(markdown: string): void;
 	destroy(): void;
 };
 
 export function createMarkdownRenderer(): MarkdownRenderer {
 	const element = document.createElement('div');
 	element.className = 'turn-markdown';
-	const streamTimers: number[] = [];
 	let copyState: CopyState = { active: true, timers: new Map() };
 
 	function clearTimers() {
-		for (const id of streamTimers) window.clearTimeout(id);
 		copyState.active = false;
 		for (const id of copyState.timers.values()) window.clearTimeout(id);
-		streamTimers.length = 0;
 		copyState.timers.clear();
 	}
 
 	return {
 		element,
-		update(markdown, renderOptions = {}) {
+		update(markdown) {
 			clearTimers();
 			copyState = { active: true, timers: new Map() };
 			element.replaceChildren();
@@ -46,18 +38,8 @@ export function createMarkdownRenderer(): MarkdownRenderer {
 				return;
 			}
 			element.hidden = false;
-			const blocks = parseMarkdownBlocks(markdown);
-			const streamWord = { next: 0 };
-			const stream = Boolean(renderOptions.stream);
-			for (const block of blocks) {
-				element.append(
-					renderBlock(block, {
-						stream,
-						streamTimers,
-						copyState,
-						streamWord,
-					}),
-				);
+			for (const block of parseMarkdownBlocks(markdown)) {
+				element.append(renderBlock(block, copyState));
 			}
 		},
 		destroy() {
@@ -66,37 +48,26 @@ export function createMarkdownRenderer(): MarkdownRenderer {
 	};
 }
 
-function renderBlock(
-	block: MarkdownBlock,
-	context: {
-		stream: boolean;
-		streamTimers: number[];
-		copyState: CopyState;
-		streamWord: { next: number };
-	},
-): HTMLElement {
+function renderBlock(block: MarkdownBlock, copyState: CopyState): HTMLElement {
 	switch (block.type) {
 		case 'paragraph': {
 			const node = document.createElement('p');
 			appendInline(node, block.text);
-			if (context.stream) streamElement(node, context);
 			return node;
 		}
 		case 'heading': {
 			const tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 			const node = document.createElement(tag);
 			appendInline(node, block.text);
-			if (context.stream) streamElement(node, context);
 			return node;
 		}
 		case 'code':
-			return renderCodeBlock(block, context.copyState);
+			return renderCodeBlock(block, copyState);
 		case 'blockquote': {
 			const node = document.createElement('blockquote');
 			const paragraph = document.createElement('p');
 			appendInline(paragraph, block.text);
 			node.append(paragraph);
-			if (context.stream) streamElement(node, context);
 			return node;
 		}
 		case 'list': {
@@ -104,7 +75,6 @@ function renderBlock(
 			for (const item of block.items) {
 				const li = document.createElement('li');
 				appendInline(li, item);
-				if (context.stream) streamElement(li, context);
 				node.append(li);
 			}
 			return node;
@@ -244,46 +214,4 @@ function appendInlineNode(parent: HTMLElement, node: InlineNode): void {
 			throw new Error(String(exhaustive));
 		}
 	}
-}
-
-function streamElement(
-	root: HTMLElement,
-	context: {
-		streamTimers: number[];
-		streamWord: { next: number };
-	},
-): void {
-	const spans: HTMLSpanElement[] = [];
-	const texts: Text[] = [];
-	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-	let current = walker.nextNode();
-	while (current) {
-		if (current instanceof Text) texts.push(current);
-		current = walker.nextNode();
-	}
-	for (const textNode of texts) {
-		const host = textNode.parentElement;
-		if (!host || host.closest('pre, .code-block, table, code')) continue;
-		const value = textNode.nodeValue ?? '';
-		const fragment = document.createDocumentFragment();
-		for (const token of value.split(/(\s+)/)) {
-			if (token === '') continue;
-			if (/^\s+$/.test(token)) {
-				fragment.append(token);
-				continue;
-			}
-			const word = document.createElement('span');
-			word.className = 'stream-word';
-			word.textContent = token;
-			fragment.append(word);
-			spans.push(word);
-		}
-		textNode.replaceWith(fragment);
-	}
-	spans.forEach((word, index) => {
-		context.streamTimers.push(
-			window.setTimeout(() => word.classList.add('is-in'), (context.streamWord.next + index) * streamGapMs),
-		);
-	});
-	context.streamWord.next += spans.length;
 }

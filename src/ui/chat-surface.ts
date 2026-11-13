@@ -34,6 +34,7 @@ import {
 	type DisplayedToolCall,
 } from './tool-state.ts';
 import { mountDictation } from './dictation.ts';
+import { createLiveReply } from './live-reply.ts';
 import type { MarkdownRenderer } from './chat-markdown.ts';
 import {
 	createActiveTurn,
@@ -108,8 +109,12 @@ export function mountChatSurface(options: Readonly<{
 	const conversation = openChatConversation(options.userId, options.aliases);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
+	let liveReply = createLiveReply('');
+	let liveTextShown = false;
+	let liveFrame = 0;
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
+			if (liveReply.apply(event) && !liveFrame) liveFrame = requestAnimationFrame(paintLiveText);
 			if (isQuietToolStreamEvent(event, quietToolIds)) return;
 			if (!applyToolStreamEvent(liveTools, event)) return;
 			pendingSession?.setTools(liveTools);
@@ -139,6 +144,21 @@ export function mountChatSurface(options: Readonly<{
 	function releasePending() {
 		pendingSession?.dispose();
 		pendingSession = undefined;
+	}
+
+	// At most one repaint per frame. Only a waiting turn shows text: a cancel,
+	// failure or recovery drops it, so the screen matches what is saved.
+	function paintLiveText() {
+		liveFrame = 0;
+		const session = pendingSession;
+		if (!session) return;
+		if (requestState.kind !== 'waiting') {
+			session.setText({ markdown: '' });
+			return;
+		}
+		const view = liveReply.view();
+		if (view.markdown) liveTextShown = true;
+		transcript.grow(() => session.setText(view));
 	}
 
 	let cachedProviders: AuthProviders | undefined;
@@ -196,7 +216,7 @@ export function mountChatSurface(options: Readonly<{
 		messages.hidden = !trailOpen;
 	}
 
-	async function paint(kind: PaintKind) {
+	async function paint(kind: PaintKind, landing: 'start' | 'live-edge' = 'start') {
 		const render = async () => {
 			const { earlier, current } = splitCurrentTurns(turns);
 			messages.replaceChildren(
@@ -218,13 +238,12 @@ export function mountChatSurface(options: Readonly<{
 			activeTurn.replaceChildren(
 				...current.map((item, index) => {
 					const isLast = index === current.length - 1;
-					const stream = kind === 'hold' && isLast && item.role === 'Assistant' && !reduceMotion;
+					// A settled reply appears as is: the learner may already have read it live.
 					return createActiveTurn(item, {
 						announce: kind === 'hold' && isLast,
-						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && !stream,
+						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && item.role !== 'Assistant',
 						interactive: isLast && Boolean(item.questionnaire),
 						steering: isLast && item.role === 'Assistant' && requestState.kind === 'idle',
-						stream,
 					}, turnSinks, {
 						onQuestionnaireSubmit: (answers) => {
 							const questionnaire = item.questionnaire;
@@ -251,6 +270,8 @@ export function mountChatSurface(options: Readonly<{
 					pendingSession.setCancelDisabled(requestState.kind === 'canceling');
 					pendingSession.setTools(liveTools);
 				}
+				if (requestState.kind === 'canceling') pendingSession.setText({ markdown: '' });
+				else if (!liveFrame) liveFrame = requestAnimationFrame(paintLiveText);
 				activeTurn.append(pendingSession.element);
 			} else {
 				releasePending();
@@ -269,7 +290,7 @@ export function mountChatSurface(options: Readonly<{
 
 		switch (kind) {
 			case 'hold':
-				await transcript.hold(render);
+				await transcript.hold(render, landing);
 				return;
 			case 'new-turn':
 				await render();
@@ -325,6 +346,8 @@ export function mountChatSurface(options: Readonly<{
 	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
+		liveReply = createLiveReply(text);
+		liveTextShown = false;
 		releasePending();
 		const result = requests.start(text);
 		requestState = requests.state;
@@ -355,7 +378,8 @@ export function mountChatSurface(options: Readonly<{
 		liveTools.length = 0;
 		quietToolIds.clear();
 		if (turn) turns = [...turns, turn];
-		await paint('hold');
+		// A learner who read the reply live stays where they were reading.
+		await paint('hold', liveTextShown ? 'live-edge' : 'start');
 	}
 
 	async function runRequestCommand(result: Promise<ChatRequestState>) {

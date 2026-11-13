@@ -7,6 +7,7 @@ import type { QuestionnaireAnswer } from '../questionnaire.ts';
 import { createSteeringBar, type SteeringKind } from './steering.ts';
 import { createToolCard, createToolList } from './tool-card.ts';
 import type { DisplayedToolCall } from './tool-state.ts';
+import type { LiveReplyView } from './live-reply.ts';
 
 const exceptionalLatencyMs = 10_000;
 
@@ -19,7 +20,6 @@ export type ActiveTurnOptions = {
 	stagger?: boolean;
 	interactive?: boolean;
 	steering?: boolean;
-	stream?: boolean;
 };
 
 export type ActiveTurnHandlers = {
@@ -37,6 +37,8 @@ export type PendingTurnSession = {
 	readonly element: HTMLElement;
 	dispose(): void;
 	setTools(calls: readonly DisplayedToolCall[]): void;
+	/** Shows reply text as it arrives; empty markdown shows none. */
+	setText(view: LiveReplyView): void;
 	setCancelDisabled(disabled: boolean): void;
 };
 
@@ -74,7 +76,6 @@ export function createActiveTurn(
 		stagger = false,
 		interactive = false,
 		steering = false,
-		stream = false,
 	}: ActiveTurnOptions = {},
 	sinks: TurnStreamSinks,
 	handlers: ActiveTurnHandlers,
@@ -86,7 +87,7 @@ export function createActiveTurn(
 	// An answered card is gone, so a card-only turn shows the question it asked.
 	const asked = item.questionnaire && !interactive
 		? item.questionnaire.items.map((question) => question.prompt).join('\n\n') : undefined;
-	appendTurnCopy(wrap, item, stream, sinks, asked);
+	appendTurnCopy(wrap, item, sinks, asked);
 	if (item.tools?.length) wrap.append(createToolList(item.tools));
 	if (item.questionnaire && interactive) {
 		const questionnaire = item.questionnaire;
@@ -191,11 +192,25 @@ export function createPendingTurn({
 	const timer = window.setTimeout(() => {
 		if (wrap.isConnected) latency.hidden = false;
 	}, exceptionalLatencyMs);
+	// The region announces status only. Text that streams in is not read word
+	// by word; the settled turn announces the reply once.
+	const reply = createMarkdownRenderer();
+	reply.element.setAttribute('aria-hidden', 'true');
+	reply.update('');
+	steps.after(reply.element);
+	let shown: LiveReplyView = { markdown: '' };
 
 	return {
 		element: wrap,
 		dispose() {
 			window.clearTimeout(timer);
+			reply.destroy();
+		},
+		setText(view) {
+			if (view.markdown === shown.markdown && view.reveal?.kind === shown.reveal?.kind) return;
+			shown = view;
+			reply.update(view.markdown);
+			if (view.markdown && view.reveal) markSuppliedCopy(reply.element, view.reveal);
 		},
 		setTools(calls) {
 			const host = wrap.querySelector('.tool-list');
@@ -286,7 +301,6 @@ function createThinkingOrbs(): HTMLElement {
 function appendTurnCopy(
 	parent: HTMLElement,
 	item: DisplayedTurn,
-	stream: boolean,
 	sinks: TurnStreamSinks,
 	asked?: string,
 ) {
@@ -307,7 +321,7 @@ function appendTurnCopy(
 	if (item.role === 'Assistant') {
 		const renderer = createMarkdownRenderer();
 		sinks.trackRenderer(renderer);
-		renderer.update(item.text.trim() || !asked ? item.text : asked, { stream });
+		renderer.update(item.text.trim() || !asked ? item.text : asked);
 		if (item.text.trim() && item.reveal) markSuppliedCopy(renderer.element, item.reveal);
 		parent.append(renderer.element);
 		return;
