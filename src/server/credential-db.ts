@@ -1,8 +1,8 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { Pool } from 'pg';
 import type { DatabaseTarget } from '../config/database.ts';
+import { sharedPostgresPool } from './postgres-pool.ts';
 
 export type CredentialRow = Readonly<{
 	userId: string;
@@ -74,10 +74,11 @@ export function createCredentialDb(target: DatabaseTarget): CredentialDb {
 }
 
 function openPostgresCredentialDb(connectionString: string): CredentialDb {
-	const pool = new Pool({ connectionString, max: 2 });
+	const pool = sharedPostgresPool(connectionString);
 	return createPostgresCredentialDb({
 		query: (text, values) => pool.query(text, values),
-		end: () => pool.end(),
+		// The shared pool outlives this store; see sharedPostgresPool.
+		end: async () => {},
 	});
 }
 
