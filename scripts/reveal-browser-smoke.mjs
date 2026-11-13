@@ -98,7 +98,8 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.locator('#chat').evaluate((form) => form.requestSubmit());
 		await answer(baselineChoice, baselineReason);
 		await answer(comparisonChoice, comparisonReason);
-		const supplied = page.locator('#active-turn .reveal-copy');
+		// The settled turn, not the pending turn that may show the same text live.
+		const supplied = page.locator('#active-turn .turn.assistant .reveal-copy');
 		await supplied.waitFor();
 		assert.ok((await supplied.innerText()).includes(assistanceText));
 		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');

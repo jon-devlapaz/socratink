@@ -28,3 +28,11 @@ test('live events stream reply text only, even while reasoning arrives first', (
 	assert.equal(events[1].kind, 'text');
 	assert.equal(JSON.stringify(events).includes(reasoning), false);
 });
+
+test('a reveal call reaches the browser before the text it labels, even in one poll', () => {
+	const progress = initialProgress();
+	const pending = [{ id: 's1', text: 'Synthetic answer' }];
+	const tools = [{ id: 'r1', name: 'mark_reveal', input: { kind: 'hint' }, state: 'done', output: 'Reveal recorded.' }];
+	const events = progressEvents(project('c', { revision: 1, messages: [question, { ...reply('A supplied hint.'), tools }], submissions: pending }), progress);
+	assert.deepEqual(events.map((e) => e.type), ['message-started', 'tool-input', 'tool-output', 'message-delta']);
+});

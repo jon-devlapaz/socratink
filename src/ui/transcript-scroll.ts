@@ -6,7 +6,11 @@ type TranscriptScroll = {
 	followLiveEdge(): void;
 	pinCurrentStart(): void;
 	scrollToStart(): void;
-	hold(mutate: () => void | Promise<void>): Promise<void>;
+	/** Paints in place. A learner following the conversation lands on the
+	 * current turn's start, or on the live edge when they were reading it there. */
+	hold(mutate: () => void | Promise<void>, landing?: 'start' | 'live-edge'): Promise<void>;
+	/** Live content grew: the view stays on the bottom only while the learner follows it. */
+	grow(mutate: () => void): void;
 	stopFollowing(): void;
 };
 
@@ -177,13 +181,29 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		followLiveEdge,
 		pinCurrentStart,
 		scrollToStart,
-		async hold(mutate) {
+		async hold(mutate, landing = 'start') {
 			if (following) {
 				await mutate();
-				pinCurrentStart();
+				if (landing === 'live-edge') followLiveEdge();
+				else pinCurrentStart();
 				return;
 			}
 			await preserveAround(mutate);
+		},
+		grow(mutate) {
+			// Programmatic scrolls mute scroll events briefly, and growth can scroll
+			// every frame, so read where the learner is before the content moves.
+			const atEdge = atLiveEdge();
+			mutate();
+			syncSpacer();
+			if (following && atEdge) {
+				withProgrammaticScroll(() => {
+					scroller.scrollTop = scroller.scrollHeight;
+				});
+				return;
+			}
+			following = false;
+			syncChrome();
 		},
 		stopFollowing,
 	};

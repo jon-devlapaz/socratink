@@ -336,6 +336,11 @@ html[data-type-size='small'] .active-node {
 	padding: 0.55rem 1.25rem 1.2rem;
 }
 
+/* With no earlier-steps tab above it, the first turn keeps clear of the card's edge. */
+.trail-toggle[hidden] + .active-scroll #active-turn {
+	padding-top: 1.05rem;
+}
+
 .active-scroll:has(#messages:not([hidden])) #active-turn {
 	padding-top: 1.05rem;
 }
@@ -452,19 +457,6 @@ html[data-type-size='small'] .active-node {
 	font-size: calc(0.98rem * var(--type-scale));
 	line-height: 1.55;
 	white-space: pre-wrap;
-}
-
-.stream-word {
-	opacity: 0;
-	filter: blur(1px);
-	transition-property: opacity, filter;
-	transition-duration: 350ms;
-	transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.stream-word.is-in {
-	opacity: 1;
-	filter: blur(0);
 }
 
 .turn.you {
@@ -670,6 +662,10 @@ html[data-type-size='small'] .active-node {
 	white-space: pre-wrap;
 }
 
+.turn.pending > .turn-markdown {
+	margin-top: 0.9rem;
+}
+
 .turn.pending .pending-latency {
 	color: var(--muted);
 	font-size: calc(0.75rem * var(--type-scale));
@@ -801,12 +797,6 @@ html[data-type-size='small'] .active-node {
 	.thinking-blob {
 		animation: none;
 		transform: none;
-	}
-
-	.stream-word {
-		transition: none !important;
-		filter: none !important;
-		opacity: 1 !important;
 	}
 
 	.jump-latest:active,
