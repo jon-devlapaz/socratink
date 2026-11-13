@@ -209,6 +209,8 @@ export function createPendingTurn({
 		setText(view) {
 			if (view.markdown === shown.markdown && view.reveal?.kind === shown.reveal?.kind) return;
 			shown = view;
+			// A reply on screen is not "taking longer than usual".
+			if (view.markdown) { window.clearTimeout(timer); latency.hidden = true; }
 			reply.update(view.markdown);
 			if (view.markdown && view.reveal) markSuppliedCopy(reply.element, view.reveal);
 		},
