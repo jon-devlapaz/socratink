@@ -28,6 +28,17 @@
   "functions": {
     "api/[...path].ts": {
       "maxDuration": 300
+    },
+    "api/runtime-monitor.ts": {
+      "maxDuration": 30,
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    }
+  },
+  "schedules": {
+    "runtime-monitor": {
+      "schedule": "*/15 * * * *",
+      "jitter": 15,
+      "function": "api/runtime-monitor"
     }
   }
 }

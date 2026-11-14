@@ -123,23 +123,33 @@ use the separately reviewed `runtime-monitor-verification` environment and the
 workflow's `preview_deployment` input. Never place this credential in source,
 repository-wide secrets, or pull-request CI.
 
-GitHub's own schedule is a fallback, not the clock. From 2026-11-09 to
-2026-11-12 it started this workflow about three times a day, so most
-45-minute windows went unread. An outside scheduler should start the workflow
-every 10 minutes instead:
+Vercel Schedules starts the production workflow every 15 minutes through the
+private `api/runtime-monitor.ts` function. Hobby adds up to 15 minutes of delay.
+The function only dispatches this workflow on `main`; preview deployments do
+nothing. GitHub's own schedule remains a fallback. It produced gaps of 4–9
+hours in November 2026, so it cannot cover the 45-minute log window alone.
 
-```
-POST https://api.github.com/repos/jon-devlapaz/socratink/actions/workflows/runtime-monitor.yml/dispatches
-Authorization: Bearer <token>
-Accept: application/vnd.github+json
+Configure `MONITOR_GITHUB_TOKEN` as a sensitive **Production-only** environment
+variable in the Vercel project `socratink-learner-app`, then deploy. Use a
+fine-grained GitHub token limited to `jon-devlapaz/socratink` with
+`Actions: read and write`. Enter it directly in Vercel; do not place it in
+source, preview variables, or chat. Set an expiry and rotate it before that
+date. This token can start and cancel repository workflows. It does not grant
+code or secret access. The Vercel log token stays in GitHub.
 
-{"ref":"main"}
-```
+After deployment, check the Vercel schedule's execution history and confirm
+several automatic GitHub monitor runs. The private function has no public URL;
+a public HTTP request must not dispatch a workflow. It logs only constant
+failure categories. Dispatch failures return a failure status in the schedule
+history; Vercel does not retry function targets. The GitHub fallback can report
+those failures when it next runs.
 
-GitHub answers 204. Use a fine-grained token limited to this repository with
-only `Actions: read and write`, and store it only in the scheduler. That token
-can start and cancel this repository's workflows; it cannot read code or
-secrets. Any scheduler that sends a POST with headers works.
+The workflow also checks the previous successful production runtime scan.
+If none started within 45 minutes, or GitHub history cannot be read, the job
+fails. Preview drills cannot satisfy this check. The first run after a gap can
+fail even when the current scan is clean; that clean scan lets the next run
+recover. This reports a gap after execution resumes; it cannot send an alert
+while both schedulers are stopped.
 
 GitHub schedules activate only on the default branch and can be delayed or
 dropped; public-repository schedules stop after 60 days without activity. The
