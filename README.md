@@ -4,9 +4,8 @@ Socratink is a single-learner AI conversation that runs on
 [Pi Durable](https://github.com/earendil-works/pi/tree/main/packages/durable).
 It supports open dialogue, structured
 question cards, and records of assistance. See [PRODUCT.md](PRODUCT.md) for
-the current boundary and the Brain's
-[North Star](socratink-brain/NORTH-STAR.md) for the intended direction
-([source fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md)).
+the current boundary and the [North Star](NORTH-STAR.md) for the intended
+direction.
 
 See [the Pi migration notes](docs/pi-durable-preview.md) for continuity, verification,
 and operational limits. Merges to `main` automatically deploy to production.

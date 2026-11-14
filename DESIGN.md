@@ -1,7 +1,7 @@
 # Existing interface conventions
 
 This document guides changes to the current conversation UI. Product direction
-belongs to the [North Star](socratink-brain/NORTH-STAR.md); these conventions
+belongs to the [North Star](NORTH-STAR.md); these conventions
 describe the existing interface, not future capabilities.
 
 ## Readability and appearance

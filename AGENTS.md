@@ -6,11 +6,8 @@ State the outcome, scope, proof, and stop condition before tool loops.
 
 ## Read the right context
 
-- **Product direction or learning behavior:** read the Brain's
-  [Constitution](socratink-brain/CONSTITUTION.md) and
-  [North Star](socratink-brain/NORTH-STAR.md), then only the linked Canon needed
-  for the task. The Brain is a separate repository. If unavailable locally,
-  use [its source repository](https://github.com/jon-devlapaz/socratink-brain/tree/master).
+- **Product direction or learning behavior:** read the
+  [North Star](NORTH-STAR.md).
   Report missing authority rather than inventing doctrine. The application
   code and its checks establish current implementation; the North Star does
   not establish that a capability is built or proven.
