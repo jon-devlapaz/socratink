@@ -22,8 +22,7 @@
 - **Returning user**: session cookie updates to the durable UUID. A
   `socratink_user_aliases` row maps the guest UUID so existing conversations remain
   accessible, `GET /api/session` reports the aliases so the client keeps the
-  stored conversation id, and guest BYOK keys move to the durable UUID
-  (names the durable user already owns keep the durable value).
+  stored conversation id. Model routing stays on the operator route.
 
 Chat conversation ids are `${userId}:${nonce}`. The chat-access middleware
 checks aliases for returning users. Foreign ids return 403.

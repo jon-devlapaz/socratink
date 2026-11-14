@@ -1,4 +1,3 @@
-// Auth and credential stores evolve independently despite sharing SQL dialects.
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';

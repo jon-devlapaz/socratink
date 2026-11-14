@@ -21,6 +21,9 @@ describe the existing interface, not future capabilities.
 
 ## Existing surfaces
 
+Every learner uses the operator model route. The menu keeps conversation,
+sign-in, and appearance controls.
+
 - **Conversation:** `chat-surface.ts`, `turn-view.ts`, and `transcript.css`
   own the active turn and earlier-step trail. Pending, cancel, recovery, and
   error feedback stays visible in the conversation, one block per request.

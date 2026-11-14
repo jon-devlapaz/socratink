@@ -7,11 +7,9 @@ import {
 	type WireSnapshot,
 } from '../../config/chat-wire.ts';
 import { appConfig } from '../../config/app.config.ts';
-import { chatModelHeader } from '../../config/chat-model.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
 import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
 import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-state.ts';
-import { storedLearnerChatSpecifier } from '../chat-pick.ts';
 import {
 	conversationBelongsToUser,
 	namespacedConversationId,
@@ -95,10 +93,6 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	return createStreamClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
-		headers: (): Record<string, string> => {
-			const specifier = storedLearnerChatSpecifier();
-			return specifier ? { [chatModelHeader]: specifier } : {};
-		},
 	});
 }
 
@@ -454,7 +448,7 @@ function awaitWithSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T
 
 export function chatTurnErrorMessage(error: unknown): string {
 	if (envelopeType(error) === 'inference_unconfigured') {
-		return 'No model provider is set up yet. Add your own key to start.';
+		return 'No model provider is set up yet. Please try again later.';
 	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
 }

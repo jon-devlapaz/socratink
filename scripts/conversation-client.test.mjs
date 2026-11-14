@@ -605,7 +605,7 @@ test('maps user-facing errors without treating cancellation as a generic failure
 	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
 	assert.equal(
 		chatTurnErrorMessage(new ChatApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
-		'No model provider is set up yet. Add your own key to start.',
+		'No model provider is set up yet. Please try again later.',
 	);
 });
 

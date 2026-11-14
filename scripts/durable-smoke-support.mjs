@@ -59,7 +59,7 @@ export async function startFixture() {
 				response.end(JSON.stringify({ sub: subject, email: `${subject}@example.invalid`, email_verified: true }));
 				return;
 			}
-			assert.ok(['/v1/responses', '/v1/chat/completions'].includes(request.url));
+			assert.equal(request.url, '/v1/chat/completions');
 			const body = JSON.parse(raw);
 			const prompt = JSON.stringify(body.input ?? body.messages);
 			const marker = prompt.match(/DURABLE_[A-Z_]+/g)?.at(-1);
@@ -100,52 +100,18 @@ async function writePlannedResponse(response, step) {
 	response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache',
 		'x-routed-via': encodeURIComponent('synthetic/routed-model'), 'x-fallback-attempts': '1' });
 	const emit = (event) => response.write(`data: ${JSON.stringify(event)}\n\n`);
-	if (path === '/v1/chat/completions') {
-		const base = { id, object: 'chat.completion.chunk', created: 0, model };
-		const delta = (value, finish = null) => emit({ ...base, choices: [{ index: 0, delta: value, finish_reason: finish }] });
-		delta({ role: 'assistant', content: '' });
-		if (reasoning) delta({ reasoning_content: reasoning });
-		if (afterReasoning) await afterReasoning.promise;
-		if (text) delta({ content: text });
-		if (afterText) await afterText.promise;
-		if (tools.length) delta({ tool_calls: tools.map((tool, index) => ({ index,
-			id: `call_${id}_${index}`, type: 'function', function: { name: tool.name, arguments: JSON.stringify(tool.arguments) } })) });
-		delta({}, tools.length ? 'tool_calls' : 'stop');
-		response.end('data: [DONE]\n\n');
-		return;
-	}
-	const output = [];
-	emit({ type: 'response.created', response: { id } });
-	if (reasoning) {
-		const item = { id: `rs_${id}`, type: 'reasoning', summary: [{ type: 'summary_text', text: reasoning }] };
-		emit({ type: 'response.output_item.added', output_index: 0, item: { ...item, summary: [] } });
-		emit({ type: 'response.reasoning_summary_text.delta', output_index: 0, summary_index: 0, delta: reasoning });
-		if (afterReasoning) await afterReasoning.promise;
-		emit({ type: 'response.output_item.done', output_index: 0, item });
-		output.push(item);
-	} else if (afterReasoning) await afterReasoning.promise;
-	for (const [index, tool] of tools.entries()) {
-		const item = { id: `fc_${id}_${index}`, type: 'function_call', call_id: `call_${id}_${index}`,
-			name: tool.name, arguments: JSON.stringify(tool.arguments), status: 'completed' };
-		const output_index = output.length;
-		emit({ type: 'response.output_item.added', output_index, item: { ...item, arguments: '' } });
-		emit({ type: 'response.function_call_arguments.delta', output_index, delta: item.arguments });
-		emit({ type: 'response.output_item.done', output_index, item });
-		output.push(item);
-	}
-	if (text) {
-		const item = { id: `msg_${id}`, type: 'message', role: 'assistant', status: 'completed',
-			content: [{ type: 'output_text', text, annotations: [] }] };
-		const output_index = output.length;
-		emit({ type: 'response.output_item.added', output_index, item: { ...item, content: [] } });
-		emit({ type: 'response.output_text.delta', output_index, content_index: 0, delta: text });
-		if (afterText) await afterText.promise;
-		emit({ type: 'response.output_item.done', output_index, item });
-		output.push(item);
-	}
-	emit({ type: 'response.completed', response: { id, status: 'completed', model, output,
-		usage: { input_tokens: 8, output_tokens: 8, total_tokens: 16 } } });
-	response.end();
+	if (path !== '/v1/chat/completions') throw new Error(`Unexpected fake model path: ${path}`);
+	const base = { id, object: 'chat.completion.chunk', created: 0, model };
+	const delta = (value, finish = null) => emit({ ...base, choices: [{ index: 0, delta: value, finish_reason: finish }] });
+	delta({ role: 'assistant', content: '' });
+	if (reasoning) delta({ reasoning_content: reasoning });
+	if (afterReasoning) await afterReasoning.promise;
+	if (text) delta({ content: text });
+	if (afterText) await afterText.promise;
+	if (tools.length) delta({ tool_calls: tools.map((tool, index) => ({ index,
+		id: `call_${id}_${index}`, type: 'function', function: { name: tool.name, arguments: JSON.stringify(tool.arguments) } })) });
+	delta({}, tools.length ? 'tool_calls' : 'stop');
+	response.end('data: [DONE]\n\n');
 }
 
 export function appFactory(fixture, { databaseUrl, secrets: suppliedSecrets,
@@ -155,9 +121,9 @@ export function appFactory(fixture, { databaseUrl, secrets: suppliedSecrets,
 	const logs = [];
 	const rawLogs = [];
 	const secrets = suppliedSecrets ?? {
-		SESSION_SECRET: randomBytes(32).toString('hex'), CREDENTIALS_SECRET: randomBytes(32).toString('hex'),
+		SESSION_SECRET: randomBytes(32).toString('hex'),
 	};
-	for (const name of ['SESSION_SECRET', 'CREDENTIALS_SECRET']) {
+	for (const name of ['SESSION_SECRET']) {
 		assert.equal(typeof secrets[name], 'string', `${name} must be supplied explicitly or generated for this test`);
 		assert.ok(secrets[name].length > 0);
 	}
@@ -236,11 +202,6 @@ export async function sendText(client, text, options = {}) {
 }
 export function userMessages(history) {
 	return history.messages.filter((message) => message.role === 'user');
-}
-export async function storeKey(app, session, key) {
-	const response = await fetch(`${app.origin}/api/openai-key`, { method: 'PUT',
-		headers: { cookie: session.cookie, 'content-type': 'application/json' }, body: JSON.stringify({ apiKey: key }) });
-	assert.equal(response.status, 200, 'synthetic learner key must store through normal API');
 }
 export async function oauth(app, session, code) {
 	const login = await fetch(`${app.origin}/api/auth/google/login`, { redirect: 'manual', headers: { cookie: session.cookie } });

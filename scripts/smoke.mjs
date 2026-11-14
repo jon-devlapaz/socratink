@@ -311,7 +311,6 @@ function startApp(appPort, providerPort) {
 			AUTH_REDIRECT_BASE_URL: '',
 			PORT: String(appPort),
 			SESSION_SECRET: 'socratink-smoke-session-secret',
-			CREDENTIALS_SECRET: 'socratink-smoke-credentials-secret',
 			JON_LOCAL_BASE_URL: `http://127.0.0.1:${providerPort}/v1`,
 			JON_LOCAL_API_KEY: 'smoke-test-key',
 			JON_LOCAL_MODEL_ID: 'auto',
@@ -349,11 +348,6 @@ try {
 	assert.equal(root.status, 200);
 	const html = await root.text();
 	assert.match(html, /<title>Socratink<\/title>/);
-	assert.match(html, /id="openai-key"/);
-	assert.match(html, /id="providers-toggle"/);
-	assert.match(html, /id="providers-status"/);
-	assert.match(html, /OpenAI platform API key/);
-	assert.match(html, /id="openai-models"/);
 	assert.doesNotMatch(html, /Log in with ChatGPT/);
 	assert.doesNotMatch(html, /Log in with Claude/);
 	const browserRoute = await fetch(`${origin}/interview-demo`);
@@ -387,24 +381,7 @@ try {
 		error: { type: 'unauthorized', message: 'A signed session is required.' },
 	});
 
-	const unauthenticatedRoute = await fetch(`${origin}/api/chat-route`);
-	assert.equal(unauthenticatedRoute.status, 401, 'Chat route without a session cookie should return 401');
-	assert.deepEqual(await unauthenticatedRoute.json(), {
-		error: { type: 'unauthorized', message: 'A signed session is required.' },
-	});
-
 	const session = await mintSessionFixture(origin);
-	const disconnectedRoute = await fetch(`${origin}/api/chat-route`, {
-		headers: { cookie: session.cookie },
-	});
-	assert.equal(disconnectedRoute.status, 200, 'signed session can read Chat route status');
-	assert.deepEqual(await disconnectedRoute.json(), {
-		kind: 'operator',
-		openai: false,
-	});
-
-	const unauthenticatedKey = await fetch(`${origin}/api/openai-key`);
-	assert.equal(unauthenticatedKey.status, 401, 'OpenAI key route without a session cookie should return 401');
 
 	const foreignChat = await fetch(
 		`${origin}/api/agents/chat/${encodeURIComponent('other-user:nonce')}`,

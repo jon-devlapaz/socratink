@@ -24,8 +24,6 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const container = `socratink-postgres-proof-${process.pid}-${Date.now()}`;
 const password = randomBytes(24).toString('hex');
 const sessionSecret = randomBytes(32).toString('hex');
-const credentialSecret = randomBytes(32).toString('hex');
-const learnerKey = `sk-synthetic-postgres-${randomBytes(16).toString('hex')}`;
 const operatorKey = 'synthetic-postgres-operator-key';
 const preload = fileURLToPath(new URL('./postgres-smoke-preload.mjs', import.meta.url));
 const report = {
@@ -48,7 +46,7 @@ let connection;
 
 function redact(value) {
 	let text = String(value);
-	for (const secret of [password, sessionSecret, credentialSecret, learnerKey, operatorKey]) {
+	for (const secret of [password, sessionSecret, operatorKey]) {
 		text = text.replaceAll(secret, '[redacted]');
 	}
 	return text.replace(/postgres(?:ql)?:\/\/[^\s'"<>]+/g, '[owned database URL]');
@@ -109,7 +107,6 @@ async function startApp(root, database) {
 			PORT: String(port),
 			DATABASE_URL: databaseUrl,
 			SESSION_SECRET: sessionSecret,
-			CREDENTIALS_SECRET: credentialSecret,
 			JON_LOCAL_BASE_URL: `${report.fixtureOrigin}/v1`,
 			JON_LOCAL_MODEL_ID: 'auto',
 			JON_LOCAL_API_KEY: operatorKey,
@@ -154,9 +151,6 @@ async function assertRestored(origin, session, guestCookie, expectedHistory) {
 	assert.equal(response.status, 200);
 	assert.deepEqual(await response.json(), { userId: session.userId, aliases: [], kind: 'registered' });
 	assert.equal((await fetch(`${origin}/api/session`, { headers: { cookie: guestCookie } })).status, 401);
-	const status = await fetch(`${origin}/api/chat-route`, { headers: { cookie: session.cookie } });
-	assert.equal(status.status, 200);
-	assert.equal((await status.json()).kind, 'openai');
 	assert.deepEqual(await clientFor(origin, session).history({ signal: AbortSignal.timeout(5_000) }), expectedHistory);
 }
 
@@ -216,9 +210,9 @@ try {
 				return;
 			}
 			const body = JSON.parse(raw);
-			const learner = request.url === '/v1/responses';
-			assert.equal(request.headers.authorization, `Bearer ${learner ? learnerKey : operatorKey}`);
-			report.providerRequests.push({ stage, provider: learner ? 'openai' : 'operator', storedKeyMatched: learner });
+			assert.equal(request.url, '/v1/chat/completions');
+			assert.equal(request.headers.authorization, `Bearer ${operatorKey}`);
+			report.providerRequests.push({ stage, provider: 'operator' });
 			writeModelResponse(response, { path: request.url, model: body.model,
 				text: 'Synthetic PostgreSQL verification response.', id: `pg_${report.providerRequests.length}` });
 		} catch (error) {
@@ -241,31 +235,21 @@ try {
 	assert.equal(callback.headers.get('location'), '/');
 	session.cookie = mergeCookies(callback, session.cookie);
 	let client = clientFor(origin, session);
-	await sendTurn(client, 'Synthetic operator turn before key storage.');
-	const keyResponse = await fetch(`${origin}/api/openai-key`, {
-		method: 'PUT', headers: { cookie: session.cookie, 'content-type': 'application/json' },
-		body: JSON.stringify({ apiKey: learnerKey }),
-	});
-	assert.equal(keyResponse.status, 200);
-	assert.equal((await keyResponse.json()).kind, 'openai');
-	let history = await sendTurn(client, 'Synthetic stored-key turn before restart.');
+	await sendTurn(client, 'Synthetic first operator turn.');
+	let history = await sendTurn(client, 'Synthetic operator turn before restart.');
 	const candidate = poolFor('candidate');
-	const credentials = (await candidate.query('SELECT ciphertext FROM socratink_credentials')).rows;
-	assert.equal(credentials.length, 1);
-	assert.match(credentials[0].ciphertext, /^v1\./);
-	assert.equal(credentials[0].ciphertext.includes(learnerKey), false);
 	assert.equal((await candidate.query('SELECT count(*)::int AS count FROM socratink_users')).rows[0].count, 1);
 	assert.equal((await candidate.query('SELECT count(*)::int AS count FROM socratink_oauth_accounts')).rows[0].count, 1);
 	await closePool(candidate);
 	await assertRestored(origin, session, guestCookie, history);
-	report.checks.push('Actual HTTP OAuth creates durable identity; guest cookie revoked; stored key encrypted; operator and learner turns persisted.');
+	report.checks.push('Actual HTTP OAuth creates durable identity; guest cookie revoked; operator turns persisted.');
 	await stopApp();
 	stage = 'candidate-after-restart';
 	origin = await startApp(candidateRoot, 'candidate');
 	await assertRestored(origin, session, guestCookie, history);
 	client = clientFor(origin, session);
-	history = await sendTurn(client, 'Synthetic stored-key turn after process restart.');
-	report.checks.push('Restart preserves signed session, guest revocation, history, key status, and actual stored-key decryption.');
+	history = await sendTurn(client, 'Synthetic operator turn after process restart.');
+	report.checks.push('Restart preserves signed session, guest revocation, history, and operator inference.');
 	await stopApp();
 	report.candidateBeforeRollback = await databaseDigest('candidate');
 	await admin.query('CREATE DATABASE rollback TEMPLATE candidate');
@@ -278,7 +262,7 @@ try {
 	assert.deepEqual(report.candidateAfterRollback, report.candidateBeforeRollback);
 	report.rollbackClone = await databaseDigest('rollback');
 	assert.notDeepEqual(report.rollbackClone, report.candidateBeforeRollback);
-	report.checks.push('Previous build reads candidate identity/key/history on a disposable clone and decrypts its key for a new turn; original database unchanged.');
+	report.checks.push('Previous build reads candidate identity and history on a disposable clone and completes a new turn; original database unchanged.');
 	assert.equal(report.fixtureError, undefined);
 	report.ok = true;
 } catch (error) {
