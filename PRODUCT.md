@@ -21,7 +21,7 @@ The app provides a single-learner conversation with an AI learning partner:
 - Learner controls for pacing, an unaided attempt, cancellation, and recovery.
 - Voice dictation as an input option, plus theme and text-size controls.
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
-  ownership checks, rate limits, and encrypted learner API-key storage.
+  ownership checks, and rate limits. Every learner uses the operator model route.
 
 Conversations run through `src/server/durable/` with the teaching policy
 (the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`.

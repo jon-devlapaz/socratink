@@ -44,7 +44,6 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
-import { mountProviders } from './providers.ts';
 import { requireElement } from './dom.ts';
 import {
 	applyRequestControlState,
@@ -99,7 +98,6 @@ export function mountChatSurface(options: Readonly<{
 		dictationToggle,
 		dictationStatus,
 	} = elements;
-	mountProviders();
 	const dictation = mountDictation({
 		input,
 		toggle: dictationToggle,

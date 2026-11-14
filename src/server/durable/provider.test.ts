@@ -15,7 +15,7 @@ import { conversationModels, messageRoute, modelRef } from './provider.ts';
 import { openEngine } from './engine.ts';
 import type { EngineOptions, ModelConfig } from './contract.ts';
 
-test('native transports preserve keys, limits, live route headers and persisted response metadata', async () => {
+test('operator transport preserves keys, limits, live route headers and persisted response metadata', async () => {
 	const requests: { path: string; authorization: string | undefined; body: Record<string, unknown> }[] = [];
 	const server = createServer(async (request, response) => {
 		let input = '';
@@ -24,17 +24,9 @@ test('native transports preserve keys, limits, live route headers and persisted 
 		requests.push({ path: request.url!, authorization: request.headers.authorization, body });
 		response.writeHead(200, { 'content-type': 'text/event-stream', 'x-routed-via': 'actual%2Fmodel', 'x-fallback-attempts': '2' });
 		const emit = (event: unknown) => response.write(`data: ${JSON.stringify(event)}\n\n`);
-		if (request.url === '/v1/responses') {
-			const item = { type: 'message', id: 'msg_1', role: 'assistant', content: [{ type: 'output_text', text: 'Ready.' }] };
-			emit({ type: 'response.output_item.added', output_index: 0, item: { ...item, content: [] } });
-			emit({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: 'Ready.' });
-			emit({ type: 'response.output_item.done', output_index: 0, item });
-			emit({ type: 'response.completed', response: { id: 'resp_1', status: 'completed', model: 'response-model', output: [item], usage: { input_tokens: 3, output_tokens: 2, total_tokens: 5 } } });
-		} else {
-			emit({ id: 'completion_1', model: 'response-model', choices: [{ index: 0, delta: { role: 'assistant', reasoning_content: 'Considering.', content: 'Ready.' }, finish_reason: null }] });
-			emit({ id: 'completion_1', model: 'response-model', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] });
-			response.write('data: [DONE]\n\n');
-		}
+		emit({ id: 'completion_1', model: 'response-model', choices: [{ index: 0, delta: { role: 'assistant', reasoning_content: 'Considering.', content: 'Ready.' }, finish_reason: null }] });
+		emit({ id: 'completion_1', model: 'response-model', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] });
+		response.write('data: [DONE]\n\n');
 		response.end();
 	});
 	server.listen(0, '127.0.0.1');
@@ -45,7 +37,6 @@ test('native transports preserve keys, limits, live route headers and persisted 
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-native-provider-'));
 	try {
 		const configs: Record<string, ModelConfig> = {
-			alice: { provider: 'openai', modelId: 'gpt-5-mini', apiKey: 'alice-synthetic', baseUrl },
 			operator: { provider: 'jon-local', modelId: 'auto', apiKey: 'operator-synthetic', baseUrl,
 				reasoning: true, contextWindow: 1048576, maxTokens: 131100 },
 		};
@@ -66,8 +57,7 @@ test('native transports preserve keys, limits, live route headers and persisted 
 			return message;
 		}));
 		const byKey = (key: string) => requests.find((request) => request.authorization === `Bearer ${key}`)!;
-		assert.equal(byKey('alice-synthetic').path, '/v1/responses');
-		assert.equal(byKey('alice-synthetic').body.model, 'gpt-5-mini');
+		assert.equal(byKey('operator-synthetic').path, '/v1/chat/completions');
 		assert.equal(byKey('operator-synthetic').body.model, 'auto');
 		assert.equal(byKey('operator-synthetic').body.max_tokens ?? byKey('operator-synthetic').body.max_completion_tokens, 131100);
 		assert.equal(byKey('operator-synthetic').body.reasoning_effort, undefined);
@@ -124,17 +114,15 @@ test('reflected credentials are removed from live failures, route headers and re
 		assert.equal(serialized.includes(encoded), false, 'the encoded credential must not escape the provider boundary');
 	}
 	try {
-		for (const chosen of [config, { ...config, provider: 'openai', modelId: 'gpt-5-mini' }]) {
-			for (failure of failures) {
-				const models = conversationModels({ ...options, resolveModel: async () => chosen }, 'learner:failure', async () => chosen);
-				const stream = models.streamSimple(models.getModel(modelRef.provider, modelRef.modelId)!, { messages: [] }, { maxRetries: 0 });
-				for await (const event of stream) assertNoKey(event);
-				const message = await stream.result();
-				assertNoKey(message);
-				assert.equal(message.stopReason, 'error');
-				assert.equal(isRetryableAssistantError(message), failure.retryable);
-				assert(message.errorMessage?.includes(failure.message), 'non-secret failure details remain available for retry classification');
-			}
+		for (failure of failures) {
+			const models = conversationModels({ ...options, resolveModel: async () => config }, 'learner:failure', async () => config);
+			const stream = models.streamSimple(models.getModel(modelRef.provider, modelRef.modelId)!, { messages: [] }, { maxRetries: 0 });
+			for await (const event of stream) assertNoKey(event);
+			const message = await stream.result();
+			assertNoKey(message);
+			assert.equal(message.stopReason, 'error');
+			assert.equal(isRetryableAssistantError(message), failure.retryable);
+			assert(message.errorMessage?.includes(failure.message), 'non-secret failure details remain available for retry classification');
 		}
 		success = true;
 		const models = conversationModels(options, 'learner:route', async () => config);

@@ -20,9 +20,9 @@ pnpm dev
 `http://127.0.0.1:3001/v1`. Configure `JON_LOCAL_BASE_URL`, `JON_LOCAL_API_KEY`,
 and optionally `JON_LOCAL_MODEL_ID` for your endpoint. Do not commit values.
 
-Local conversation, authentication, and credential databases use separate
-SQLite files under `.cache/`. Configuration owners are `src/config/database.ts`,
-`auth.ts`, `session.ts`, `credentials.ts`, and `src/inference/operator.ts`.
+Local conversation and authentication databases use separate SQLite files
+under `.cache/`. Configuration owners are `src/config/database.ts`, `auth.ts`,
+`session.ts`, and `src/inference/operator.ts`.
 
 ## Identity, models, and hosted configuration
 
@@ -32,23 +32,18 @@ the matching `*_CLIENT_ID` and `*_CLIENT_SECRET` settings plus
 `AUTH_REDIRECT_BASE_URL`; see [the authentication flow](src/ui/auth/README.md)
 for account linking and the limits of the guest allowance.
 
-Conversations are scoped to the session user and permitted aliases. Learner
-API keys are encrypted in the product credential store.
-Model routing is owned by `src/inference/`: the learner's
-own key first, then the operator. A route the learner chose never falls back to
-the operator's key. Model choices are listed in `src/config/chat-model.ts`.
+Conversations are scoped to the session user and permitted aliases.
+Model routing is owned by `src/inference/`. Every learner uses the operator
+route. Saved model selections do not change that route.
 
 Merges to `main` deploy to production. A preview deploy alone does not.
-Keep the database, `SESSION_SECRET`, and `CREDENTIALS_SECRET` to preserve
-users, cookies, encrypted keys, and history.
+Keep the database and `SESSION_SECRET` to preserve users, cookies, and history.
 
-Production and Vercel deployments require `DATABASE_URL`,
-`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel, a public HTTPS
-`JON_LOCAL_BASE_URL` with `JON_LOCAL_API_KEY` selects the operator endpoint;
-otherwise the app selects AI Gateway. Gateway credentials come from
-`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`. With none of these, inference is
+Production and Vercel deployments require `DATABASE_URL` and `SESSION_SECRET`.
+Vercel always uses AI Gateway. Gateway credentials come from
+`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`. Without either, inference is
 unconfigured: `/healthz` returns 503 and a send is refused with
-`inference_unconfigured` unless the learner has connected their own key.
+`inference_unconfigured`. Non-Vercel runs keep the `JON_LOCAL_*` settings.
 
 Use private database connectivity. Local checks do not validate deployed
 identity settings, external providers, multi-instance hosting, or suitability
@@ -84,8 +79,8 @@ pnpm smoke:postgres --candidate <candidate-root> --baseline <previous-root> --ou
 
 This needs a running Docker daemon and a locally available `postgres:17-alpine`
 image. It creates and removes its own database container, uses synthetic OAuth
-and model responses, and saves a report proving session, key, and conversation
-recovery. The previous build runs against a disposable copy of that test data.
+and model responses, and saves a report of session and conversation recovery.
+The previous build runs against a disposable copy of that test data.
 
 For an interaction check, start a conversation, complete an open-ended turn
 and a question card, inspect the earlier-step trail, and reload to check

@@ -23,42 +23,9 @@ const hostedGatewayLimits = {
 	maxTokens: 131_100,
 } as const;
 
-function isPublicHttpsUrl(value: string): boolean {
-	try {
-		const url = new URL(value);
-		if (url.protocol !== 'https:') return false;
-		const host = url.hostname.toLowerCase();
-		if (!host.includes('.')) return false;
-		if (host === 'localhost' || host.endsWith('.local')) return false;
-		if (/^(127\.|10\.|192\.168\.|169\.254\.|100\.)/.test(host)) return false;
-		if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return false;
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-function hostedLocalOverride(environment: ChatModelEnvironment): ChatModel | undefined {
-	const baseUrl = environment.JON_LOCAL_BASE_URL?.trim();
-	const apiKey = environment.JON_LOCAL_API_KEY?.trim();
-	// Vercel cannot reach Tailscale CGNAT or loopback, so those stay on AI Gateway.
-	if (!baseUrl || !apiKey || !isPublicHttpsUrl(baseUrl)) return undefined;
-	const modelId = environment.JON_LOCAL_MODEL_ID?.trim() || appConfig.defaultLocalModelId;
-	return {
-		providerId: chatProviderId,
-		baseUrl,
-		modelId,
-		apiKey,
-		...localChatModelLimits,
-	};
-}
-
 /** The operator's model, or undefined when a hosted deploy has no credential. */
 export function resolveChatModel(environment: ChatModelEnvironment): ChatModel | undefined {
 	if (environment.VERCEL === '1') {
-		const override = hostedLocalOverride(environment);
-		if (override) return override;
-
 		const apiKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
 		if (!apiKey) return undefined;
 		return {

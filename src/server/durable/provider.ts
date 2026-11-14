@@ -1,7 +1,7 @@
 import {
 	createAssistantMessageEventStream, createModels, createProvider,
 	type Api, type AssistantMessage, type AssistantMessageEventStream, type Message,
-	type Model, type ProviderStreams, type SimpleStreamOptions, type StreamOptions,
+	type Model, type SimpleStreamOptions, type StreamOptions,
 } from '@earendil-works/pi-ai';
 import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
@@ -17,17 +17,11 @@ type RoutedMessage = AssistantMessage & { socratinkRoute?: ModelRouteRecord };
 export function conversationModels(options: EngineOptions, conversationId: string,
 	selection: () => Promise<ModelSelection | undefined>, onResolved?: (config: ModelConfig) => void) {
 	const models = createModels();
-	const openai = openaiProvider();
 	const compatible = openAICompletionsApi();
-	let current: { config: ModelConfig; model: Model<Api>; streams: ProviderStreams } | undefined;
-	const catalogModel = openai.getModels().find((model) => model.id === 'gpt-5-nano');
-	if (!catalogModel) throw new Error('The installed Pi catalog lacks the default learner model.');
+	let current: { config: ModelConfig; model: Model<'openai-completions'> } | undefined;
+	const catalogModel = openaiProvider().getModels().find((model) => model.id === 'gpt-5-nano');
+	if (!catalogModel) throw new Error('The installed Pi catalog lacks the bootstrap model.');
 	function select(config: ModelConfig): NonNullable<typeof current> {
-		if (config.provider === 'openai') {
-			const model = openai.getModels().find((entry) => entry.id === config.modelId);
-			if (!model) throw new Error('The installed Pi catalog lacks the selected learner model.');
-			return { config, model: { ...model, ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}) }, streams: openai };
-		}
 		if (config.provider !== 'jon-local' || !config.baseUrl || !config.contextWindow || !config.maxTokens) {
 			throw new Error('The operator model requires its configured endpoint and limits.');
 		}
@@ -38,7 +32,7 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			input: ['text'], contextWindow: config.contextWindow, maxTokens: config.maxTokens,
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 		};
-		return { config, model, streams: compatible };
+		return { config, model };
 	}
 	function requestOptions<T extends StreamOptions | SimpleStreamOptions>(request: T | undefined) {
 		if (!current) throw new Error('Model credentials have not been resolved.');
@@ -61,8 +55,8 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 	}
 	models.setProvider(createProvider({
 		id: modelRef.provider,
-		models: [{ ...catalogModel, id: modelRef.modelId, name: 'Selected Socratink model', provider: modelRef.provider }],
-		auth: { apiKey: { name: 'Socratink learner or operator credential', resolve: async () => {
+		models: [{ ...catalogModel, id: modelRef.modelId, name: 'Socratink model', provider: modelRef.provider }],
+		auth: { apiKey: { name: 'Socratink operator credential', resolve: async () => {
 			current = select(await options.resolveModel(conversationId, await selection()));
 			onResolved?.(current.config);
 			return { auth: { apiKey: current.config.apiKey } };
@@ -70,11 +64,11 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 		api: {
 			stream: (_model, context, request) => {
 				const resolved = requestOptions(request);
-				return withRoute(resolved.selected.streams.stream(resolved.selected.model, context, resolved.options), resolved.route, resolved.selected.config.apiKey);
+				return withRoute(compatible.stream(resolved.selected.model, context, resolved.options), resolved.route, resolved.selected.config.apiKey);
 			},
 			streamSimple: (_model, context, request) => {
 				const resolved = requestOptions(request);
-				return withRoute(resolved.selected.streams.streamSimple(resolved.selected.model, context, resolved.options), resolved.route, resolved.selected.config.apiKey);
+				return withRoute(compatible.streamSimple(resolved.selected.model, context, resolved.options), resolved.route, resolved.selected.config.apiKey);
 			},
 		},
 	}));

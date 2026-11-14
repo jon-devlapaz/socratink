@@ -5,12 +5,9 @@ import { resolveAuthConfig } from './config/auth.ts';
 import { appConfig } from './config/app.config.ts';
 import { resolveSessionSecret } from './config/session.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
-import { requireChatSession, requireSignedSession } from './server/chat-access.ts';
-import { mountChatRoute } from './server/chat-route.ts';
-import { getCredentialStore } from './server/credential-runtime.ts';
+import { requireChatSession } from './server/chat-access.ts';
 import { guestTurnGateMiddleware } from './server/guest-turns.ts';
 import { mountOAuthRoutes } from './server/oauth.ts';
-import { mountOpenaiKeyRoutes } from './server/openai-key.ts';
 import {
 	chatRateLimitMax,
 	chatRateLimitWindowMs,
@@ -21,17 +18,11 @@ import { reportFailure } from './server/logging.ts';
 import type { Inference } from './inference/index.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
-const credentialStore = getCredentialStore();
 const authDb = getAuthDb();
 const authConfig = resolveAuthConfig(process.env);
 const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
 	max: chatRateLimitMax,
-});
-const signedSession = requireSignedSession({
-	secret: sessionSecret,
-	rateLimiter: chatRateLimiter,
-	authDb,
 });
 
 export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operatorStatus'>) {
@@ -49,21 +40,12 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 			: context.json({ status: 'unconfigured', inference: 'unconfigured' }, 503);
 	});
 	mountSessionRoutes(app, { secret: sessionSecret, authDb });
-	mountOpenaiKeyRoutes(app, {
-		signed: signedSession,
-		store: credentialStore,
-	});
-	mountChatRoute(app, {
-		signed: signedSession,
-		store: credentialStore,
-	});
 	if (authConfig) {
 		mountOAuthRoutes(app, {
 			config: authConfig,
 			secret: sessionSecret,
 			authDb,
-			onRekey: (guestUserId, durableUserId) =>
-				credentialStore.rekeyUser({ fromUserId: guestUserId, toUserId: durableUserId }),
+			onRekey: async () => {},
 		});
 	}
 	app.use(

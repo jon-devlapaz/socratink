@@ -107,80 +107,19 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.deepEqual(fixture.sent, ['Stop this reply']);
 	});
 
-	for (const failure of ['http', 'invalid', 'network']) {
-		await check(`provider-status-${failure}`, async (page, fixture) => {
-			fixture.statusFailure = failure;
-			await page.addInitScript((key) => localStorage.setItem(key, 'openai/gpt-5-mini'), appConfig.chatModelStorageKey);
-			await page.goto(origin);
-			await openProviders(page);
-			await page.locator('#openai-key-status[role="alert"]').waitFor();
-			assert.doesNotMatch(await page.locator('#providers-status .is-live').innerText(), /Chat uses/);
-			assert.doesNotMatch(await page.locator('#providers-toggle').getAttribute('aria-label'), /Chat uses/);
-			assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatModelStorageKey), 'openai/gpt-5-mini');
-			assert.equal(await page.locator('#openai-key-connect').isEnabled(), true);
-		});
-	}
-
-	await check('provider-key-request-recovery', async (page, fixture) => {
+	await check('stored-model-preference-is-ignored', async (page, fixture) => {
+		await page.addInitScript(() => localStorage.setItem('socratink-chat-model', 'openai/gpt-5-nano'));
 		await page.goto(origin);
-		await openProviders(page);
-		fixture.keyFailure = true;
-		await page.locator('#openai-key-input').fill('synthetic-browser-key');
-		await page.locator('#openai-key-connect').click();
-		await page.getByText('Could not store that key. Try again.', { exact: true }).waitFor();
-		assert.equal(await page.locator('#openai-key-connect').isEnabled(), true);
-		fixture.keyFailure = false;
-		await page.locator('#openai-key-connect').click();
-		await page.locator('#openai-key-disconnect').waitFor();
-		await page.getByRole('option', { name: 'GPT-5 mini', exact: true }).click();
-		await page.waitForFunction(() => document.querySelector('[data-specifier="openai/gpt-5-mini"]')?.getAttribute('aria-selected') === 'true');
-		fixture.statusFailure = 'network';
-		await page.getByRole('option', { name: 'GPT-5 mini', exact: true }).click();
-		await page.locator('#openai-key-status[role="alert"]').waitFor();
-		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses your OpenAI key.');
-		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatModelStorageKey), 'openai/gpt-5-mini');
-		fixture.statusFailure = undefined;
-		fixture.keyFailure = true;
-		await page.locator('#openai-key-disconnect').click();
-		await page.getByText('Could not disconnect that key. Try again.', { exact: true }).waitFor();
-		assert.equal(await page.locator('#openai-key-disconnect').isEnabled(), true);
-		fixture.keyFailure = false;
-		await page.locator('#openai-key-disconnect').click();
-		await page.locator('#openai-key-connect').waitFor();
-		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatModelStorageKey), null);
-		assert.deepEqual(fixture.keyMethods, ['PUT', 'PUT', 'DELETE', 'DELETE']);
-	});
-
-	await check('provider-mutation-owns-status', async (page, fixture) => {
-		await page.goto(origin);
-		await openProviders(page);
-		fixture.statusFailure = 'http';
-		await page.locator('#openai-key-input').fill('synthetic-browser-key');
-		await page.locator('#openai-key-connect').click();
-		await page.locator('#openai-key-disconnect').waitFor();
-		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses your OpenAI key.');
-		await page.locator('#openai-key-disconnect').click();
-		await page.locator('#openai-key-connect').waitFor();
-		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses the Socratink model.');
-	});
-
-	await check('provider-ignores-older-status-read', async (page, fixture) => {
-		fixture.holdInitialStatus = true;
-		await page.goto(origin);
-		await openProviders(page);
-		await page.locator('#openai-key-input').fill('synthetic-browser-key');
-		await page.locator('#openai-key-connect').click();
-		await page.locator('#openai-key-disconnect').waitFor();
-		const staleResponse = page.waitForResponse((response) => new URL(response.url()).pathname === appConfig.chatRoutePath);
-		fixture.releaseStatusRead();
-		await (await staleResponse).finished();
-		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-		assert.equal(await page.locator('#openai-key-disconnect').isVisible(), true);
-		assert.equal(await page.locator('#providers-status .is-live').innerText(), 'Chat uses your OpenAI key.');
+		await send(page, 'Use the operator model');
+		await page.getByText('Fresh reply', { exact: true }).waitFor();
+		assert.deepEqual(fixture.sent, ['Use the operator model']);
+		assert.deepEqual(fixture.modelHeaders, [undefined]);
+		assert.equal(await page.getByRole('button', { name: /Providers/ }).count(), 0);
+		assert.equal(await page.getByRole('listbox', { name: /models/i }).count(), 0);
 	});
 
 	assert.equal(results.filter((result) => !result.passed).length, 0, JSON.stringify(results.filter((result) => !result.passed)));
-	console.log(`UI browser passed: ${results.length} retry/cancel/provider scenarios.`);
+	console.log(`UI browser passed: ${results.length} retry/cancel/operator scenarios.`);
 }
 
 async function send(page, text) {
@@ -188,54 +127,26 @@ async function send(page, text) {
 	await page.locator('#chat').evaluate((form) => form.requestSubmit());
 }
 
-async function openProviders(page) {
-	await page.locator('#peek-handle').click();
-	await page.locator('#providers-toggle').click();
-}
-
 function createServices(origin, session) {
 	let submissionId = '';
-	let connected = false;
 	let completed = false;
 	let reads = 0;
-	let statusReads = 0;
 	let releaseReply;
 	const replyReady = new Promise((resolve) => { releaseReply = resolve; });
 	let releaseAbort;
 	const abortRequested = new Promise((resolve) => { releaseAbort = resolve; });
-	let releaseStatus;
-	const statusReady = new Promise((resolve) => { releaseStatus = resolve; });
-	const chatStatus = () => ({ kind: connected ? 'openai' : 'operator', openai: connected });
 	const fixture = {
 		mode: 'success',
-		statusFailure: undefined,
-		keyFailure: false,
-		holdInitialStatus: false,
 		sent: [],
 		aborts: 0,
-		keyMethods: [],
+		modelHeaders: [],
 		finishReply() { releaseReply(); },
-		releaseStatusRead() { releaseStatus(); },
 		async handle(route, url) {
 			const json = (body, status = 200, headers = {}) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers });
 			if (url.pathname === appConfig.sessionPath) {
 				return json({ userId: session.userId, aliases: [], kind: 'registered' });
 			}
 			if (url.pathname === appConfig.authProvidersPath) return json({ google: false, github: false });
-			if (url.pathname === appConfig.chatRoutePath) {
-				const status = chatStatus();
-				if (++statusReads === 1 && fixture.holdInitialStatus) await statusReady;
-				if (fixture.statusFailure === 'network') return route.abort('failed');
-				if (fixture.statusFailure === 'http') return json({}, 500);
-				if (fixture.statusFailure === 'invalid') return json({ unexpected: true });
-				return json(status);
-			}
-			if (url.pathname === appConfig.openaiKeyPath) {
-				fixture.keyMethods.push(route.request().method());
-				if (fixture.keyFailure) return route.abort('failed');
-				connected = route.request().method() === 'PUT';
-				return json(chatStatus());
-			}
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
 			if (url.pathname.endsWith('/abort')) {
 				fixture.aborts += 1;
@@ -243,6 +154,7 @@ function createServices(origin, session) {
 				return json({ aborted: true });
 			}
 			if (route.request().method() === 'POST') {
+				fixture.modelHeaders.push(route.request().headers()['x-socratink-chat-model']);
 				fixture.sent.push(route.request().postDataJSON().body);
 				if (fixture.mode === 'admission-failure' && fixture.sent.length === 1) {
 					return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);

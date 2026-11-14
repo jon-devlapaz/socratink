@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { mintSessionFixture } from './session-fixture.mjs';
-import { appFactory, clientFor, gate, sendText, startFixture, storeKey, until, userMessages } from './durable-smoke-support.mjs';
+import { appFactory, clientFor, gate, sendText, startFixture, until, userMessages } from './durable-smoke-support.mjs';
 import { verifyDurableBrowser } from './durable-browser-smoke.mjs';
 import { measureTurn, timingHoldMs } from './durable-timing.mjs';
 
@@ -24,9 +24,6 @@ try {
 	assert.deepEqual(await (await fetch(`${app.origin}/healthz`)).json(), { status: 'ok', inference: 'local' });
 	report.checks.push('Normal built server reports its inference route.');
 	const session = await mintSessionFixture(app.origin);
-	const key = 'sk-synthetic-durable-http-learner';
-	fixture.secrets.set(key, 'learner');
-	await storeKey(app, session, key);
 	const client = clientFor(app, session, 'events');
 	stage = 'live-events-and-reattach';
 	const reasoning = 'I am inspecting the evidence before giving this synthetic hint.';
@@ -66,8 +63,9 @@ try {
 	const assistant = history.messages.findLast((message) => message.role === 'assistant');
 	assert.equal(assistant.parts.filter((part) => part.type === 'text').map((part) => part.text).join(''), text);
 	assert.deepEqual(assistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
-	assert.equal(fixture.calls[0].path, '/v1/responses');
-	report.checks.push('Native Responses tool events reach the browser client live and raw reasoning never does; lost read reattaches without duplicate learner input.');
+	assert.equal(fixture.calls[0].path, '/v1/chat/completions');
+	assert.equal(fixture.calls.every((call) => call.key === 'operator'), true);
+	report.checks.push('Operator tool events reach the browser client live and raw reasoning never does; lost read reattaches without duplicate learner input.');
 	report.checks.push('Reply preserves reveal provenance and routed-model/fallback metadata, with reasoning kept out of answer text.');
 	stage = 'restart-history';
 	await app.stop();

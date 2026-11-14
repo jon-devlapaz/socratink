@@ -4,11 +4,11 @@ import { join, resolve } from 'node:path';
 import pg from 'pg';
 import { mintSessionFixture } from './session-fixture.mjs';
 import { startDisposablePostgres } from './durable-postgres-fixture.mjs';
-import { appFactory, clientFor, delay, gate, oauth, sendText, startFixture, storeKey, until, userMessages } from './durable-smoke-support.mjs';
+import { appFactory, clientFor, delay, gate, oauth, sendText, startFixture, until, userMessages } from './durable-smoke-support.mjs';
 import { verifyDurableHistoryBrowser } from './durable-browser-smoke.mjs';
 
 // Failure cases: replacing auth/history instead of preserving it; guest aliases
-// lose their owner's key; two processes execute the same accepted turn; reads
+// lose their history; two processes execute the same accepted turn; reads
 // contend with execution; an owner crash or remote cancel never settles; Pi
 // persists provider credentials in its journal.
 const out = resolve(process.env.DURABLE_POSTGRES_SMOKE_OUT || '.cache/durable-postgres-smoke');
@@ -34,12 +34,6 @@ async function expectCall(marker, key, path) {
 	await until(() => fixture.calls.some((call) => call.marker === marker), `${marker} reaches provider`);
 	assert.deepEqual(fixture.calls.filter((call) => call.marker === marker).map(({ key, path }) => ({ key, path })), [{ key, path }]);
 }
-async function completed(client, marker, text) {
-	fixture.plan(marker, { text });
-	const result = await sendText(client, marker);
-	assert.equal(result.reply.text, text);
-	return result;
-}
 
 try {
 	database = await startDisposablePostgres();
@@ -54,22 +48,15 @@ try {
 	const aliasGuest = await mintSessionFixture(first.origin);
 	const aliasId = aliasGuest.userId;
 	const oldCookie = aliasGuest.cookie;
-	const alphaKey = 'sk-synthetic-durable-postgres-alpha';
-	const betaKey = 'sk-synthetic-durable-postgres-beta';
-	const rotatedKey = 'sk-synthetic-durable-postgres-alpha-rotated';
-	fixture.secrets.set(alphaKey, 'alpha');
-	fixture.secrets.set(betaKey, 'beta');
-	fixture.secrets.set(rotatedKey, 'alpha-rotated');
-	await storeKey(first, aliasGuest, alphaKey);
 	const owner = await oauth(first, aliasGuest, 'synthetic-alpha');
 	assert.equal(owner.userId, alpha.userId, 'real OAuth callback must attach to the existing account');
 	assert.ok(owner.aliases.includes(aliasId));
 	assert.equal((await fetch(`${first.origin}/api/session`, { headers: { cookie: oldCookie } })).status, 401);
 	await assertSession(first, owner);
-	report.checks.push('Actual HTTP OAuth preserves the account, rekeys guest credentials, and revokes the old guest cookie.');
+	report.checks.push('Actual HTTP OAuth preserves the account and revokes the old guest cookie.');
 	stage = 'new-pi-alias-and-metadata';
 	const piId = `${aliasId}:new-pi`;
-	let piClient = clientFor(first, owner, piId);
+	const piClient = clientFor(first, owner, piId);
 	const piText = 'A new Pi conversation belongs to the same account alias. This synthetic hint was supplied by Socratink.';
 	const reveal = { kind: 'hint', target: 'Synthetic ownership recovery' };
 	const question = { prompt: 'Which synthetic action preserves the accepted request?', choices: ['Recheck', 'Resend'], reasoning: true };
@@ -80,11 +67,10 @@ try {
 	assert.deepEqual(freshAssistant.parts.filter((part) => part.type === 'data-reveal').map((part) => part.data), [reveal]);
 	assert.equal(freshAssistant.parts.filter((part) => part.type === 'data-questionnaire').length, 1);
 	assert.ok(textOf(freshAssistant).includes(piText));
-	assert.equal(fixture.calls.filter((call) => call.marker === 'DURABLE_PI_ALIAS').every((call) => call.key === 'alpha'), true);
+	assert.equal(fixture.calls.filter((call) => call.marker === 'DURABLE_PI_ALIAS').every((call) => call.key === 'operator'), true);
 	assert.deepEqual(freshAssistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
 	assert.equal((await pool.query('SELECT count(*)::int AS count FROM socratink_pi.commits')).rows[0].count > 0, true);
 	const beta = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-beta');
-	await storeKey(first, beta, betaKey);
 	for (const method of ['GET', 'POST']) {
 		const denied = await fetch(piClient.url, { method, headers: { cookie: beta.cookie, 'content-type': 'application/json' },
 			...(method === 'POST' ? { body: JSON.stringify({ kind: 'user', body: 'Foreign attempt' }) } : {}) });
@@ -94,7 +80,7 @@ try {
 	assert.equal((await fetch(piClient.url, { headers: { cookie: oldCookie } })).status, 401);
 	report.piBrowser = await verifyDurableHistoryBrowser({ app: first, session: owner, conversationId: piId,
 		expectedText: piText, question: question.prompt, reveal: true, out: join(out, 'pi-browser') });
-	report.checks.push('New alias conversation uses Pi PostgreSQL storage and the owner credential; question, hint and route metadata survive browser reload; foreign and revoked cookies are denied.');
+	report.checks.push('New alias conversation uses Pi PostgreSQL storage and the operator route; question, hint and route metadata survive browser reload; foreign and revoked cookies are denied.');
 	stage = 'overlapping-learners';
 	const alphaGate = gate();
 	const betaGate = gate();
@@ -106,8 +92,8 @@ try {
 		alphaClient.send({ message: { kind: 'user', body: 'DURABLE_ALPHA_OVERLAP' } }),
 		betaClient.send({ message: { kind: 'user', body: 'DURABLE_BETA_OVERLAP' } }),
 	]);
-	await expectCall('DURABLE_ALPHA_OVERLAP', 'alpha', '/v1/responses');
-	await expectCall('DURABLE_BETA_OVERLAP', 'beta', '/v1/responses');
+	await expectCall('DURABLE_ALPHA_OVERLAP', 'operator', '/v1/chat/completions');
+	await expectCall('DURABLE_BETA_OVERLAP', 'operator', '/v1/chat/completions');
 	alphaGate.release();
 	betaGate.release();
 	const [alphaReply, betaReply] = await Promise.all([
@@ -118,7 +104,7 @@ try {
 	assert.equal(betaReply.text, 'Beta isolated reply.');
 	assert.equal(JSON.stringify(await alphaClient.history()).includes('Beta isolated reply'), false);
 	assert.equal(JSON.stringify(await betaClient.history()).includes('Alpha isolated reply'), false);
-	report.checks.push('Overlapping learners use separate stored keys and receive only their own history.');
+	report.checks.push('Overlapping learners use the operator route and receive only their own history.');
 	stage = 'two-process-read-and-crash';
 	const second = await apps.start();
 	const deathGate = gate();
@@ -158,15 +144,8 @@ try {
 	assert.equal(JSON.stringify(cancelledHistory).includes('Must not appear.'), false);
 	cancelGate.release();
 	report.checks.push('Cancellation from a second process reaches the active owner and durably settles aborted.');
-	stage = 'rotation-revocation-restart';
-	await storeKey(first, owner, rotatedKey);
-	piClient = clientFor(first, owner, piId);
-	await completed(piClient, 'DURABLE_ROTATED', 'The next alias turn uses the rotated key.');
-	await expectCall('DURABLE_ROTATED', 'alpha-rotated', '/v1/responses');
-	assert.equal((await fetch(`${first.origin}/api/openai-key`, { method: 'DELETE', headers: { cookie: owner.cookie } })).status, 200);
-	await completed(piClient, 'DURABLE_REVOKED', 'The next alias turn uses the operator fallback.');
-	await expectCall('DURABLE_REVOKED', 'operator', '/v1/chat/completions');
-	const beforeRestart = await piClient.history();
+	stage = 'restart';
+	const beforeRestart = await clientFor(first, owner, piId).history();
 	await first.stop();
 	await second.stop();
 	first = await apps.start();
@@ -176,11 +155,8 @@ try {
 	assert.equal(signedInAgain.userId, owner.userId);
 	assert.ok(signedInAgain.aliases.includes(aliasId));
 	assert.deepEqual(await clientFor(first, signedInAgain, piId).history(), beforeRestart);
-	report.checks.push('Key rotation/revocation affect subsequent alias turns; all histories and signed identity survive full restart and fresh OAuth login to the same account.');
+	report.checks.push('All histories and signed identity survive full restart and fresh OAuth login to the same account.');
 	stage = 'persistence-safety';
-	const credentials = (await pool.query('SELECT ciphertext FROM socratink_credentials')).rows;
-	assert.equal(credentials.length, 1, 'only beta key remains after alpha revocation');
-	assert.match(credentials[0].ciphertext, /^v1\./);
 	const tables = (await pool.query("SELECT tablename FROM pg_tables WHERE schemaname='socratink_pi' ORDER BY tablename")).rows;
 	assert.ok(tables.length > 0);
 	for (const { tablename } of tables) {
@@ -189,7 +165,7 @@ try {
 	}
 	for (const secret of fixture.secrets.keys()) assert.equal(apps.hasRawLog(secret), false, 'application logs must not contain raw provider keys');
 	assert.deepEqual(fixture.errors, []);
-	report.checks.push('Remaining credential is encrypted; Pi journal and application log contain no synthetic raw keys.');
+	report.checks.push('Pi journal and application log contain no synthetic raw keys.');
 	report.ok = true;
 } catch (error) {
 	report.failure = { stage, message: apps?.redact(error.stack ?? error) ?? String(error) };
