@@ -24,7 +24,7 @@ The app provides a single-learner conversation with an AI learning partner:
   ownership checks, rate limits, and encrypted learner API-key storage.
 
 Conversations run through `src/server/durable/` with the teaching policy
-(the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`. See [migration scope and limits](docs/pi-durable-preview.md).
+(the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`.
 
 The owning implementation is `src/learning/`, `src/app.ts`, and their
 linked UI, configuration, and server modules. Setup and software checks are

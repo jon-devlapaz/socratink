@@ -1,12 +1,8 @@
 .git
 .agents
-.bt
 .cache
 .claude
-.codex
-.cursor
 .env*
-.omx
 .npmrc
 .pnpm-store
 .vercel
