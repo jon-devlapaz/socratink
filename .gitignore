@@ -26,13 +26,11 @@ pnpm-debug.log*
 
 # local config
 .idea/
-.bt/
 .vscode/settings.json
 *.code-workspace
 
 # other
 *.tsbuildinfo
-vitest-results.json
 
 # job data (local development)
 data/
@@ -41,30 +39,5 @@ data/
 .artifacts/
 artifacts/
 
-# local Rivet editor project
-*.rivet-project
-
-# Cursor installer lockfile; Tink uses .tink/skills.lock
-skills-lock.json
-
-# Python bytecode and local operator tooling from Brain/Docent skills
-__pycache__/
-.venv/
-pyproject.toml
-uv.lock
-.variate/
-# Agent scratch logs; kept on disk, not source
-.audit/
-.cursor/*
-!.cursor/agents/
-!.cursor/agents/*.md
-praxist_task/
-
-# Cold archives live outside the product repo (see research/README.md)
-research/_cold-archive/
-
 # Local agent notes and scratch; shared project guidance lives in tracked docs
 .agents/
-
-# Nested private doctrine vault — separate repository
-socratink-brain/

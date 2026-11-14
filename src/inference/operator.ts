@@ -3,7 +3,6 @@ import { chatProviderId, type ChatModel } from '../config/chat-model.ts';
 
 export type ChatModelEnvironment = {
 	readonly VERCEL?: string;
-	readonly NF_PROJECT_ID?: string;
 	readonly JON_LOCAL_API_KEY?: string;
 	readonly JON_LOCAL_BASE_URL?: string;
 	readonly JON_LOCAL_MODEL_ID?: string;
@@ -56,7 +55,7 @@ function hostedLocalOverride(environment: ChatModelEnvironment): ChatModel | und
 
 /** The operator's model, or undefined when a hosted deploy has no credential. */
 export function resolveChatModel(environment: ChatModelEnvironment): ChatModel | undefined {
-	if (environment.VERCEL === '1' || environment.NF_PROJECT_ID) {
+	if (environment.VERCEL === '1') {
 		const override = hostedLocalOverride(environment);
 		if (override) return override;
 

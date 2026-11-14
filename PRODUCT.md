@@ -1,8 +1,6 @@
 # Product
 
-Socratink's direction is defined in the Brain's
-[North Star](socratink-brain/NORTH-STAR.md), with a
-[source-repository fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md).
+Socratink's direction is defined in the [North Star](NORTH-STAR.md).
 This file describes the current application, not the full ambition.
 
 ## Implemented boundary
@@ -26,7 +24,7 @@ The app provides a single-learner conversation with an AI learning partner:
   ownership checks, rate limits, and encrypted learner API-key storage.
 
 Conversations run through `src/server/durable/` with the teaching policy
-(the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`. See [migration scope and limits](docs/pi-durable-preview.md).
+(the vendored skill plus Socratink bindings) in `src/learning/` and model routing in `src/inference/`.
 
 The owning implementation is `src/learning/`, `src/app.ts`, and their
 linked UI, configuration, and server modules. Setup and software checks are
@@ -34,9 +32,9 @@ in [README.md](README.md).
 
 ## Direction and limits
 
-Personal practice is one part of the North Star. Dialogue rooms, simulated
-audiences, one-on-one and group debates, shared projects, teacher workflows,
-and delayed independent demonstrations remain proposed capabilities.
+The app serves individual learners. Speaking to an audience and arguing a
+case with other people are later directions, not built capabilities.
+A later-day retention re-check is also not built.
 
 The tutor rates subskill levels and mastery inside a conversation by the
 skill's strict evaluation rules. That rating is the tutor's judgment, not an

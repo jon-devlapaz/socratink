@@ -47,10 +47,9 @@ function assertUserKeyError(error, expected) {
 	assert.doesNotMatch(error.message, new RegExp(plaintext));
 }
 
-test('fails closed in production, Northflank, or Vercel when CREDENTIALS_SECRET is missing', () => {
+test('fails closed in production or Vercel when CREDENTIALS_SECRET is missing', () => {
 	for (const environment of [
 		{ NODE_ENV: 'production' },
-		{ NF_PROJECT_ID: 'socratink' },
 		{ VERCEL: '1' },
 	]) {
 		assert.throws(

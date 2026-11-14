@@ -4,12 +4,8 @@ Socratink is a single-learner AI conversation that runs on
 [Pi Durable](https://github.com/earendil-works/pi/tree/main/packages/durable).
 It supports open dialogue, structured
 question cards, and records of assistance. See [PRODUCT.md](PRODUCT.md) for
-the current boundary and the Brain's
-[North Star](socratink-brain/NORTH-STAR.md) for the intended direction
-([source fallback](https://github.com/jon-devlapaz/socratink-brain/blob/master/NORTH-STAR.md)).
-
-See [the Pi migration notes](docs/pi-durable-preview.md) for continuity, verification,
-and operational limits. Merges to `main` automatically deploy to production.
+the current boundary and the [North Star](NORTH-STAR.md) for the intended
+direction.
 
 ## Run locally
 
@@ -37,24 +33,23 @@ the matching `*_CLIENT_ID` and `*_CLIENT_SECRET` settings plus
 for account linking and the limits of the guest allowance.
 
 Conversations are scoped to the session user and permitted aliases. Learner
-API keys are encrypted in the product credential store. The active model route
-depends on the connected credentials and selected model; otherwise it uses
-the operator provider. Model routing is owned by `src/inference/`: the learner's
+API keys are encrypted in the product credential store.
+Model routing is owned by `src/inference/`: the learner's
 own key first, then the operator. A route the learner chose never falls back to
 the operator's key. Model choices are listed in `src/config/chat-model.ts`.
 
-Production, Vercel, and Northflank deployments require `DATABASE_URL`,
-`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel/Northflank, a public HTTPS
+Merges to `main` deploy to production. A preview deploy alone does not.
+Keep the database, `SESSION_SECRET`, and `CREDENTIALS_SECRET` to preserve
+users, cookies, encrypted keys, and history.
+
+Production and Vercel deployments require `DATABASE_URL`,
+`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel, a public HTTPS
 `JON_LOCAL_BASE_URL` with `JON_LOCAL_API_KEY` selects the operator endpoint;
 otherwise the app selects AI Gateway. Gateway credentials come from
 `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`. With none of these, inference is
 unconfigured: `/healthz` returns 503 and a send is refused with
 `inference_unconfigured` unless the learner has connected their own key.
 
-The `Dockerfile` serves the built Node app on port `3000`, with `/healthz` for
-readiness and the operator's inference route (`gateway` or `local`). Retain the
-single-replica, recreate-deployment constraint until multi-instance hosting is
-verified.
 Use private database connectivity. Local checks do not validate deployed
 identity settings, external providers, multi-instance hosting, or suitability
 for a particular learner population.
@@ -67,7 +62,6 @@ pnpm smoke
 pnpm smoke:durable
 pnpm test:durable:postgres
 pnpm smoke:durable:postgres
-pnpm audit:trellis
 pnpm audit --prod
 ```
 
@@ -112,9 +106,8 @@ and recovery failures, including failures after an HTTP 202 admission. The
 monitor publishes counts only; it never copies Vercel error bodies, request
 paths, learner text, or credentials into public Actions logs.
 
-Pi emits the same constant failure and recovery categories, including actual
-model retries and recovery of interrupted turns. It never logs provider error
-bodies. Request failures also produce a constant category and generic response.
+Pi emits the same failure categories for model retries and interrupted turns.
+Provider error bodies are not logged. Request failures get a generic response.
 
 Configure `VERCEL_TOKEN` as an environment secret in `runtime-monitor`, which
 is restricted to `main`. Use a token scoped to the Socratink Vercel project;
