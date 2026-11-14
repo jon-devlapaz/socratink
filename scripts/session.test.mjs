@@ -77,10 +77,9 @@ function decodedPayload(cookiePair) {
 	return parseSessionCookieValue(encoded.slice(0, encoded.lastIndexOf('.')));
 }
 
-test('fails closed in production, Northflank, or Vercel when SESSION_SECRET is missing', () => {
+test('fails closed in production or Vercel when SESSION_SECRET is missing', () => {
 	for (const environment of [
 		{ NODE_ENV: 'production' },
-		{ NF_PROJECT_ID: 'socratink' },
 		{ VERCEL: '1' },
 	]) {
 		assert.throws(
@@ -307,10 +306,10 @@ test('signed and Chat admission each consume exactly one shared allowance', asyn
 });
 
 test('secure cookies follow only the hosted security environment', () => {
-	for (const environment of [{ NODE_ENV: 'production' }, { NF_PROJECT_ID: 'x' }, { VERCEL: '1' }]) {
+	for (const environment of [{ NODE_ENV: 'production' }, { VERCEL: '1' }]) {
 		assert.equal(sessionUsesSecureCookie(environment), true);
 	}
-	for (const environment of [{}, { NODE_ENV: 'test' }, { VERCEL: '0' }, { NF_PROJECT_ID: '' }]) {
+	for (const environment of [{}, { NODE_ENV: 'test' }, { VERCEL: '0' }]) {
 		assert.equal(sessionUsesSecureCookie(environment), false);
 	}
 });

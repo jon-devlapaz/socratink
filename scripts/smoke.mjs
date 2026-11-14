@@ -304,7 +304,6 @@ function startApp(appPort, providerPort) {
 			NODE_ENV: 'development',
 			DATABASE_URL: '',
 			VERCEL: '',
-			NF_PROJECT_ID: '',
 			GOOGLE_CLIENT_ID: '',
 			GOOGLE_CLIENT_SECRET: '',
 			GITHUB_CLIENT_ID: '',

@@ -106,7 +106,7 @@ import {
 }
 
 {
-	assert.deepEqual(resolveChatModel({ NF_PROJECT_ID: 'socratink', AI_GATEWAY_API_KEY: 'gateway-key' }), {
+	assert.deepEqual(resolveChatModel({ VERCEL: '1', AI_GATEWAY_API_KEY: 'gateway-key' }), {
 		providerId: chatProviderId,
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
 		modelId: appConfig.vercelAiGatewayModelId,
@@ -119,7 +119,6 @@ import {
 
 {
 	// A hosted deploy with no credential is unconfigured, not a crash at import.
-	assert.equal(resolveChatModel({ NF_PROJECT_ID: 'socratink' }), undefined);
 	assert.equal(resolveChatModel({ VERCEL: '1' }), undefined);
 }
 

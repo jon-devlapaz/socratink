@@ -42,18 +42,14 @@ Merges to `main` deploy to production. A preview deploy alone does not.
 Keep the database, `SESSION_SECRET`, and `CREDENTIALS_SECRET` to preserve
 users, cookies, encrypted keys, and history.
 
-Production, Vercel, and Northflank deployments require `DATABASE_URL`,
-`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel/Northflank, a public HTTPS
+Production and Vercel deployments require `DATABASE_URL`,
+`SESSION_SECRET`, and `CREDENTIALS_SECRET`. On Vercel, a public HTTPS
 `JON_LOCAL_BASE_URL` with `JON_LOCAL_API_KEY` selects the operator endpoint;
 otherwise the app selects AI Gateway. Gateway credentials come from
 `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN`. With none of these, inference is
 unconfigured: `/healthz` returns 503 and a send is refused with
 `inference_unconfigured` unless the learner has connected their own key.
 
-The `Dockerfile` serves the built Node app on port `3000`, with `/healthz` for
-readiness and the operator's inference route (`gateway` or `local`). Retain the
-single-replica, recreate-deployment constraint until multi-instance hosting is
-verified.
 Use private database connectivity. Local checks do not validate deployed
 identity settings, external providers, multi-instance hosting, or suitability
 for a particular learner population.
