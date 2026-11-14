@@ -145,7 +145,7 @@ try {
 	cancelGate.release();
 	report.checks.push('Cancellation from a second process reaches the active owner and durably settles aborted.');
 	stage = 'restart';
-	const beforeRestart = await piClient.history();
+	const beforeRestart = await clientFor(first, owner, piId).history();
 	await first.stop();
 	await second.stop();
 	first = await apps.start();

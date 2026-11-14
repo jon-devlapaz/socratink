@@ -24,6 +24,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const container = `socratink-postgres-proof-${process.pid}-${Date.now()}`;
 const password = randomBytes(24).toString('hex');
 const sessionSecret = randomBytes(32).toString('hex');
+const credentialSecret = randomBytes(32).toString('hex');
 const operatorKey = 'synthetic-postgres-operator-key';
 const preload = fileURLToPath(new URL('./postgres-smoke-preload.mjs', import.meta.url));
 const report = {
@@ -46,7 +47,7 @@ let connection;
 
 function redact(value) {
 	let text = String(value);
-	for (const secret of [password, sessionSecret, operatorKey]) {
+	for (const secret of [password, sessionSecret, credentialSecret, operatorKey]) {
 		text = text.replaceAll(secret, '[redacted]');
 	}
 	return text.replace(/postgres(?:ql)?:\/\/[^\s'"<>]+/g, '[owned database URL]');
@@ -107,6 +108,8 @@ async function startApp(root, database) {
 			PORT: String(port),
 			DATABASE_URL: databaseUrl,
 			SESSION_SECRET: sessionSecret,
+			// Builds before the single model route need it to boot for rollback.
+			CREDENTIALS_SECRET: credentialSecret,
 			JON_LOCAL_BASE_URL: `${report.fixtureOrigin}/v1`,
 			JON_LOCAL_MODEL_ID: 'auto',
 			JON_LOCAL_API_KEY: operatorKey,
