@@ -45,7 +45,7 @@
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:client-id": "node --test scripts/client-id.test.mjs",
 		"test:static-routing": "node --test scripts/static-routing.test.mjs",
-		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs",
+		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs scripts/monitor-dispatch.test.mjs scripts/monitor-cadence.test.mjs",
 		"test:durable": "node --test src/inference/*.test.ts src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs scripts/durable-reconnect.test.mjs",
 		"test:durable:postgres": "DURABLE_TEST_POSTGRES=1 node --test scripts/durable-storage.test.mjs",
 		"smoke:durable": "node scripts/durable-smoke.mjs",

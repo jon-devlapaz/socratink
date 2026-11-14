@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: socratink-runtime-monitor-${{ github.ref }}-${{ inputs.preview_deployment && 'verification' || 'production' }}
@@ -19,6 +20,7 @@ concurrency:
 
 jobs:
   monitor:
+    name: ${{ inputs.preview_deployment && 'Preview monitor' || 'Production monitor' }}
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -48,7 +50,14 @@ jobs:
           NODE
 
       - name: Check runtime failures
+        if: always() && !cancelled()
         run: node scripts/runtime-monitor.mjs
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           MONITOR_PREVIEW_DEPLOYMENT: ${{ inputs.preview_deployment || '' }}
+
+      - name: Check monitor cadence
+        if: always() && !cancelled() && inputs.preview_deployment == ''
+        run: node scripts/monitor-cadence.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
