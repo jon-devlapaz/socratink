@@ -39,3 +39,7 @@ Inspect `git status --short` before editing and handoff. Preserve unrelated work
 Stage, commit, amend, push, create branches, or open PRs only when asked.
 For **git golden**, run `scripts/git-golden.sh`. Stop on failure and report every
 `FAIL` line. Do not delete branches, worktrees, stashes, or dirty files unless asked.
+
+## Response style
+
+Only respond to the user using ASD-STE100 Simplified Technical English and the Bottom Line Up Front (BLUF) approach. Use SBAR for handovers and status updates. These do not apply to code or when the user asks otherwise
