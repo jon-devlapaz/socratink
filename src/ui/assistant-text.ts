@@ -4,8 +4,17 @@ import { visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 const internalAssistantMarkersPattern = /^(?:«[A-Z][A-Z0-9_]*»\s*)+/u;
 
+const internalToolNamePattern = /\b(?:mark_reveal|present_question)\b/u;
+
 export function learnerVisibleAssistantText(text: string): string {
-	return text.replace(internalAssistantMarkersPattern, '');
+	const visible = text.replace(internalAssistantMarkersPattern, '');
+	if (!internalToolNamePattern.test(visible)) return visible;
+	return visible
+		.replace(/[ \t]*\((?:[^()]|\([^()]*\))*(?:\)|$)/gu,
+			(part) => internalToolNamePattern.test(part) ? '' : part)
+		.replace(/[^.!?\n]+(?:[.!?]+|$)/gu,
+			(sentence) => internalToolNamePattern.test(sentence) ? '' : sentence)
+		.trim();
 }
 
 export function assistantTurnHasVisibleContent(input: {

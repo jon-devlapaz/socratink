@@ -24,8 +24,8 @@ export function focusAfterRequestStatePaint(
 	elements: Pick<RequestControlElements, 'input' | 'activeTurn'>,
 ): void {
 	if (chatRequestControls(state).composerLocked) {
-		const action = elements.activeTurn.querySelector<HTMLButtonElement>(
-			'.request-actions .request-action',
+		const action = elements.activeTurn.querySelector<HTMLElement>(
+			'.request-actions .request-action, .chat-gate-btn',
 		);
 		if (action) {
 			action.focus();

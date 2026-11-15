@@ -45,6 +45,12 @@ export type ChatRequestState =
 	  }
 	| { kind: 'completed'; text: string; reply: WireReply };
 
+export function isGuestTurnLimitError(state: ChatRequestState): boolean {
+	return state.kind === 'terminal'
+		&& state.outcome === 'not-admitted'
+		&& state.code === 'guest_turn_limit';
+}
+
 export function chatRequestControls(state: ChatRequestState): {
 	busy: boolean;
 	composerLocked: boolean;
@@ -61,7 +67,7 @@ export function chatRequestControls(state: ChatRequestState): {
 		case 'recovery':
 			return { busy: false, composerLocked: true, startOverDisabled: false };
 		case 'terminal':
-			return { busy: false, composerLocked: false, startOverDisabled: false };
+			return { busy: false, composerLocked: isGuestTurnLimitError(state), startOverDisabled: false };
 		default: {
 			const exhaustive: never = state;
 			return exhaustive;

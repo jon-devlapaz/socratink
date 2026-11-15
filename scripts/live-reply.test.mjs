@@ -73,6 +73,15 @@ test('leading markers are stripped when complete and held while half-arrived', (
 	assert.equal(fold(createLiveReply(learner), [delta('«not a marker')]).markdown, '«not a marker');
 });
 
+test('live text hides completed and unfinished bookkeeping that names internal tools', () => {
+	const live = createLiveReply(learner);
+	assert.equal(fold(live, [delta('What changes?')]).markdown, 'What changes?');
+	assert.equal(fold(live, [delta(' (No mark_reveal needed')]).markdown, 'What changes?');
+	assert.equal(fold(live, [delta(' — diagnostic only.)')]).markdown, 'What changes?');
+	assert.equal(fold(live, [delta(' Try again.')]).markdown, 'What changes? Try again.');
+	assert.equal(fold(createLiveReply(learner), [delta('I will call present_question now.')]).markdown, '');
+});
+
 test('only text deltas reach the learner; reasoning and other events do not', () => {
 	const live = createLiveReply(learner);
 	const changed = [

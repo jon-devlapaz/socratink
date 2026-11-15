@@ -5,6 +5,7 @@ import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
+	isGuestTurnLimitError,
 	type ChatRequestState,
 	openChatConversation,
 	startNewChatConversation,
@@ -240,7 +241,7 @@ export function mountChatSurface(options: Readonly<{
 					return createActiveTurn(item, {
 						announce: kind === 'hold' && isLast,
 						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && item.role !== 'Assistant',
-						interactive: isLast && Boolean(item.questionnaire),
+						interactive: isLast && Boolean(item.questionnaire) && !chatRequestControls(requestState).composerLocked,
 						steering: isLast && item.role === 'Assistant' && requestState.kind === 'idle',
 					}, turnSinks, {
 						onQuestionnaireSubmit: (answers) => {
@@ -400,6 +401,11 @@ export function mountChatSurface(options: Readonly<{
 			input.focus();
 			return;
 		}
+		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
+			input.value = state.text;
+			const last = turns.at(-1);
+			if (last?.role === 'You' && last.text === state.text) turns = turns.slice(0, -1);
+		}
 		applyRequestControls(state);
 		await paint('hold');
 		focusAfterRequestStatePaint(state, elements);
@@ -505,12 +511,4 @@ function queryChatSurface(): ChatSurfaceElements {
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};
-}
-
-function isGuestTurnLimitError(state: ChatRequestState): boolean {
-	return (
-		state.kind === 'terminal'
-		&& state.outcome === 'not-admitted'
-		&& state.code === 'guest_turn_limit'
-	);
 }
