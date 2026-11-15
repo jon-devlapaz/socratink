@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
 	displayLabel,
+	displayedAssistantTurn,
 	displayedLearnerTurn,
 	groupEarlierSteps,
 	splitCurrentTurns,
@@ -368,6 +369,29 @@ test('strips internal assistant markers before history is shown', () => {
 		turns[1]?.text,
 		'(Just making sure we are on the same page!) Photosynthesis needs light.',
 	);
+});
+
+test('assistant text removes only parentheticals or sentences naming internal tools', () => {
+	const cases = [
+		['What changes? (No mark_reveal needed — this was a diagnostic question with no reveal.)', 'What changes?'],
+		['Try again (recorded with mark_reveal). What changes?', 'Try again. What changes?'],
+		['What changes? No mark_reveal is needed. Try again.', 'What changes? Try again.'],
+		['I will use present_question now! What changes?', 'What changes?'],
+		['What changes? (No mark_reveal needed (diagnostic).)', 'What changes?'],
+		['What changes?\n\n(No `mark_reveal` needed.)', 'What changes?'],
+		['Use a diagram (not a formula). What changes?', 'Use a diagram (not a formula). What changes?'],
+		['A reveal can help. Tools can help too.', 'A reveal can help. Tools can help too.'],
+		['The present_questionnaire field is data.', 'The present_questionnaire field is data.'],
+	];
+	for (const [text, expected] of cases) {
+		assert.equal(learnerVisibleAssistantText(text), expected);
+		assert.equal(displayedAssistantTurn({ text })?.text, expected);
+		const history = visibleTurnsFromHistory({ settlements: [], messages: [
+			{ role: 'assistant', display: 'visible', parts: [{ type: 'text', text }] },
+		] });
+		assert.equal(history[0]?.text, expected);
+	}
+	assert.equal(displayedAssistantTurn({ text: '(No mark_reveal needed.)' }), undefined);
 });
 
 test('learnerVisibleAssistantText removes stacked internal markers', () => {

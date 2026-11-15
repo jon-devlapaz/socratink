@@ -1,3 +1,4 @@
+import { guestTurnLimit } from '../config/guest-turns.ts';
 import type { AuthProviders } from './session.ts';
 
 export function hasAuthProvider(providers: AuthProviders): boolean {
@@ -13,7 +14,7 @@ export function createAuthGateCard(providers: AuthProviders): HTMLElement {
 	const message = document.createElement('p');
 	message.className = 'chat-gate-message';
 	message.textContent =
-		'You\u2019ve had 3 turns. Sign in to save your conversation and keep learning.';
+		`You\u2019ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`;
 	card.append(message);
 
 	const actions = document.createElement('div');

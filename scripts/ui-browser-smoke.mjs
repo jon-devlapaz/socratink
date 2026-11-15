@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { appConfig } from '../src/config/app.config.ts';
+import { guestTurnLimit } from '../src/server/guest-turns.ts';
+import { formatSteeringMessage } from '../src/ui/steering.ts';
 
 export async function verifyUiBrowser({ browser, origin, session, out }) {
 	await mkdir(out, { recursive: true });
@@ -34,6 +36,45 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			} finally {
 				await context.close();
 			}
+		}
+	}
+
+	for (const width of [390, 1280]) {
+		for (const source of ['composer', 'steering', 'question']) {
+			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
+				fixture.mode = 'guest-limit';
+				await page.setViewportSize({ width, height: 900 });
+				await page.goto(origin);
+				await page.locator('#active-turn .questionnaire').waitFor();
+				await page.evaluate(() => {
+					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
+				});
+				if (source === 'composer') await send(page, 'Keep my unsent question');
+				else if (source === 'steering') await page.getByRole('button', { name: 'Too fast: need a smaller step', exact: true }).click();
+				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
+				await page.locator('.chat-gate-card').waitFor();
+				const expected = source === 'composer' ? 'Keep my unsent question'
+					: source === 'steering' ? formatSteeringMessage('smaller-step')
+						: 'Questionnaire answers:\n- Which step?: Asked for a hint.';
+				assert.deepEqual(fixture.sent, [expected]);
+				assert.equal(await page.locator('#message').inputValue(), expected);
+				assert.equal(await page.locator('#message').isDisabled(), true);
+				assert.equal(await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(), true);
+				assert.equal(await page.locator('.chat-gate-message').innerText(),
+					`You’ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`);
+				assert.equal(await page.locator('.chat-gate-card a').count(), 2);
+				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
+				assert.equal(await page.locator('#active-turn .questionnaire, #active-turn .steering-bar').count(), 0);
+				await page.locator('#chat').evaluate(form => form.requestSubmit());
+				await page.evaluate(() => window.guestButtons.forEach(button => button.click()));
+				await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+				assert.deepEqual(fixture.sent, [expected]);
+				assert.equal(await page.locator('.chat-gate-card').count(), 1);
+				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+				await page.reload();
+				await page.locator('#active-turn .questionnaire').waitFor();
+				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
+			});
 		}
 	}
 
@@ -146,7 +187,7 @@ function createServices(origin, session) {
 			if (url.pathname === appConfig.sessionPath) {
 				return json({ userId: session.userId, aliases: [], kind: 'registered' });
 			}
-			if (url.pathname === appConfig.authProvidersPath) return json({ google: false, github: false });
+			if (url.pathname === appConfig.authProvidersPath) return json({ google: fixture.mode === 'guest-limit', github: fixture.mode === 'guest-limit' });
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
 			if (url.pathname.endsWith('/abort')) {
 				fixture.aborts += 1;
@@ -156,6 +197,9 @@ function createServices(origin, session) {
 			if (route.request().method() === 'POST') {
 				fixture.modelHeaders.push(route.request().headers()['x-socratink-chat-model']);
 				fixture.sent.push(route.request().postDataJSON().body);
+				if (fixture.mode === 'guest-limit') {
+					return json({ error: { type: 'guest_turn_limit', message: 'Sign in to continue this conversation.' } }, 403);
+				}
 				if (fixture.mode === 'admission-failure' && fixture.sent.length === 1) {
 					return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 				}
@@ -163,6 +207,15 @@ function createServices(origin, session) {
 				return json({ submissionId }, 202);
 			}
 			if (!url.pathname.endsWith('/events')) {
+				if (fixture.mode === 'guest-limit') return json({ messages: [{
+					role: 'assistant', display: 'visible', parts: [
+						{ type: 'text', text: 'What would you check?' },
+						{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
+							name: 'item', prompt: 'Which step?', required: true, multiple: false,
+							choices: [{ value: 'check', label: 'Check' }, { value: 'retry', label: 'Retry' }],
+						}] } },
+					],
+				}], settlements: [] });
 				return json({ messages: completed ? [{ role: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply' }] }] : [], settlements: [] });
 			}
 			reads += 1;

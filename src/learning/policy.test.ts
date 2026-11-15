@@ -18,6 +18,10 @@ test('the teaching policy is the vendored socratic-tutor skill followed by Socra
 	}
 });
 
+test('the tutor keeps tool names and bookkeeping out of learner text', () => {
+	assert.ok(systemPrompt.includes('Never mention internal tools or bookkeeping to the learner.'));
+});
+
 test('questions use current validation and presentation; reveals retain provenance without ending the turn', () => {
 	const question = executeLearningTool('present_question', { prompt: ' Which step? ', choices: [' Recheck ', 'Retry'], reasoning: true });
 	assert.equal(question.terminate, true);

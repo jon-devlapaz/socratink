@@ -4,11 +4,12 @@ import {
 	sessionUsesSecureCookie,
 	type SessionEnvironment,
 } from '../config/session.ts';
+import { guestTurnLimit } from '../config/guest-turns.ts';
 import { readSession } from './session.ts';
 import type { AuthDb } from './auth-db.ts';
 
 export const guestTurnsCookieName = 'socratink-guest-turns';
-export const guestTurnLimit = 3;
+export { guestTurnLimit } from '../config/guest-turns.ts';
 export const guestTurnsHeader = 'X-Socratink-Guest-Turns';
 
 export const guestTurnLimitError = {

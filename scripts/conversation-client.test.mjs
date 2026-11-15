@@ -527,6 +527,9 @@ test('not-admitted terminal state carries the envelope error code', async () => 
 	assert.equal(state.kind, 'terminal');
 	assert.equal(state.outcome, 'not-admitted');
 	assert.equal(state.code, 'guest_turn_limit');
+	assert.deepEqual(chatRequestControls(state), {
+		busy: false, composerLocked: true, startOverDisabled: false,
+	});
 });
 
 test('a confirmed not-admitted send can retry once', async () => {

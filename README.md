@@ -26,8 +26,9 @@ under `.cache/`. Configuration owners are `src/config/database.ts`, `auth.ts`,
 
 ## Identity, models, and hosted configuration
 
-The app creates a signed guest session. Its three-turn guest allowance leads
-to sign-in when OAuth providers are configured. Google and GitHub sign-in use
+The app creates a signed guest session. Its allowance is set by
+`guestTurnLimit` in `src/config/guest-turns.ts` and leads to sign-in when OAuth
+providers are configured. Google and GitHub sign-in use
 the matching `*_CLIENT_ID` and `*_CLIENT_SECRET` settings plus
 `AUTH_REDIRECT_BASE_URL`; see [the authentication flow](src/ui/auth/README.md)
 for account linking and the limits of the guest allowance.

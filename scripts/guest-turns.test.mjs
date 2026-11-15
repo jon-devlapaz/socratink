@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
 import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import {
+	guestTurnLimit,
 	guestTurnLimitError,
 	guestTurnsHeader,
 	guestTurnGateMiddleware,
@@ -59,7 +60,7 @@ test('guest turn gate allows registered users without turn cap', async () => {
 		assert.equal(registeredRes.status, 200);
 		const sessionCookie = cookiePairFromResponse(registeredRes);
 
-		for (let i = 0; i < 5; i++) {
+		for (let i = 0; i < guestTurnLimit + 2; i++) {
 			const turnRes = await app.request(`${appConfig.chatAgentPath}/${userId}:turn-${i}`, {
 				method: 'POST',
 				headers: { Cookie: sessionCookie },
@@ -70,7 +71,11 @@ test('guest turn gate allows registered users without turn cap', async () => {
 	});
 });
 
-test('guest turn gate enforces 3-turn limit for guests and increments counter', async () => {
+test('guest allowance is ten turns', () => {
+	assert.equal(guestTurnLimit, 10);
+});
+
+test(`guest turn gate enforces ${guestTurnLimit}-turn limit for guests and increments counter`, async () => {
 	await withAuthDb(async (authDb) => {
 		const app = new Hono();
 		app.post(appConfig.sessionPath, async (context) => {
@@ -87,7 +92,7 @@ test('guest turn gate enforces 3-turn limit for guests and increments counter', 
 		const { userId } = await sessionRes.json();
 		let cookieHeader = cookiePairFromResponse(sessionRes);
 
-		for (let turn = 1; turn <= 3; turn++) {
+		for (let turn = 1; turn <= guestTurnLimit; turn++) {
 			const turnRes = await app.request(`${appConfig.chatAgentPath}/${userId}:turn-${turn}`, {
 				method: 'POST',
 				headers: { Cookie: cookieHeader },
@@ -97,7 +102,7 @@ test('guest turn gate enforces 3-turn limit for guests and increments counter', 
 			cookieHeader = mergeCookies(turnRes, cookieHeader);
 		}
 
-		const blockedRes = await app.request(`${appConfig.chatAgentPath}/${userId}:turn-4`, {
+		const blockedRes = await app.request(`${appConfig.chatAgentPath}/${userId}:turn-${guestTurnLimit + 1}`, {
 			method: 'POST',
 			headers: { Cookie: cookieHeader },
 		});
@@ -136,10 +141,16 @@ test('guest quota survives raw downstream responses and keeps attempt charging a
 			assert.ok(response.headers.getSetCookie().some((value) => value.startsWith('downstream=preserved;')));
 			cookie = mergeCookies(response, cookie);
 		}
+		for (let turn = 4; turn <= guestTurnLimit; turn++) {
+			const response = await app.request(path, { method: 'POST', headers: { cookie } });
+			assert.equal(response.status, 202);
+			assert.equal(response.headers.get(guestTurnsHeader), String(turn));
+			cookie = mergeCookies(response, cookie);
+		}
 		const blocked = await app.request(path, { method: 'POST', headers: { cookie } });
 		assert.equal(blocked.status, 403);
 		assert.deepEqual(await blocked.json(), { error: guestTurnLimitError });
-		assert.equal(handled, 3, 'quota rejection happens before downstream admission');
+		assert.equal(handled, guestTurnLimit, 'quota rejection happens before downstream admission');
 		for (const [method, suffix] of [['GET', ''], ['POST', '/abort']]) {
 			const response = await app.request(path + suffix, { method, headers: { cookie } });
 			assert.equal(response.status, 202);

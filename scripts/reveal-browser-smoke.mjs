@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { namespacedConversationId } from '../src/config/session.ts';
+import { guestTurnLimit, guestTurnsHeader } from '../src/server/guest-turns.ts';
 
 // Browser proof uses only the fake provider and synthetic session from smoke.
 export async function verifyRevealBrowser({ origin, session, savedConversationId, initialMessage, assistanceText,
@@ -28,11 +29,13 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 	}, namespacedConversationId(session.userId, 'reveal-browser'));
 	const page = await context.newPage();
 	const artifacts = [];
+	let guestTurns = 0;
 	async function answer(choice, reason) {
 		const form = page.locator('#active-turn .questionnaire');
 		await form.getByText(choice, { exact: true }).click();
 		await form.locator('input[type="text"]').fill(reason);
 		await form.evaluate((node) => node.requestSubmit());
+		guestTurns += 1;
 	}
 	try {
 		const { verifyUiBrowser } = await import('./ui-browser-smoke.mjs');
@@ -96,6 +99,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		artifacts.push({ kind: 'preferences', restoredBeforeAppModule: true, themeAndTextSizeSurviveReload: true });
 		await page.locator('#message').fill(initialMessage);
 		await page.locator('#chat').evaluate((form) => form.requestSubmit());
+		guestTurns += 1;
 		await answer(baselineChoice, baselineReason);
 		await answer(comparisonChoice, comparisonReason);
 		// The settled turn, not the pending turn that may show the same text live.
@@ -128,10 +132,16 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 			await page.screenshot({ path: `${out}/${width}-restored.png` });
 			artifacts.push({ width, live, geometry, accessibility: await supplied.ariaSnapshot() });
 		}
-		const fourthTurnResponse = page.waitForResponse(response =>
+		for (let turn = guestTurns; turn < guestTurnLimit; turn++) {
+			const response = await context.request.post(`${origin}/api/agents/chat/not-owned`);
+			assert.equal(response.status(), 403);
+			assert.notEqual((await response.json()).error.type, 'guest_turn_limit');
+			assert.equal(response.headers()[guestTurnsHeader.toLowerCase()], String(turn + 1));
+		}
+		const limitResponse = page.waitForResponse(response =>
 			response.request().method() === 'POST' && response.url().startsWith(`${origin}/api/agents/chat/`));
 		await answer(revisedChoice, revisedReason);
-		const rejected = await fourthTurnResponse;
+		const rejected = await limitResponse;
 		assert.equal(rejected.status(), 403);
 		assert.equal((await rejected.json()).error.type, 'guest_turn_limit');
 		const notSent = page.locator('#active-turn .request-state.not-admitted');
@@ -142,7 +152,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.reload();
 		await supplied.waitFor();
 		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
-		artifacts.push({ kind: 'guest-limit', fourthTurnRejected: true, priorRevealRestored: true });
+		artifacts.push({ kind: 'guest-limit', rejectedTurn: guestTurnLimit + 1, priorRevealRestored: true });
 		await page.evaluate(id => localStorage.setItem('socratink-chat-conversation-id', id), savedConversationId);
 		await page.reload();
 		await page.locator('#trail-toggle').click();

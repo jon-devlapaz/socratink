@@ -4,9 +4,10 @@
 
 1. Visit `/` without a valid session cookie → client auto-mints a guest session
    via `POST /api/session` and starts chatting immediately (guest-first)
-2. Guest users get 3 free conversational turns tracked via a signed
-   `socratink-guest-turns` cookie
-3. After turn 3, the chat composer locks and an inline auth gate card appears
+2. Guest users get the allowance set by `guestTurnLimit` in
+   `src/config/guest-turns.ts`, tracked via a signed `socratink-guest-turns` cookie
+3. When a send exceeds the allowance, its text returns to the locked composer
+   and an inline auth gate card appears
    with sign-in buttons for the configured providers (`/api/auth/providers`);
    with no provider configured the generic failed-request turn shows instead
 4. Clicking a sign-in button navigates to `/api/auth/:provider/login`, which
@@ -29,7 +30,7 @@ checks aliases for returning users. Foreign ids return 403.
 
 ## Accepted limits
 
-- The 3-turn counter is a signed client cookie, so clearing cookies restarts
+- The turn counter is a signed client cookie, so clearing cookies restarts
   the guest allowance. The gate is a conversion nudge, not abuse control.
 - The gate increments before downstream checks, so a turn that fails
   admission still consumes guest allowance.
