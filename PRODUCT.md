@@ -45,3 +45,24 @@ for the configured service; the app uses essential session cookies.
 
 Use the North Star to choose future work. Keep implementation and validation
 claims tied to the code and evidence that support them.
+
+## Frontier
+
+The frontier is `main` plus the [North Star](NORTH-STAR.md). The items below
+are parked. They are not built capabilities and not commitments.
+
+| Parked item | Where it lives |
+| --- | --- |
+| Recall widget: show a term, recall, then reveal | Issue #67, closed PR #68 |
+| Phone development over plain http with a scripted tutor | Closed PR #63 |
+| Invited beta access | Closed PR #50 |
+| Retry-practice prototype and three requested-help cases | Operator archive, branches `personal-tutor` and `a-learner` |
+| Harness comparison that selected Pi Durable | Operator archive, `harness-comparison.tar.gz` |
+| Tinkery workflow scaffold | Operator archive, branch `ink-control-local` |
+| Defend-it mode, sound cues, spoken replies, magic-link sign-in, help guards | Issues #93, #89, #48, #31, #32, #65 |
+| Product knowledge vault | The private `socratink-brain` repository |
+
+The operator archive is on the operator's machine: local branches named
+`archive/2026-11-14/<name>` and `~/dev/archives/socratink-2026-11-14/`, which
+holds a bundle, patches, and a `MANIFEST.md` with restore commands. A closed
+PR keeps its commits on GitHub at `refs/pull/<number>/head`.
