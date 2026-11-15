@@ -41,3 +41,6 @@ artifacts/
 
 # Local agent notes and scratch; shared project guidance lives in tracked docs
 .agents/
+
+# Private knowledge vault, a separate repository. Never track it here.
+socratink-brain/
