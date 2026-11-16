@@ -22,7 +22,10 @@ globalThis.fetch = async (input, options) => {
  appendFileSync(process.env.CADENCE_FAKE_CAPTURE, JSON.stringify({ url: url.href, method: options.method ?? 'GET',
   redirect: options.redirect, timed: options.signal instanceof AbortSignal,
   authenticated: options.headers.Authorization === 'Bearer synthetic-cadence-token' }) + '\\n');
- if (process.env.CADENCE_FAKE_NETWORK) throw new Error(process.env.CADENCE_FAKE_PRIVATE);
+ const first = !globalThis.fakeCalls;
+ globalThis.fakeCalls = (globalThis.fakeCalls ?? 0) + 1;
+ if (process.env.CADENCE_FAKE_NETWORK && (first || process.env.CADENCE_FAKE_NETWORK !== 'first')) throw new Error(process.env.CADENCE_FAKE_PRIVATE);
+ if (process.env.CADENCE_FAKE_FIRST_STATUS && first) return new Response(process.env.CADENCE_FAKE_PRIVATE, { status: Number(process.env.CADENCE_FAKE_FIRST_STATUS) });
  const fixture = JSON.parse(process.env.CADENCE_FAKE_READS);
  const runId = url.pathname.match(/\\/runs\\/(\\d+)\\/jobs$/)?.[1];
  const data = runId ? fixture.jobs[runId] : fixture.runs;
@@ -56,15 +59,19 @@ globalThis.fetch = async (input, options) => {
 		['incomplete job list', fixture([run()], { 10: { ...jobs(), total_count: 2 } }), { readFailures: 1 }],
 		['missing steps', fixture([run()], { 10: jobs(undefined, { steps: undefined }) }), { readFailures: 1 }],
 		['malformed JSON', { runs: privateText, jobs: {} }, { readFailures: 1 }],
-		['HTTP failure', fixture(), { readFailures: 1 }, { CADENCE_FAKE_STATUS: '403' }],
-		['network failure', fixture(), { readFailures: 1 }, { CADENCE_FAKE_NETWORK: '1' }],
+		['HTTP failure is not retried', fixture(), { readFailures: 1 }, { CADENCE_FAKE_STATUS: '403' }, 1],
+		['repeated server error fails after one retry', fixture(), { readFailures: 1 }, { CADENCE_FAKE_STATUS: '503' }, 2],
+		['repeated network failure fails after one retry', fixture(), { readFailures: 1 }, { CADENCE_FAKE_NETWORK: '1' }, 2],
+		['one server error recovers on retry', fixture(), {}, { CADENCE_FAKE_FIRST_STATUS: '502' }, 3],
+		['one rate limit recovers on retry', fixture(), {}, { CADENCE_FAKE_FIRST_STATUS: '429' }, 3],
+		['one network failure recovers on retry', fixture(), {}, { CADENCE_FAKE_NETWORK: 'first' }, 3],
 		['oversized response is canceled', fixture(), { readFailures: 1 }, { CADENCE_FAKE_OVERSIZE: '1' }],
 		['missing token sends no request', fixture(), { readFailures: 1 }, { GITHUB_TOKEN: '' }],
 		['invalid current run sends no request', fixture(), { readFailures: 1 }, { GITHUB_RUN_ID: privateText }],
 		['bounded10-run search', fixture(Array.from({ length: 10 }, (_, id) => run(id + 1)), Object.fromEntries(Array.from({ length: 10 }, (_, id) => [id + 1, jobs([], { name: 'Preview monitor' })]))), { missingBaseline: 1 }],
 	];
 	try {
-		for (const [name, reads, counts, extraEnv] of cases) await t.test(name, async () => {
+		for (const [name, reads, counts, extraEnv, expectedCalls] of cases) await t.test(name, async () => {
 			await writeFile(capture, '');
 			await writeFile(capture + '.canceled', '');
 			const env = { GITHUB_TOKEN: 'synthetic-cadence-token', GITHUB_RUN_ID: '100',
@@ -85,11 +92,12 @@ globalThis.fetch = async (input, options) => {
 			if (!env.GITHUB_TOKEN || env.GITHUB_RUN_ID !== '100') assert.equal(calls.length, 0);
 			else assert.ok(calls.length >= 1);
 			if (name === 'bounded10-run search') assert.equal(calls.length, 11);
+			if (expectedCalls !== undefined) assert.equal(calls.length, expectedCalls);
 			for (const [index, call] of calls.entries()) {
 				assert.equal(call.method, 'GET'); assert.equal(call.redirect, 'error'); assert.equal(call.timed, true); assert.equal(call.authenticated, true);
 				const url = new URL(call.url);
 				assert.equal(url.origin, 'https://api.github.com');
-				if (index === 0) {
+				if (index === 0 || (expectedCalls > 1 && index === 1)) {
 					assert.equal(url.pathname, '/repos/jon-devlapaz/socratink/actions/workflows/runtime-monitor.yml/runs');
 					assert.deepEqual(Object.fromEntries(url.searchParams), { branch: 'main', status: 'completed', per_page: '10', page: '1' });
 				} else {
