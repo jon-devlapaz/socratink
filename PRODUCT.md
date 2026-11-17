@@ -60,7 +60,6 @@ are parked. They are not built capabilities and not commitments.
 | Harness comparison that selected Pi Durable | Operator archive, `harness-comparison.tar.gz` |
 | Tinkery workflow scaffold | Operator archive, branch `ink-control-local` |
 | Defend-it mode, sound cues, spoken replies, magic-link sign-in, help guards | Issues #93, #89, #48, #31, #32, #65 |
-| Product knowledge vault | The private `socratink-brain` repository |
 
 The operator archive is on the operator's machine: local branches named
 `archive/2026-11-14/<name>` and `~/dev/archives/socratink-2026-11-14/`, which
