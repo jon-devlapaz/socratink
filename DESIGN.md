@@ -19,6 +19,13 @@ describe the existing interface, not future capabilities.
 - Preserve keyboard focus, accessible control names, reduced-motion behavior,
   touch targets, and safe-area spacing. Check narrow screens as well as desktop.
 
+## Browser support
+
+**Browser Support:** Use Baseline Widely available features freely. Newly
+available features are allowed only with feature detection and graceful
+degradation. Add fallback code only when it is 20 lines or fewer and adds no
+dependency; otherwise redesign or skip the feature.
+
 ## Existing surfaces
 
 Every learner uses the operator model route. The menu keeps conversation,
