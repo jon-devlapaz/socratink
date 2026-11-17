@@ -127,7 +127,7 @@ textarea {
 	flex-direction: column;
 	align-items: center;
 	overflow: hidden;
-	padding: clamp(3.75rem, 6vh, 6rem) 1.5rem calc(var(--dock-closed) + 1.25rem);
+	padding: clamp(3.75rem, 6vh, 6rem) 1.5rem calc(var(--dock-closed) + var(--composer-grow, 0px) + 1.25rem);
 	transition-property: padding-bottom, padding-top;
 	transition-duration: 320ms;
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
@@ -253,6 +253,13 @@ body.conversation-empty #chat:focus-within {
 	display: block;
 	width: 100%;
 	min-height: 4.6rem;
+	/* Grow with a long answer; older browsers keep the fixed height and scroll. */
+	field-sizing: content;
+	max-height: min(40dvh, 18rem);
+	overflow-y: auto;
+	/* Hide scrolled text in the bottom padding, where the footer row sits. */
+	-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 2.45rem), transparent calc(100% - 2.05rem));
+	mask-image: linear-gradient(to bottom, black calc(100% - 2.45rem), transparent calc(100% - 2.05rem));
 	resize: none;
 	border: 0;
 	padding: 0.85rem 1.1rem 2.45rem;
@@ -355,7 +362,7 @@ body.conversation-empty #chat:focus-within {
 
 @media (max-height: 720px) {
 	.stage {
-		padding-block: 3.25rem calc(var(--dock-closed) + 0.75rem);
+		padding-block: 3.25rem calc(var(--dock-closed) + var(--composer-grow, 0px) + 0.75rem);
 	}
 
 	html:has(.active-node .questionnaire) .stage,

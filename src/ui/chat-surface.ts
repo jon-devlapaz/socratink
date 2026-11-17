@@ -327,6 +327,12 @@ export function mountChatSurface(options: Readonly<{
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 
+	// The dock is fixed, so reserve room for a grown composer above the transcript end.
+	new ResizeObserver(() => {
+		const grow = input.offsetHeight - parseFloat(getComputedStyle(input).minHeight);
+		document.documentElement.style.setProperty('--composer-grow', `${Math.max(0, grow)}px`);
+	}).observe(input);
+
 	input.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
 			event.preventDefault();
