@@ -169,6 +169,10 @@ test('Sound defaults off and the plain menu toggle saves its state', async t => 
 
 test('saved Sound on requires a user gesture before audio can start', async t => {
 	const ui = await setup(t, { saved: true });
+	await ui.page.evaluate(() => {
+		document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+	});
 	await ui.send(undefined, { synthetic: true });
 	assert.equal(await ui.starts(), 0);
 	await ui.send();
