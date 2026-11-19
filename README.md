@@ -24,6 +24,17 @@ Local conversation and authentication databases use separate SQLite files
 under `.cache/`. Configuration owners are `src/config/database.ts`, `auth.ts`,
 `session.ts`, and `src/inference/operator.ts`.
 
+## In-app feedback
+
+Set `VITE_MODEM_FEEDBACK_TOKEN` in `src/ui/.env.local` for local use. In Vercel,
+set it on the Socratink project and build a new deployment. This channel token
+is public and included in the browser build. Manage it in Modem under
+Settings → Integrations → In-app feedback.
+
+Open **Feedback** from the main menu. Guests can include a name and email.
+For a signed-in user, Socratink uses the account email. The tutor can offer
+to send a report through Modem and waits for the learner to approve the draft.
+
 ## Identity, models, and hosted configuration
 
 The app creates a signed guest session. Its allowance is set by

@@ -83,7 +83,7 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 export function mountChatSurface(options: Readonly<{
 	userId: string;
 	aliases: readonly string[];
-}>): void {
+}>) {
 	const elements = queryChatSurface();
 	const {
 		form,
@@ -322,7 +322,7 @@ export function mountChatSurface(options: Readonly<{
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
-	mountMenuSheet(elements, {
+	const closeMenu = mountMenuSheet(elements, {
 		reduceMotion,
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
@@ -476,6 +476,7 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	void restoreConversation();
+	return closeMenu;
 }
 
 function isQuietToolStreamEvent(
