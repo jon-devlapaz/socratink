@@ -54,6 +54,7 @@
 	opacity: 1;
 }
 
+html:has(.menu-layer.is-open) .skip-link,
 html:has(.menu-layer.is-open) .peek-handle,
 html:has(.menu-layer.is-pulling) .peek-handle {
 	visibility: hidden;

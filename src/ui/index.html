@@ -30,6 +30,7 @@
 		</script>
 	</head>
 	<body class="conversation-empty">
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<button
 			class="peek-handle"
 			id="peek-handle"
@@ -58,7 +59,7 @@
 				<span class="sr-only">Open menu</span>
 			</button>
 
-			<main class="stage">
+			<main id="main-content" class="stage" tabindex="-1">
 				<section class="active-node" aria-label="Current step">
 					<button
 						class="trail-toggle"
@@ -100,6 +101,7 @@
 					<label class="sr-only" for="message">Message Socratink</label>
 					<textarea
 						id="message"
+						autocomplete="off"
 						name="message"
 						rows="2"
 						required
@@ -262,9 +264,9 @@
 
 		<dialog id="feedback-dialog" aria-labelledby="feedback-title">
 			<form id="feedback-form">
-				<h2 id="feedback-title">Send feedback</h2>
+				<h2 id="feedback-title" tabindex="-1" autofocus>Send feedback</h2>
 				<p id="feedback-notice">Your feedback goes to the Socratink team through Modem.</p>
-				<label>Message<textarea name="message" rows="5" required autofocus></textarea></label>
+				<label>Message<textarea name="message" rows="5" required></textarea></label>
 				<label>Name (optional)<input name="name" autocomplete="name" maxlength="256"></label>
 				<label id="feedback-email-label">Email (optional)<input name="email" type="email" autocomplete="email" maxlength="320"></label>
 				<p id="feedback-status" role="status"></p>
