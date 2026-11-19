@@ -8,7 +8,7 @@ Run ID: `b9a2bbf3-4113-4102-b227-2d5910d2f81c`.
 Checkout: `/Users/jondev/dev/worktrees/tink-sdlc-setup/learners-who-turn-sound-on-hear-a-soft`.
 Seed: `runs/learners-who-turn-sound-on-hear-a-soft/seed-contract.md`.
 Seed SHA-256: `6c13c78aa871837a78b9257851168fc5d1daf873585d5e3bccfdf0ea0f878edb`.
-Candidate: the implementation commit that first adds this report. The final report update records its hash after verification.
+Verified code candidate: `ba20a4d925503aea3ee63608a5c0239acf288b4a`. The later handoff commit adds only run evidence and this report update. No PR or result revision exists.
 
 ## Background
 
@@ -39,4 +39,6 @@ The build-the-lever skill led to the committed, repeatable fault driver instead 
 
 ## Recommendation
 
-Run committed-work verification next. Seed-4 needs the operator's phone review on the PR's Vercel preview before merge. Seed-5 needs the operator's independent scope review. No manual acceptance record was created. No PR or preview URL was supplied or established. Audible quality, real device audio behavior, and operator acceptance remain unproven. The trusted Tinkery executable path was not supplied; intake was not repeated or replaced with another tool.
+Committed-work verification ran with `python3 _system/scripts/sdlc.py verify learners-who-turn-sound-on-hear-a-soft`. It exited 1 with `Checklist incomplete: seed-4, seed-5`. The receipt at `04-test/output/verification.json` records `awaiting-attestation`, seed-1 through seed-3 proven, and `seed-1 red at base, green at candidate`. All automated checks passed. The verification log is `04-test/output/test-log.md`. This is not a completed verification or operator acceptance.
+
+Seed-4 needs the operator's phone review on the PR's Vercel preview before merge. Seed-5 needs the operator's independent scope review. No manual acceptance record was created. No PR or preview URL was supplied or established. Audible quality, real device audio behavior, and operator acceptance remain unproven. The trusted Tinkery executable path was not supplied; intake was not repeated or replaced with another tool.
