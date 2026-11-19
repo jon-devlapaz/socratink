@@ -46,6 +46,7 @@ import {
 	type TurnStreamSinks,
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
+import { mountSoundCues } from './sound-cues.ts';
 import { requireElement } from './dom.ts';
 import {
 	applyRequestControlState,
@@ -315,6 +316,7 @@ export function mountChatSurface(options: Readonly<{
 
 	initAppearance(appearance);
 	initTypeSize(typeSize);
+	const sound = mountSoundCues(requireElement<HTMLButtonElement>('#sound-toggle'));
 	startOver.addEventListener('click', () => {
 		dictation.cancel();
 		draft.clear();
@@ -359,6 +361,7 @@ export function mountChatSurface(options: Readonly<{
 		liveReply = createLiveReply(text);
 		liveTextShown = false;
 		releasePending();
+		sound.beginReply();
 		const submittedDraft = (fromComposer || retryOf?.outcome === 'not-admitted') && input.value.trim() === text
 			? input.value : undefined;
 		const result = requests.start(text, () => {
@@ -413,6 +416,7 @@ export function mountChatSurface(options: Readonly<{
 			requests.acknowledgeCompleted();
 			requestState = requests.state;
 			applyRequestControls(requestState);
+			sound.complete(state.reply);
 			await appendAssistantReply(state.reply);
 			if (moveFocus) input.focus();
 			return;

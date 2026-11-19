@@ -1,0 +1,93 @@
+{
+  "profile": "light",
+  "kind": "feature",
+  "schema": 1,
+  "run_id": "b9a2bbf3-4113-4102-b227-2d5910d2f81c",
+  "seed_contract": {
+    "path": "runs/learners-who-turn-sound-on-hear-a-soft/seed-contract.md",
+    "sha256": "6c13c78aa871837a78b9257851168fc5d1daf873585d5e3bccfdf0ea0f878edb",
+    "source": "/Users/jondev/scratch/sound-TEST/sessions/session-Xv9pJN/seed-contract.md",
+    "definitions_sha256": "2001cd49558d52be52c75cdefd0228a57b978e8be955c3ded5deb3d68e2a3e3d",
+    "confirmation": {
+      "schema_version": 3,
+      "checks_sha256": "edd3b93cf26d3c2b66a4a0b941675a587a39251a43720a34310b02bda38b1d90",
+      "session_id": "session-Xv9pJN",
+      "operator": "agent",
+      "revision": "r1",
+      "source": "confirm",
+      "confirmed_at": "2026-11-19T03:44:31.793791+00:00",
+      "seed_sha256": "6c13c78aa871837a78b9257851168fc5d1daf873585d5e3bccfdf0ea0f878edb",
+      "decisions_sha256": "8744c65fac0b7ccc423b8b58b1e3c74a7aef0fa8627ad4a87e8eb57e31f4cd63",
+      "actor": {
+        "action": "typed confirm at this terminal",
+        "by": "terminal",
+        "declaration": "declared: agent",
+        "identity": "declaration is not verified identity"
+      }
+    },
+    "definitions": [
+      {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/sound-cues.test.mjs && node -e \"const s=require('./package.json').scripts; process.exit(s.check.includes('pnpm test:sound-cues') && (s['test:sound-cues']||'').includes('scripts/sound-cues.test.mjs') ? 0 : 1)\"",
+        "cwd": ".",
+        "expect": "Proposed, not run. With the package-specified Node and pnpm versions, install dependencies and run the new exact test file. Start with empty preference storage and no user gesture: assert Sound off and no audio start. Activate the plain menu Sound control through a user gesture, reload and assert the preference persists without replaying history. Submit 'How does photosynthesis store energy?' through production UI integration with deterministic external responses; assert exactly one quiet, short tick after the unmarked reply finishes. Supply a reply marked as a hint, then a marked answer: assert no tick. Restore saved history: assert no tick. Repeat with Sound off, then prefers-reduced-motion set: assert no tick. Repeat completion delivery for one reply: assert one tick total. Verify each planted fault is caught: a tick on a marked hint, a tick on restored history, a tick with Sound off, a tick with reduced motion, and two ticks for one reply. The corresponding zero-start or one-start assertion must fail for each fault. There is no chime clause. The final wiring assertion exits zero only when pnpm check includes pnpm test:sound-cues and that script names scripts/sound-cues.test.mjs. Scope and preview evidence are supplied by the separate records.",
+        "failure_case": "Any planted forbidden tick or duplicate tick, a missing gesture guard, an unsaved or default-on toggle, or missing pnpm check wiring must fail this regression.",
+        "kind": "provisional",
+        "missing": "scripts/sound-cues.test.mjs and the production sound implementation are not present in the inspected listings. Add behavior-named tests for default-off and saved toggle state, gesture gating, single fresh reply completion, marked assistance silence, restored-history silence, Sound-off silence, reduced-motion silence and duplicate completion. Use the repository's node:test runner and production integration, with fakes only at external boundaries. Add test:sound-cues to package.json and pnpm check. The explicit file invocation fails if the file is absent; it does not rely on a name filter.",
+        "source": "goal; probe-real-sample; probe-pre-mortem; package.json:5-43; .github/workflows/ci.yml:21-40; scripts/live-reply.test.mjs:1-8",
+        "statement": "The tick regression checks the tick, the toggle and the silence rules, with no chime clause; the tick regression catches a tick on a marked hint, a tick on restored history, a tick with Sound off, a tick with reduced motion, and two ticks for one reply; Tests run in pnpm check; the tick regression command ends with: node -e \"const s=require('./package.json').scripts; process.exit(s.check.includes('pnpm test:sound-cues') && (s['test:sound-cues']||'').includes('scripts/sound-cues.test.mjs') ? 0 : 1)\"; the scope-guard command checks no new dependency, no audio files, and no server, inference or reveal-logic change: B=$(git merge-base HEAD origin/main) && git diff --quiet \"$B\" -- pnpm-lock.yaml src/server src/inference src/learning src/reveal.ts src/ui/reveal-mark.ts && ! git diff --name-only --diff-filter=A \"$B\" | grep -Eiq '\\.(mp3|wav|ogg|m4a|aac|flac|webm)$'; the browser judgment of the toggle and tick happens on the PR's Vercel preview before merge.",
+        "id": "seed-1",
+        "description": "The tick regression checks the tick, the toggle and the silence rules, with no chime clause; the tick regression catches a tick on a marked hint, a tick on restored history, a tick with Sound off, a tick with reduced motion, and two ticks for one reply; Tests run in pnpm check; the tick regression command ends with: node -e \"const s=require('./package.json').scripts; process.exit(s.check.includes('pnpm test:sound-cues') && (s['test:sound-cues']||'').includes('scripts/sound-cues.test.mjs') ? 0 : 1)\"; the scope-guard command checks no new dependency, no audio files, and no server, inference or reveal-logic change: B=$(git merge-base HEAD origin/main) && git diff --quiet \"$B\" -- pnpm-lock.yaml src/server src/inference src/learning src/reveal.ts src/ui/reveal-mark.ts && ! git diff --name-only --diff-filter=A \"$B\" | grep -Eiq '\\.(mp3|wav|ogg|m4a|aac|flac|webm)$'; the browser judgment of the toggle and tick happens on the PR's Vercel preview before merge.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "B=$(git merge-base HEAD origin/main) && git diff --quiet \"$B\" -- pnpm-lock.yaml src/server src/inference src/learning src/reveal.ts src/ui/reveal-mark.ts && ! git diff --name-only --diff-filter=A \"$B\" | grep -Eiq '\\.(mp3|wav|ogg|m4a|aac|flac|webm)$'",
+        "cwd": ".",
+        "expect": "Proposed, not run. In the candidate checkout with origin/main available, determine the merge base and inspect the diff. Exit zero with no protected-path or lockfile difference and no added audio file matching the specified extensions. This exact guard does not inspect package.json dependency declarations or top-level src/server.ts; review those separately against the same scope.",
+        "failure_case": "A changed pnpm-lock.yaml or listed protected path, an added matching audio file, or an unavailable merge base must not pass this command.",
+        "kind": "cmd",
+        "source": "goal; origin evidence labeled Tinkery original 1",
+        "statement": "no new dependency, no audio files, and no server, inference or reveal-logic change",
+        "id": "seed-2",
+        "description": "no new dependency, no audio files, and no server, inference or reveal-logic change",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm check",
+        "cwd": ".",
+        "expect": "Proposed, not run. Starting from the candidate checkout with the package-specified Node and pnpm versions, install locked dependencies and run the full gate. All constituent checks, including the newly wired test:sound-cues regression, exit successfully. The build may write generated output under dist. This is suite verification, not browser judgment or learner acceptance.",
+        "failure_case": "A failing sound regression, type error, failed existing assertion or failed build must fail the full gate.",
+        "kind": "cmd",
+        "source": "goal; package.json:5-16; .github/workflows/ci.yml:21-40; README.md:54-66",
+        "statement": "Tests run in pnpm check.",
+        "id": "seed-3",
+        "description": "Tests run in pnpm check.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "failure_case": "A loud, long or repeated tick, forbidden sound, lost preference, non-plain menu control, inaccessible toggle, audio console error, or judgment performed only after merge must not pass.",
+        "how_to_judge": "Before merge, inspect the PR's Vercel preview on a phone. Begin in a fresh browser with reduced motion off: open the menu and confirm Sound is off and is a plain menu line like type size, not a new chip or pill. Turn Sound on, reload and inspect the saved choice without a history tick. Ask 'How does photosynthesis store energy?' and listen as the tutor reply finishes: is there exactly one soft, quiet, short tick? Ask 'Can I have a hint?' and inspect that the supplied hint has its reveal mark and no sound. Reload and listen for silence from restored history. Turn Sound off and repeat the question; then turn Sound on with prefers-reduced-motion set and repeat: both must be silent. Inspect keyboard focus and accessible naming and check for audio-related console errors. Judge whether the tick and menu control fit the existing interface. The answer can require audio tuning or UI repairs before merge; it cannot add a chime or waive silence rules.",
+        "kind": "judge",
+        "source": "goal; probe-real-sample; probe-pre-mortem; DESIGN.md:18-28,49-53",
+        "statement": "The browser judgment of the toggle and tick happens on the PR's Vercel preview before merge.",
+        "id": "seed-4",
+        "description": "The browser judgment of the toggle and tick happens on the PR's Vercel preview before merge.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "failure_case": "A new runtime dependency declared only in package.json or a server change in src/server.ts must not pass scope review even if the exact scope command exits zero.",
+        "how_to_judge": "Inspect the candidate diff against its origin/main merge base, including package.json dependency declarations and top-level src/server.ts as well as the paths in the exact scope guard. Has the change added a runtime dependency, audio asset, React or shadcn, or changed server, inference or reveal logic? A boundary violation requires removing that change or surfacing the conflict; a passing scope command alone is not sufficient evidence.",
+        "kind": "judge",
+        "source": "goal; package.json:47-67; AGENTS.md:17-24; scope-guard record",
+        "statement": "The implementation preserves the dependency and protected-code boundaries beyond the exact scope guard.",
+        "id": "seed-5",
+        "description": "The implementation preserves the dependency and protected-code boundaries beyond the exact scope guard.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      }
+    ]
+  }
+}

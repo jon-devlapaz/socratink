@@ -473,3 +473,8 @@ html:has(.menu-layer.is-open) .app-canvas {
 		opacity: 0;
 	}
 }
+
+#sound-toggle[aria-pressed='false'] .sound-waves,
+#sound-toggle[aria-pressed='true'] .sound-mute {
+	display: none;
+}
