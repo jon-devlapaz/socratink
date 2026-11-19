@@ -1,15 +1,17 @@
 import { appConfig } from '../config/app.config.ts';
 import type { WireReply } from '../config/chat-wire.ts';
 import { revealFromReply } from '../reveal.ts';
+import { requireElement } from './dom.ts';
 
 export function mountSoundCues(button: HTMLButtonElement) {
+	const label = requireElement('#sound-label', button);
 	let enabled = localStorage.getItem(appConfig.soundStorageKey) === 'on';
 	let context: AudioContext | undefined;
 	let pending = false;
 
 	function paint() {
 		button.setAttribute('aria-pressed', String(enabled));
-		button.textContent = `Sound ${enabled ? 'on' : 'off'}`;
+		label.textContent = `Sound ${enabled ? 'on' : 'off'}`;
 	}
 
 	function unlock(event: Event) {

@@ -245,7 +245,9 @@ test('duplicate completion delivery produces one tick total', async t => {
 		const history = await (await fetch(`/api/agents/chat/${encodeURIComponent(id)}`)).json();
 		const submissionId = history.settlements.at(-1).submissionId;
 		const reply = { ...replyFrom(history, submissionId), submissionId };
-		const probe = mountSoundCues(document.createElement('button'));
+		const button = document.createElement('button');
+		button.innerHTML = '<span id="sound-label"></span>';
+		const probe = mountSoundCues(button);
 		window.completeSoundProbe = () => {
 			probe.beginReply();
 			probe.complete(reply);
