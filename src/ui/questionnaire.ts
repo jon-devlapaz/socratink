@@ -37,16 +37,7 @@ export function createQuestionnaire(
 	const item = definition.items[0]!;
 	const section = createQuestionItem(item);
 
-	const progressRow = document.createElement('div');
-	progressRow.className = 'questionnaire-progress-row';
-	const progressText = document.createElement('span');
-	progressText.textContent = 'Question 1 of 1';
-	const progress = document.createElement('progress');
-	progress.max = 1;
-	progress.value = 1;
-	progress.setAttribute('aria-label', 'Question 1 of 1');
-	progressRow.append(progressText, progress);
-	form.append(progressRow, section);
+	form.append(section);
 
 	const actions = document.createElement('div');
 	actions.className = 'questionnaire-actions';

@@ -36,6 +36,7 @@ pnpm-debug.log*
 data/
 .vercel
 .env*
+!src/ui/.env.example
 .artifacts/
 artifacts/
 

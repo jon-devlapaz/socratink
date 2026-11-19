@@ -40,15 +40,10 @@ body.not-found-page {
 	line-height: 1.15;
 }
 
-.not-found h1 + p {
-	margin: 1.5rem 0 2.5rem;
-	color: var(--muted);
-	line-height: 1.75;
-}
-
 .not-found nav {
 	display: flex;
 	gap: 2rem;
+	margin-top: 1.5rem;
 }
 
 .not-found a {

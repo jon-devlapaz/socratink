@@ -1,0 +1,79 @@
+#feedback-trigger[hidden] {
+	display: none;
+}
+
+#feedback-dialog {
+	width: min(30rem, calc(100% - 2rem));
+	max-height: calc(100% - 2rem);
+	padding: clamp(1rem, 4vw, 1.75rem);
+	border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+	border-radius: 1rem;
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--panel-shadow);
+}
+
+#feedback-dialog::backdrop {
+	background: rgb(0 0 0 / 38%);
+}
+
+#feedback-form {
+	display: grid;
+	gap: 0.8rem;
+}
+
+#feedback-form h2,
+#feedback-form p {
+	margin: 0;
+}
+
+#feedback-form p {
+	color: var(--muted);
+	font-size: 0.85em;
+}
+
+#feedback-form label:not([hidden]) {
+	display: grid;
+	gap: 0.3rem;
+}
+
+#feedback-form input,
+#feedback-form textarea,
+.feedback-actions button {
+	font: inherit;
+	color: var(--ink);
+	border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+	border-radius: 0.5rem;
+	background: var(--paper);
+	padding: 0.5rem 0.7rem;
+}
+
+#feedback-form textarea {
+	resize: vertical;
+}
+
+#feedback-status:empty {
+	display: none;
+}
+
+.feedback-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.feedback-actions button {
+	min-height: 44px;
+	cursor: pointer;
+}
+
+#feedback-send {
+	background: var(--send-fill);
+	color: var(--send-ink);
+}
+
+#feedback-send:disabled {
+	opacity: 0.6;
+	cursor: default;
+}

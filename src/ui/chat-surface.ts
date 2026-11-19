@@ -12,6 +12,7 @@ import {
 	unsettledSubmissionFromHistory,
 	watchChatConversationReset,
 } from './client/conversation.ts';
+import { mountChatDraft } from './client/chat-draft.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
@@ -84,7 +85,7 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 export function mountChatSurface(options: Readonly<{
 	userId: string;
 	aliases: readonly string[];
-}>): void {
+}>) {
 	const elements = queryChatSurface();
 	const {
 		form,
@@ -107,6 +108,7 @@ export function mountChatSurface(options: Readonly<{
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation(options.userId, options.aliases);
+	const draft = mountChatDraft(input, conversation.id);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	let liveReply = createLiveReply('');
@@ -317,14 +319,16 @@ export function mountChatSurface(options: Readonly<{
 	const sound = mountSoundCues(requireElement<HTMLButtonElement>('#sound-toggle'));
 	startOver.addEventListener('click', () => {
 		dictation.cancel();
+		draft.clear();
 		startNewChatConversation(options.userId);
 	});
 	watchChatConversationReset(() => {
+		draft.clear();
 		location.reload();
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
-	mountMenuSheet(elements, {
+	const closeMenu = mountMenuSheet(elements, {
 		reduceMotion,
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
@@ -342,14 +346,15 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function sendMessage(text: string) {
+	async function sendMessage(text: string, fromComposer = false) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		await startRequest(text);
+		await startRequest(text, undefined, fromComposer);
 	}
 
 	async function startRequest(
 		text: string,
 		retryOf?: Extract<ChatRequestState, { kind: 'terminal' }>,
+		fromComposer = false,
 	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
@@ -357,7 +362,13 @@ export function mountChatSurface(options: Readonly<{
 		liveTextShown = false;
 		releasePending();
 		sound.beginReply();
-		const result = requests.start(text);
+		const submittedDraft = (fromComposer || retryOf?.outcome === 'not-admitted') && input.value.trim() === text
+			? input.value : undefined;
+		const result = requests.start(text, () => {
+			if (submittedDraft === undefined || input.value !== submittedDraft) return;
+			input.value = '';
+			draft.clear();
+		});
 		requestState = requests.state;
 		applyRequestControls(requestState);
 		if (requestState.kind === 'terminal') {
@@ -366,7 +377,6 @@ export function mountChatSurface(options: Readonly<{
 			await result;
 			return;
 		}
-		if (!retryOf || retryOf.outcome === 'not-admitted') input.value = '';
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
@@ -399,7 +409,7 @@ export function mountChatSurface(options: Readonly<{
 		await applyRequestState(await result);
 	}
 
-	async function applyRequestState(state: ChatRequestState) {
+	async function applyRequestState(state: ChatRequestState, moveFocus = true) {
 		if (requests.state !== state) return;
 		requestState = state;
 		if (state.kind === 'completed') {
@@ -408,17 +418,17 @@ export function mountChatSurface(options: Readonly<{
 			applyRequestControls(requestState);
 			sound.complete(state.reply);
 			await appendAssistantReply(state.reply);
-			input.focus();
+			if (moveFocus) input.focus();
 			return;
 		}
 		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
-			input.value = state.text;
+			if (!input.value) input.value = state.text;
 			const last = turns.at(-1);
 			if (last?.role === 'You' && last.text === state.text) turns = turns.slice(0, -1);
 		}
 		applyRequestControls(state);
 		await paint('hold');
-		focusAfterRequestStatePaint(state, elements);
+		if (moveFocus) focusAfterRequestStatePaint(state, elements);
 	}
 
 	form.addEventListener('submit', async (event) => {
@@ -426,7 +436,7 @@ export function mountChatSurface(options: Readonly<{
 		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
 		if (!text || chatRequestControls(requests.state).composerLocked) return;
-		await sendMessage(text);
+		await sendMessage(text, true);
 	});
 
 	async function restoreConversation() {
@@ -474,12 +484,13 @@ export function mountChatSurface(options: Readonly<{
 			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
-			focusAfterRequestStatePaint(requestState, elements);
 		}
-		if (unsettled) await runRequestCommand(requests.recheck());
+		// Startup recovery updates the conversation without moving keyboard focus.
+		if (unsettled) await applyRequestState(await requests.recheck(), false);
 	}
 
 	void restoreConversation();
+	return closeMenu;
 }
 
 function isQuietToolStreamEvent(

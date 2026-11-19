@@ -330,6 +330,27 @@ body.conversation-empty #chat:focus-within {
 	opacity: 0.42;
 }
 
+.skip-link {
+	position: fixed;
+	inset-block-start: max(0.5rem, env(safe-area-inset-top));
+	inset-inline-start: max(0.5rem, env(safe-area-inset-left));
+	z-index: 22;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.25rem;
+	background: var(--paper);
+	color: var(--ink);
+	font: 1rem "Paper Mono", monospace;
+}
+
+.skip-link:not(:focus) {
+	clip-path: inset(50%);
+}
+
+.skip-link:focus {
+	outline: 2px solid var(--ink);
+	outline-offset: -2px;
+}
+
 .sr-only {
 	position: absolute;
 	width: 1px;

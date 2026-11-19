@@ -10,8 +10,7 @@ import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../le
 import { cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
-
-export const inputKind = 'socratink.input';
+import { inputKind } from './contract.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);

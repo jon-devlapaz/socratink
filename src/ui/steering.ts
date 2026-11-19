@@ -56,6 +56,7 @@ export function selectedTextIn(root: Node): string {
 export type SteeringBarOptions = {
 	sourceText: string;
 	onSteer: (kind: SteeringKind) => void;
+	showUnaidedLabel?: boolean;
 	selectionRoot?: Node;
 	writeClipboard?: (text: string) => Promise<boolean>;
 };
@@ -63,6 +64,7 @@ export type SteeringBarOptions = {
 export function createSteeringBar({
 	sourceText,
 	onSteer,
+	showUnaidedLabel = false,
 	selectionRoot,
 	writeClipboard = writeClipboardText,
 }: SteeringBarOptions): HTMLElement {
@@ -76,6 +78,7 @@ export function createSteeringBar({
 				label: steeringCopy[kind].label,
 				ariaLabel: steeringCopy[kind].ariaLabel,
 				icon: steeringCopy[kind].icon,
+				showLabel: kind === 'try-unaided' && showUnaidedLabel,
 				onClick: () => {
 					for (const action of bar.querySelectorAll('button')) action.disabled = true;
 					onSteer(kind);
@@ -104,20 +107,30 @@ function createSteeringAction({
 	label,
 	ariaLabel,
 	icon,
+	showLabel = false,
 	onClick,
 }: {
 	label: string;
 	ariaLabel: string;
 	icon: readonly string[];
+	showLabel?: boolean;
 	onClick: () => void;
 }): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.className = 'steering-action';
 	button.setAttribute('aria-label', ariaLabel);
-	const tipId = `steering-tip-${Math.random().toString(36).slice(2, 9)}`;
-	button.setAttribute('aria-describedby', tipId);
-	button.append(createSteeringIcon(icon), createSteeringTip(tipId, label));
+	button.append(createSteeringIcon(icon));
+	if (showLabel) {
+		button.className = 'steering-action with-label';
+		const copy = document.createElement('span');
+		copy.textContent = label;
+		button.append(copy);
+	} else {
+		const tipId = `steering-tip-${Math.random().toString(36).slice(2, 9)}`;
+		button.setAttribute('aria-describedby', tipId);
+		button.append(createSteeringTip(tipId, label));
+	}
 	button.addEventListener('click', onClick);
 	return button;
 }

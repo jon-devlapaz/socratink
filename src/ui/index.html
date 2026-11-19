@@ -30,6 +30,7 @@
 		</script>
 	</head>
 	<body class="conversation-empty">
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<button
 			class="peek-handle"
 			id="peek-handle"
@@ -58,7 +59,7 @@
 				<span class="sr-only">Open menu</span>
 			</button>
 
-			<main class="stage">
+			<main id="main-content" class="stage" tabindex="-1">
 				<section class="active-node" aria-label="Current step">
 					<button
 						class="trail-toggle"
@@ -100,6 +101,7 @@
 					<label class="sr-only" for="message">Message Socratink</label>
 					<textarea
 						id="message"
+						autocomplete="off"
 						name="message"
 						rows="2"
 						required
@@ -249,11 +251,32 @@
 						</svg>
 						<span id="auth-link-label">Sign in</span>
 					</a>
+					<button id="feedback-trigger" type="button" aria-haspopup="dialog" hidden>
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M20 5H4v12h4v3l4-3h8zM8 9h8m-8 4h5"
+								stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
+						</svg>
+						<span>Feedback</span>
+					</button>
 				</nav>
 				<div class="menu-handle" id="menu-handle" aria-hidden="true"></div>
 			</div>
 		</div>
 
+		<dialog id="feedback-dialog" aria-labelledby="feedback-title">
+			<form id="feedback-form">
+				<h2 id="feedback-title" tabindex="-1" autofocus>Send feedback</h2>
+				<p id="feedback-notice">Your feedback goes to the Socratink team through Modem.</p>
+				<label>Message<textarea name="message" rows="5" required></textarea></label>
+				<label>Name (optional)<input name="name" autocomplete="name" maxlength="256"></label>
+				<label id="feedback-email-label">Email (optional)<input name="email" type="email" autocomplete="email" maxlength="320"></label>
+				<p id="feedback-status" role="status"></p>
+				<div class="feedback-actions">
+					<button id="feedback-close" type="button">Close</button>
+					<button id="feedback-send" type="submit">Send feedback</button>
+				</div>
+			</form>
+		</dialog>
 		<script type="module" src="/main.ts"></script>
 	</body>
 </html>
