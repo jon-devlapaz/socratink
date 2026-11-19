@@ -74,9 +74,57 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				await page.reload();
 				await page.locator('#active-turn .questionnaire').waitFor();
 				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
+				assert.equal(await page.locator('#message').inputValue(), source === 'composer' ? expected : '');
 			});
 		}
 	}
+
+	await check('composer-draft-scope', async (page, fixture) => {
+		await page.goto(origin);
+		const input = page.locator('#message');
+		const ready = (tab) => tab.locator('#message[placeholder]').waitFor();
+		await ready(page);
+		const original = '  An unsent explanation.\nAnother line.  ';
+		await input.fill(original);
+		await page.reload();
+		await ready(page);
+		assert.equal(await input.inputValue(), original);
+
+		// A page opened with an opener starts with a copy of its session storage.
+		const [otherTab] = await Promise.all([
+			page.waitForEvent('popup'),
+			page.evaluate(() => { window.open(location.href); }),
+		]);
+		await ready(otherTab);
+		assert.equal(await otherTab.locator('#message').inputValue(), '');
+		await otherTab.reload();
+		await ready(otherTab);
+		assert.equal(await otherTab.locator('#message').inputValue(), '');
+		await otherTab.close();
+		assert.equal(await input.inputValue(), original);
+
+		await page.locator('#chat').evaluate((form) => form.requestSubmit());
+		await page.getByText('Fresh reply', { exact: true }).waitFor();
+		assert.deepEqual(fixture.sent, [original.trim()]);
+		await page.reload();
+		await page.getByText('Fresh reply', { exact: true }).waitFor();
+		assert.equal(await input.inputValue(), '');
+
+		await input.fill('A draft for the old conversation');
+		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
+		await page.locator('#peek-handle').click();
+		await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start over' }).click()]);
+		await ready(page);
+		assert.equal(await input.inputValue(), '');
+		const newId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
+		assert.notEqual(newId, initialId);
+		await page.evaluate(({ key, initialId }) => localStorage.setItem(key, initialId), {
+			key: appConfig.chatConversationStorageKey, initialId,
+		});
+		await page.reload();
+		await ready(page);
+		assert.equal(await input.inputValue(), '');
+	});
 
 	await check('retry-clears-streamed-attempt', async (page, fixture) => {
 		fixture.mode = 'stream-failure';

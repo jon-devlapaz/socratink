@@ -12,6 +12,7 @@ import {
 	unsettledSubmissionFromHistory,
 	watchChatConversationReset,
 } from './client/conversation.ts';
+import { mountChatDraft } from './client/chat-draft.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
@@ -106,6 +107,7 @@ export function mountChatSurface(options: Readonly<{
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation(options.userId, options.aliases);
+	const draft = mountChatDraft(input, conversation.id);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	let liveReply = createLiveReply('');
@@ -315,9 +317,11 @@ export function mountChatSurface(options: Readonly<{
 	initTypeSize(typeSize);
 	startOver.addEventListener('click', () => {
 		dictation.cancel();
+		draft.clear();
 		startNewChatConversation(options.userId);
 	});
 	watchChatConversationReset(() => {
+		draft.clear();
 		location.reload();
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
@@ -340,21 +344,28 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function sendMessage(text: string) {
+	async function sendMessage(text: string, fromComposer = false) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		await startRequest(text);
+		await startRequest(text, undefined, fromComposer);
 	}
 
 	async function startRequest(
 		text: string,
 		retryOf?: Extract<ChatRequestState, { kind: 'terminal' }>,
+		fromComposer = false,
 	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
 		liveReply = createLiveReply(text);
 		liveTextShown = false;
 		releasePending();
-		const result = requests.start(text);
+		const submittedDraft = (fromComposer || retryOf?.outcome === 'not-admitted') && input.value.trim() === text
+			? input.value : undefined;
+		const result = requests.start(text, () => {
+			if (submittedDraft === undefined || input.value !== submittedDraft) return;
+			input.value = '';
+			draft.clear();
+		});
 		requestState = requests.state;
 		applyRequestControls(requestState);
 		if (requestState.kind === 'terminal') {
@@ -363,7 +374,6 @@ export function mountChatSurface(options: Readonly<{
 			await result;
 			return;
 		}
-		if (!retryOf || retryOf.outcome === 'not-admitted') input.value = '';
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
@@ -408,7 +418,7 @@ export function mountChatSurface(options: Readonly<{
 			return;
 		}
 		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
-			input.value = state.text;
+			if (!input.value) input.value = state.text;
 			const last = turns.at(-1);
 			if (last?.role === 'You' && last.text === state.text) turns = turns.slice(0, -1);
 		}
@@ -422,7 +432,7 @@ export function mountChatSurface(options: Readonly<{
 		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
 		if (!text || chatRequestControls(requests.state).composerLocked) return;
-		await sendMessage(text);
+		await sendMessage(text, true);
 	});
 
 	async function restoreConversation() {
