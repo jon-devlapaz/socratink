@@ -1,26 +1,24 @@
 {
-  "result": "awaiting-attestation",
+  "result": "passed",
   "candidate": {
-    "head": "ba20a4d925503aea3ee63608a5c0239acf288b4a",
-    "tree": "9801b25093573d375fb09f35bd1ae91a6b15ebd04ea5027ccf3d266a58fed2b0"
+    "head": "ed46cdbc5a22996185be3672412e774b67811a09",
+    "tree": "45b461b205b7edb61a3c4040b08d27677856427259fb840fa27d3b00d434379e"
   },
   "inputs": "c5a84476b335feda37241b2b0e6fbb08392e8625dffc2e5b15378ce97434c2a3",
   "policy": "29df6ec28500a7c2aad10e39c80f654da489c8524d728acbd4bd40e8e1d4c5e3",
   "test_lock": null,
   "checklist": "57ba36d7351a32661148961de4e997372ceb4e8c53b5cb399645741dc886cbbd",
-  "manual_marks": {},
-  "pending_attestations": [
-    "seed-4",
-    "seed-5"
-  ],
-  "error": "Checklist incomplete: seed-4, seed-5 (mark them with: sdlc.py mark learners-who-turn-sound-on-hear-a-soft <id> passed --evidence \"...\" --reviewer 'REVIEWER' --source 'SOURCE')",
+  "manual_marks": {
+    "seed-4": "2599e84631b42b2fd738b4b8f18ef0301fbfd6b16edd55e6913273490da12462",
+    "seed-5": "4cfd4e5837b8e16264bb0b55d1e382b66f3e01bf18987d9e5795e9e3f0a88551"
+  },
   "checklist_items": {},
   "seed_checks": {
     "seed-1": "proven",
     "seed-2": "proven",
     "seed-3": "proven",
-    "seed-4": "pending",
-    "seed-5": "pending"
+    "seed-4": "attested",
+    "seed-5": "attested"
   },
   "red_at_base": {
     "base": "efa55c7d679eff5f5d67e45d64c9d6c74014ec4a",
@@ -28,5 +26,5 @@
       "seed-1 red at base, green at candidate"
     ]
   },
-  "log": "40b3f526e26552f987b5915bb6d6907793c4096f7d4ec252c5ad72ae93e5c807"
+  "log": "c57e1d0ead0c00ae221072ca1241a8d1f8d8fd398c6f0c599f647a32043f916f"
 }
