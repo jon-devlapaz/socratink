@@ -1,6 +1,8 @@
 import type { DatabaseTarget } from '../../config/database.ts';
 import type { ModelRouteRecord } from '../../config/model-route.ts';
 
+export const inputKind = 'socratink.input';
+
 export type ModelSelection = { provider: string; modelId: string };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;

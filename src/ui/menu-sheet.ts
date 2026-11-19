@@ -18,7 +18,7 @@ export type MenuSheetOptions = {
 	reduceMotion: boolean;
 };
 
-export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOptions): void {
+export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOptions) {
 	const {
 		lockup,
 		canvas,
@@ -168,6 +168,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 	menuLayer.inert = true;
 	bindSheetHandle(menuHandle);
 	bindSheetHandle(peekHandle, { openOnDown: true });
+	return () => setMenuOpen(false);
 }
 
 function suppressNextClick(handle: HTMLElement) {

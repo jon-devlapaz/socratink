@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import type { Engine, EngineOptions, ModelSelection, Snapshot, TurnRecord } from './contract.ts';
-import { inputKind, productRegistry } from './extension.ts';
+import { inputKind, type Engine, type EngineOptions, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { productRegistry } from './extension.ts';
+import { feedbackExtension } from './feedback-extension.ts';
 import { readSnapshot, type InputData } from './projection.ts';
 import { conversationModels, modelRef } from './provider.ts';
 import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
@@ -176,7 +177,10 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		} while (cursor);
 		return undefined;
 	}, (config) => { modelId = config.modelId; });
-	const harness = await Harness.open(storage, { models, registry: productRegistry(),
+	const registry = productRegistry();
+	const feedback = await feedbackExtension(id);
+	if (feedback) registry.install(feedback);
+	const harness = await Harness.open(storage, { models, registry,
 		settings: { compaction: { enabled: false }, stream: { maxRetries: 0 },
 			retry: { maxRetries: 2, baseDelayMs: 50 }, progress: { persistWithinMs: 50 } },
 	}, context);

@@ -9,8 +9,8 @@
 		"pnpm": ">=11 <12"
 	},
 	"scripts": {
-		"dev": "vite build --config vite.config.ui.ts && node --watch src/server.ts",
-		"dev:phone": "vite build --config vite.config.ui.ts && HOST=0.0.0.0 node --watch src/server.ts",
+		"dev": "vite build --config vite.config.ui.ts && node --env-file-if-exists=src/ui/.env.local --watch src/server.ts",
+		"dev:phone": "vite build --config vite.config.ui.ts && HOST=0.0.0.0 node --env-file-if-exists=src/ui/.env.local --watch src/server.ts",
 		"build": "vite build && vite build --config vite.config.ui.ts",
 		"build:ui": "vite build --config vite.config.ui.ts",
 		"check": "pnpm check:file-size && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:auth-db && pnpm test:guest-turns && pnpm test:oauth && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:conversation && pnpm test:chat-turns && pnpm test:live-reply && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm test:durable && pnpm build && pnpm test:static-routing",
@@ -42,7 +42,7 @@
 		"test:client-id": "node --test scripts/client-id.test.mjs",
 		"test:static-routing": "node --test scripts/static-routing.test.mjs",
 		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs scripts/monitor-dispatch.test.mjs scripts/monitor-cadence.test.mjs",
-		"test:durable": "node --test src/inference/*.test.ts src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs scripts/durable-reconnect.test.mjs",
+		"test:durable": "node --test src/inference/*.test.ts src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs scripts/durable-reconnect.test.mjs scripts/feedback-agent.test.mjs",
 		"test:durable:postgres": "DURABLE_TEST_POSTGRES=1 node --test scripts/durable-storage.test.mjs",
 		"smoke:durable": "node scripts/durable-smoke.mjs",
 		"smoke:durable:postgres": "pnpm build && node scripts/durable-postgres-smoke.mjs"
