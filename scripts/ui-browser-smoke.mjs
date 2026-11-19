@@ -40,6 +40,45 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	}
 
 	for (const width of [390, 1280]) {
+		await check(`skip-links-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto(origin);
+			const input = page.locator('#message');
+			await page.locator('#message[placeholder="What are you working on?"]:enabled').waitFor();
+			await skipToMain(page);
+			await page.keyboard.press('Tab');
+			assert.equal(await input.evaluate((node) => document.activeElement === node), true);
+			assert.equal(await input.getAttribute('autocomplete'), 'off');
+			await page.keyboard.type('Keyboard draft');
+			assert.equal(await input.inputValue(), 'Keyboard draft');
+
+			await page.goto(`${origin}/login.html`);
+			await skipToMain(page);
+		});
+
+		await check(`skip-link-during-restore-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 900 });
+			const historyPath = `**${appConfig.chatAgentPath}/*`;
+			const releaseHistory = Promise.withResolvers();
+			await page.route(historyPath, async (route) => {
+				await releaseHistory.promise;
+				await route.fallback();
+			});
+			try {
+				await Promise.all([page.waitForRequest(historyPath), page.goto(origin)]);
+				assert.equal(await page.locator('#message').isDisabled(), true);
+				await skipToMain(page);
+			} finally {
+				releaseHistory.resolve();
+			}
+			await page.locator('#message:enabled').waitFor();
+			assert.equal(await page.evaluate(() => document.activeElement.id), 'main-content');
+			await page.keyboard.press('Tab');
+			assert.equal(await page.evaluate(() => document.activeElement.id), 'message');
+		});
+	}
+
+	for (const width of [390, 1280]) {
 		for (const source of ['composer', 'steering', 'question']) {
 			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
 				fixture.mode = 'guest-limit';
@@ -160,7 +199,21 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	});
 
 	assert.equal(results.filter((result) => !result.passed).length, 0, JSON.stringify(results.filter((result) => !result.passed)));
-	console.log(`UI browser passed: ${results.length} retry/cancel/operator scenarios.`);
+	console.log(`UI browser passed: ${results.length} keyboard, retry, cancel, and operator scenarios.`);
+}
+
+async function skipToMain(page) {
+	const link = page.getByRole('link', { name: 'Skip to main content', exact: true });
+	assert.equal(await link.evaluate((node) => getComputedStyle(node).clipPath), 'inset(50%)');
+	await page.keyboard.press('Tab');
+	assert.equal(await link.evaluate((node) => {
+		const rect = node.getBoundingClientRect();
+		const style = getComputedStyle(node);
+		return document.activeElement === node && style.clipPath === 'none' && style.outlineStyle === 'solid'
+			&& rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight;
+	}), true);
+	await page.keyboard.press('Enter');
+	assert.equal(await page.evaluate(() => document.activeElement === document.querySelector('main')), true);
 }
 
 async function send(page, text) {

@@ -396,7 +396,7 @@ export function mountChatSurface(options: Readonly<{
 		await applyRequestState(await result);
 	}
 
-	async function applyRequestState(state: ChatRequestState) {
+	async function applyRequestState(state: ChatRequestState, moveFocus = true) {
 		if (requests.state !== state) return;
 		requestState = state;
 		if (state.kind === 'completed') {
@@ -404,7 +404,7 @@ export function mountChatSurface(options: Readonly<{
 			requestState = requests.state;
 			applyRequestControls(requestState);
 			await appendAssistantReply(state.reply);
-			input.focus();
+			if (moveFocus) input.focus();
 			return;
 		}
 		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
@@ -414,7 +414,7 @@ export function mountChatSurface(options: Readonly<{
 		}
 		applyRequestControls(state);
 		await paint('hold');
-		focusAfterRequestStatePaint(state, elements);
+		if (moveFocus) focusAfterRequestStatePaint(state, elements);
 	}
 
 	form.addEventListener('submit', async (event) => {
@@ -470,9 +470,9 @@ export function mountChatSurface(options: Readonly<{
 			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
-			focusAfterRequestStatePaint(requestState, elements);
 		}
-		if (unsettled) await runRequestCommand(requests.recheck());
+		// Startup recovery updates the conversation without moving keyboard focus.
+		if (unsettled) await applyRequestState(await requests.recheck(), false);
 	}
 
 	void restoreConversation();
