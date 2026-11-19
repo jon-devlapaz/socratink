@@ -90,16 +90,17 @@ type ChatRequestCoordinatorOptions = {
 	onEvent?: (event: WireEvent) => void;
 };
 
-export function openChatConversation(userId: string, aliases: readonly string[] = []): StreamClient {
+export function openChatConversation(userId: string, aliases: readonly string[] = []) {
 	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
 	const conversationId =
 		stored && conversationBelongsToUser(stored, userId, aliases)
 			? stored
 			: namespacedConversationId(userId, randomId());
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
-	return createStreamClient({
+	const client = createStreamClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 	});
+	return { id: conversationId, ...client };
 }
 
 export function startNewChatConversation(userId: string) {
@@ -164,7 +165,7 @@ export class ChatRequestCoordinator {
 		this.onEvent?.(event);
 	}
 
-	start(text: string): Promise<ChatRequestState> {
+	start(text: string, onAdmitted?: () => void): Promise<ChatRequestState> {
 		if (this.state.kind === 'terminal') {
 			this.pending = undefined;
 			this.state = { kind: 'idle' };
@@ -184,7 +185,7 @@ export class ChatRequestCoordinator {
 		};
 		this.pending = pending;
 		this.state = { kind: 'waiting', text };
-		return this.sendAndRead(pending);
+		return this.sendAndRead(pending, onAdmitted);
 	}
 
 	beginRestore(): void {
@@ -309,7 +310,7 @@ export class ChatRequestCoordinator {
 		this.state = { kind: 'idle' };
 	}
 
-	private async sendAndRead(pending: PendingRequest): Promise<ChatRequestState> {
+	private async sendAndRead(pending: PendingRequest, onAdmitted?: () => void): Promise<ChatRequestState> {
 		this.streamTools.length = 0;
 		try {
 			const admission = await this.conversation.send({
@@ -318,6 +319,7 @@ export class ChatRequestCoordinator {
 			});
 			pending.admission = admission;
 			pending.admissionResult.resolve(admission);
+			onAdmitted?.();
 			const reply = await this.conversation.read(admission, {
 				signal: pending.controller.signal,
 				onEvent: (event) => this.observeStreamEvent(event),

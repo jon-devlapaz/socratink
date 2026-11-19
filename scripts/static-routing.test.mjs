@@ -46,6 +46,6 @@ test('production build ships branded recovery and existing static entries', asyn
 	for (const [, path] of assets) {
 		assert.ok((await readFile(`dist/client${path}`)).byteLength > 0);
 	}
-	assert.match(await readFile('dist/client/login.html', 'utf8'), /Welcome back/);
+	assert.match(await readFile('dist/client/login.html', 'utf8'), /<h1[^>]*>Sign in<\/h1>/);
 	assert.match(await readFile('dist/client/index.html', 'utf8'), /id="chat"/);
 });

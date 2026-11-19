@@ -57,6 +57,7 @@ body.login-page {
 .login-card {
 	position: relative;
 	width: min(400px, 100%);
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 1.75rem;
@@ -122,13 +123,6 @@ body.login-page {
 	text-wrap: balance;
 }
 
-.login-lede {
-	margin: 0;
-	font-size: 0.8125rem;
-	color: var(--muted);
-	text-wrap: pretty;
-}
-
 .login-body {
 	margin-top: 1.75rem;
 	display: flex;
@@ -147,13 +141,16 @@ body.login-page {
 }
 
 .login-oauth {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+	display: flex;
+	flex-wrap: wrap;
 	gap: 0.65rem;
 }
 
 .login-oauth-btn {
 	display: inline-flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	min-width: 0;
 	align-items: center;
 	justify-content: center;
 	gap: 0.65rem;
