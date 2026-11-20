@@ -47,6 +47,7 @@ import {
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
 import { mountSoundCues } from './sound-cues.ts';
+import { mountConversationCopy } from './copy-conversation.ts';
 import { requireElement } from './dom.ts';
 import {
 	applyRequestControlState,
@@ -126,6 +127,11 @@ export function mountChatSurface(options: Readonly<{
 	let hasEntered = false;
 	let turns: DisplayedTurn[] = [];
 	let requestState: ChatRequestState = requests.state;
+	const syncConversationCopy = mountConversationCopy(
+		requireElement<HTMLButtonElement>('#copy-conversation'),
+		requireElement<HTMLElement>('#copy-conversation-status'),
+		() => requestState.kind === 'idle' ? turns : undefined,
+	);
 	const transcript = attachTranscriptScroll(card);
 	const markdownRenderers: MarkdownRenderer[] = [];
 	let pendingSession: PendingTurnSession | undefined;
@@ -219,6 +225,7 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	async function paint(kind: PaintKind, landing: 'start' | 'live-edge' = 'start') {
+		syncConversationCopy();
 		const render = async () => {
 			const { earlier, current } = splitCurrentTurns(turns);
 			messages.replaceChildren(
@@ -310,6 +317,7 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	function applyRequestControls(state: ChatRequestState) {
+		syncConversationCopy();
 		applyRequestControlState(state, elements);
 		dictation.setEnabled(!chatRequestControls(state).composerLocked);
 	}

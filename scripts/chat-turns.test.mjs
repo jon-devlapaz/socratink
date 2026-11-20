@@ -10,6 +10,8 @@ import {
 } from '../src/ui/chat-turns.ts';
 import { learnerVisibleAssistantText } from '../src/ui/assistant-text.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
+import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
+import { conversationMarkdown } from '../src/ui/conversation-markdown.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -24,6 +26,27 @@ const questionnaire = {
 		},
 	],
 };
+
+test('exports projected learner words, questions, assistance, and tool-only turns as Markdown', () => {
+	const turns = visibleTurnsFromHistory({ settlements: [], messages: [
+		{ role: 'assistant', parts: [{ type: 'data-questionnaire', data: questionnaire }] },
+		{ role: 'user', parts: [{ type: 'text', text: formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: ['example'] }]) }] },
+		{ role: 'assistant', parts: [
+			{ type: 'text', text: 'Keep **this** punctuation.' },
+			{ type: 'data-reveal', data: { kind: 'worked_example', target: 'Order' } },
+		] },
+		{ role: 'assistant', parts: [{ type: 'dynamic-tool', toolCallId: 't', toolName: 'inspect', state: 'output-available', output: 'Visible result' }] },
+	] });
+	assert.equal(conversationMarkdown(turns), [
+		'## Socratink\n\nHow should we begin?\n- Worked example',
+		'## You\n\nWorked example',
+		'## Socratink\n\nSocratink supplied worked example: Order.\n\nKeep **this** punctuation.',
+		'## Socratink\n\ninspect: Done\n\nVisible result',
+	].join('\n\n'));
+	assert.equal(conversationMarkdown([]), '');
+	const steering = displayedLearnerTurn(formatSteeringMessage('smaller-step'));
+	assert.equal(conversationMarkdown([steering]), `## You\n\n${steering.shownText}`);
+});
 
 test('projects only visible learner and assistant turns from conversation history', () => {
 	const turns = visibleTurnsFromHistory({
