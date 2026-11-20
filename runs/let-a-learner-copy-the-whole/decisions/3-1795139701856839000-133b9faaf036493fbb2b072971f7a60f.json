@@ -1,0 +1,84 @@
+{
+  "inputs": "9fc9ec072bf25cf41d0d8df67bc6ccf8fc777c78183f7150de21faea5e0227c2",
+  "decision": "approved",
+  "basis": "confirmed-seed",
+  "reviewer": "confirmed-seed binding (automatic)",
+  "source": "runs/let-a-learner-copy-the-whole/seed-contract.md",
+  "seed_binding": {
+    "path": "runs/let-a-learner-copy-the-whole/seed-contract.md",
+    "sha256": "052d0877c1c8f111fdc50e53b87c7d359632d142161537773b789a862d8abc98",
+    "source": "/private/tmp/claude-501/-Users-jondev-dev-active-tinkery/00a9ff61-4380-4ef5-bc0d-4dfff296a7ef/scratchpad/TEST-dogfood-932-resume.0pBs/sessions/session-oPmVC5/seed-contract.md",
+    "definitions_sha256": "be32a7d80deadbcf990597300b7f5b3c62d78506781b0f8daf22584f4058b2f8",
+    "confirmation": {
+      "schema_version": 3,
+      "checks_sha256": "99d0108600857efe537f2c6d6cfb88058c858c73384a767f1c45b6653bd39b85",
+      "session_id": "session-oPmVC5",
+      "operator": "agent",
+      "revision": "r1",
+      "source": "tinkery seed step confirm 6a40035e8e0043a024cf05161e99b1fc5b3da08a39829d8744e97eb664db21f4",
+      "confirmed_at": "2026-11-20T01:52:05.504706+00:00",
+      "seed_sha256": "052d0877c1c8f111fdc50e53b87c7d359632d142161537773b789a862d8abc98",
+      "decisions_sha256": "e42f9e27d316f27478882b3cfd05c3f9c7af7050e24804dadd6b439f48ee5aef",
+      "actor": {
+        "action": "typed confirm at this terminal",
+        "by": "terminal",
+        "declaration": "declared: agent",
+        "identity": "declaration is not verified identity"
+      }
+    },
+    "definitions": [
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm build && PLAYWRIGHT_BROWSERS_PATH=.cache/playwright pnpm exec playwright install chromium && PLAYWRIGHT_BROWSERS_PATH=.cache/playwright node --test scripts/copy-conversation.test.mjs",
+        "cwd": ".",
+        "expect": "Proposed, not executed. Start an isolated browser with a synthetic conversation and a deterministic provider. Enter exactly \u201cExplain **order**.\u201d; return exactly \u201cFirst, keep `a`.\u201d; enter exactly \u201cThen what?\u201d; return a card-only question exactly \u201cWhich comes next?\u201d with choices \u201cA\u201d and \u201cB\u201d. Collapse earlier steps. Activate the single whole-conversation text control, then paste into a plain textarea. Assert Markdown contains both learner messages, the tutor reply and the card-only question, once each, in that order, with distinct speaker labels and unchanged punctuation. Reload and repeat with restored history. Exercise a live reply so the control cannot silently produce an incomplete conversation while reporting success. Deny clipboard writes and assert no success state is announced. Inspect narrow and desktop layouts for one text control; visual quietness is judged separately. Revert the copy handler or serializer guard and confirm the clipboard-content assertion fails.",
+        "failure_case": "A copy that omits a collapsed or card-only turn, changes turn order, leaks learner protocol instructions, or announces success after a denied clipboard write must fail.",
+        "kind": "provisional",
+        "missing": "Add scripts/copy-conversation.test.mjs using node:test and Playwright. It must own deterministic browser/server setup, clipboard paste coverage, restored and live-request cases, and assertions for denied writes and card-only turns. The browser invocation and new assertions are not yet implemented.",
+        "source": "goal; package.json:33\u201340, 68\u201374; scripts/chat-turns.test.mjs:1\u201358, 136\u2013169; .github/workflows/ci.yml:22\u201338",
+        "statement": "one quiet text control copies the conversation, and pasting it shows every turn in order.",
+        "id": "seed-1",
+        "description": "one quiet text control copies the conversation, and pasting it shows every turn in order.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm test:chat-turns",
+        "cwd": ".",
+        "expect": "Proposed, not executed. With the repository's supported Node and pnpm versions, install locked dependencies and run existing turn assertions. All pass. As a targeted guard challenge, replacing shownText with raw questionnaire protocol text should fail the learner-facing answer assertion.",
+        "failure_case": "A card answer shown as raw Questionnaire answers protocol text must fail the learner-facing projection assertion.",
+        "kind": "cmd",
+        "source": "package.json:33\u201340; scripts/chat-turns.test.mjs:1\u201358, 136\u2013169; .github/workflows/ci.yml:22\u201332",
+        "statement": "Existing learner-facing turn projection remains unchanged.",
+        "id": "seed-2",
+        "description": "Existing learner-facing turn projection remains unchanged.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm check && pnpm smoke",
+        "cwd": ".",
+        "expect": "Proposed, not executed. Use the supported Node and pnpm versions in a checkout with locked dependencies. Run the full quality gate, including its build, then the deterministic fake-provider smoke test. Both commands exit zero. This supplements, not replaces, the targeted copy regression.",
+        "failure_case": "A type error introduced by wiring the new control must fail the quality gate and prevent a passing result.",
+        "kind": "cmd",
+        "source": "AGENTS.md:28\u201334; README.md:67\u201382; package.json:13\u201318; .github/workflows/ci.yml:30\u201350",
+        "statement": "The repository quality gate and deterministic smoke checks pass.",
+        "id": "seed-3",
+        "description": "The repository quality gate and deterministic smoke checks pass.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "failure_case": "A pill-shaped, bordered or badge-bearing copy control must not pass the yohaku judgment.",
+        "how_to_judge": "Taste inspects the built conversation at narrow and desktop widths, in light and dark themes, including focus and copied feedback states. Does one quiet text control fit the existing interface without added chrome, pills, borders or badges? The answer can require visual or wording repairs; it does not accept teaching changes.",
+        "kind": "judge",
+        "source": "goal; DESIGN.md:9\u201320",
+        "statement": "The control keeps the yohaku look: no added chrome, pills, borders or badges.",
+        "id": "seed-4",
+        "description": "The control keeps the yohaku look: no added chrome, pills, borders or badges.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      }
+    ]
+  },
+  "reason": "matches confirmed seed (sha256: 052d0877c1c8f111fdc50e53b87c7d359632d142161537773b789a862d8abc98)"
+}
