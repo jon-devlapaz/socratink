@@ -146,7 +146,8 @@ those failures when it next runs.
 
 The workflow also checks the previous successful production runtime scan.
 If none started within 45 minutes, or GitHub history cannot be read, the job
-fails. Preview drills cannot satisfy this check. The first run after a gap can
+fails. A network error, HTTP 429 or 5xx on a history read gets one retry after
+one second; a second failure, or any other status, still fails the job. Preview drills cannot satisfy this check. The first run after a gap can
 fail even when the current scan is clean; that clean scan lets the next run
 recover. This reports a gap after execution resumes; it cannot send an alert
 while both schedulers are stopped.

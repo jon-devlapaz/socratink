@@ -1,18 +1,31 @@
 const repository = 'https://api.github.com/repos/jon-devlapaz/socratink';
 const counts = { cadenceGaps: 0, missingBaseline: 0, readFailures: 0 };
 
-async function readMetadata(path) {
-	const response = await fetch(`${repository}${path}`, {
-		headers: {
-			Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2026-03-10',
-		},
-		redirect: 'error',
-		signal: AbortSignal.timeout(10_000),
-	});
+// One transient GitHub failure (network, 429 or 5xx) gets one retry, so a
+// single blip does not page; a repeat, or any other status, still fails closed.
+async function readMetadata(path, retry = true) {
+	let response;
+	try {
+		response = await fetch(`${repository}${path}`, {
+			headers: {
+				Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+				Accept: 'application/vnd.github+json',
+				'X-GitHub-Api-Version': '2026-03-10',
+			},
+			redirect: 'error',
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch (error) {
+		if (!retry) throw error;
+		await new Promise((done) => setTimeout(done, 1000));
+		return readMetadata(path, false);
+	}
 	if (!response.ok || !response.body) {
 		await response.body?.cancel();
+		if (retry && (response.status === 429 || response.status >= 500)) {
+			await new Promise((done) => setTimeout(done, 1000));
+			return readMetadata(path, false);
+		}
 		throw new Error();
 	}
 	const chunks = [];
