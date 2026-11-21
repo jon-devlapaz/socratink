@@ -58,7 +58,7 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 			apiKey: 'gateway-key',
 			reasoning: true,
 			contextWindow: 204_800,
-			maxTokens: 131_100,
+			maxTokens: 32_768,
 		},
 	);
 }
@@ -71,7 +71,7 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		apiKey: 'oidc-token',
 		reasoning: true,
 		contextWindow: 204_800,
-		maxTokens: 131_100,
+		maxTokens: 32_768,
 	});
 }
 
@@ -83,7 +83,7 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		apiKey: 'gateway-key',
 		reasoning: true,
 		contextWindow: 204_800,
-		maxTokens: 131_100,
+		maxTokens: 32_768,
 	});
 }
 
