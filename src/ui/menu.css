@@ -213,9 +213,17 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	justify-content: center;
 	align-items: flex-start;
 	gap: 1.35rem 1.15rem;
-	width: min(28rem, calc(100% - 2rem));
+	width: fit-content;
+	max-width: calc(100% - 2rem);
 	margin: 1.6rem auto 0.4rem;
 	padding: 0.4rem 0 0.2rem;
+}
+
+/* Keep all six tiles from wrapping as a row of five and a row of one. */
+@media (max-width: 34.15rem) {
+	.menu-orbs:has(> :nth-child(6 of :not([hidden]))) {
+		max-width: min(22rem, calc(100% - 2rem));
+	}
 }
 
 .menu-orbs a,

@@ -328,7 +328,7 @@ html[data-type-size='small'] .active-node {
 }
 
 #active-turn {
-	padding: 0.55rem 1.25rem 1.2rem;
+	padding: 0.55rem var(--conversation-text-inset) 1.2rem;
 }
 
 /* With no earlier-steps tab above it, the first turn keeps clear of the card's edge. */

@@ -218,6 +218,9 @@
 }
 
 .questionnaire-button-ghost {
+	min-inline-size: 44px;
+	padding-inline: 0;
+	text-align: start;
 	background: transparent;
 	margin-right: auto;
 	color: var(--muted);

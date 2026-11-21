@@ -57,6 +57,17 @@ are no solid teal blocks. The composer has a neutral paper fill and a hairline
 edge, with no invitation glow. Sign-in uses the same folio rules, not a dark
 floating card. Shadows must identify a meaningful state, not decoration.
 
+## Alignment
+
+Recorded by Codex on 2026-11-21 during the Gridlines pass.
+
+- Current-turn text, composer text, and dictation status use a common inset
+  of 1.25rem. The composer border counts toward this inset.
+- The first text action in a question starts on the prompt's leading edge.
+- Menu controls share one centered row when there is space for all six.
+  On smaller screens, keep rows centered and align the icons within each row.
+- Sign-in providers share the available row width equally.
+
 ## Access and behavior
 
 Preserve accessible names, DOM contracts, keyboard order, the earlier-step
