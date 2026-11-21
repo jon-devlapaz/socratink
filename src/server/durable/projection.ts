@@ -87,6 +87,8 @@ function appendAssistant(target: ProductMessage, message: AssistantMessage) {
 	const open = text.indexOf('<think>');
 	if (open >= 0) { inline += text.slice(open); text = text.slice(0, open); }
 	if (closed >= 0 || open >= 0) text = text.trim();
+	// Told to "write no text" after a mark check, the model sometimes writes that literally.
+	if (/^\(no text\)$/i.test(text.trim())) text = '';
 	inline = inline.replaceAll(/<\/?think>/g, '').trim();
 	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]
 		.filter(Boolean).join('\n\n');
