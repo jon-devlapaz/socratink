@@ -7,13 +7,15 @@ function protectedReveal(message: ProductMessage, permission: RevealDefinition |
 		...(message.data?.reveal ?? []),
 		...(message.tools ?? []).filter((tool) => tool.name === revealToolName && !tool.isError).map((tool) => tool.input),
 	].map(parseRevealDefinition);
-	return reveals.find((reveal) => reveal && (reveal.kind === 'full_answer' || reveal.kind === 'worked_example')
+	return reveals.find((reveal) => reveal && !reveal.requested && (reveal.kind === 'full_answer' || reveal.kind === 'worked_example')
 		&& (permission?.kind !== reveal.kind || permission?.target !== reveal.target));
 }
 
 function consentCard(reveal: RevealDefinition): QuestionnaireDefinition {
 	return questionnaireFromPresentQuestion({
-		prompt: reveal.kind === 'full_answer' ? 'I can show a full answer.' : 'I can show a worked example.',
+		prompt: reveal.kind === 'full_answer'
+			? `I can show a full answer${reveal.target ? ` to ${reveal.target}` : ''}.`
+			: `I can show a worked example${reveal.target ? ` of ${reveal.target}` : ''}.`,
 		choices: [{ value: 'see-it', label: 'See it' }, { value: 'try-once-more', label: 'Try once more' }],
 	});
 }
@@ -40,8 +42,6 @@ export function withRevealConsent(snapshot: Snapshot, consentRequired: ReadonlyS
 			}
 			return { role: 'assistant', submissionId: message.submissionId, text: '' };
 		}
-		const marked = (message.data?.reveal ?? []).some((value) => parseRevealDefinition(value));
-		if (!completed.has(message.submissionId) && !marked) return { ...message, text: '' };
 		return message;
 	});
 	return { ...snapshot, messages };

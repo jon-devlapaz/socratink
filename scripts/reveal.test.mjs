@@ -16,6 +16,13 @@ test('accepts a kind and optional target, and rejects unknown kinds', () => {
 	assert.equal(parseRevealDefinition({ kind: 'full_answer', extra: true }), undefined);
 });
 
+test('requested accepts only an explicit true flag', () => {
+	assert.deepEqual(parseRevealDefinition({ kind: 'full_answer', requested: true }), { kind: 'full_answer', requested: true });
+	for (const requested of [false, 'true', 1, null]) {
+		assert.equal(parseRevealDefinition({ kind: 'full_answer', requested }), undefined);
+	}
+});
+
 test('reads the last data-reveal part', () => {
 	assert.deepEqual(
 		revealFromParts([

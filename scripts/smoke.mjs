@@ -240,7 +240,7 @@ const scriptedProviderTurns = [
 		finishReason: 'tool_calls',
 	},
 	{
-		expectedMessages: ['Questionnaire answers:\n- I can show a full answer.: See it'],
+		expectedMessages: [`Questionnaire answers:\n- I can show a full answer to ${revealExample.target}.: See it`],
 		text: assistanceText,
 		tools: [{ id: 'call_permitted_reveal', name: 'mark_reveal', arguments: revealExample },
 			presentQuestionCall('call_permitted_revision', revisedPresent)],

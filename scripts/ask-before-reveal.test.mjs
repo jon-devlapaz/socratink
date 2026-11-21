@@ -12,6 +12,7 @@ import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { formatQuestionnaireAnswers, questionnaireFromParts } from '../src/questionnaire.ts';
 
 const protectedText = 'The answer is 42.';
+const beforeMark = 'What do we know?';
 
 async function fixture(run) {
 	await mkdir('.cache', { recursive: true });
@@ -42,7 +43,8 @@ async function fixture(run) {
 	try {
 		await run({ snapshot, poll,
 			async restart() { await Promise.all(work); await engine.close(); engine = await openEngine(options); },
-			async turn(learner, kind, text, inspect = () => {}) {
+			async turn(learner, reveal, text, inspect = () => {}) {
+				const input = typeof reveal === 'string' ? { kind: reveal } : reveal;
 				const count = responses.length;
 				const submissionId = await engine.submit(id, learner);
 				const live = createLiveReply(learner);
@@ -60,17 +62,25 @@ async function fixture(run) {
 				};
 				await poll(observe, () => responses.length > count);
 				const first = responses[count];
-				emit(first, { role: 'assistant', content: text.slice(0, 10) });
-				await delay(100); await observe();
-				emit(first, { content: text.slice(10) });
-				await delay(100); await observe();
-				if (kind) {
+				let writer = first;
+				if (input) {
+					emit(first, { role: 'assistant', content: beforeMark });
+					await poll(observe, (value) => JSON.stringify(value).includes(beforeMark));
 					emit(first, { tool_calls: [{ index: 0, id: `reveal_${count}`, type: 'function',
-						function: { name: 'mark_reveal', arguments: JSON.stringify({ kind }) } }] });
+						function: { name: 'mark_reveal', arguments: JSON.stringify(input) } }] });
 					finish(first, 'tool_calls');
 					await poll(observe, () => responses.length > count + 1);
-					finish(responses[count + 1]);
-				} else finish(first);
+					writer = responses[count + 1];
+				}
+				emit(writer, { role: 'assistant', content: text.slice(0, 10) });
+				await delay(100); await observe();
+				emit(writer, { content: text.slice(10) });
+				if (input && !input.requested && ['full_answer', 'worked_example'].includes(input.kind)) {
+					await delay(500); await observe();
+				} else {
+					await poll(observe, (value) => JSON.stringify(value).includes(text));
+				}
+				finish(writer);
 				const state = await poll(observe, (value) => value.settlements.some((s) => s.submissionId === submissionId));
 				await Promise.all(work);
 				return { state, reply: state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant') };
@@ -100,7 +110,13 @@ function withheld({ state, markdown }) {
 for (const kind of ['full_answer', 'worked_example']) {
 	for (const choice of ['see-it', 'try-once-more']) {
 		test(`${kind}: ${choice}, intermediate text and restored pending choice`, async () => fixture(async (f) => {
-			const pending = await f.turn('Just tell me the answer.', kind, protectedText, withheld);
+			let prefixStreamed = false;
+			const pending = await f.turn('I think it is 41.', kind, protectedText, (value) => {
+				withheld(value);
+				if (value.markdown === beforeMark && !value.state.settlements.length) prefixStreamed = true;
+			});
+			assert.equal(prefixStreamed, true, 'text before the mark streams');
+			assert.doesNotMatch(JSON.stringify(pending.reply), /What do we know/, 'settlement hides pre-mark text too');
 			const card = questionnaireFromParts(pending.reply.parts);
 			assert.ok(card, 'the protected reply must become an existing question card');
 			assert.deepEqual(card.items[0].choices.map((c) => c.label), ['See it', 'Try once more']);
@@ -113,7 +129,7 @@ for (const kind of ['full_answer', 'worked_example']) {
 			const answer = formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: [choice] }]);
 			if (choice === 'see-it') {
 				const seen = await f.turn(answer, kind, protectedText);
-				assert.equal(seen.reply.parts.filter((p) => p.type === 'text').map((p) => p.text).join(''), protectedText);
+				assert.equal(seen.reply.parts.filter((p) => p.type === 'text').map((p) => p.text).join(''), `${beforeMark}\n\n${protectedText}`);
 				assert.deepEqual(seen.reply.parts.find((p) => p.type === 'data-reveal').data, { kind });
 				const again = await f.turn('Another answer, please.', kind, protectedText, ({ state }) => {
 					const latest = state.messages.filter((m) => m.submissionId === state.messages.at(-1).submissionId);
@@ -130,13 +146,47 @@ for (const kind of ['full_answer', 'worked_example']) {
 	}
 }
 
-test('a hint arrives without a consent card and keeps its provenance', async () => fixture(async (f) => {
+test('an unmarked reply streams before settlement', async () => fixture(async (f) => {
+	let streamed = false;
+	const text = 'What would you try next?';
+	const { reply } = await f.turn('Let me try.', undefined, text, ({ state, markdown }) => {
+		if (!state.settlements.length && markdown === text) streamed = true;
+	});
+	assert.equal(streamed, true, 'ordinary text must not wait for settlement');
+	assert.equal(reply.parts.find((p) => p.type === 'text').text, text);
+}));
+
+for (const kind of ['full_answer', 'worked_example']) {
+	test(`${kind}: an explicit answer request needs no consent card`, async () => fixture(async (f) => {
+		const reveal = { kind, requested: true };
+		let streamed = false;
+		const { reply } = await f.turn('Just tell me the answer.', reveal, protectedText, ({ state, markdown }) => {
+			if (!state.settlements.length && markdown.includes(protectedText)) streamed = true;
+		});
+		assert.equal(streamed, true);
+		assert.equal(questionnaireFromParts(reply.parts), undefined);
+		assert.ok(reply.parts.find((p) => p.type === 'text').text.includes(protectedText));
+		assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, reveal);
+	}));
+
+	for (const target of [undefined, 'solving 6 times 7']) {
+		test(`${kind}: consent line ${target ? 'names its target' : 'keeps the default without a target'}`, async () => fixture(async (f) => {
+			const { reply } = await f.turn('I think it is 41.', { kind, ...(target ? { target } : {}) }, protectedText, withheld);
+			const card = questionnaireFromParts(reply.parts);
+			assert.equal(card.items[0].prompt, kind === 'full_answer'
+				? `I can show a full answer${target ? ` to ${target}` : ''}.`
+				: `I can show a worked example${target ? ` of ${target}` : ''}.`);
+		}));
+	}
+}
+
+for (const kind of ['hint', 'partial']) test(`${kind} arrives without a consent card and keeps its provenance`, async () => fixture(async (f) => {
 	let liveHint = false;
-	const { reply } = await f.turn('Give me a hint.', 'hint', 'Consider the units.', ({ state, markdown }) => {
-		if (!state.settlements.length && markdown === 'Consider the units.') liveHint = true;
+	const { reply } = await f.turn('Give me a hint.', kind, 'Consider the units.', ({ state, markdown }) => {
+		if (!state.settlements.length && markdown.includes('Consider the units.')) liveHint = true;
 	});
 	assert.equal(liveHint, true, 'the hint is visible before settlement without a choice');
 	assert.equal(questionnaireFromParts(reply.parts), undefined);
-	assert.equal(reply.parts.find((p) => p.type === 'text').text, 'Consider the units.');
-	assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, { kind: 'hint' });
+	assert.equal(reply.parts.find((p) => p.type === 'text').text, `${beforeMark}\n\nConsider the units.`);
+	assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, { kind });
 }));

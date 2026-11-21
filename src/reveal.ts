@@ -9,6 +9,7 @@ export const revealDataName = 'reveal';
 export const RevealSchema = v.strictObject({
 	kind: v.picklist(['hint', 'worked_example', 'partial', 'full_answer']),
 	target: v.optional(boundedString(320)),
+	requested: v.optional(v.literal(true)),
 });
 
 export type RevealDefinition = v.InferOutput<typeof RevealSchema>;
