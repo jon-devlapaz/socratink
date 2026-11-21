@@ -172,6 +172,7 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		if (failures === 3) assert.equal(completed.submissions[0].error, 'The model request could not complete.');
 		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
 		assert.equal(turns[0].model, failures === 1 ? 'synthetic-route' : 'synthetic', 'a turn without a routed reply logs the configured model');
+		assert.equal(turns[0].providerStatus, failures === 1 ? undefined : 500, 'a failed turn records the provider HTTP status');
 		assert.equal(JSON.stringify(turns).includes('Synthetic private'), false, 'turn records carry no learner or provider text');
 	} finally { await engine.close(); }
 }, failures));
@@ -238,7 +239,7 @@ test('a turn log line names route, hashed session, model, latency and status, ne
 	console.log = (line) => lines.push(line);
 	try {
 		logTurn({ conversationId: 'guest-user:nonce', submissionId: '4', latencyMs: 812, model: 'synthetic/model', status: 'completed' });
-		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed' });
+		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed', providerStatus: 429 });
 	} finally { console.log = log; }
 	const [completed, failed] = lines.map((line) => JSON.parse(line));
 	assert.deepEqual(Object.keys(completed), ['event', 'route', 'session', 'submission', 'model', 'latencyMs', 'status']);
@@ -247,5 +248,6 @@ test('a turn log line names route, hashed session, model, latency and status, ne
 	assert.match(completed.session, /^[0-9a-f]{12}$/);
 	assert.equal(failed.session, completed.session, 'turns of one conversation share a session hash');
 	assert.equal(lines.join('').includes('guest-user'), false);
-	assert.deepEqual({ model: failed.model, status: failed.status, error: failed.error }, { model: null, status: 'failed', error: 'model_request_failed' });
+	assert.deepEqual({ model: failed.model, status: failed.status, error: failed.error, providerStatus: failed.providerStatus },
+		{ model: null, status: 'failed', error: 'model_request_failed', providerStatus: 429 });
 });

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
-import { Harness, LiveDoc, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
+import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
 import { inputKind, type Engine, type EngineOptions, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
@@ -66,7 +66,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		let failed = false;
 		const reportFailed = () => { if (!failed && !owner.interrupted) { failed = true; report('submission_failed'); } };
 		const started = Date.now();
-		let ended: Pick<TurnRecord, 'status' | 'model'> = { status: 'unsettled' };
+		let ended: Pick<TurnRecord, 'status' | 'model' | 'providerStatus'> = { status: 'unsettled' };
 		const checkCancellation = () => {
 			if (cancellation || cancelled || owner.interrupted) return;
 			cancellation = (async () => {
@@ -88,7 +88,16 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
 					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
 					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
-					if (submission?.outcome === 'failed') reportFailed();
+					if (submission?.outcome === 'failed') {
+						reportFailed();
+						// The last failed reply's error starts with the provider's HTTP status
+						// ("429 ..."). Keep only that number: the rest can echo request text.
+						const recent = await owner.storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
+						const reply = recent.items.flatMap((entry) => [...(entry.model ?? [])].reverse())
+							.find((message) => message.role === 'assistant' && message.stopReason === 'error');
+						const status = reply?.role === 'assistant' ? /^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1] : undefined;
+						if (status) ended.providerStatus = Number(status);
+					}
 				}
 			} catch { ended = { status: 'error' }; reportFailed(); }
 			finally {

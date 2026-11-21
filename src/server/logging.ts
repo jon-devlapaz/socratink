@@ -2,8 +2,9 @@ import { createHash } from 'node:crypto';
 import { appConfig } from '../config/app.config.ts';
 import type { TurnRecord } from './durable/contract.ts';
 
-/** Server log lines carry categories, ids and timings only. Runtime events and
- * provider errors can contain learner text and credentials, so neither is logged. */
+/** Server log lines carry categories, ids, timings and a failed turn's provider HTTP
+ * status only. Runtime events and provider error text can contain learner text and
+ * credentials, so neither is logged. */
 export function reportFailure(category: 'submission_failed' | 'submission_recovery' | 'request_failed'): void {
 	console.error(JSON.stringify({ event: 'socratink_failure', category }));
 }
@@ -19,5 +20,5 @@ export function logTurn(turn: TurnRecord): void {
 	console.log(JSON.stringify({ event: 'socratink_turn', route: appConfig.chatAgentPath,
 		session: createHash('sha256').update(turn.conversationId).digest('hex').slice(0, 12),
 		submission: turn.submissionId, model: turn.model ?? null, latencyMs: turn.latencyMs, status: turn.status,
-		...(error ? { error } : {}) }));
+		...(error ? { error } : {}), ...(turn.providerStatus ? { providerStatus: turn.providerStatus } : {}) }));
 }
