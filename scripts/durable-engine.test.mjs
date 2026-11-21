@@ -38,7 +38,7 @@ function chunk(response, delta, finish_reason = null) {
 }
 function finish(response, text = 'Completed reply.') { chunk(response, { content: text }); chunk(response, {}, 'stop'); response.end('data: [DONE]\n\n'); }
 async function until(read, predicate) {
-	for (let attempt = 0; attempt < 250; attempt++) { const value = await read(); if (predicate(value)) return value; await delay(20); }
+	for (let attempt = 0; attempt < 750; attempt++) { const value = await read(); if (predicate(value)) return value; await delay(20); }
 	throw new Error('Expected durable state was not reached.');
 }
 
@@ -156,7 +156,13 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		logTurn: (turn) => turns.push(turn) });
 	try {
 		await engine.submit('learner:failure', 'Synthetic private learner text.');
-		if (failures === 1) { await until(async () => responses.length, (count) => count === 2); finish(responses[1]); }
+		if (failures === 1) {
+			await until(async () => responses.length, (count) => count === 1);
+			const failedAt = Date.now();
+			await until(async () => responses.length, (count) => count === 2);
+			assert.ok(Date.now() - failedAt >= 1_500, 'a failed model request waits before it retries, so a rate limit can clear');
+			finish(responses[1]);
+		}
 		await Promise.all(background);
 		const completed = await engine.snapshot('learner:failure');
 		assert.equal(completed.submissions[0].outcome, failures === 1 ? 'completed' : 'failed');

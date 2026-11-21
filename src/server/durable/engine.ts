@@ -182,7 +182,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 	if (feedback) registry.install(feedback);
 	const harness = await Harness.open(storage, { models, registry,
 		settings: { compaction: { enabled: false }, stream: { maxRetries: 0 },
-			retry: { maxRetries: 2, baseDelayMs: 50 }, progress: { persistWithinMs: 50 } },
+			retry: { maxRetries: 2, baseDelayMs: 2_000 }, progress: { persistWithinMs: 50 } },
 	}, context);
 	try {
 		root = await harness.root(context, { agent: { model: modelRef, maxTurns: 8 } });
