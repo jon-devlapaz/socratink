@@ -19,8 +19,8 @@
 }
 
 .peek-handle:focus-visible {
-	outline: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-	outline-offset: 4px;
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .peek-handle::after,
@@ -89,9 +89,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	flex: none;
 	border-radius: 48% 52% 49% 51% / 52% 48% 52% 48%;
 	background: var(--mark-fill);
-	box-shadow:
-		inset 0 -0.035em 0.07em rgba(255, 255, 255, 0.045),
-		0 0.015em 0.04em rgba(20, 19, 17, 0.18);
+	box-shadow: none;
 	transform-origin: center;
 	transition-property: opacity;
 	transition-duration: 150ms;
@@ -134,8 +132,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 }
 
 .brand-lockup:focus-visible {
-	outline: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-	outline-offset: 0.3em;
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .encounter-active .brand-lockup:focus-visible .brand-name {
@@ -190,7 +188,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	flex-direction: column;
 	overflow: hidden;
 	padding-top: env(safe-area-inset-top, 0px);
-	border-radius: 0 0 16px 16px;
+	border-radius: 0;
+	border-bottom: 1px solid var(--rule);
 	background: var(--paper);
 	box-shadow: var(--shadow-border), var(--panel-shadow);
 	backdrop-filter: blur(14px);
@@ -250,7 +249,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	color: var(--ink);
 	background: transparent;
 	box-shadow: none;
-	outline: none;
+	outline: 2px solid var(--accent);
 }
 
 .menu-orbs a:hover > svg,
@@ -264,7 +263,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 .menu-orbs button:focus-visible > svg,
 .menu-orbs button:focus-visible > .orb-glyph {
 	background: var(--path-hover);
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+	box-shadow: none;
 }
 
 .menu-orbs a:active,
@@ -284,8 +283,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0.85rem;
-	border-radius: 999px;
-	background: var(--path);
+	border-radius: 0.6rem;
+	background: transparent;
 	box-shadow: var(--shadow-border);
 	box-sizing: content-box;
 	color: var(--ink);

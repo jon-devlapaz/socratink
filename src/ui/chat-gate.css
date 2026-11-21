@@ -1,9 +1,8 @@
 .chat-gate-card {
 	margin-block-start: 1rem;
 	padding: 1.25rem 1.5rem;
-	border-radius: 0.75rem;
-	background: var(--card);
-	box-shadow: var(--shadow-border);
+	border-block: 1px solid var(--rule);
+	background: transparent;
 	text-align: center;
 }
 
@@ -35,23 +34,16 @@
 	cursor: pointer;
 }
 
-.chat-gate-google {
-	background: hsl(0 0% 100%);
-	color: hsl(0 0% 12%);
-}
-
-.chat-gate-google:hover {
-	background: hsl(0 0% 92%);
-}
-
+.chat-gate-google,
 .chat-gate-github {
-	background: hsl(0 0% 20%);
-	color: hsl(0 0% 92%);
-	border: 1px solid hsl(0 0% 28%);
+	background: var(--paper-2);
+	color: var(--ink);
+	border: 1px solid var(--rule);
 }
 
+.chat-gate-google:hover,
 .chat-gate-github:hover {
-	background: hsl(0 0% 26%);
+	background: var(--path-hover);
 }
 
 @media (min-width: 28rem) {
