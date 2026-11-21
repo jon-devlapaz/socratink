@@ -197,7 +197,8 @@ async function handleCallback(
 		const identity = await identityResolvers[provider](accessToken);
 		if (!identity) return context.redirect('/login.html?error=unverified_email');
 
-		const guestUserId = (await readSession(context, options.secret, options.authDb))?.userId;
+		const session = await readSession(context, options.secret, options.authDb);
+		const guestUserId = session?.kind === 'guest' ? session.userId : undefined;
 		const durableUserId = await resolveDurableUserId(options.authDb, {
 			provider,
 			providerUserId: identity.providerUserId,

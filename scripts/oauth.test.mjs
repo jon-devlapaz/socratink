@@ -299,6 +299,44 @@ test('Google callback links a returning guest to an existing account via alias',
 	});
 });
 
+test('switching between Google accounts keeps separate registered identities', async () => {
+	await withAuthDb(async (authDb) => {
+		const rekeys = [];
+		const app = createCallbackApp(authDb, {
+			onRekey: async (from, to) => { rekeys.push([from, to]); },
+		});
+		async function signIn(cookies, subject) {
+			const login = await startLogin(app, 'google', cookies);
+			return withMockFetch({
+				'https://oauth2.googleapis.com/token': googleTokenRoute,
+				'https://openidconnect.googleapis.com/v1/userinfo': () => ({
+					sub: subject, email: `${subject}@example.com`, email_verified: true,
+				}),
+			}, async () => {
+				const res = await app.request(`/api/auth/google/callback?code=test-code&state=${login.state}`, {
+					headers: { Cookie: login.cookies },
+				});
+				assert.equal(res.headers.get('location'), '/');
+				return mergeCookies(res, login.cookies);
+			});
+		}
+		const guest = await mintGuest(app);
+		const firstCookies = await signIn(guest.cookies, 'first');
+		const secondCookies = await signIn(firstCookies, 'second');
+		const second = await sessionPayload(app, secondCookies);
+		assert.equal(second.kind, 'registered');
+		assert.notEqual(second.userId, guest.userId);
+		assert.deepEqual(second.aliases, []);
+		assert.equal((await authDb.findUserById(second.userId))?.email, 'second@example.com');
+
+		const returning = await signIn(secondCookies, 'first');
+		assert.deepEqual(await sessionPayload(app, returning), {
+			userId: guest.userId, aliases: [], kind: 'registered',
+		});
+		assert.deepEqual(rekeys, []);
+	});
+});
+
 test('Google callback attaches a new provider to an existing email user', async () => {
 	await withAuthDb(async (authDb) => {
 		const durableUserId = 'email-user-1';
