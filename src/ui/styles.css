@@ -1,3 +1,25 @@
+@font-face {
+	font-family: "Inter";
+	src: url("./fonts/inter.woff2") format("woff2");
+	font-weight: 100 900;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Instrument Serif";
+	src: url("./fonts/instrument-serif.woff2") format("woff2");
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Instrument Serif";
+	src: url("./fonts/instrument-serif-italic.woff2") format("woff2");
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
 :root {
 	--paper: #fffcf0;
 	--paper-2: #f2f0e9;
@@ -13,16 +35,13 @@
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	--rule: color-mix(in srgb, var(--ink) 10%, transparent);
 	--wash: transparent;
-	--grain-blend: multiply;
-	--grain-opacity: 0.38;
-	--tint-blend: multiply;
 	--path: color-mix(in srgb, var(--ui) 35%, var(--paper));
 	--path-hover: color-mix(in srgb, var(--ui) 65%, var(--paper));
 	--chip: var(--paper-2);
 	--chip-strong: var(--paper);
 	--highlight: transparent;
-	--send-ink: var(--accent);
-	--send-fill: var(--paper-2);
+	--send-ink: var(--paper);
+	--send-fill: var(--accent);
 	--mark-fill: var(--ink);
 	--wordmark-filter: none;
 	--panel-shadow: none;
@@ -88,26 +107,6 @@ body {
 	transition-timing-function: var(--drawer);
 }
 
-.app-canvas::before,
-.app-canvas::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-}
-
-.app-canvas::before {
-	background-image: var(--grain);
-	background-size: 180px 140px;
-	mix-blend-mode: var(--grain-blend);
-	opacity: var(--grain-opacity);
-}
-
-.app-canvas::after {
-	background: color-mix(in srgb, var(--paper) 50%, transparent);
-	mix-blend-mode: var(--tint-blend);
-}
 
 button,
 input,
@@ -229,12 +228,13 @@ body.questionnaire-active .stage {
 	overflow: hidden;
 	border: 1px solid var(--rule);
 	border-radius: 0.6rem;
-	background: var(--paper-2);
+	background: var(--paper);
+	transition: border-color 150ms var(--ease-out);
 }
 
+/* One quiet signal: the hairline turns jade. The textarea draws no ring of its own. */
 #chat:focus-within {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
+	border-color: var(--accent);
 }
 
 #message {
@@ -259,8 +259,7 @@ body.questionnaire-active .stage {
 }
 
 #message:focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: -3px;
+	outline: none;
 }
 
 #message::placeholder {
@@ -417,8 +416,6 @@ body.questionnaire-active .stage {
 	--muted: #aaa69e;
 	--quiet: #8f8c85;
 	--accent: #3aa99f;
-	--grain-blend: overlay;
-	--grain-opacity: 0.5;
 	--wordmark-filter: invert(1);
 	color-scheme: dark;
 }
@@ -433,9 +430,7 @@ body.questionnaire-active .stage {
 		--muted: #aaa69e;
 		--quiet: #8f8c85;
 		--accent: #3aa99f;
-		--grain-blend: overlay;
-		--grain-opacity: 0.5;
-		--wordmark-filter: invert(1);
+				--wordmark-filter: invert(1);
 		color-scheme: dark;
 	}
 }

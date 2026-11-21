@@ -26,7 +26,7 @@
 	padding: 0;
 	margin: 0;
 	font-family: var(--font-serif);
-	font-size: calc(1.65rem * var(--type-scale, 1));
+	font-size: calc(clamp(1.3rem, 1.05rem + 1.2vw, 1.65rem) * var(--type-scale, 1));
 	font-weight: 400;
 	line-height: 1.2;
 	letter-spacing: -0.02em;
@@ -34,7 +34,7 @@
 }
 
 .questionnaire-item legend + .questionnaire-choices {
-	margin-top: 1rem;
+	margin-top: 0.5rem;
 }
 
 .questionnaire-description,
@@ -67,10 +67,30 @@
 	gap: 0.75rem;
 }
 
-.questionnaire-choices > button + button {
+/* One-tap choices, such as the consent card, are words on the page, not boxes.
+   "Try once more" is the invited path, so it carries the accent. */
+.questionnaire-choices > button {
+	flex: 0 0 auto;
+	min-height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
 	color: var(--muted);
 	background: transparent;
-	border-color: transparent;
+	font-size: calc(0.95rem * var(--type-scale, 1));
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.3em;
+	text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.questionnaire-choices > button + button {
+	color: var(--accent);
+	text-decoration-color: currentColor;
+}
+
+.questionnaire-choices > button:hover {
+	text-decoration-color: currentColor;
 }
 
 .questionnaire-choice {
