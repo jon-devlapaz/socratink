@@ -1,56 +1,69 @@
 @font-face {
-	font-family: "Paper Mono";
-	src: url("./fonts/paper-mono.woff2") format("woff2");
-	font-weight: 100 800;
+	font-family: "Inter";
+	src: url("./fonts/inter.woff2") format("woff2");
+	font-weight: 100 900;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Instrument Serif";
+	src: url("./fonts/instrument-serif.woff2") format("woff2");
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Instrument Serif";
+	src: url("./fonts/instrument-serif-italic.woff2") format("woff2");
+	font-weight: 400;
+	font-style: italic;
 	font-display: swap;
 }
 
 :root {
 	--paper: #fffcf0;
+	--paper-2: #f2f0e9;
+	--ui: #e6e4d9;
+	--ui-2: #dad8ce;
 	--ink: #100f0f;
-	--muted: #6f6e69;
-	--quiet: #878580;
-	--accent: #24837b;
-	--error: #af3029;
-	--wash: color-mix(in srgb, #ffffff 50%, transparent);
-	--grain-blend: multiply;
-	--grain-opacity: 0.38;
-	--tint-blend: multiply;
-	--path: color-mix(in srgb, #fffcf0 42%, transparent);
-	--path-hover: color-mix(in srgb, #fffcf0 72%, transparent);
-	--chip: color-mix(in srgb, #fffcf0 72%, transparent);
-	--chip-strong: color-mix(in srgb, #fffcf0 96%, transparent);
-	--highlight: rgba(255, 252, 240, 0.55);
-	--send-ink: #fffcf0;
+	--muted: #575653;
+	--quiet: #686762;
+	--accent: #1f7a72;
+	--error: #d14d41;
+	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+	--font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--rule: color-mix(in srgb, var(--ink) 10%, transparent);
+	--wash: transparent;
+	--path: color-mix(in srgb, var(--ui) 35%, var(--paper));
+	--path-hover: color-mix(in srgb, var(--ui) 65%, var(--paper));
+	--chip: var(--paper-2);
+	--chip-strong: var(--paper);
+	--highlight: transparent;
+	--send-ink: var(--paper);
 	--send-fill: var(--accent);
-	--mark-fill: radial-gradient(circle at 62% 72%, #1c1b1a 0%, #100f0f 42%, #100f0f 100%);
+	--mark-fill: var(--ink);
 	--wordmark-filter: none;
-	--panel-shadow: 0 18px 40px rgba(16, 15, 15, 0.08);
-	--card: color-mix(in srgb, #fffcf0 58%, transparent);
+	--panel-shadow: none;
+	--card: transparent;
 	color-scheme: light;
 	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-	--shadow-border:
-		0 0 0 1px rgba(16, 15, 15, 0.08),
-		0 1px 2px -1px rgba(16, 15, 15, 0.06),
-		0 2px 4px 0 rgba(16, 15, 15, 0.04);
-	--shadow-border-hover:
-		0 0 0 1px rgba(16, 15, 15, 0.12),
-		0 1px 2px -1px rgba(16, 15, 15, 0.08),
-		0 2px 4px 0 rgba(16, 15, 15, 0.06);
-	--composer-invite-glow: 0 0 36px 4px color-mix(in srgb, var(--accent) 30%, transparent);
-	--composer-invite-ring: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+	--shadow-border: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+	--shadow-border-hover: 0 0 0 1px color-mix(in srgb, var(--ink) 16%, transparent);
 	--ease-out: ease-out;
 	--press: cubic-bezier(0.2, 0, 0, 1);
 	--drawer: cubic-bezier(0.32, 0.72, 0, 1);
 	--drawer-ms: 500ms;
 	--dock-closed: 7.25rem;
 	--grab-bar-width: 36px;
-	--grab-bar-height: 5px;
+	--grab-bar-height: 3px;
 	--peek-bar-top: 0.55rem;
-	font-family: "Paper Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-family: var(--font-sans);
 	color: var(--ink);
 	background: var(--paper);
-	font-synthesis: style;
+	font-synthesis: none;
+	-webkit-font-smoothing: antialiased;
+	letter-spacing: -0.01em;
 }
 
 * {
@@ -94,30 +107,41 @@ body {
 	transition-timing-function: var(--drawer);
 }
 
-.app-canvas::before,
-.app-canvas::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-}
 
-.app-canvas::before {
-	background-image: var(--grain);
-	background-size: 180px 140px;
-	mix-blend-mode: var(--grain-blend);
-	opacity: var(--grain-opacity);
-}
-
-.app-canvas::after {
-	background: color-mix(in srgb, var(--paper) 50%, transparent);
-	mix-blend-mode: var(--tint-blend);
+button,
+input,
+textarea {
+	font: inherit;
 }
 
 button,
-textarea {
-	font: inherit;
+a,
+.questionnaire-choice {
+	-webkit-tap-highlight-color: transparent;
+}
+
+button,
+input:not([type="radio"]):not([type="checkbox"]),
+a:not(.turn-markdown a) {
+	min-height: 44px;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+::selection {
+	background: color-mix(in srgb, var(--accent) 35%, transparent);
+	color: var(--ink);
+}
+
+p {
+	text-wrap: pretty;
+}
+
+.composer-hint {
+	font-family: var(--font-mono);
 }
 
 .stage {
@@ -173,7 +197,7 @@ textarea {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 0 1.5rem 1rem;
+	padding: 0 max(1.5rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom));
 	background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--paper) 78%, transparent) 28%);
 	transition-property: transform, opacity;
 	transition-duration: 320ms, 240ms;
@@ -197,76 +221,44 @@ body.questionnaire-active .stage {
 	width: min(580px, 100%);
 }
 
-.composer-shell::before {
-	content: "";
-	position: absolute;
-	inset: 1px;
-	z-index: 0;
-	border-radius: 17px;
-	pointer-events: none;
-	box-shadow: var(--composer-invite-glow);
-	opacity: 0;
-	transition-property: opacity;
-	transition-duration: 1s;
-	transition-timing-function: var(--ease-out);
-}
-
-body.conversation-empty .composer-shell::before {
-	opacity: 1;
-	transition-duration: 300ms;
-}
-
 #chat {
 	position: relative;
 	z-index: 1;
 	width: 100%;
 	overflow: hidden;
-	border-radius: 18px;
-	background: var(--card);
-	box-shadow: var(--shadow-border), inset 0 1px 0 var(--highlight);
-	backdrop-filter: blur(10px);
-	transition-property: box-shadow;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
+	border: 1px solid var(--rule);
+	border-radius: 0.6rem;
+	background: var(--paper);
+	transition: border-color 150ms var(--ease-out);
 }
 
-body.conversation-empty #chat {
-	box-shadow: var(--composer-invite-ring), var(--shadow-border), inset 0 1px 0 var(--highlight);
-}
-
+/* One quiet signal: the hairline turns jade. The textarea draws no ring of its own. */
 #chat:focus-within {
-	box-shadow:
-		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
-		var(--shadow-border-hover),
-		inset 0 1px 0 var(--highlight);
-}
-
-body.conversation-empty #chat:focus-within {
-	box-shadow:
-		0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
-		var(--composer-invite-ring),
-		var(--shadow-border-hover),
-		inset 0 1px 0 var(--highlight);
+	border-color: var(--accent);
 }
 
 #message {
 	display: block;
 	width: 100%;
-	min-height: 4.6rem;
+	min-height: 6rem;
 	/* Grow with a long answer; older browsers keep the fixed height and scroll. */
 	field-sizing: content;
 	max-height: min(40dvh, 18rem);
 	overflow-y: auto;
 	/* Hide scrolled text in the bottom padding, where the footer row sits. */
-	-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 2.45rem), transparent calc(100% - 2.05rem));
-	mask-image: linear-gradient(to bottom, black calc(100% - 2.45rem), transparent calc(100% - 2.05rem));
+	-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
+	mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	resize: none;
 	border: 0;
-	padding: 0.85rem 1.1rem 2.45rem;
+	padding: 0.85rem 1.1rem 3.5rem;
 	color: var(--ink);
 	background: transparent;
 	font-size: 1rem;
 	line-height: 1.5;
+	outline: none;
+}
+
+#message:focus-visible {
 	outline: none;
 }
 
@@ -299,11 +291,11 @@ body.conversation-empty #chat:focus-within {
 
 .composer-send button[type='submit'] {
 	display: grid;
-	width: 30px;
-	height: 30px;
+	width: 44px;
+	height: 44px;
 	place-items: center;
 	border: 0;
-	border-radius: 50%;
+	border-radius: 0.4rem;
 	color: var(--send-ink);
 	background: var(--send-fill);
 	cursor: pointer;
@@ -339,7 +331,7 @@ body.conversation-empty #chat:focus-within {
 	border-radius: 0.25rem;
 	background: var(--paper);
 	color: var(--ink);
-	font: 1rem "Paper Mono", monospace;
+	font: 1rem var(--font-sans);
 }
 
 .skip-link:not(:focus) {
@@ -347,8 +339,8 @@ body.conversation-empty #chat:focus-within {
 }
 
 .skip-link:focus {
-	outline: 2px solid var(--ink);
-	outline-offset: -2px;
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .sr-only {
@@ -417,68 +409,28 @@ body.conversation-empty #chat:focus-within {
 
 :root[data-theme="dark"] {
 	--paper: #100f0f;
+	--paper-2: #1c1b1a;
+	--ui: #282726;
+	--ui-2: #343331;
 	--ink: #cecdc3;
-	--muted: #878580;
-	--quiet: #6f6e69;
+	--muted: #aaa69e;
+	--quiet: #8f8c85;
 	--accent: #3aa99f;
-	--error: #d14d41;
-	--wash: color-mix(in srgb, #000000 50%, transparent);
-	--grain-blend: overlay;
-	--grain-opacity: 0.5;
-	--tint-blend: overlay;
-	--path: color-mix(in srgb, #282726 55%, transparent);
-	--path-hover: color-mix(in srgb, #343331 72%, transparent);
-	--chip: color-mix(in srgb, #343331 72%, transparent);
-	--chip-strong: color-mix(in srgb, #1c1b1a 96%, transparent);
-	--highlight: rgba(255, 255, 255, 0.06);
-	--send-ink: #100f0f;
-	--send-fill: var(--ink);
-	--mark-fill: radial-gradient(circle at 62% 72%, #cecdc3 0%, #b7b5ac 42%, #878580 100%);
 	--wordmark-filter: invert(1);
-	--panel-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
-	--card: color-mix(in srgb, #1c1b1a 72%, transparent);
-	--shadow-border:
-		0 0 0 1px rgba(206, 205, 195, 0.08),
-		0 1px 2px -1px rgba(0, 0, 0, 0.32),
-		0 2px 4px 0 rgba(0, 0, 0, 0.24);
-	--shadow-border-hover:
-		0 0 0 1px rgba(206, 205, 195, 0.14),
-		0 1px 2px -1px rgba(0, 0, 0, 0.4),
-		0 2px 4px 0 rgba(0, 0, 0, 0.28);
 	color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme="light"]) {
 		--paper: #100f0f;
+		--paper-2: #1c1b1a;
+		--ui: #282726;
+		--ui-2: #343331;
 		--ink: #cecdc3;
-		--muted: #878580;
-		--quiet: #6f6e69;
+		--muted: #aaa69e;
+		--quiet: #8f8c85;
 		--accent: #3aa99f;
-		--error: #d14d41;
-		--wash: color-mix(in srgb, #000000 50%, transparent);
-		--grain-blend: overlay;
-		--grain-opacity: 0.5;
-		--tint-blend: overlay;
-		--path: color-mix(in srgb, #282726 55%, transparent);
-		--path-hover: color-mix(in srgb, #343331 72%, transparent);
-		--chip: color-mix(in srgb, #343331 72%, transparent);
-		--chip-strong: color-mix(in srgb, #1c1b1a 96%, transparent);
-		--highlight: rgba(255, 255, 255, 0.06);
-		--send-ink: #100f0f;
-		--send-fill: var(--ink);
-		--mark-fill: radial-gradient(circle at 62% 72%, #cecdc3 0%, #b7b5ac 42%, #878580 100%);
-		--wordmark-filter: invert(1);
-		--panel-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
-		--card: color-mix(in srgb, #1c1b1a 72%, transparent);
-		--shadow-border:
-			0 0 0 1px rgba(206, 205, 195, 0.08),
-			0 1px 2px -1px rgba(0, 0, 0, 0.32),
-			0 2px 4px 0 rgba(0, 0, 0, 0.24);
-		--shadow-border-hover:
-			0 0 0 1px rgba(206, 205, 195, 0.14),
-			0 1px 2px -1px rgba(0, 0, 0, 0.4),
-			0 2px 4px 0 rgba(0, 0, 0, 0.28);
+				--wordmark-filter: invert(1);
 		color-scheme: dark;
 	}
 }

@@ -48,7 +48,7 @@
 }
 
 .tool-card[data-state='running'] .tool-card-state {
-	color: var(--accent);
+	color: var(--muted);
 }
 
 .tool-card[data-state='failed'] .tool-card-state,
@@ -63,7 +63,7 @@
 	padding: 0;
 	color: var(--quiet);
 	background: none;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-family: var(--font-sans);
 	font-size: calc(0.72rem * var(--type-scale, 1));
 	font-weight: 400;
 	line-height: 1.45;

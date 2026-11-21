@@ -13,13 +13,13 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2rem;
-	height: 2rem;
+	width: 44px;
+	height: 44px;
 	margin: 0;
 	padding: 0;
 	border: 0;
 	border-radius: 6px;
-	color: var(--quiet);
+	color: var(--muted);
 	background: none;
 	cursor: pointer;
 	transition-property: color, background-color, scale, box-shadow;
@@ -36,7 +36,7 @@
 .steering-action.with-label {
 	width: auto;
 	height: auto;
-	min-height: 2rem;
+	min-height: 44px;
 	gap: 0.35rem;
 	padding: 0.25rem 0.5rem;
 	color: var(--muted);
@@ -103,8 +103,8 @@
 
 .steering-action:focus-visible {
 	color: var(--ink);
-	outline: none;
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+	outline: 2px solid var(--accent);
+	box-shadow: none;
 }
 
 .steering-action:focus-visible .steering-tip {
