@@ -56,8 +56,8 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 			baseUrl: appConfig.vercelAiGatewayBaseUrl,
 			modelId: appConfig.vercelAiGatewayModelId,
 			apiKey: 'gateway-key',
-			reasoning: true,
-			contextWindow: 204_800,
+			reasoning: false,
+			contextWindow: 131_072,
 			maxTokens: 32_768,
 		},
 	);
@@ -69,8 +69,8 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
 		modelId: appConfig.vercelAiGatewayModelId,
 		apiKey: 'oidc-token',
-		reasoning: true,
-		contextWindow: 204_800,
+		reasoning: false,
+		contextWindow: 131_072,
 		maxTokens: 32_768,
 	});
 }
@@ -81,8 +81,8 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
 		modelId: appConfig.vercelAiGatewayModelId,
 		apiKey: 'gateway-key',
-		reasoning: true,
-		contextWindow: 204_800,
+		reasoning: false,
+		contextWindow: 131_072,
 		maxTokens: 32_768,
 	});
 }

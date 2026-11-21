@@ -20,8 +20,8 @@ const localChatModelLimits = {
 // The gateway routes this model to whichever provider serves it. Providers cap
 // output differently (Novita caps it at 131,072 tokens), so ask for far less.
 const hostedGatewayLimits = {
-	reasoning: true,
-	contextWindow: 204_800,
+	reasoning: false,
+	contextWindow: 131_072,
 	maxTokens: 32_768,
 } as const;
 
