@@ -6,6 +6,36 @@ import { resolveChatModel } from '../inference/operator.ts';
 import { operatorApiModel } from './durable/provider.ts';
 import { reportFailure } from './logging.ts';
 
+/** One tiny real call through the model, key and limits a learner's turn uses, with one
+ * retry after a 429. It passes only on a non-empty reply text. `status` is the provider's
+ * HTTP status only, never its error text; it is undefined when no model is configured.
+ * Sends no learner data. */
+export async function probeOnce(): Promise<{ ok: boolean; status: number | null | undefined; latencyMs: number }> {
+	const started = Date.now();
+	const operator = resolveChatModel(process.env);
+	if (!operator) return { ok: false, status: undefined, latencyMs: 0 };
+	const config = modelConfig(operator);
+	const model = operatorApiModel(config);
+	const call = async () => {
+		let status: number | null = null;
+		const reply = await openAICompletionsApi().streamSimple(model,
+			normalizeContext({ messages: [{ role: 'user', content: 'Reply with the single word: ok', timestamp: Date.now() }] }),
+			{ apiKey: config.apiKey, maxTokens: model.maxTokens, signal: AbortSignal.timeout(60_000),
+				onResponse: (response) => { status = response.status; } }).result();
+		// A failed reply's error starts with the provider's HTTP status ("429 ...").
+		// Keep only that number: the rest can echo request text.
+		status ??= Number(/^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1]) || null;
+		const text = reply.content.some((block) => block.type === 'text' && block.text.trim() !== '');
+		return { status, ok: status === 200 && reply.stopReason !== 'error' && reply.stopReason !== 'aborted' && text };
+	};
+	let result = await call();
+	if (result.status === 429) {
+		await sleep(5_000);
+		result = await call();
+	}
+	return { ...result, latencyMs: Date.now() - started };
+}
+
 /** Once a day in production, one tiny real call through the model, key and limits a
  * learner's turn uses. A pass needs a non-empty reply text; reasoning alone fails.
  * A failure logs `probe_failed` with the provider's HTTP status only, so the runtime
@@ -22,36 +52,12 @@ export default {
 		if (process.env.VERCEL_ENV !== 'production') return new Response(null, { status: 204 });
 		const oidcToken = request.headers.get('x-vercel-oidc-token');
 		if (oidcToken) process.env.VERCEL_OIDC_TOKEN = oidcToken;
-		const operator = resolveChatModel(process.env);
-		if (!operator) {
-			reportFailure('probe_failed', null);
-			return new Response(null, { status: 503 });
-		}
-		const config = modelConfig(operator);
-		const model = operatorApiModel(config);
-		const started = Date.now();
-		const call = async () => {
-			let status: number | null = null;
-			const reply = await openAICompletionsApi().streamSimple(model,
-				normalizeContext({ messages: [{ role: 'user', content: 'Reply with the single word: ok', timestamp: Date.now() }] }),
-				{ apiKey: config.apiKey, maxTokens: model.maxTokens, signal: AbortSignal.timeout(60_000),
-					onResponse: (response) => { status = response.status; } }).result();
-			// A failed reply's error starts with the provider's HTTP status ("429 ...").
-			// Keep only that number: the rest can echo request text.
-			status ??= Number(/^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1]) || null;
-			const text = reply.content.some((block) => block.type === 'text' && block.text.trim() !== '');
-			return { status, ok: status === 200 && reply.stopReason !== 'error' && reply.stopReason !== 'aborted' && text };
-		};
-		let result = await call();
-		if (result.status === 429) {
-			await sleep(5_000);
-			result = await call();
-		}
+		const result = await probeOnce();
 		if (!result.ok) {
-			reportFailure('probe_failed', result.status);
-			return new Response(null, { status: 502 });
+			reportFailure('probe_failed', result.status ?? null);
+			return new Response(null, { status: result.status === undefined ? 503 : 502 });
 		}
-		console.log(JSON.stringify({ event: 'socratink_probe', status: 'ok', latencyMs: Date.now() - started }));
+		console.log(JSON.stringify({ event: 'socratink_probe', status: 'ok', latencyMs: result.latencyMs }));
 		return new Response(null, { status: 200 });
 	},
 };
