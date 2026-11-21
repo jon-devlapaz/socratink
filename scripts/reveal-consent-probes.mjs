@@ -29,12 +29,12 @@ const probes = [
 	},
 	{
 		name: 'requested is accepted by the parser', file: 'src/reveal.ts',
-		from: '\trequested: v.optional(v.literal(true)),\n', to: '',
+		from: '\trequested: v.optional(v.boolean()),\n', to: '',
 		test: 'scripts/reveal.test.mjs', pattern: 'requested accepts',
 	},
 	{
-		name: 'requested rejects non-true values', file: 'src/reveal.ts',
-		from: 'requested: v.optional(v.literal(true))', to: 'requested: v.optional(v.boolean())',
+		name: 'requested rejects non-boolean values', file: 'src/reveal.ts',
+		from: 'requested: v.optional(v.boolean())', to: 'requested: v.optional(v.unknown())',
 		test: 'scripts/reveal.test.mjs', pattern: 'requested accepts',
 	},
 	{
@@ -45,8 +45,9 @@ const probes = [
 	},
 	...['full answer', 'worked example'].map((kind) => ({
 		name: `${kind} card names the target`, file: consent,
-		from: kind === 'full answer' ? '${reveal.target ? ` to ${reveal.target}` : \'\'}' : '${reveal.target ? ` of ${reveal.target}` : \'\'}',
-		to: '', test: regression,
+		from: kind === 'full answer' ? 'target ? `I can show the full answer: ${target}.`' : 'target ? `I can show a worked example: ${target}.`',
+		to: kind === 'full answer' ? 'false ? `I can show the full answer: ${target}.`' : 'false ? `I can show a worked example: ${target}.`',
+		test: regression,
 		pattern: `${kind === 'full answer' ? 'full_answer' : 'worked_example'}: consent line names its target`,
 	})),
 ];

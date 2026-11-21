@@ -52,3 +52,16 @@ test('the shared correction policy permits only one extra attempt', () => {
 	assert.equal(presentQuestionRetryReason(unboxed), 'unboxed');
 	assert.equal(presentQuestionRetryReason({ ...unboxed, alreadyRetried: true }), undefined);
 });
+
+test('every tool parameter is a plain typed JSON schema that strict providers accept', async () => {
+	const { learningToolDefinitions } = await import('./tools.ts');
+	const bare = (schema: Record<string, unknown>, path: string): string[] => {
+		const errors: string[] = [];
+		if ('const' in schema) errors.push(`${path} uses const`);
+		if (!('type' in schema) && !('enum' in schema) && !('anyOf' in schema)) errors.push(`${path} has no type`);
+		for (const [key, child] of Object.entries((schema.properties ?? {}) as Record<string, Record<string, unknown>>)) errors.push(...bare(child, `${path}.${key}`));
+		if (schema.items && typeof schema.items === 'object') errors.push(...bare(schema.items as Record<string, unknown>, `${path}[]`));
+		return errors;
+	};
+	for (const tool of learningToolDefinitions) assert.deepEqual(bare(tool.parameters as Record<string, unknown>, tool.name), []);
+});
