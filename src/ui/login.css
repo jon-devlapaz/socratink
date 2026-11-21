@@ -101,7 +101,7 @@ body.login-page {
 
 .login-oauth-btn {
 	display: inline-flex;
-	flex: 1 1 auto;
+	flex: 1 1 8rem;
 	min-width: 0;
 	align-items: center;
 	justify-content: center;

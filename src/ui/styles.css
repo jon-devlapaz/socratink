@@ -96,6 +96,7 @@ body {
 }
 
 .app-canvas {
+	--conversation-text-inset: 1.25rem;
 	position: relative;
 	height: 100%;
 	isolation: isolate;
@@ -222,11 +223,13 @@ body.questionnaire-active .stage {
 }
 
 #chat {
+	--composer-border-width: 1px;
+	--composer-text-inset: calc(var(--conversation-text-inset) - var(--composer-border-width));
 	position: relative;
 	z-index: 1;
 	width: 100%;
 	overflow: hidden;
-	border: 1px solid var(--rule);
+	border: var(--composer-border-width) solid var(--rule);
 	border-radius: 0.6rem;
 	background: var(--paper);
 	transition: border-color 150ms var(--ease-out);
@@ -250,7 +253,7 @@ body.questionnaire-active .stage {
 	mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	resize: none;
 	border: 0;
-	padding: 0.85rem 1.1rem 3.5rem;
+	padding: 0.85rem var(--composer-text-inset) 3.5rem;
 	color: var(--ink);
 	background: transparent;
 	font-size: 1rem;
@@ -270,7 +273,7 @@ body.questionnaire-active .stage {
 	position: absolute;
 	right: 0.9rem;
 	bottom: 0.55rem;
-	left: 1.1rem;
+	left: var(--composer-text-inset);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
