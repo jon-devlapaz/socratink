@@ -75,8 +75,18 @@ function appendResult(assistant: ProductMessage, message: Extract<Message, { rol
 }
 
 function appendAssistant(target: ProductMessage, message: AssistantMessage) {
-	const text = messageText(message);
-	const reasoning = message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []).join('');
+	// Some gateway providers put reasoning in the reply text inside <think> tags.
+	// The learner never sees it as reply text: it can state the answer a card withholds.
+	const raw = messageText(message);
+	const closed = raw.lastIndexOf('</think>');
+	let text = closed < 0 ? raw : raw.slice(closed + '</think>'.length);
+	let inline = closed < 0 ? '' : raw.slice(0, closed);
+	const open = text.indexOf('<think>');
+	if (open >= 0) { inline += text.slice(open); text = text.slice(0, open); }
+	if (closed >= 0 || open >= 0) text = text.trim();
+	inline = inline.replaceAll(/<\/?think>/g, '').trim();
+	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]
+		.filter(Boolean).join('\n\n');
 	if (text) target.text += `${target.text ? '\n\n' : ''}${text}`;
 	if (reasoning) target.reasoning = `${target.reasoning ? `${target.reasoning}\n\n` : ''}${reasoning}`;
 	const route = messageRoute(message);

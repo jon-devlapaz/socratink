@@ -201,6 +201,24 @@ for (const retryAfterCrash of [false, true]) test(`SIGKILL recovery logs once${r
 	} finally { child.kill('SIGKILL'); await engine.close(); }
 }, retryAfterCrash ? [2] : 0));
 
+for (const [name, streamed, hidden] of [
+	['a closed block', '<think>Rayleigh scattering explains it.</think>\n\nWhat do you notice at sunset?', 'Rayleigh'],
+	['an unbalanced block', '<think> ∝ 1/λ</think>\n<think>⁴)\n- The sky would look black.</think>\n\nWhat do you notice at sunset?', 'black'],
+	['an unclosed block', 'What do you notice at sunset?<think>The sky would look black.', 'black'],
+]) test(`reasoning that a provider sends in <think> tags (${name}) never shows as reply text`, async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:think', 'Hello.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], streamed);
+		const settled = await until(() => engine.snapshot('learner:think'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.equal(reply.text, 'What do you notice at sunset?');
+		assert.ok(reply.reasoning.includes(hidden), 'the tagged text stays available as reasoning');
+	} finally { await engine.close(); }
+}));
+
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');
 	const lines = [];
