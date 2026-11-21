@@ -23,11 +23,20 @@ const wordMs = 120;
 async function fixture(run) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-durable-reconnect-'));
 	const model = createServer(async (request, response) => {
-		for await (const _chunk of request) {}
+		let raw = '';
+		for await (const chunk of request) raw += chunk;
+		const continued = JSON.parse(raw).messages.some((message) => message.role === 'tool');
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
 		const chunk = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'synthetic', model: 'synthetic',
 			choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
 		chunk({ role: 'assistant', content: '' });
+		if (!continued) {
+			chunk({ tool_calls: [{ index: 0, id: 'synthetic_hint', type: 'function',
+				function: { name: 'mark_reveal', arguments: JSON.stringify({ kind: 'hint' }) } }] });
+			chunk({}, 'tool_calls');
+			response.end('data: [DONE]\n\n');
+			return;
+		}
 		for (const word of words) { await delay(wordMs); chunk({ content: word }); }
 		chunk({}, 'stop');
 		response.end('data: [DONE]\n\n');

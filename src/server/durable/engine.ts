@@ -130,7 +130,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				}
 				const requestId = randomUUID();
 				const submission = await owner.root.submit({ type: 'input', content: text, whenBusy: 'reject', requestId,
-					entry: { kind: inputKind, data: { requestId, ...(selection ? { selection } : {}) } } }, context);
+					entry: { kind: inputKind, data: { requestId, revealConsent: true, ...(selection ? { selection } : {}) } } }, context);
 				run(id, owner, submission.id);
 				return String(submission.id);
 			} catch (error) {

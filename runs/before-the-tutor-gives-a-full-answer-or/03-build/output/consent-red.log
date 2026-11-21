@@ -1,0 +1,93 @@
+✖ full_answer: see-it, intermediate text and restored pending choice (314.454958ms)
+✖ full_answer: try-once-more, intermediate text and restored pending choice (225.636333ms)
+✖ worked_example: see-it, intermediate text and restored pending choice (223.20375ms)
+✖ worked_example: try-once-more, intermediate text and restored pending choice (223.978208ms)
+✔ a hint arrives without a consent card and keeps its provenance (265.321083ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1432.898625
+
+✖ failing tests:
+
+test at scripts/ask-before-reveal.test.mjs:102:3
+✖ full_answer: see-it, intermediate text and restored pending choice (314.454958ms)
+  AssertionError [ERR_ASSERTION]: protected content must not reach the browser before permission
+      at withheld (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:95:9)
+      at observe (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:56:7)
+      at async Object.turn (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:66:23)
+      at async file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:103:20
+      at async fixture (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:43:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"v":1,"conversationId":"learner:consent","messages":[{"id":"8:user","role":"user","display":"visible","submissionId":"8","parts":[{"type":"text","text":"Just tell me the answer.","state":"streaming"}]},{"id":"8:assistant","role":"assistant","display":"visible","submissionId":"8","parts":[{"type":"text","text":"The answer is 42.","state":"streaming"}]}],"settlements":[]}',
+    expected: /The answer|42\./,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/ask-before-reveal.test.mjs:102:3
+✖ full_answer: try-once-more, intermediate text and restored pending choice (225.636333ms)
+  AssertionError [ERR_ASSERTION]: protected content must not reach the browser before permission
+      at withheld (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:95:9)
+      at observe (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:56:7)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at listOnTimeout (node:internal/timers:644:9)
+      at process.processTimers (node:internal/timers:618:7)
+      at async Object.turn (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:66:23)
+      at async file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:103:20
+      at async fixture (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:43:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"v":1,"conversationId":"learner:consent","messages":[{"id":"8:user","role":"user","display":"visible","submissionId":"8","parts":[{"type":"text","text":"Just tell me the answer.","state":"streaming"}]},{"id":"8:assistant","role":"assistant","display":"visible","submissionId":"8","parts":[{"type":"text","text":"The answer","state":"streaming"}]}],"settlements":[]}',
+    expected: /The answer|42\./,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/ask-before-reveal.test.mjs:102:3
+✖ worked_example: see-it, intermediate text and restored pending choice (223.20375ms)
+  AssertionError [ERR_ASSERTION]: protected content must not reach the browser before permission
+      at withheld (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:95:9)
+      at observe (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:56:7)
+      at async Object.turn (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:66:23)
+      at async file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:103:20
+      at async fixture (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:43:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"v":1,"conversationId":"learner:consent","messages":[{"id":"8:user","role":"user","display":"visible","submissionId":"8","parts":[{"type":"text","text":"Just tell me the answer.","state":"streaming"}]},{"id":"8:assistant","role":"assistant","display":"visible","submissionId":"8","parts":[{"type":"text","text":"The answer is 42.","state":"streaming"}]}],"settlements":[]}',
+    expected: /The answer|42\./,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/ask-before-reveal.test.mjs:102:3
+✖ worked_example: try-once-more, intermediate text and restored pending choice (223.978208ms)
+  AssertionError [ERR_ASSERTION]: protected content must not reach the browser before permission
+      at withheld (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:95:9)
+      at observe (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:56:7)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at listOnTimeout (node:internal/timers:644:9)
+      at process.processTimers (node:internal/timers:618:7)
+      at async Object.turn (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:66:23)
+      at async file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:103:20
+      at async fixture (file:///Users/jondev/dev/worktrees/dogfood-ask-before-answer/before-the-tutor-gives-a-full-answer-or/scripts/ask-before-reveal.test.mjs:43:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"v":1,"conversationId":"learner:consent","messages":[{"id":"8:user","role":"user","display":"visible","submissionId":"8","parts":[{"type":"text","text":"Just tell me the answer.","state":"streaming"}]},{"id":"8:assistant","role":"assistant","display":"visible","submissionId":"8","parts":[{"type":"text","text":"The answer","state":"streaming"}]}],"settlements":[]}',
+    expected: /The answer|42\./,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

@@ -11,6 +11,11 @@
       "source": "Confirmed goal, Done when line; package.json:23-44 establishes node --test for scripts/*.test.mjs; README.md:11-18 establishes dependency setup; src/ui/live-reply.ts:16-56 identifies the streaming boundary",
       "statement": "before a full answer or a worked example, the tutor says in one line what it is about to give, and gives it only after the learner chooses to see it or to try once more.",
       "id": "seed-1",
+      "activation": {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/ask-before-reveal.test.mjs",
+        "cwd": ".",
+        "evidence": "Prerequisite exists at scripts/ask-before-reveal.test.mjs. The integration test enters openEngine with a local synthetic provider and checks both protected kinds, both choices, intermediate browser snapshots and live views, restored pending cards, one-turn permission, and immediate hints. Before implementation, four protected cases failed with protected content must not reach the browser before permission; the hint case passed."
+      },
       "description": "before a full answer or a worked example, the tutor says in one line what it is about to give, and gives it only after the learner chooses to see it or to try once more.",
       "origin": "agent-confirmed-seed",
       "locked": true

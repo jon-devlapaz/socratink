@@ -5,9 +5,10 @@ import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './co
 import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
+import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
-export type InputData = { requestId: string; selection?: ModelSelection };
+export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true };
 
 /** The reader is a single committed snapshot, independent of execution ownership. */
 export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
@@ -16,11 +17,13 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 	let cursor: Cursor | undefined;
 	let assistant: ProductMessage | undefined;
 	const tools = new Map<string, ProductTool>();
+	const consentRequired = new Set<string>();
 	do {
 		const page = await storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'ascending' }, 100, cursor, context);
 		for (const entry of page.items) {
 			if (entry.kind === inputKind) {
 				assistant = await beginSubmission(snapshot, storage, entry);
+				if ((entry.data as InputData).revealConsent) consentRequired.add(assistant.submissionId);
 				tools.clear();
 			} else if (assistant) appendEntry(assistant, entry, tools);
 		}
@@ -36,7 +39,7 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 	}
 	snapshot.messages = snapshot.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
-	return snapshot;
+	return withRevealConsent(snapshot, consentRequired);
 }
 
 async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, entry: EntryRecord): Promise<ProductMessage> {
