@@ -32,6 +32,10 @@
     "api/runtime-monitor.ts": {
       "maxDuration": 30,
       "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    },
+    "api/tutor-probe.ts": {
+      "maxDuration": 180,
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
     }
   },
   "schedules": {
@@ -39,6 +43,10 @@
       "schedule": "*/15 * * * *",
       "jitter": 15,
       "function": "api/runtime-monitor"
+    },
+    "tutor-probe": {
+      "schedule": "0 13 * * *",
+      "function": "api/tutor-probe"
     }
   }
 }

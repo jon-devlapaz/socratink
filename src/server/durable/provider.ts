@@ -22,17 +22,7 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 	const catalogModel = openaiProvider().getModels().find((model) => model.id === 'gpt-5-nano');
 	if (!catalogModel) throw new Error('The installed Pi catalog lacks the bootstrap model.');
 	function select(config: ModelConfig): NonNullable<typeof current> {
-		if (config.provider !== 'jon-local' || !config.baseUrl || !config.contextWindow || !config.maxTokens) {
-			throw new Error('The operator model requires its configured endpoint and limits.');
-		}
-		const model: Model<'openai-completions'> = {
-			id: config.modelId, name: config.modelId, api: 'openai-completions',
-			provider: config.provider, baseUrl: config.baseUrl, reasoning: config.reasoning ?? false,
-			compat: { supportsReasoningEffort: config.baseUrl === appConfig.vercelAiGatewayBaseUrl },
-			input: ['text'], contextWindow: config.contextWindow, maxTokens: config.maxTokens,
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-		};
-		return { config, model };
+		return { config, model: operatorApiModel(config) };
 	}
 	function requestOptions<T extends StreamOptions | SimpleStreamOptions>(request: T | undefined) {
 		if (!current) throw new Error('Model credentials have not been resolved.');
@@ -73,6 +63,21 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 		},
 	}));
 	return models;
+}
+
+/** The OpenAI-compatible model Pi calls for a resolved operator config. Refuses a
+ * config without the operator provider, endpoint and limits. */
+export function operatorApiModel(config: ModelConfig): Model<'openai-completions'> {
+	if (config.provider !== 'jon-local' || !config.baseUrl || !config.contextWindow || !config.maxTokens) {
+		throw new Error('The operator model requires its configured endpoint and limits.');
+	}
+	return {
+		id: config.modelId, name: config.modelId, api: 'openai-completions',
+		provider: config.provider, baseUrl: config.baseUrl, reasoning: config.reasoning ?? false,
+		compat: { supportsReasoningEffort: config.baseUrl === appConfig.vercelAiGatewayBaseUrl },
+		input: ['text'], contextWindow: config.contextWindow, maxTokens: config.maxTokens,
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+	};
 }
 
 /** A product-owned field travels with Pi's normal live and committed message. */
