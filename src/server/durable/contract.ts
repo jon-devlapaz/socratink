@@ -21,6 +21,8 @@ export type Snapshot = { revision: number; messages: ProductMessage[]; submissio
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;
 	status: Outcome | 'interrupted' | 'error' | 'unsettled';
+	/** The provider's HTTP status for a failed turn, when its error names one. Never its text. */
+	providerStatus?: number;
 };
 export type EngineOptions = {
 	target: DatabaseTarget;
