@@ -35,16 +35,21 @@ export function createQuestionnaire(
 	form.setAttribute('aria-label', definition.kind === 'quiz' ? 'Quiz' : 'Questions');
 	// Validated live and restored definitions contain exactly one item.
 	const item = definition.items[0]!;
-	const section = createQuestionItem(item);
+	const consent = definition.kind === 'reveal-consent';
+	const section = createQuestionItem(item, consent
+		? (value) => onSubmit([{ name: item.name, values: [value] }]) : undefined);
 
 	form.append(section);
+	if (consent) {
+		form.addEventListener('submit', (event) => event.preventDefault());
+		section.focus({ preventScroll: true });
+		return form;
+	}
 
 	const actions = document.createElement('div');
 	actions.className = 'questionnaire-actions';
 	const skip = createButton('Skip', 'questionnaire-button questionnaire-button-ghost');
 	skip.hidden = item.required !== false;
-	// Help is always offered: a card must never force a guess. The answer
-	// text tells the tutor, and the server records the turn as assistance.
 	const help = (['hint', 'unknown'] as const satisfies readonly QuestionnaireHelp[]).map((kind) => {
 		const button = createButton(kind === 'hint' ? 'Hint' : "I don't know", 'questionnaire-button questionnaire-button-ghost');
 		button.addEventListener('click', () => onSubmit([{ name: item.name, values: [], help: kind }]));
@@ -95,7 +100,7 @@ export function createQuestionnaire(
 	return form;
 }
 
-function createQuestionItem(item: QuestionnaireItem): HTMLFieldSetElement {
+function createQuestionItem(item: QuestionnaireItem, onChoose?: (value: string) => void): HTMLFieldSetElement {
 	const fieldset = document.createElement('fieldset');
 	fieldset.className = 'questionnaire-item';
 	fieldset.dataset.item = item.name;
@@ -120,6 +125,12 @@ function createQuestionItem(item: QuestionnaireItem): HTMLFieldSetElement {
 	const choices = document.createElement('div');
 	choices.className = 'questionnaire-choices';
 	for (const choice of item.choices) {
+		if (onChoose) {
+			const button = createButton(choice.label, 'questionnaire-button questionnaire-button-primary');
+			button.addEventListener('click', () => onChoose(choice.value));
+			choices.append(button);
+			continue;
+		}
 		const label = document.createElement('label');
 		label.className = 'questionnaire-choice';
 		const input = document.createElement('input');

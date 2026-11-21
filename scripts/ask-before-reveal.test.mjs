@@ -119,6 +119,7 @@ for (const kind of ['full_answer', 'worked_example']) {
 			assert.doesNotMatch(JSON.stringify(pending.reply), /What do we know/, 'settlement hides pre-mark text too');
 			const card = questionnaireFromParts(pending.reply.parts);
 			assert.ok(card, 'the protected reply must become an existing question card');
+			assert.equal(card.kind, 'reveal-consent');
 			assert.deepEqual(card.items[0].choices.map((c) => c.label), ['See it', 'Try once more']);
 			assert.match(card.items[0].prompt, kind === 'full_answer' ? /full answer/ : /worked example/);
 			assert.doesNotMatch(card.items[0].prompt, /\n/);
@@ -169,13 +170,13 @@ for (const kind of ['full_answer', 'worked_example']) {
 		assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, reveal);
 	}));
 
-	for (const target of [undefined, 'solving 6 times 7']) {
-		test(`${kind}: consent line ${target ? 'names its target' : 'keeps the default without a target'}`, async () => fixture(async (f) => {
+	for (const target of [undefined, 'Solving 6 times 7', 'solving 6 times 7']) {
+		test(`${kind}: consent line ${target ? `names its target (${target})` : 'keeps the default without a target'}`, async () => fixture(async (f) => {
 			const { reply } = await f.turn('I think it is 41.', { kind, ...(target ? { target } : {}) }, protectedText, withheld);
 			const card = questionnaireFromParts(reply.parts);
 			assert.equal(card.items[0].prompt, kind === 'full_answer'
-				? `I can show a full answer${target ? ` to ${target}` : ''}.`
-				: `I can show a worked example${target ? ` of ${target}` : ''}.`);
+				? target ? 'I can show the full answer: solving 6 times 7.' : 'I can show a full answer.'
+				: target ? 'I can show a worked example: solving 6 times 7.' : 'I can show a worked example.');
 		}));
 	}
 }

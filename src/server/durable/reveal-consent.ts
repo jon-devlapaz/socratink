@@ -12,12 +12,16 @@ function protectedReveal(message: ProductMessage, permission: RevealDefinition |
 }
 
 function consentCard(reveal: RevealDefinition): QuestionnaireDefinition {
-	return questionnaireFromPresentQuestion({
-		prompt: reveal.kind === 'full_answer'
-			? `I can show a full answer${reveal.target ? ` to ${reveal.target}` : ''}.`
-			: `I can show a worked example${reveal.target ? ` of ${reveal.target}` : ''}.`,
-		choices: [{ value: 'see-it', label: 'See it' }, { value: 'try-once-more', label: 'Try once more' }],
-	});
+	const target = reveal.target ? reveal.target[0]!.toLowerCase() + reveal.target.slice(1) : undefined;
+	return {
+		...questionnaireFromPresentQuestion({
+			prompt: reveal.kind === 'full_answer'
+				? target ? `I can show the full answer: ${target}.` : 'I can show a full answer.'
+				: target ? `I can show a worked example: ${target}.` : 'I can show a worked example.',
+			choices: [{ value: 'see-it', label: 'See it' }, { value: 'try-once-more', label: 'Try once more' }],
+		}),
+		kind: 'reveal-consent',
+	};
 }
 
 export function withRevealConsent(snapshot: Snapshot, consentRequired: ReadonlySet<string>): Snapshot {
