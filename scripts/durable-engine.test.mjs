@@ -219,6 +219,18 @@ for (const [name, streamed, hidden] of [
 	} finally { await engine.close(); }
 }));
 
+test('a literal "(no text)" reply, written after a mark check, never shows', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:empty', 'Hello.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], '(no text)');
+		const settled = await until(() => engine.snapshot('learner:empty'), (value) => value.submissions[0]?.outcome === 'completed');
+		assert.equal(JSON.stringify(settled.messages).includes('(no text)'), false);
+	} finally { await engine.close(); }
+}));
+
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');
 	const lines = [];
