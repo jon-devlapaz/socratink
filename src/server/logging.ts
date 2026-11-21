@@ -2,11 +2,15 @@ import { createHash } from 'node:crypto';
 import { appConfig } from '../config/app.config.ts';
 import type { TurnRecord } from './durable/contract.ts';
 
-/** Server log lines carry categories, ids, timings and a failed turn's provider HTTP
+/** Server log lines carry categories, ids, timings and a failed call's provider HTTP
  * status only. Runtime events and provider error text can contain learner text and
- * credentials, so neither is logged. */
-export function reportFailure(category: 'submission_failed' | 'submission_recovery' | 'request_failed'): void {
-	console.error(JSON.stringify({ event: 'socratink_failure', category }));
+ * credentials, so neither is logged. A failed tutor probe always states its status,
+ * null when no HTTP status came back. */
+export function reportFailure(...failure: ['submission_failed' | 'submission_recovery' | 'request_failed']
+	| ['probe_failed', number | null]): void {
+	const [category, providerStatus] = failure;
+	console.error(JSON.stringify({ event: 'socratink_failure', category,
+		...(category === 'probe_failed' ? { providerStatus } : {}) }));
 }
 
 const turnErrors: Partial<Record<TurnRecord['status'], string>> = {

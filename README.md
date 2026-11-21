@@ -158,3 +158,12 @@ more than once. Vercel Hobby retains runtime logs for one hour, so a long
 scheduler outage can lose evidence. The log API does not report gaps within
 returned history. This is a basic failure monitor, not an on-call guarantee or
 a check of model quality. It makes no model calls.
+
+Vercel Schedules also runs the private `api/tutor-probe.ts` function once a day
+at 13:00 UTC, in production only. It makes one real call through the same
+gateway, model, key and output limit as a learner's turn, with the fixed prompt
+"Reply with the single word: ok" and no learner data. After a 429 it waits 5
+seconds and tries once more. A reply without text, a timeout after 60 seconds or
+any other status logs `probe_failed` with the provider's HTTP status only. The
+runtime monitor then fails its next run. The probe costs about one cent a month.
+It checks the gateway, provider and request shape, not the chat engine.

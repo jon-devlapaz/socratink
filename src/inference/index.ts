@@ -29,12 +29,17 @@ export function createInference(options: { operator: () => ChatModel | undefined
 		},
 		async resolveModel(conversationId: string): Promise<ModelConfig> {
 			if (!userIdFromConversationId(conversationId)) throw new Error('Conversation must belong to a learner.');
-			const operator = operatorModel();
-			return { provider: operator.providerId, modelId: operator.modelId,
-				apiKey: operator.apiKey, baseUrl: operator.baseUrl, reasoning: operator.reasoning,
-				contextWindow: operator.contextWindow, maxTokens: operator.maxTokens };
+			return modelConfig(operatorModel());
 		},
 	};
+}
+
+/** The request config for the operator's model: what a learner's turn and the
+ * daily tutor probe both send. */
+export function modelConfig(operator: ChatModel): ModelConfig {
+	return { provider: operator.providerId, modelId: operator.modelId,
+		apiKey: operator.apiKey, baseUrl: operator.baseUrl, reasoning: operator.reasoning,
+		contextWindow: operator.contextWindow, maxTokens: operator.maxTokens };
 }
 
 export type Inference = ReturnType<typeof createInference>;

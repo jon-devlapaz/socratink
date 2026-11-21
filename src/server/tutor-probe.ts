@@ -1,0 +1,57 @@
+import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completions.lazy';
+import { normalizeContext } from '@earendil-works/pi-ai/utils/transcript';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { modelConfig } from '../inference/index.ts';
+import { resolveChatModel } from '../inference/operator.ts';
+import { operatorApiModel } from './durable/provider.ts';
+import { reportFailure } from './logging.ts';
+
+/** Once a day in production, one tiny real call through the model, key and limits a
+ * learner's turn uses. A pass needs a non-empty reply text; reasoning alone fails.
+ * A failure logs `probe_failed` with the provider's HTTP status only, so the runtime
+ * monitor fails its GitHub run. Sends no learner data and writes nothing. Other
+ * deployments and requests that are not its schedule event call nothing. */
+export default {
+	async fetch(request: Request): Promise<Response> {
+		// Vercel's schedule/v1beta trigger makes this function private. These
+		// headers select the expected event; they are not public authentication.
+		if (request.method !== 'POST' || request.headers.get('ce-type') !== 'com.vercel.schedule.v1beta'
+			|| request.headers.get('ce-vssschedulename') !== 'tutor-probe') {
+			return new Response(null, { status: 400 });
+		}
+		if (process.env.VERCEL_ENV !== 'production') return new Response(null, { status: 204 });
+		const oidcToken = request.headers.get('x-vercel-oidc-token');
+		if (oidcToken) process.env.VERCEL_OIDC_TOKEN = oidcToken;
+		const operator = resolveChatModel(process.env);
+		if (!operator) {
+			reportFailure('probe_failed', null);
+			return new Response(null, { status: 503 });
+		}
+		const config = modelConfig(operator);
+		const model = operatorApiModel(config);
+		const started = Date.now();
+		const call = async () => {
+			let status: number | null = null;
+			const reply = await openAICompletionsApi().streamSimple(model,
+				normalizeContext({ messages: [{ role: 'user', content: 'Reply with the single word: ok', timestamp: Date.now() }] }),
+				{ apiKey: config.apiKey, maxTokens: model.maxTokens, signal: AbortSignal.timeout(60_000),
+					onResponse: (response) => { status = response.status; } }).result();
+			// A failed reply's error starts with the provider's HTTP status ("429 ...").
+			// Keep only that number: the rest can echo request text.
+			status ??= Number(/^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1]) || null;
+			const text = reply.content.some((block) => block.type === 'text' && block.text.trim() !== '');
+			return { status, ok: status === 200 && reply.stopReason !== 'error' && reply.stopReason !== 'aborted' && text };
+		};
+		let result = await call();
+		if (result.status === 429) {
+			await sleep(5_000);
+			result = await call();
+		}
+		if (!result.ok) {
+			reportFailure('probe_failed', result.status);
+			return new Response(null, { status: 502 });
+		}
+		console.log(JSON.stringify({ event: 'socratink_probe', status: 'ok', latencyMs: Date.now() - started }));
+		return new Response(null, { status: 200 });
+	},
+};
