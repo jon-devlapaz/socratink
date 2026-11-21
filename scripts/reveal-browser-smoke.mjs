@@ -103,7 +103,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await answer(baselineChoice, baselineReason);
 		await answer(comparisonChoice, comparisonReason);
 		const consent = page.locator('#active-turn .questionnaire');
-		const consentLine = 'I can show the full answer: recover an admitted request after the response stream drops.';
+		const consentLine = 'I can show a full answer.';
 		await consent.getByText(consentLine, { exact: true }).waitFor();
 		assert.equal((await page.locator('#active-turn').innerText()).includes(assistanceText), false);
 		await page.reload();

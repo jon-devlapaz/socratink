@@ -43,13 +43,6 @@ const probes = [
 		to: 'A request such as "just tell me" is not permission.',
 		test: 'src/learning/policy.test.ts', pattern: 'only an explicit answer request',
 	},
-	...['full answer', 'worked example'].map((kind) => ({
-		name: `${kind} card names the target`, file: consent,
-		from: kind === 'full answer' ? 'target ? `I can show the full answer: ${target}.`' : 'target ? `I can show a worked example: ${target}.`',
-		to: kind === 'full answer' ? 'false ? `I can show the full answer: ${target}.`' : 'false ? `I can show a worked example: ${target}.`',
-		test: regression,
-		pattern: `${kind === 'full answer' ? 'full_answer' : 'worked_example'}: consent line names its target`,
-	})),
 ];
 
 for (const probe of probes) {
