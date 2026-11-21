@@ -170,13 +170,11 @@ for (const kind of ['full_answer', 'worked_example']) {
 		assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, reveal);
 	}));
 
-	for (const target of [undefined, 'Solving 6 times 7', 'solving 6 times 7']) {
-		test(`${kind}: consent line ${target ? `names its target (${target})` : 'keeps the default without a target'}`, async () => fixture(async (f) => {
+	for (const target of [undefined, 'If the Sun emitted only red light, the sky would look nearly black']) {
+		test(`${kind}: consent line ${target ? 'never shows a target that states the answer' : 'keeps the default without a target'}`, async () => fixture(async (f) => {
 			const { reply } = await f.turn('I think it is 41.', { kind, ...(target ? { target } : {}) }, protectedText, withheld);
 			const card = questionnaireFromParts(reply.parts);
-			assert.equal(card.items[0].prompt, kind === 'full_answer'
-				? target ? 'I can show the full answer: solving 6 times 7.' : 'I can show a full answer.'
-				: target ? 'I can show a worked example: solving 6 times 7.' : 'I can show a worked example.');
+			assert.equal(card.items[0].prompt, kind === 'full_answer' ? 'I can show a full answer.' : 'I can show a worked example.');
 		}));
 	}
 }

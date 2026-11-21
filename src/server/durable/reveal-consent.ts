@@ -12,12 +12,10 @@ function protectedReveal(message: ProductMessage, permission: RevealDefinition |
 }
 
 function consentCard(reveal: RevealDefinition): QuestionnaireDefinition {
-	const target = reveal.target ? reveal.target[0]!.toLowerCase() + reveal.target.slice(1) : undefined;
+	// The line never quotes the model's target: a target can state the answer the card withholds.
 	return {
 		...questionnaireFromPresentQuestion({
-			prompt: reveal.kind === 'full_answer'
-				? target ? `I can show the full answer: ${target}.` : 'I can show a full answer.'
-				: target ? `I can show a worked example: ${target}.` : 'I can show a worked example.',
+			prompt: reveal.kind === 'full_answer' ? 'I can show a full answer.' : 'I can show a worked example.',
 			choices: [{ value: 'see-it', label: 'See it' }, { value: 'try-once-more', label: 'Try once more' }],
 		}),
 		kind: 'reveal-consent',
