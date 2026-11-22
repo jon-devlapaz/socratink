@@ -1,9 +1,5 @@
-/** One past conversation on the History page. The Pi log keeps the
- * conversation itself; the server's index only names and orders it. */
 export type ConversationSummary = Readonly<{ id: string; title: string; updatedAt: string }>;
 
-/** A conversation's title: the learner's first admitted message on one line,
- * shortened. */
 export function conversationTitle(text: string): string {
 	const line = text.replace(/\s+/g, ' ').trim();
 	return line.length > 60 ? `${line.slice(0, 59).trimEnd()}…` : line;

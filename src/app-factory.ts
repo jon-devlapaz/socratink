@@ -22,7 +22,6 @@ import type { Inference } from './inference/index.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
 const authDb = getAuthDb();
-// History lives beside the accounts it belongs to.
 const conversationIndex = createConversationIndex(resolveAuthStoreTarget(process.env));
 const authConfig = resolveAuthConfig(process.env);
 const chatRateLimiter = createRateLimiter({
@@ -37,7 +36,6 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 		return context.json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
 	});
 
-	// Unconfigured inference fails the health check so the monitor alerts before a learner does.
 	app.get('/healthz', (context) => {
 		const status = inference.operatorStatus();
 		return status.state === 'ready'

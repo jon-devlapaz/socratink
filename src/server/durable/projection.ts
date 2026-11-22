@@ -10,7 +10,6 @@ import type { CommittedStorage } from './storage.ts';
 
 export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true };
 
-/** The reader is a single committed snapshot, independent of execution ownership. */
 export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
 	const snapshot: Snapshot = { revision: storage.revision, messages: [], submissions: [] };
 	if (!await storage.conversation(ROOT_CONVERSATION_ID, context)) return snapshot;
@@ -78,8 +77,6 @@ function appendResult(assistant: ProductMessage, message: Extract<Message, { rol
 }
 
 function appendAssistant(target: ProductMessage, message: AssistantMessage) {
-	// Some gateway providers put reasoning in the reply text inside <think> tags.
-	// The learner never sees it as reply text: it can state the answer a card withholds.
 	const raw = messageText(message);
 	const closed = raw.lastIndexOf('</think>');
 	let text = closed < 0 ? raw : raw.slice(closed + '</think>'.length);
@@ -87,7 +84,6 @@ function appendAssistant(target: ProductMessage, message: AssistantMessage) {
 	const open = text.indexOf('<think>');
 	if (open >= 0) { inline += text.slice(open); text = text.slice(0, open); }
 	if (closed >= 0 || open >= 0) text = text.trim();
-	// Told to "write no text" after a mark check, the model sometimes writes that literally.
 	if (/^\(no text\)$/i.test(text.trim())) text = '';
 	inline = inline.replaceAll(/<\/?think>/g, '').trim();
 	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]

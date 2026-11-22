@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS socratink_user_aliases (
 	created_at TEXT NOT NULL
 );`;
 
-// An older alias can name a registered account as its source. That account owns its own history.
 const GUEST_ALIAS_FILTER_SQL =
 	'NOT EXISTS (SELECT 1 FROM socratink_users WHERE id = socratink_user_aliases.guest_user_id)';
 
@@ -120,7 +119,6 @@ function openPostgresAuthDb(connectionString: string): AuthDb {
 	const pool = sharedPostgresPool(connectionString);
 	return createPostgresAuthDb({
 		query: (text, values) => pool.query(text, values),
-		// The shared pool outlives this store; see sharedPostgresPool.
 		end: async () => {},
 	});
 }

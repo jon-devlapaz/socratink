@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { appConfig } from '../src/config/app.config.ts';
 
 const config = JSON.parse(await readFile('vercel.json', 'utf8'));
 
@@ -41,6 +42,12 @@ test('production build ships branded recovery and existing static entries', asyn
 		index.match(boot)?.[0].replace(/\s+/g, ' '),
 		'404 boot script matches the app boot script',
 	);
+	const login = await readFile('dist/client/login.html', 'utf8');
+	for (const page of [index, notFound, login]) {
+		assert.ok(page.includes(`'${appConfig.themeStorageKey}'`), 'boot scripts read the theme key the app writes');
+		assert.doesNotMatch(page, /%SOCRATINK_/);
+	}
+	for (const page of [index, notFound]) assert.ok(page.includes(`'${appConfig.typeSizeStorageKey}'`));
 	const assets = [...notFound.matchAll(/(?:src|href)="(\/assets\/[^"?#]+)"/g)];
 	assert.ok(assets.length >= 2, 'built styles and wordmark use root-relative URLs');
 	for (const [, path] of assets) {

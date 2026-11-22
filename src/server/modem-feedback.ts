@@ -50,7 +50,7 @@ export async function sendAgentFeedback(token: string, user: AppUser | undefined
 			const text = result.content?.find((item) => item.type === 'text')?.text;
 			let body: { id?: unknown } | undefined;
 			if (text && !result.structuredContent) {
-				try { body = JSON.parse(text); } catch { /* No structured receipt. */ }
+				try { body = JSON.parse(text); } catch {}
 			}
 			const id = result.structuredContent?.id ?? body?.id;
 			return typeof id === 'string' && id ? 'accepted' : 'unconfirmed';

@@ -10,7 +10,6 @@ type HistoryOptions = Readonly<{
 	beforeSwitch: () => void;
 }>;
 
-/** Titles once kept in browser storage, before History moved to the server. */
 const legacyHistoryKeyPrefix = 'socratink-chat-history';
 
 export function mountHistory(options: HistoryOptions) {
@@ -30,7 +29,6 @@ export function mountHistory(options: HistoryOptions) {
 		void load();
 	});
 	retry.addEventListener('click', () => void load());
-	// The dialog returns focus to the control that opened the menu.
 	close.addEventListener('click', () => dialog.close());
 
 	async function load() {
@@ -65,7 +63,6 @@ export function mountHistory(options: HistoryOptions) {
 			title.className = 'history-title';
 			title.textContent = entry.title;
 			const current = entry.id === options.currentId;
-			// Color is never the only signal for the open conversation.
 			const when = document.createElement(current ? 'span' : 'time');
 			when.className = 'history-when';
 			if (when instanceof HTMLTimeElement) when.dateTime = entry.updatedAt;
@@ -90,7 +87,6 @@ function forgetLegacyHistory() {
 	try {
 		for (const key of Object.keys(localStorage)) if (key.startsWith(legacyHistoryKeyPrefix)) localStorage.removeItem(key);
 	} catch {
-		// Without storage access there is nothing to remove.
 	}
 }
 

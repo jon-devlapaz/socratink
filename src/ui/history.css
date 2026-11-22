@@ -1,4 +1,3 @@
-/* History is a quiet page of paper: rows and hairlines, no cards or badges. */
 #history-dialog {
 	width: 100%;
 	max-width: none;
@@ -74,7 +73,6 @@
 	font-size: 0.85em;
 }
 
-/* Unsupported browsers keep normal wrapping. */
 .history-note {
 	text-wrap: balance;
 }
@@ -125,7 +123,6 @@
 	background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
-/* The words, not only the color, mark the open conversation. */
 #history-list button[aria-current='true'] .history-when {
 	color: var(--ink);
 }
@@ -149,7 +146,6 @@
 	outline-offset: -2px;
 }
 
-/* Wide screens: the same page, set a little lower so it does not hug the top edge. */
 @media (min-width: 48rem) {
 	#history-dialog {
 		padding-top: max(1.25rem, 6vh);

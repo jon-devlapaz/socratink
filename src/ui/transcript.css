@@ -28,7 +28,6 @@
 	}
 }
 
-/* Frost sits behind the transcript so the bookmark can join the card edge. */
 .active-node::before {
 	content: '';
 	position: absolute;
@@ -192,7 +191,6 @@ html[data-type-size='small'] .active-node {
 	color: color-mix(in srgb, var(--accent) 28%, var(--chip-strong));
 }
 
-/* Hover/open: the tab fill occupies the node's 1px slot so the outline stays one stroke. */
 .trail-toggle:hover::before,
 .trail-toggle:focus-visible::before,
 .trail-toggle[aria-expanded='true']::before {
@@ -309,7 +307,6 @@ html[data-type-size='small'] .active-node {
 }
 
 .history-turn.you {
-	/* Same lanes as the live turn: You is the right-hand landmark. */
 	padding-left: 12%;
 	text-align: right;
 }
@@ -331,7 +328,6 @@ html[data-type-size='small'] .active-node {
 	padding: 0.55rem var(--conversation-text-inset) 1.2rem;
 }
 
-/* With no earlier-steps tab above it, the first turn keeps clear of the card's edge. */
 .trail-toggle[hidden] + .active-scroll #active-turn {
 	padding-top: 1.05rem;
 }
@@ -811,7 +807,6 @@ body.conversation-empty .active-node {
 	display: none;
 }
 
-/* The landing page's voice on an empty page: one serif line, nothing else. */
 body.conversation-empty .stage::before {
 	content: "Make the thinking your own.";
 	display: block;

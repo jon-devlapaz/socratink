@@ -11,14 +11,11 @@ export type ChatModelEnvironment = {
 };
 
 const localChatModelLimits = {
-	// Keeps thinking blocks. Effort is sent only on the Vercel gateway URL.
 	reasoning: true,
 	contextWindow: 1_048_576,
 	maxTokens: 131_100,
 } as const;
 
-// The gateway routes each model to whichever provider serves it. Providers cap
-// output differently (MiMo caps it at 131,072 tokens), so ask for far less.
 const hostedGatewayLimits = {
 	reasoning: true,
 	contextWindow: 204_800,
