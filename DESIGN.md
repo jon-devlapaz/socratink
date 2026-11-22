@@ -26,10 +26,13 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 ## Type
 
 The landing's sans stack is Inter, ui-sans-serif, system-ui, sans-serif.
-Its display stack is Instrument Serif, ui-serif, Georgia, serif. No local
-Inter or Instrument Serif files were found during this change. The app uses
-these fallback stacks and downloads no fonts. The existing Paper Mono asset
-and its OFL license remain in `src/ui/fonts/`, but no longer set dialogue.
+The display stack is Newsreader, ui-serif, Georgia, serif, set by
+`--font-serif` in `styles.css`. Newsreader replaced the landing's Instrument
+Serif in the app on 2026-11-22; the landing page has not changed yet. The app
+bundles Inter and Newsreader (Latin subset, variable weight) in
+`src/ui/fonts/` with their OFL licenses and downloads no fonts from other
+origins. The existing Paper Mono asset and its OFL license remain there, but
+no longer set dialogue.
 
 Use the sans stack for prose, controls, learner work, and tutor explanations.
 Use the serif stack for display, structured tutor questions, and quotations.
@@ -64,7 +67,7 @@ Recorded by Codex on 2026-11-21 during the Gridlines pass.
 - Current-turn text, composer text, and dictation status use a common inset
   of 1.25rem. The composer border counts toward this inset.
 - The first text action in a question starts on the prompt's leading edge.
-- Menu controls share one centered row when there is space for all six.
+- Menu controls share one centered row when there is space for all of them.
   On smaller screens, keep rows centered and align the icons within each row.
 - Sign-in providers share the available row width equally.
 
@@ -92,7 +95,9 @@ fits within 20 lines and adds no dependency. Otherwise redesign or skip it.
 
 `transcript.css` owns conversation layout. `questionnaire.css` owns question
 and consent styling. `reveal-mark.css` owns supplied-help attribution.
-`login.css` owns sign-in appearance. Other UI styles use the shared tokens.
+`login.css` owns sign-in appearance. `history.css` owns the History page:
+rows and hairlines on paper, with the open conversation marked by a verdigris
+rule and the words "Open now" in full ink. It leaves by "Back to conversation". Other UI styles use the shared tokens.
 Behavior stays in the existing TypeScript modules.
 
 Run `pnpm check` and `REVEAL_BROWSER=1 pnpm smoke`. Compare conversation,

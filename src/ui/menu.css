@@ -219,7 +219,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	padding: 0.4rem 0 0.2rem;
 }
 
-/* Keep all six tiles from wrapping as a row of five and a row of one. */
+/* Keep six or more tiles from wrapping as a full row and a single tile. */
 @media (max-width: 34.15rem) {
 	.menu-orbs:has(> :nth-child(6 of :not([hidden]))) {
 		max-width: min(22rem, calc(100% - 2rem));
