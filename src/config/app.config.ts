@@ -2,6 +2,7 @@ export const appConfig = {
 	chatAgentPath: '/api/agents/chat',
 	soundStorageKey: 'socratink-sound',
 	sessionPath: '/api/session',
+	conversationsPath: '/api/conversations',
 	authProvidersPath: '/api/auth/providers',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatConversationResetKey: 'socratink-chat-conversation-reset',

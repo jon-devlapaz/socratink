@@ -6,7 +6,7 @@ import type { TurnRecord } from './durable/contract.ts';
  * status only. Runtime events and provider error text can contain learner text and
  * credentials, so neither is logged. A failed tutor probe always states its status,
  * null when no HTTP status came back. */
-export function reportFailure(...failure: ['submission_failed' | 'submission_recovery' | 'request_failed']
+export function reportFailure(...failure: ['submission_failed' | 'submission_recovery' | 'request_failed' | 'conversation_index_failed']
 	| ['probe_failed', number | null]): void {
 	const [category, providerStatus] = failure;
 	console.error(JSON.stringify({ event: 'socratink_failure', category,

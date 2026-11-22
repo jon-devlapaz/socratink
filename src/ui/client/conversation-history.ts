@@ -1,4 +1,5 @@
 import { appConfig } from '../../config/app.config.ts';
+import { conversationTitle } from '../../config/conversation-title.ts';
 import { conversationBelongsToUser, userIdFromConversationId } from '../../config/session.ts';
 
 /** One past conversation, as this browser remembers it. The server keeps the
@@ -12,11 +13,6 @@ type PastConversation = { id: string; title: string; usedAt: number };
 export type ConversationEvidence = { kind: 'admitted' | 'restored'; firstLearnerText: string };
 
 export const historyLimit = 50;
-
-export function conversationTitle(text: string): string {
-	const line = text.replace(/\s+/g, ' ').trim();
-	return line.length > 60 ? `${line.slice(0, 59).trimEnd()}…` : line;
-}
 
 export function rememberConversation(id: string, evidence: ConversationEvidence, now = Date.now()) {
 	const owner = userIdFromConversationId(id);
