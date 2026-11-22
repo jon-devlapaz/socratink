@@ -156,7 +156,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const confirm = page.locator('#start-over-dialog[open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			"This conversation and your draft will close, and you can't reopen it yet.");
+			'Your draft will be deleted. You can reopen this conversation from History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
