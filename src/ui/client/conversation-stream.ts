@@ -52,7 +52,6 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 				} catch (error) {
 					if (signal?.aborted) throw signal.reason;
 					if (error instanceof ChatApiError) throw error;
-					// A dropped connection reconnects below.
 				}
 				const settlement = latest?.settlements.find((s) => s.submissionId === submissionId);
 				if (latest && settlement) {
@@ -76,7 +75,7 @@ export type StreamClient = ReturnType<typeof createStreamClient>;
 async function apiError(response: Response): Promise<ChatApiError> {
 	const text = await response.text();
 	let body: unknown = text;
-	try { body = JSON.parse(text); } catch { /* keep the text */ }
+	try { body = JSON.parse(text); } catch {}
 	return new ChatApiError(response.status, body);
 }
 
@@ -98,8 +97,6 @@ async function* serverEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<W
 	}
 }
 
-/** Each connection replays pending turns from their start. Pass on only what
- * this reader has not delivered yet. Resets are state, not progress. */
 function deduplicator() {
 	const once = new Set<string>();
 	const delivered = new Map<string, string>();

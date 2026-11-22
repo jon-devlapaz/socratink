@@ -127,8 +127,6 @@ export type QuestionnaireAnswer = {
 	help?: QuestionnaireHelp;
 };
 
-/** The answer text for each card help request. The server reads these back to
- * record the turn as assistance, so they are the one owner of that wording. */
 export const questionnaireHelpText: Record<QuestionnaireHelp, string> = {
 	hint: 'Asked for a hint.',
 	unknown: "I don't know.",

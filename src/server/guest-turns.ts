@@ -55,7 +55,6 @@ export function guestTurnGateMiddleware(options: {
 
 		const updated = count + 1;
 		await next();
-		// The chat route returns a raw Response, so attach the counter to the finalized response.
 		await setSignedCookie(context, guestTurnsCookieName, String(updated), options.secret, {
 			path: '/',
 			httpOnly: true,

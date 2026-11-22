@@ -3,7 +3,7 @@ import { normalizeContext } from '@earendil-works/pi-ai/utils/transcript';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { modelConfig } from '../inference/index.ts';
 import { resolveChatModel } from '../inference/operator.ts';
-import { operatorApiModel } from './durable/provider.ts';
+import { operatorApiModel, providerHttpStatus } from './durable/provider.ts';
 import { reportFailure } from './logging.ts';
 
 /** One tiny real call through the model, key and limits a learner's turn uses, with one
@@ -22,9 +22,7 @@ export async function probeOnce(): Promise<{ ok: boolean; status: number | null 
 			normalizeContext({ messages: [{ role: 'user', content: 'Reply with the single word: ok', timestamp: Date.now() }] }),
 			{ apiKey: config.apiKey, maxTokens: model.maxTokens, signal: AbortSignal.timeout(60_000),
 				onResponse: (response) => { status = response.status; } }).result();
-		// A failed reply's error starts with the provider's HTTP status ("429 ...").
-		// Keep only that number: the rest can echo request text.
-		status ??= Number(/^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1]) || null;
+		status ??= providerHttpStatus(reply.errorMessage) ?? null;
 		const text = reply.content.some((block) => block.type === 'text' && block.text.trim() !== '');
 		return { status, ok: status === 200 && reply.stopReason !== 'error' && reply.stopReason !== 'aborted' && text };
 	};

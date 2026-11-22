@@ -34,8 +34,6 @@ export function createInference(options: { operator: () => ChatModel | undefined
 	};
 }
 
-/** The request config for the operator's model: what a learner's turn and the
- * daily tutor probe both send. */
 export function modelConfig(operator: ChatModel): ModelConfig {
 	return { provider: operator.providerId, modelId: operator.modelId,
 		apiKey: operator.apiKey, baseUrl: operator.baseUrl, reasoning: operator.reasoning,

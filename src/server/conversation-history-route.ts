@@ -14,20 +14,16 @@ type ConversationHistoryOptions = Readonly<{
 	index: ConversationIndex;
 }>;
 
-/** Records each admitted learner message and lists a learner's conversations.
- * Mount the recorder after requireChatSession, which checks ownership. */
 export function mountConversationHistory(app: Hono, options: ConversationHistoryOptions) {
 	app.use(`${appConfig.chatAgentPath}/*`, async (context, next) => {
 		const message = context.req.method === 'POST' ? await context.req.json().catch(() => null) : null;
 		await next();
-		// 202 means the engine admitted it; refused and busy messages name nothing.
 		if (context.res.status !== 202 || typeof message?.body !== 'string') return;
 		const conversationId = chatConversationIdFromPath(context.req.path);
 		if (!conversationId) return;
 		try {
 			await options.index.recordAdmitted(conversationId, message.body);
 		} catch {
-			// The turn already succeeded. The next admitted message records it again.
 			reportFailure('conversation_index_failed');
 		}
 	});

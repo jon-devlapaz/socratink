@@ -6,7 +6,6 @@ export function mountChatDraft(input: HTMLTextAreaElement, conversationId: strin
 			if (text) sessionStorage.setItem(key, text);
 			else sessionStorage.removeItem(key);
 		} catch {
-			// The composer still works when browser storage is unavailable.
 		}
 	}
 
@@ -15,7 +14,6 @@ export function mountChatDraft(input: HTMLTextAreaElement, conversationId: strin
 		try {
 			input.value = sessionStorage.getItem(key) ?? '';
 		} catch {
-			// There is no draft to restore without storage access.
 		}
 	} else {
 		// A newly opened tab can receive a copy of its opener's session storage.

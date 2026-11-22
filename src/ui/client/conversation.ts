@@ -21,8 +21,6 @@ type ChatTurnClient = Pick<StreamClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = WireAdmission;
 
 export const abortRequestTimeoutMs = 5_000;
-// Recheck and reload follow an already-admitted turn. 8s cut a live
-// FreeLLMAPI teaching reply off mid-stream; 90s leaves room for a slow model.
 export const settlementReadTimeoutMs = 90_000;
 
 export type ChatRequestState =

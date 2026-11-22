@@ -33,7 +33,6 @@ export function createQuestionnaire(
 	const form = document.createElement('form');
 	form.className = 'questionnaire';
 	form.setAttribute('aria-label', definition.kind === 'quiz' ? 'Quiz' : 'Questions');
-	// Validated live and restored definitions contain exactly one item.
 	const item = definition.items[0]!;
 	const consent = definition.kind === 'reveal-consent';
 	const section = createQuestionItem(item, consent

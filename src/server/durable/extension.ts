@@ -44,14 +44,10 @@ export function productRegistry() {
 					try { hasQuestion ||= executeTool(round.name, round.arguments).terminate; }
 					catch { invalidQuestion = true; }
 				}
-				// A successful question ends the turn. Pi requires every call of a
-				// mixed tool round to request termination, including a reveal beside it.
-				// A reveal that answers a correction ends the turn too, so the reply is not repeated.
+				// Pi requires every call of a mixed tool round to request termination, including a reveal beside it.
 				const correctedReveal = calls.every((round) => round.name === revealToolName)
 					&& corrections(earlier).some((body) => revealBodies.includes(body));
 				const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal;
-				// A card help request is assistance even when the tutor answers with
-				// only another card, which leaves no yield to correct.
 				const help = hasQuestion && call.name === 'present_question' && !result.isError
 					&& !revealed(earlier) && !calls.some((round) => round.name === revealToolName)
 					? cardHelpReveal(learnerText(entries)) : undefined;
@@ -80,8 +76,6 @@ export function productRegistry() {
 	return registry;
 }
 
-/** The correction bodies already sent for this input. A failed question also
- * counts, because it already causes Pi's next tool-continuation request. */
 function corrections(entries: readonly EntryRecord[]): string[] {
 	return entries.flatMap((entry) => (entry.model ?? []).flatMap((message) => {
 		if (message.role === 'toolResult' && message.toolName === 'present_question' && message.isError) return [message.toolName];

@@ -2,8 +2,6 @@ import { steeringPrefix } from '../config/chat-message.ts';
 import { questionnaireAnswerPrefix, questionnaireHelpText } from '../questionnaire.ts';
 import { socraticTutorSkill } from './socratic-tutor.ts';
 
-// The socratic-tutor skill is the teaching policy. This section binds it to
-// Socratink's tools, controls, and card, and tightens what counts as evidence.
 const socratinkBindings = `# Running inside Socratink
 
 Socratink exists only for tutoring, so every conversation is a tutoring session. Skip the intent guard and go straight to Session start with the topic or goal in the learner's first message. If it names no topic, ask what they want to master.

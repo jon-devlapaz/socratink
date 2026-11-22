@@ -24,7 +24,6 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 			const send = (event: NewEvent) => write(`data: ${JSON.stringify({ ...event, conversationId: id, position: { batch: 0, index: index++ } })}\n\n`);
 			const opened = Date.now();
 			let beat = opened;
-			// One replayed log per connection: each poll reads only new commits.
 			const follower = engine.follow(id);
 			try {
 				let state = await follower.snapshot();
@@ -38,7 +37,6 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 					if (Date.now() - beat >= timing.heartbeatMs) { write(': ping\n\n'); beat = Date.now(); }
 					await delay(timing.pollMs, undefined, { signal: stopped }).catch(() => {});
 					if (stopped.aborted) break;
-					// snapshot() also recovers work a dead process left pending.
 					state = await follower.snapshot();
 				}
 			} catch (error) {

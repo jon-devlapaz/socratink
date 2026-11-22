@@ -84,7 +84,6 @@ export function createActiveTurn(
 	wrap.className = `turn ${item.role.toLowerCase()}`;
 	if (announce) wrap.setAttribute('aria-live', 'polite');
 	if (stagger) wrap.classList.add('stagger-item');
-	// An answered card is gone, so a card-only turn shows the question it asked.
 	const asked = item.questionnaire && !interactive
 		? item.questionnaire.items.map((question) => question.prompt).join('\n\n') : undefined;
 	appendTurnCopy(wrap, item, sinks, asked);
@@ -171,7 +170,6 @@ export function createPendingTurn({
 	list.className = 'thinking-steps-list';
 	const working = document.createElement('li');
 	working.className = 'thinking-step-copy';
-	// A status, never the model's raw reasoning: that can leak a verdict early.
 	working.textContent = 'Working from what you wrote';
 	const latency = document.createElement('li');
 	latency.className = 'pending-latency';
@@ -193,8 +191,6 @@ export function createPendingTurn({
 	const timer = window.setTimeout(() => {
 		if (wrap.isConnected) latency.hidden = false;
 	}, exceptionalLatencyMs);
-	// The region announces status only. Text that streams in is not read word
-	// by word; the settled turn announces the reply once.
 	const reply = createMarkdownRenderer();
 	reply.element.setAttribute('aria-hidden', 'true');
 	reply.update('');
@@ -210,7 +206,6 @@ export function createPendingTurn({
 		setText(view) {
 			if (view.markdown === shown.markdown && view.reveal?.kind === shown.reveal?.kind) return;
 			shown = view;
-			// A reply on screen is not "taking longer than usual".
 			if (view.markdown) { window.clearTimeout(timer); latency.hidden = true; }
 			reply.update(view.markdown);
 			if (view.markdown && view.reveal) markSuppliedCopy(reply.element, view.reveal);
@@ -339,7 +334,6 @@ function appendTurnCopy(
 function historyBodyText(item: DisplayedTurn): string {
 	const compact = compactMarkdownText(item.shownText ?? item.text);
 	if (compact) return compact;
-	// A card-only turn shows the question it asked.
 	if (item.questionnaire) return item.questionnaire.items.map((question) => question.prompt).join(' ');
 	if (item.tools?.length) return item.tools.map((call) => call.name).join(', ');
 	return '';

@@ -26,7 +26,6 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: () => Prom
 			if (error instanceof InferenceUnavailableError) {
 				return c.json({ error: { type: 'inference_unconfigured', message: 'No model provider is set up yet. Please try again later.' } }, 503);
 			}
-			// A second tab may admit work while model selection is being resolved.
 			if (error instanceof DurableBusyError) {
 				return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);
 			}

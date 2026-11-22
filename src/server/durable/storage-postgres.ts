@@ -116,7 +116,6 @@ export function postgresLog(connectionString: string): LogBackend {
 			await ready();
 			await pool.query(`UPDATE ${schema}.namespaces SET abort_through=GREATEST(abort_through,$2) WHERE namespace=$1`, [namespace, through]);
 		},
-		// The shared pool outlives this store; see sharedPostgresPool.
 		async close() { await ready.settled(); },
 	};
 }

@@ -19,11 +19,9 @@ export type ProductMessage = {
 };
 export type Submission = { id: string; text: string; outcome?: Outcome; error?: string };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };
-/** How one execution of a turn ended, for logs: no learner text. */
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;
 	status: Outcome | 'interrupted' | 'error' | 'unsettled';
-	/** The provider's HTTP status for a failed turn, when its error names one. Never its text. */
 	providerStatus?: number;
 };
 export type EngineOptions = {
