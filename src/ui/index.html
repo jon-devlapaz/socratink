@@ -233,6 +233,12 @@
 						</svg>
 						<span>Start over</span>
 					</button>
+					<button id="history-trigger" type="button" aria-haspopup="dialog">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M5 6.5h14M5 12h14M5 17.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg>
+						<span>History</span>
+					</button>
 					<a id="auth-link" href="/login.html">
 						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
 							<path
@@ -262,6 +268,18 @@
 				<div class="menu-handle" id="menu-handle" aria-hidden="true"></div>
 			</div>
 		</div>
+
+		<dialog id="history-dialog" aria-labelledby="history-title">
+			<div class="history-page">
+				<div class="history-head">
+					<h2 id="history-title">History</h2>
+					<button id="history-close" type="button">Back to conversation</button>
+				</div>
+				<p class="history-note">Conversations from this browser. Choose one to open it.</p>
+				<p id="history-empty" hidden>Your conversations appear here after you send a message.</p>
+				<ol id="history-list" aria-labelledby="history-title"></ol>
+			</div>
+		</dialog>
 
 		<dialog id="feedback-dialog" aria-labelledby="feedback-title">
 			<form id="feedback-form">

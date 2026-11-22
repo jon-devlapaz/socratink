@@ -64,7 +64,7 @@ Recorded by Codex on 2026-11-21 during the Gridlines pass.
 - Current-turn text, composer text, and dictation status use a common inset
   of 1.25rem. The composer border counts toward this inset.
 - The first text action in a question starts on the prompt's leading edge.
-- Menu controls share one centered row when there is space for all six.
+- Menu controls share one centered row when there is space for all of them.
   On smaller screens, keep rows centered and align the icons within each row.
 - Sign-in providers share the available row width equally.
 
@@ -92,7 +92,9 @@ fits within 20 lines and adds no dependency. Otherwise redesign or skip it.
 
 `transcript.css` owns conversation layout. `questionnaire.css` owns question
 and consent styling. `reveal-mark.css` owns supplied-help attribution.
-`login.css` owns sign-in appearance. Other UI styles use the shared tokens.
+`login.css` owns sign-in appearance. `history.css` owns the History page:
+rows and hairlines on paper, with the open conversation marked by a verdigris
+rule and the words "Open now" in full ink. It leaves by "Back to conversation". Other UI styles use the shared tokens.
 Behavior stays in the existing TypeScript modules.
 
 Run `pnpm check` and `REVEAL_BROWSER=1 pnpm smoke`. Compare conversation,

@@ -104,7 +104,11 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 }
 
 export function startNewChatConversation(userId: string) {
-	const conversationId = namespacedConversationId(userId, randomId());
+	switchChatConversation(namespacedConversationId(userId, randomId()));
+}
+
+/** Opens a conversation here and in this learner's other tabs. */
+export function switchChatConversation(conversationId: string) {
 	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
 	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
 	location.reload();
