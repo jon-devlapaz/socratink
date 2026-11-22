@@ -39,6 +39,8 @@ test('operator transport preserves keys, limits, live route headers and persiste
 		const configs: Record<string, ModelConfig> = {
 			operator: { provider: 'jon-local', modelId: 'auto', apiKey: 'operator-synthetic', baseUrl,
 				reasoning: true, contextWindow: 1048576, maxTokens: 131100 },
+			fallback: { provider: 'jon-local', modelId: 'primary', apiKey: 'fallback-synthetic', baseUrl,
+				contextWindow: 128000, maxTokens: 4096, fallbackModelIds: ['second/model'] },
 		};
 		const options: EngineOptions = { target: { kind: 'sqlite', filename: ':memory:' }, resolveModel: async (id) => configs[id]! };
 		const responses = await Promise.all(Object.keys(configs).map(async (id) => {
@@ -61,6 +63,8 @@ test('operator transport preserves keys, limits, live route headers and persiste
 		assert.equal(byKey('operator-synthetic').body.model, 'auto');
 		assert.equal(byKey('operator-synthetic').body.max_tokens ?? byKey('operator-synthetic').body.max_completion_tokens, 131100);
 		assert.equal(byKey('operator-synthetic').body.reasoning_effort, undefined);
+		assert.equal(byKey('operator-synthetic').body.models, undefined, 'a config without fallbacks sends none');
+		assert.deepEqual(byKey('fallback-synthetic').body.models, ['second/model'], 'learner turns ask the gateway to fall back');
 		const file = join(directory, 'metadata.sqlite');
 		let storage = await openNodeSqliteStorage(file);
 		await commitWrites(storage, [{ type: 'conversation', value: { id: ROOT_CONVERSATION_ID } },

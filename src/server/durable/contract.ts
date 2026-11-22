@@ -6,6 +6,8 @@ export const inputKind = 'socratink.input';
 export type ModelSelection = { provider: string; modelId: string };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;
+	/** Models the gateway tries in order when the primary model fails. */
+	fallbackModelIds?: readonly string[];
 };
 export type Outcome = 'completed' | 'failed' | 'aborted';
 export type ProductTool = {
