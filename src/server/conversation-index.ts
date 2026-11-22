@@ -2,14 +2,10 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { DatabaseTarget } from '../config/database.ts';
-import { conversationTitle } from '../config/conversation-title.ts';
+import { conversationTitle, type ConversationSummary } from '../config/conversations.ts';
 import { userIdFromConversationId } from '../config/session.ts';
 import { sharedPostgresPool } from './postgres-pool.ts';
 import type { AuthPgClient } from './auth-db.ts';
-
-/** One past conversation for the History page. The Pi log keeps the
- * conversation itself; this index only names it and orders it. */
-export type ConversationSummary = Readonly<{ id: string; title: string; updatedAt: string }>;
 
 export interface ConversationIndex {
 	/** The server admitted this learner message. The first one names the

@@ -47,7 +47,6 @@ import {
 } from './turn-view.ts';
 import { mountMenuSheet } from './menu-sheet.ts';
 import { mountHistory } from './history.ts';
-import { rememberConversation } from './client/conversation-history.ts';
 import { mountSoundCues } from './sound-cues.ts';
 import { requireElement } from './dom.ts';
 import {
@@ -335,8 +334,6 @@ export function mountChatSurface(options: Readonly<{
 		reduceMotion,
 	});
 	mountHistory({
-		userId: options.userId,
-		aliases: options.aliases,
 		currentId: conversation.id,
 		closeMenu,
 		// This tab keeps the draft keyed to its conversation; other tabs follow
@@ -381,9 +378,6 @@ export function mountChatSurface(options: Readonly<{
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
 		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire);
 		const result = requests.start(text, () => {
-			// Only an admitted message can name a conversation: a refused first
-			// attempt never reaches the server.
-			rememberConversation(conversation.id, { kind: 'admitted', firstLearnerText: learnerTurn.shownText ?? text });
 			if (submittedDraft === undefined || input.value !== submittedDraft) return;
 			input.value = '';
 			draft.clear();
@@ -497,12 +491,6 @@ export function mountChatSurface(options: Readonly<{
 				}
 			}
 			turns = visible;
-			const firstLearnerTurn = visible.find((turn) => turn.role === 'You');
-			if (firstLearnerTurn) {
-				rememberConversation(conversation.id, {
-					kind: 'restored', firstLearnerText: firstLearnerTurn.shownText ?? firstLearnerTurn.text,
-				});
-			}
 			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
