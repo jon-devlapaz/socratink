@@ -31,6 +31,11 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 		let fallbackAttempts = 0;
 		const options = { ...request, apiKey: selected.config.apiKey,
 			maxTokens: Math.min(request?.maxTokens ?? selected.model.maxTokens, selected.model.maxTokens),
+			onPayload: async (params: unknown, model: Model<Api>) => {
+				const next = (await request?.onPayload?.(params, model)) ?? params;
+				const fallbacks = selected.config.fallbackModelIds;
+				return fallbacks?.length ? { ...(next as object), models: [...fallbacks] } : next;
+			},
 			onResponse: async (response: Parameters<NonNullable<StreamOptions['onResponse']>>[0], model: Model<Api>) => {
 				const captured = routingFromHeaders(response.headers);
 				fallbackAttempts = captured.fallbackAttempts || fallbackAttempts;
