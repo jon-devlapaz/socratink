@@ -69,6 +69,7 @@ pnpm smoke
 pnpm smoke:durable
 pnpm test:durable:postgres
 pnpm smoke:durable:postgres
+pnpm verify:formal
 pnpm audit --prod
 ```
 
@@ -81,6 +82,9 @@ Set `REVEAL_BROWSER=1` when running `pnpm smoke` to include browser interaction
 checks. They use the `playwright` dev dependency; `CHROME_PATH` and
 `PLAYWRIGHT_MODULE` can point to existing installations. Screenshots and results
 are saved under `.cache/reveal/`.
+
+`pnpm verify:formal` model-checks Cancel targeting with TLA+ (Java 11+; it
+downloads a checksum-pinned `tla2tools.jar`). See `.claude/skills/verify-cancel/SKILL.md`.
 
 To verify PostgreSQL restart and rollback, build the candidate and previous
 revision in separate directories, then run:
