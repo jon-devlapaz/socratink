@@ -19,6 +19,10 @@ The app provides a single-learner conversation with an AI learning partner:
   request for help, or looks like it supplies content, without `mark_reveal`
   gets one correction where the tutor decides whether to mark it.
 - Learner controls for pacing, an unaided attempt, cancellation, and recovery.
+- A History page in the menu that lists conversations used on this browser,
+  titled by the learner's first admitted message, and reopens one. Each
+  learner's list is kept in browser storage only and cleared on sign-out; it
+  does not follow a learner to another device.
 - Voice dictation as an input option, plus theme and text-size controls.
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
   ownership checks, and rate limits. Every learner uses the operator model route.
