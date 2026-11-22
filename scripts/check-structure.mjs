@@ -23,7 +23,8 @@ export function findProblems(files) {
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 	const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' })
-		.split('\0').filter((file) => file && existsSync(file)).map((file) => ({ file, text: readFileSync(file, 'utf8') }));
+		.split('\0').filter((file) => rules.some((rule) => rule.applies(file)) && existsSync(file))
+		.map((file) => ({ file, text: readFileSync(file, 'utf8') }));
 	const problems = findProblems(files);
 	if (problems.length) {
 		console.error(`Structure check failed:\n${problems.map((problem) => `  ${problem}`).join('\n')}`);
