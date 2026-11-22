@@ -30,8 +30,6 @@ export function sqliteLog(filename: string): LogBackend {
 		async exists(namespace) { return !!db.prepare('SELECT 1 FROM pi_namespaces WHERE namespace=?').get(namespace); },
 		async read(namespace, after) { return transaction(() => state(namespace, after)); },
 		async claim(namespace) {
-			// Separate per-conversation lock files allow other conversations to run.
-			// The OS releases this transaction if its owning process dies.
 			const lock = new DatabaseSync(join(lockDirectory, `${createHash('sha256').update(namespace).digest('hex')}.sqlite`));
 			try { lock.exec('BEGIN EXCLUSIVE'); }
 			catch (error) {

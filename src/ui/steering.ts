@@ -2,8 +2,6 @@ import { steeringPrefix } from '../config/chat-message.ts';
 
 export type SteeringKind = 'smaller-step' | 'try-unaided';
 
-// `body` is what the tutor reads. `said` is what the learner sees they sent,
-// so the transcript never puts the instruction in the learner's mouth.
 const steeringCopy: Record<SteeringKind, { label: string; ariaLabel: string; body: string; said: string; icon: string[] }> = {
 	'smaller-step': {
 		label: 'Smaller step',

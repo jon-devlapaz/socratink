@@ -9,9 +9,6 @@ import type { AuthPgClient } from './auth-db.ts';
 import { setupOnce } from './setup-once.ts';
 
 export interface ConversationIndex {
-	/** The server admitted this learner message. The first one names the
-	 * conversation; every one marks it used. A conversation always starts
-	 * with typed learner text: the tutor never speaks first. */
 	recordAdmitted(conversationId: string, text: string, at?: Date): Promise<void>;
 	/** Newest first, for a learner and their guest aliases. */
 	list(ownerIds: readonly string[]): Promise<ConversationSummary[]>;
@@ -44,7 +41,6 @@ export function createConversationIndex(target: DatabaseTarget): ConversationInd
 	switch (target.kind) {
 		case 'postgres': {
 			const pool = sharedPostgresPool(target.connectionString);
-			// The shared pool outlives this index; see sharedPostgresPool.
 			return createPostgresConversationIndex({ query: (text, values) => pool.query(text, values), end: async () => {} });
 		}
 		case 'sqlite':

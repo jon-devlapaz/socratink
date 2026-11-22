@@ -191,8 +191,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 			await preserveAround(mutate);
 		},
 		grow(mutate) {
-			// Programmatic scrolls mute scroll events briefly, and growth can scroll
-			// every frame, so read where the learner is before the content moves.
 			const atEdge = atLiveEdge();
 			mutate();
 			syncSpacer();

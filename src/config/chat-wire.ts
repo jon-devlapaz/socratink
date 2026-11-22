@@ -1,6 +1,3 @@
-/** The chat wire format between the Socratink server and browser: a JSON
- * snapshot of the conversation, and Server-Sent Events that update it. */
-
 export type WirePart =
 	| { type: 'text'; text: string; state: 'streaming' | 'done' }
 	| { type: `data-${string}`; data: unknown }

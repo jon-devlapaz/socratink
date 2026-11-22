@@ -44,7 +44,7 @@
 		"test:chat-markdown": "node --test scripts/chat-markdown.test.mjs",
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:client-id": "node --test scripts/client-id.test.mjs",
-		"test:static-routing": "node --test scripts/static-routing.test.mjs",
+		"test:static-routing": "node --test scripts/static-routing.test.mjs scripts/health.test.mjs",
 		"test:runtime-monitor": "node --test scripts/runtime-monitor.test.mjs scripts/monitor-dispatch.test.mjs scripts/monitor-cadence.test.mjs",
 		"test:tutor-probe": "node --test scripts/tutor-probe.test.mjs",
 		"test:preview-probe": "node --test scripts/preview-probe.test.mjs",

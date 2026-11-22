@@ -13,8 +13,6 @@ export const presentQuestionRetryBodies = {
 
 export type PresentQuestionRetryReason = keyof typeof presentQuestionRetryBodies;
 
-// Choices only count when the turn ends on the list: a skill map in a fence,
-// or a subskill list followed by an open question, is not a pick.
 export function looksLikeUnboxedChoices(text: string): boolean {
 	const lines = text.replace(/^ {0,3}```[^\n]*\n[\s\S]*?^ {0,3}```[ \t]*$/gm, '').trimEnd().split('\n');
 	let start = lines.length;

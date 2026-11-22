@@ -12,7 +12,6 @@ function protectedReveal(message: ProductMessage, permission: RevealDefinition |
 }
 
 function consentCard(reveal: RevealDefinition): QuestionnaireDefinition {
-	// The line never quotes the model's target: a target can state the answer the card withholds.
 	return {
 		...questionnaireFromPresentQuestion({
 			prompt: reveal.kind === 'full_answer' ? 'I can show a full answer.' : 'I can show a worked example.',

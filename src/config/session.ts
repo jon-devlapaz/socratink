@@ -26,8 +26,6 @@ export function isSessionUserId(value: unknown): value is string {
 	return typeof value === 'string' && value.length > 0 && !value.includes(':');
 }
 
-// Signed session cookie payload. The cookie nonce is per-cookie randomness and
-// is unrelated to the nonce in `${userId}:${nonce}` conversation ids.
 export type SessionCookieKind = 'guest' | 'registered';
 
 export type SessionCookie = Readonly<{

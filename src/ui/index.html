@@ -12,7 +12,7 @@
 		/>
 		<script>
 			(function () {
-				var key = 'socratink-theme';
+				var key = '%SOCRATINK_THEME_STORAGE_KEY%';
 				var stored = localStorage.getItem(key);
 				var dark =
 					stored === 'dark' ||
@@ -22,7 +22,7 @@
 				}
 				var meta = document.getElementById('theme-color');
 				if (meta) meta.setAttribute('content', dark ? '#100f0f' : '#fffcf0');
-				var typeSize = localStorage.getItem('socratink-type-size');
+				var typeSize = localStorage.getItem('%SOCRATINK_TYPE_SIZE_STORAGE_KEY%');
 				if (typeSize === 'big' || typeSize === 'medium' || typeSize === 'small') {
 					document.documentElement.dataset.typeSize = typeSize;
 				}

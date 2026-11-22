@@ -179,7 +179,6 @@ export function mountDictation(options: Readonly<{
 			try {
 				active.recognition.abort();
 			} catch {
-				// The browser may already have ended capture.
 			}
 		}
 	}

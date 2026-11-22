@@ -7,7 +7,6 @@ import { learnerVisibleAssistantText } from './assistant-text.ts';
  * markdown shows nothing. */
 export type LiveReplyView = { markdown: string; reveal?: RevealDefinition };
 
-// A leading marker whose closing « » run has not arrived yet.
 const partialLeadingMarker = /^«(?:[A-Z][A-Z0-9_]*)?$/u;
 
 /** Folds one turn's live events into the reply text the learner may see now.
@@ -35,7 +34,6 @@ export function createLiveReply(learnerText: string) {
 				return true;
 			}
 			if (event.type === 'tool-input' && event.toolName === revealToolName) {
-				// An invalid input fails the tool and records nothing, like at settlement.
 				const parsed = parseRevealDefinition(event.input);
 				if (!parsed) return false;
 				reveal = parsed;

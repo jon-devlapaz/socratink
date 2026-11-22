@@ -150,8 +150,6 @@ export function mountChatSurface(options: Readonly<{
 		pendingSession = undefined;
 	}
 
-	// At most one repaint per frame. Only a waiting turn shows text: a cancel,
-	// failure or recovery drops it, so the screen matches what is saved.
 	function paintLiveText() {
 		liveFrame = 0;
 		const session = pendingSession;
@@ -233,8 +231,6 @@ export function mountChatSurface(options: Readonly<{
 				await wait(150);
 				activeTurn.classList.remove('is-exiting');
 			}
-			// Every await comes before the active turn changes: a start and a
-			// cancel can settle on the same state and paint it twice at once.
 			const stateElement = requestState.kind === 'recovery' || requestState.kind === 'terminal'
 				? await requestStateElement(requestState) : undefined;
 
@@ -242,7 +238,6 @@ export function mountChatSurface(options: Readonly<{
 			activeTurn.replaceChildren(
 				...current.map((item, index) => {
 					const isLast = index === current.length - 1;
-					// A settled reply appears as is: the learner may already have read it live.
 					return createActiveTurn(item, {
 						announce: kind === 'hold' && isLast,
 						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && item.role !== 'Assistant',
@@ -336,13 +331,10 @@ export function mountChatSurface(options: Readonly<{
 	mountHistory({
 		currentId: conversation.id,
 		closeMenu,
-		// This tab keeps the draft keyed to its conversation; other tabs follow
-		// the switch through watchChatConversationReset, which clears theirs.
 		beforeSwitch: () => dictation.cancel(),
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 
-	// The dock is fixed, so reserve room for a grown composer above the transcript end.
 	new ResizeObserver(() => {
 		const grow = input.offsetHeight - parseFloat(getComputedStyle(input).minHeight);
 		document.documentElement.style.setProperty('--composer-grow', `${Math.max(0, grow)}px`);
@@ -406,7 +398,6 @@ export function mountChatSurface(options: Readonly<{
 		liveTools.length = 0;
 		quietToolIds.clear();
 		if (turn) turns = [...turns, turn];
-		// A learner who read the reply live stays where they were reading.
 		await paint('hold', liveTextShown ? 'live-edge' : 'start');
 	}
 
@@ -495,7 +486,6 @@ export function mountChatSurface(options: Readonly<{
 		} finally {
 			applyRequestControls(requestState);
 		}
-		// Startup recovery updates the conversation without moving keyboard focus.
 		if (unsettled) await applyRequestState(await requests.recheck(), false);
 	}
 

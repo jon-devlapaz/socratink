@@ -1,5 +1,3 @@
-// Assistant-turn markdown subset. This is not CommonMark or GFM.
-
 export type MarkdownBlock =
 	| { type: 'paragraph'; text: string }
 	| { type: 'heading'; level: 1 | 2 | 3 | 4 | 5 | 6; text: string }

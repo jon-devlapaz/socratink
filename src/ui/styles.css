@@ -237,7 +237,6 @@ body.questionnaire-active .stage {
 	transition: border-color 150ms var(--ease-out);
 }
 
-/* One quiet signal: the hairline turns jade. The textarea draws no ring of its own. */
 #chat:focus-within {
 	border-color: var(--accent);
 }
@@ -246,11 +245,9 @@ body.questionnaire-active .stage {
 	display: block;
 	width: 100%;
 	min-height: 6rem;
-	/* Grow with a long answer; older browsers keep the fixed height and scroll. */
 	field-sizing: content;
 	max-height: min(40dvh, 18rem);
 	overflow-y: auto;
-	/* Hide scrolled text in the bottom padding, where the footer row sits. */
 	-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	resize: none;

@@ -85,7 +85,6 @@ export function operatorApiModel(config: ModelConfig): Model<'openai-completions
 	};
 }
 
-/** A product-owned field travels with Pi's normal live and committed message. */
 export function messageRoute(message: Message): ModelRouteRecord | undefined {
 	return message.role === 'assistant' ? modelRouteFromMetadata((message as RoutedMessage).socratinkRoute) : undefined;
 }
@@ -95,8 +94,6 @@ function withRoute(source: AssistantMessageEventStream, route: (message: Assista
 	const redact = credentialRedactor(apiKey);
 	const annotate = (message: AssistantMessage): RoutedMessage => {
 		const captured = route(message);
-		// Provider errors and headers are untrusted. Remove this request's key
-		// before Pi publishes or commits them; preserve status and retry wording.
 		return { ...message,
 			...(message.errorMessage ? { errorMessage: redact(message.errorMessage) } : {}),
 			...(message.responseModel ? { responseModel: redact(message.responseModel) } : {}),
@@ -123,4 +120,9 @@ function credentialRedactor(apiKey: string | undefined): (text: string) => strin
 	const encoded = encodeURIComponent(apiKey);
 	const variants = [...new Set([apiKey, encoded, encoded.replace(/%[\dA-F]{2}/g, (part) => part.toLowerCase())])];
 	return (text) => variants.reduce((result, secret) => result.split(secret).join('[redacted]'), text);
+}
+
+export function providerHttpStatus(errorMessage: string | undefined): number | undefined {
+	const status = /^\s*([1-5]\d\d)\b/.exec(errorMessage ?? '')?.[1];
+	return status ? Number(status) : undefined;
 }
