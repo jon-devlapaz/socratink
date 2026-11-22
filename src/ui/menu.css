@@ -485,3 +485,53 @@ html:has(.menu-layer.is-open) .app-canvas {
 #sound-toggle[aria-pressed='true'] .sound-mute {
 	display: none;
 }
+
+/* Start over asks once before it closes the conversation and its draft. */
+#start-over-dialog {
+	width: min(30rem, calc(100% - 2rem));
+	padding: clamp(1rem, 4vw, 1.75rem);
+	border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+	border-radius: 1rem;
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--panel-shadow);
+}
+
+#start-over-dialog::backdrop {
+	background: rgb(0 0 0 / 38%);
+}
+
+#start-over-dialog form {
+	display: grid;
+	gap: 0.8rem;
+}
+
+#start-over-dialog h2 {
+	margin: 0;
+	font-family: var(--font-serif);
+	font-size: 1.65rem;
+	font-weight: 400;
+}
+
+#start-over-dialog p {
+	margin: 0;
+	color: var(--muted);
+}
+
+.start-over-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.start-over-actions button {
+	min-height: 44px;
+	padding: 0.5rem 0.7rem;
+	font: inherit;
+	color: var(--ink);
+	border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+	border-radius: 0.5rem;
+	background: var(--paper);
+	cursor: pointer;
+}

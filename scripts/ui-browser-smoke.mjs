@@ -152,7 +152,22 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 		await page.locator('#peek-handle').click();
-		await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start over' }).click()]);
+		await page.getByRole('button', { name: 'Start over' }).click();
+		const confirm = page.locator('#start-over-dialog[open]');
+		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
+		assert.equal(await confirm.locator('p').innerText(),
+			"This conversation and your draft will close, and you can't reopen it yet.");
+		await page.keyboard.press('Escape');
+		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
+		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
+		assert.equal(await input.inputValue(), 'A draft for the old conversation');
+		await page.locator('#peek-handle').click();
+		await page.getByRole('button', { name: 'Start over' }).click();
+		await page.getByRole('button', { name: 'Keep this conversation' }).click();
+		assert.equal(await input.inputValue(), 'A draft for the old conversation');
+		await page.locator('#peek-handle').click();
+		await page.getByRole('button', { name: 'Start over' }).click();
+		await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 		await ready(page);
 		assert.equal(await input.inputValue(), '');
 		const newId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
@@ -192,7 +207,8 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			await page.locator('#active-turn').getByText('Fresh reply', { exact: true }).waitFor();
 			const firstId = await storedId();
 			await page.locator('#peek-handle').click();
-			await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start over' }).click()]);
+			await page.getByRole('button', { name: 'Start over' }).click();
+			await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 			await ready();
 			await send(page, 'How do tides\nwork  in a bay?');
 			// The fixture's history read repeats the last reply in every conversation.
