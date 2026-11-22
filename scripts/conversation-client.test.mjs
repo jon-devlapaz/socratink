@@ -94,36 +94,101 @@ test('a 404 read leaves the admission in recovery without resending', async () =
 	assert.deepEqual(reads, [admission]);
 });
 
-test('cancel before observed admission stays unknown and never enables resend', async () => {
+test('cancel before observed admission sends no Cancel and never enables resend', async () => {
 	let aborts = 0;
 	let sends = 0;
 	const conversation = {
 		async send({ signal }) {
 			sends += 1;
-			return abortablePendingRead(signal);
+			assert.equal(signal, undefined, 'Cancel must not drop the send that would name the submission');
+			return new Promise(() => {});
 		},
 		async read() {
 			throw new Error('should not read');
 		},
-		async abort({ signal }) {
-			assert.ok(signal);
+		async abort() {
 			aborts += 1;
 			return { aborted: false };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		settlementSignal: () => AbortSignal.abort(),
+	});
+	const running = coordinator.start('hello');
+	const state = await coordinator.cancel();
+
+	assert.equal(state.kind, 'recovery');
+	assert.equal(state.admission, undefined);
+	assert.match(state.detail, /waiting for the server to confirm/i);
+	assert.throws(() => coordinator.start('hello'), /already active/);
+	assert.equal((await coordinator.recheck()).kind, 'recovery');
+	assert.equal(sends, 1);
+	assert.equal(aborts, 0, 'a Cancel without a submission id could stop another tab\'s later reply');
+	void running;
+});
+
+test('a delayed admission after Cancel lets recheck stop that submission by id', async () => {
+	const aborts = [];
+	let admit;
+	const conversation = {
+		send() {
+			return new Promise((resolve) => { admit = resolve; });
+		},
+		async read(target) {
+			assert.equal(target, admission.submissionId);
+			throw executionError('aborted');
+		},
+		async abort({ submissionId, signal }) {
+			assert.ok(signal);
+			aborts.push(submissionId);
+			return { aborted: true };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		settlementSignal: () => AbortSignal.abort(),
+	});
+	void coordinator.start('hello');
+	assert.equal((await coordinator.cancel()).kind, 'recovery');
+	admit(admission);
+	await Promise.resolve();
+	const state = await coordinator.recheck();
+	assert.deepEqual(aborts, ['sub-1']);
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'aborted');
+});
+
+test('cancel during send waits for admission, then stops only that submission', async () => {
+	const aborts = [];
+	let admit;
+	let reads = 0;
+	const conversation = {
+		send() {
+			return new Promise((resolve) => { admit = resolve; });
+		},
+		async read(target) {
+			reads += 1;
+			assert.equal(target, admission.submissionId, 'only the settlement read runs after Cancel');
+			throw executionError('aborted');
+		},
+		async abort({ submissionId }) {
+			aborts.push(submissionId);
+			return { aborted: true };
 		},
 	};
 	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
 	const running = coordinator.start('hello');
 	const canceled = coordinator.cancel();
-
+	await Promise.resolve();
+	assert.deepEqual(aborts, [], 'no Cancel goes out before the id is known');
+	admit(admission);
 	const state = await canceled;
-	assert.equal(state.kind, 'recovery');
-	assert.equal(state.admission, undefined);
-	assert.match(state.detail, /admission is still unknown/i);
-	assert.throws(() => coordinator.start('hello'), /already active/);
+	assert.deepEqual(aborts, ['sub-1']);
+	assert.equal(reads, 1);
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'aborted');
 	assert.equal(await running, state);
-	assert.equal((await coordinator.recheck()).kind, 'recovery');
-	assert.equal(sends, 1);
-	assert.equal(aborts, 2);
 });
 
 test('send interruption before observed admission recovers without resend', async () => {
@@ -164,7 +229,8 @@ test('cancel after admission waits for an aborted settlement before saying Cance
 			assert.equal(target, admission.submissionId);
 			throw executionError('aborted');
 		},
-		async abort() {
+		async abort({ submissionId }) {
+			assert.equal(submissionId, admission.submissionId, 'Cancel names the reply it stops');
 			return { aborted: true };
 		},
 	};

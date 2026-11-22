@@ -34,10 +34,13 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: () => Prom
 		return c.json({ submissionId }, 202);
 	});
 	app.post(`${path}/abort`, async (c) => {
-		const id = c.req.param('id');
-		const aborted = (await engine.snapshot(id)).submissions.some((s) => !s.outcome);
-		await engine.abort(id);
-		return c.json({ aborted });
+		// Cancel names the reply it means. Without that, a late Cancel from one tab
+		// could stop a reply that another tab started in the same conversation.
+		const submissionId = (await c.req.json().catch(() => null))?.submissionId;
+		if (typeof submissionId !== 'string' || !/^\d+$/.test(submissionId)) {
+			return c.json({ error: { type: 'invalid_abort', message: 'Cancel needs the id of the reply to stop.' } }, 400);
+		}
+		return c.json({ aborted: await engine.abort(c.req.param('id'), submissionId) });
 	});
 	app.get(`${path}/events`, (c) => new Response(conversationEvents(engine, c.req.param('id'), c.req.raw.signal), {
 		headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' },

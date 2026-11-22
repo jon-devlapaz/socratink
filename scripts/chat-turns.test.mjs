@@ -394,6 +394,27 @@ test('assistant text removes only parentheticals or sentences naming internal to
 	assert.equal(displayedAssistantTurn({ text: '(No mark_reveal needed.)' }), undefined);
 });
 
+test('a reply after Try once more shows only the question, never notes on the reveal (#136)', () => {
+	const live = 'Alright, no answer shown.\n\nWhat happens to the light that reaches a tilted hemisphere?\n\n(no reveal — this was a question only)';
+	const question = 'What happens to the light that reaches a tilted hemisphere?';
+	const cases = [
+		[live, question],
+		['Okay, answer withheld. What would you check first?', 'What would you check first?'],
+		['Not showing you the answer yet. Which way does the axis point?', 'Which way does the axis point?'],
+		['Without revealing the answer, what do you notice?', 'Without revealing the answer, what do you notice?'],
+		['No answer is perfect here. What would you try?', 'No answer is perfect here. What would you try?'],
+		['A reveal can help later. What do you notice?', 'A reveal can help later. What do you notice?'],
+	];
+	for (const [text, expected] of cases) {
+		assert.equal(learnerVisibleAssistantText(text), expected);
+		const history = visibleTurnsFromHistory({ settlements: [], messages: [
+			{ role: 'assistant', display: 'visible', parts: [{ type: 'text', text }] },
+		] });
+		assert.equal(history[0]?.text, expected);
+	}
+	assert.doesNotMatch(learnerVisibleAssistantText(live), /answer shown|no reveal/i);
+});
+
 test('learnerVisibleAssistantText removes stacked internal markers', () => {
 	assert.equal(
 		learnerVisibleAssistantText('«STATION_IDENT» «DEBUG_ONLY» Hello'),
