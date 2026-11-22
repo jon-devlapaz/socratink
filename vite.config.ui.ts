@@ -6,6 +6,18 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
 	root: 'src/ui',
+	plugins: [{
+		name: 'vercel-web-analytics',
+		apply: 'build',
+		transformIndexHtml(_html, { path }) {
+			if (process.env.VERCEL_ENV !== 'production' || (path !== '/index.html' && path !== '/login.html')) return;
+			return [{
+				tag: 'script',
+				attrs: { defer: true, src: '/_vercel/insights/script.js' },
+				injectTo: 'head',
+			}];
+		},
+	}],
 	build: {
 		outDir: '../../dist/client',
 		emptyOutDir: true,
