@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { DatabaseTarget } from '../config/database.ts';
 import { sharedPostgresPool } from './postgres-pool.ts';
+import { setupOnce } from './setup-once.ts';
 
 export type UserRow = Readonly<{
 	id: string;
@@ -125,12 +126,7 @@ function openPostgresAuthDb(connectionString: string): AuthDb {
 }
 
 export function createPostgresAuthDb(client: AuthPgClient): AuthDb {
-	let ready: Promise<void> | undefined;
-	// A failed setup is forgotten so the next request retries it.
-	const ensure = () => (ready ??= client.query(CREATE_TABLES_SQL).then(() => undefined, (error) => {
-		ready = undefined;
-		throw error;
-	}));
+	const ensure = setupOnce(() => client.query(CREATE_TABLES_SQL));
 
 	return {
 		async findUserByEmail(email) {
