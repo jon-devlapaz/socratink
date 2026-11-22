@@ -53,6 +53,7 @@
 		"test:durable": "node --test src/inference/*.test.ts src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs scripts/durable-reconnect.test.mjs scripts/feedback-agent.test.mjs",
 		"test:durable:postgres": "DURABLE_TEST_POSTGRES=1 node --test scripts/durable-storage.test.mjs scripts/conversation-index.test.mjs",
 		"smoke:durable": "node scripts/durable-smoke.mjs",
+		"verify:formal": "node scripts/verify-formal.mjs",
 		"smoke:durable:postgres": "pnpm build && node scripts/durable-postgres-smoke.mjs"
 	},
 	"dependencies": {
