@@ -94,6 +94,28 @@ image. It creates and removes its own database container, uses synthetic OAuth
 and model responses, and saves a report of session and conversation recovery.
 The previous build runs against a disposable copy of that test data.
 
+### Tutor behaviour eval
+
+`pnpm eval:tutor --live` runs scripted learner conversations against the real
+tutor model through the durable engine, tools, and consent card. It checks what
+the learner sees: one question per turn, reveals marked with `mark_reveal`, no
+internal notes (#136), and "just tell me" shown without a consent card (#133).
+It calls a paid model, so it refuses to run without `--live`.
+
+```sh
+VERCEL=1 AI_GATEWAY_API_KEY=... pnpm eval:tutor --live --runs 3
+pnpm eval:tutor --list
+```
+
+Without `VERCEL=1` it uses the `JON_LOCAL_*` model. `--only` picks scenarios by
+name. Transcripts and results go to `.cache/tutor-eval/`. A failed check exits 1.
+Rules live in `src/learning/behaviour-rules.ts`, each quoting the system prompt
+sentence it tests; scenarios and checks live in `evals/tutor/`.
+`pnpm test:tutor-eval` (part of `pnpm check`) proves each rule's check fails on a
+scripted buggy tutor and passes a policy-following one, with a fake model.
+The checks are text heuristics over synthetic runs: a pass does not establish
+teaching quality or learning effectiveness.
+
 For an interaction check, start a conversation, complete an open-ended turn
 and a question card, inspect the earlier-step trail, and reload to check
 restoration. Check assistance markings when the tutor supplies target content.
