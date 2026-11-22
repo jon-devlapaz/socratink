@@ -177,6 +177,8 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				await page.locator('#peek-handle').click();
 				await page.getByRole('button', { name: 'History' }).click();
 				await page.locator('#history-dialog[open]').waitFor();
+				// History loads from the server each time it opens.
+				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
 			await ready();
 			await page.locator('#peek-handle').click();
@@ -406,6 +408,8 @@ function createServices(origin, session) {
 					fixture.listFailures -= 1;
 					return json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
 				}
+				// A real server takes time; the page must wait for the list, not race it.
+				await new Promise((resolve) => setTimeout(resolve, 250));
 				return json({ conversations: [...fixture.conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) });
 			}
 			if (url.pathname === appConfig.authProvidersPath) return json({ google: fixture.mode === 'guest-limit', github: fixture.mode === 'guest-limit' });
