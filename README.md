@@ -167,3 +167,8 @@ seconds and tries once more. A reply without text, a timeout after 60 seconds or
 any other status logs `probe_failed` with the provider's HTTP status only. The
 runtime monitor then fails its next run. The probe costs about one cent a month.
 It checks the gateway, provider and request shape, not the chat engine.
+
+Each Vercel preview build ends with the same call (`scripts/preview-probe.mjs`).
+If it fails, the build fails and prints the provider's HTTP status only, so a
+preview whose model call fails never reaches a taster. Production and local
+builds call nothing. It costs one tiny call per preview build.
