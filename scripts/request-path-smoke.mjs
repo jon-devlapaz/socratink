@@ -176,8 +176,13 @@ try {
 		await new Promise((resolve) => setTimeout(resolve, 25));
 	}
 	assert.ok(calls.some((call) => call.marker === 'aborted'), 'abort check must reach the provider');
-	const aborted = await fetch(`${abortUrl}/abort`, { method: 'POST', headers: { cookie: abortSession.cookie } });
+	const unnamed = await fetch(`${abortUrl}/abort`, { method: 'POST', headers: { cookie: abortSession.cookie } });
+	assert.equal(unnamed.status, 400, 'a Cancel that names no reply is refused');
+	const aborted = await fetch(`${abortUrl}/abort`, { method: 'POST',
+		headers: { cookie: abortSession.cookie, 'content-type': 'application/json' },
+		body: JSON.stringify({ submissionId: abortAdmission.submissionId }) });
 	assert.equal(aborted.status, 200);
+	assert.deepEqual(await aborted.json(), { aborted: true });
 	await assert.rejects(abortClient.read(abortAdmission, { signal: AbortSignal.timeout(10_000) }),
 		(error) => error.name !== 'TimeoutError');
 	assert.equal((await abortClient.history()).settlements.at(-1)?.outcome, 'aborted');
