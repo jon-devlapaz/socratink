@@ -39,7 +39,8 @@ export function createInference(options: { operator: () => ChatModel | undefined
 export function modelConfig(operator: ChatModel): ModelConfig {
 	return { provider: operator.providerId, modelId: operator.modelId,
 		apiKey: operator.apiKey, baseUrl: operator.baseUrl, reasoning: operator.reasoning,
-		contextWindow: operator.contextWindow, maxTokens: operator.maxTokens };
+		contextWindow: operator.contextWindow, maxTokens: operator.maxTokens,
+		...(operator.fallbackModelIds?.length ? { fallbackModelIds: operator.fallbackModelIds } : {}) };
 }
 
 export type Inference = ReturnType<typeof createInference>;

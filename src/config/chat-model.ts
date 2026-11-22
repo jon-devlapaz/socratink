@@ -8,4 +8,5 @@ export type ChatModel = {
 	readonly reasoning: boolean;
 	readonly contextWindow: number;
 	readonly maxTokens: number;
+	readonly fallbackModelIds?: readonly string[];
 };
