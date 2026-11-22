@@ -8,6 +8,7 @@ import { mountConversationHistory } from '../src/server/conversation-history-rou
 import {
 	conversationListLimit,
 	createConversationIndex,
+	createPostgresConversationIndex,
 	createSqliteConversationIndex,
 } from '../src/server/conversation-index.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
@@ -161,4 +162,21 @@ test('route: a failing index does not fail the turn', async () => {
 	assert.match(errors[0], /conversation_index_failed/);
 	assert.doesNotMatch(errors[0], /private question/);
 	await authDb.close();
+});
+
+test('postgres index shares one table setup between concurrent first calls and retries a failed one', async () => {
+	let setups = 0;
+	const index = createPostgresConversationIndex({
+		async query(text) {
+			if (/CREATE TABLE/.test(text) && ++setups === 1) throw new Error('Authentication timed out');
+			return { rows: [] };
+		},
+		async end() {},
+	});
+	const first = await Promise.allSettled([index.list(['owner']), index.list(['owner'])]);
+	assert.deepEqual(first.map((result) => result.status), ['rejected', 'rejected']);
+	assert.equal(setups, 1);
+	assert.deepEqual(await index.list(['owner']), []);
+	assert.deepEqual(await index.list(['owner']), []);
+	assert.equal(setups, 2);
 });

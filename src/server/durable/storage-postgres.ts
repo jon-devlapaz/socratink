@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { sharedPostgresPool } from '../postgres-pool.ts';
+import { setupOnce } from '../setup-once.ts';
 import { emptyLog, logFormat, maximumId, type LogBackend, type LogState } from './storage-types.ts';
 
 const schema = 'socratink_pi';
@@ -22,11 +23,7 @@ export function postgresOwnerConnectionString(connectionString: string): string 
 export function postgresLog(connectionString: string): LogBackend {
 	const ownerConnectionString = postgresOwnerConnectionString(connectionString);
 	const pool = sharedPostgresPool(connectionString);
-	// Initialize on first use, inside a request that awaits it: a handshake
-	// started at module load can stall while the function is frozen between
-	// requests. A failed attempt is forgotten so the next request retries.
-	let initialized: Promise<void> | undefined;
-	const ready = () => initialized ??= initialize().catch((error) => { initialized = undefined; throw error; });
+	const ready = setupOnce(initialize);
 	async function initialize() {
 		const client = await pool.connect();
 		try {
@@ -120,6 +117,6 @@ export function postgresLog(connectionString: string): LogBackend {
 			await pool.query(`UPDATE ${schema}.namespaces SET abort_through=GREATEST(abort_through,$2) WHERE namespace=$1`, [namespace, through]);
 		},
 		// The shared pool outlives this store; see sharedPostgresPool.
-		async close() { await initialized?.catch(() => {}); },
+		async close() { await ready.settled(); },
 	};
 }

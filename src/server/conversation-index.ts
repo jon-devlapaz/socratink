@@ -6,6 +6,7 @@ import { conversationTitle, type ConversationSummary } from '../config/conversat
 import { userIdFromConversationId } from '../config/session.ts';
 import { sharedPostgresPool } from './postgres-pool.ts';
 import type { AuthPgClient } from './auth-db.ts';
+import { setupOnce } from './setup-once.ts';
 
 export interface ConversationIndex {
 	/** The server admitted this learner message. The first one names the
@@ -56,12 +57,7 @@ export function createConversationIndex(target: DatabaseTarget): ConversationInd
 }
 
 export function createPostgresConversationIndex(client: AuthPgClient): ConversationIndex {
-	let ready: Promise<void> | undefined;
-	// A failed setup is forgotten so the next request retries it.
-	const ensure = () => (ready ??= client.query(CREATE_SQL).then(() => undefined, (error) => {
-		ready = undefined;
-		throw error;
-	}));
+	const ensure = setupOnce(() => client.query(CREATE_SQL));
 	return {
 		async recordAdmitted(conversationId, text, at = new Date()) {
 			const row = admittedRow(conversationId, text, at);
