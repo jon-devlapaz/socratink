@@ -26,10 +26,13 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 ## Type
 
 The landing's sans stack is Inter, ui-sans-serif, system-ui, sans-serif.
-Its display stack is Instrument Serif, ui-serif, Georgia, serif. No local
-Inter or Instrument Serif files were found during this change. The app uses
-these fallback stacks and downloads no fonts. The existing Paper Mono asset
-and its OFL license remain in `src/ui/fonts/`, but no longer set dialogue.
+The display stack is Newsreader, ui-serif, Georgia, serif, set by
+`--font-serif` in `styles.css`. Newsreader replaced the landing's Instrument
+Serif in the app on 2026-11-22; the landing page has not changed yet. The app
+bundles Inter and Newsreader (Latin subset, variable weight) in
+`src/ui/fonts/` with their OFL licenses and downloads no fonts from other
+origins. The existing Paper Mono asset and its OFL license remain there, but
+no longer set dialogue.
 
 Use the sans stack for prose, controls, learner work, and tutor explanations.
 Use the serif stack for display, structured tutor questions, and quotations.
