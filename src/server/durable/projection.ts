@@ -5,6 +5,7 @@ import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './co
 import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
+import { splitReasoning } from '../../learning/learner-text.ts';
 import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
@@ -77,15 +78,7 @@ function appendResult(assistant: ProductMessage, message: Extract<Message, { rol
 }
 
 function appendAssistant(target: ProductMessage, message: AssistantMessage) {
-	const raw = messageText(message);
-	const closed = raw.lastIndexOf('</think>');
-	let text = closed < 0 ? raw : raw.slice(closed + '</think>'.length);
-	let inline = closed < 0 ? '' : raw.slice(0, closed);
-	const open = text.indexOf('<think>');
-	if (open >= 0) { inline += text.slice(open); text = text.slice(0, open); }
-	if (closed >= 0 || open >= 0) text = text.trim();
-	if (/^\(no text\)$/i.test(text.trim())) text = '';
-	inline = inline.replaceAll(/<\/?think>/g, '').trim();
+	const { text, reasoning: inline } = splitReasoning(messageText(message));
 	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]
 		.filter(Boolean).join('\n\n');
 	if (text) target.text += `${target.text ? '\n\n' : ''}${text}`;

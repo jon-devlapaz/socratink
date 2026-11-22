@@ -48,3 +48,29 @@ test('postgres-setup-retries passes setup through setupOnce, SQLite-only stores 
 		{ file: 'src/server/durable/provider.test.ts', text: before80 },
 	]), []);
 });
+
+const pastLeakFixes = {
+	'#25 marker in the UI': `const internalAssistantMarkersPattern = /^(?:«[A-Z][A-Z0-9_]*»\\s*)+/u;`,
+	'#117 think tags in the projection': `const closed = raw.lastIndexOf('</think>');`,
+	'#117 think tags as a regex': `inline = inline.replaceAll(/<\\/?think>/g, '').trim();`,
+	'#116 tool names in the UI': `const internalToolNamePattern = /\\b(?:mark_reveal|present_question)\\b/u;`,
+	'#131 "(no text)" in the projection': `if (/^\\(no text\\)$/i.test(text.trim())) text = '';`,
+	'#136 reveal notes in the UI': `const revealNotePattern = /\\b(?:no reveal|no answer shown)\\b/iu;`,
+};
+
+test('learner-text-owner fails on each past leak fix written outside the owner and names the fix', () => {
+	for (const [name, text] of Object.entries(pastLeakFixes)) {
+		const problems = findProblems([{ file: 'src/ui/live-reply.ts', text }]);
+		assert.equal(problems.length, 1, name);
+		assert.match(problems[0], /\[learner-text-owner\].*src\/learning\/learner-text\.ts/, name);
+	}
+});
+
+test('learner-text-owner passes the owner, prompts that say "no text", and tests', () => {
+	assert.deepEqual(findProblems([
+		{ file: 'src/learning/learner-text.ts', text: Object.values(pastLeakFixes).join('\n') },
+		{ file: 'src/learning/mark-reveal.ts', text: 'const prompt = `Call ${revealToolName} now and write no text.`;' },
+		{ file: 'src/ui/live-reply.test.ts', text: pastLeakFixes['#25 marker in the UI'] },
+		{ file: 'src/ui/markdown.ts', text: "const quote = text.replace(/[«»]/g, '\"');" },
+	]), []);
+});

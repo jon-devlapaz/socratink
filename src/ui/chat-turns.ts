@@ -2,7 +2,8 @@ import { revealFromParts, type RevealDefinition } from '../reveal.ts';
 import type { WireSnapshot } from '../config/chat-wire.ts';
 import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
-import { assistantTurnHasVisibleContent, learnerVisibleAssistantText } from './assistant-text.ts';
+import { assistantTurnHasVisibleContent } from './assistant-text.ts';
+import { learnerVisibleText } from '../learning/learner-text.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
@@ -37,7 +38,7 @@ export function displayedAssistantTurn(input: {
 	const tools = visibleCardTools(input.tools ?? [], { questionnaire: input.questionnaire });
 	return {
 		role: 'Assistant',
-		text: learnerVisibleAssistantText(input.text),
+		text: learnerVisibleText(input.text),
 		...(input.questionnaire ? { questionnaire: input.questionnaire } : {}),
 		...(input.reveal ? { reveal: input.reveal } : {}),
 		...(input.modelRoute ? { modelRoute: input.modelRoute } : {}),
