@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { appConfig } from '../src/config/app.config.ts';
+import { conversationTitle } from '../src/config/conversation-title.ts';
 import {
-	conversationTitle,
 	forgetPastConversations,
 	historyLimit,
 	pastConversations,

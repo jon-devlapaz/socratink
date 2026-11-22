@@ -44,7 +44,8 @@ export function requireChatSession(options: SessionAdmissionOptions): Middleware
 	};
 }
 
-async function admitSignedSession(context: Context, options: SessionAdmissionOptions) {
+/** The signed session after the rate limit, or the error response to return. */
+export async function admitSignedSession(context: Context, options: SessionAdmissionOptions) {
 	const session = await readSession(context, options.secret, options.authDb);
 	if (!session) return jsonError(context, 401, unauthorizedSessionError);
 
