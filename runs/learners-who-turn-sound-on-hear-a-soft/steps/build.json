@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "run_id": "b9a2bbf3-4113-4102-b227-2d5910d2f81c",
+  "checkout": "/Users/jondev/dev/worktrees/tink-sdlc-setup/learners-who-turn-sound-on-hear-a-soft",
+  "report": "/Users/jondev/dev/worktrees/tink-sdlc-setup/learners-who-turn-sound-on-hear-a-soft/runs/learners-who-turn-sound-on-hear-a-soft/worker-report.md",
+  "model": "openai-codex/gpt-6.1-sol:medium",
+  "launcher": "/Users/jondev/dev/worktrees/tink-sdlc-setup/learners-who-turn-sound-on-hear-a-soft/_system/scripts/pi-launcher",
+  "launcher_sha256": "45f2b688d7e1fa9f243125de72817e9529926bbed7dd9ce563fb7bdcf0f32856",
+  "state": "completed",
+  "session": "tsdlc-d62d406002f14e63b8daf6da085f63bd",
+  "prepared_ns": 1795060581413412000,
+  "max_responses": 60,
+  "process_group": 15746,
+  "report_sha256": "d803fa5c16ddded3ea441e2b28cc2b38ee8f1d545f9ada23826c6b6df7435ea5"
+}

@@ -19,8 +19,8 @@
 }
 
 .peek-handle:focus-visible {
-	outline: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-	outline-offset: 4px;
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .peek-handle::after,
@@ -54,6 +54,7 @@
 	opacity: 1;
 }
 
+html:has(.menu-layer.is-open) .skip-link,
 html:has(.menu-layer.is-open) .peek-handle,
 html:has(.menu-layer.is-pulling) .peek-handle {
 	visibility: hidden;
@@ -88,9 +89,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	flex: none;
 	border-radius: 48% 52% 49% 51% / 52% 48% 52% 48%;
 	background: var(--mark-fill);
-	box-shadow:
-		inset 0 -0.035em 0.07em rgba(255, 255, 255, 0.045),
-		0 0.015em 0.04em rgba(20, 19, 17, 0.18);
+	box-shadow: none;
 	transform-origin: center;
 	transition-property: opacity;
 	transition-duration: 150ms;
@@ -133,8 +132,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 }
 
 .brand-lockup:focus-visible {
-	outline: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-	outline-offset: 0.3em;
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .encounter-active .brand-lockup:focus-visible .brand-name {
@@ -189,7 +188,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	flex-direction: column;
 	overflow: hidden;
 	padding-top: env(safe-area-inset-top, 0px);
-	border-radius: 0 0 16px 16px;
+	border-radius: 0;
+	border-bottom: 1px solid var(--rule);
 	background: var(--paper);
 	box-shadow: var(--shadow-border), var(--panel-shadow);
 	backdrop-filter: blur(14px);
@@ -213,9 +213,17 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	justify-content: center;
 	align-items: flex-start;
 	gap: 1.35rem 1.15rem;
-	width: min(28rem, calc(100% - 2rem));
+	width: fit-content;
+	max-width: calc(100% - 2rem);
 	margin: 1.6rem auto 0.4rem;
 	padding: 0.4rem 0 0.2rem;
+}
+
+/* Keep six or more tiles from wrapping as a full row and a single tile. */
+@media (max-width: 34.15rem) {
+	.menu-orbs:has(> :nth-child(6 of :not([hidden]))) {
+		max-width: min(22rem, calc(100% - 2rem));
+	}
 }
 
 .menu-orbs a,
@@ -249,7 +257,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	color: var(--ink);
 	background: transparent;
 	box-shadow: none;
-	outline: none;
+	outline: 2px solid var(--accent);
 }
 
 .menu-orbs a:hover > svg,
@@ -263,7 +271,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 .menu-orbs button:focus-visible > svg,
 .menu-orbs button:focus-visible > .orb-glyph {
 	background: var(--path-hover);
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-border-hover);
+	box-shadow: none;
 }
 
 .menu-orbs a:active,
@@ -283,8 +291,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0.85rem;
-	border-radius: 999px;
-	background: var(--path);
+	border-radius: 0.6rem;
+	background: transparent;
 	box-shadow: var(--shadow-border);
 	box-sizing: content-box;
 	color: var(--ink);
@@ -471,4 +479,9 @@ html:has(.menu-layer.is-open) .app-canvas {
 	#type-size-toggle[data-size='big'] .type-icon.is-small {
 		opacity: 0;
 	}
+}
+
+#sound-toggle[aria-pressed='false'] .sound-waves,
+#sound-toggle[aria-pressed='true'] .sound-mute {
+	display: none;
 }

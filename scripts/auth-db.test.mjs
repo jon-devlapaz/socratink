@@ -132,6 +132,19 @@ test('AuthDb operations: users, oauth_accounts, and aliases', async () => {
 	});
 });
 
+test('alias lookups ignore a stored link whose source is a registered user', async () => {
+	await withAuthDb(async (db) => {
+		await db.createUser('owner', 'owner@example.com');
+		await db.createAlias('valid-guest', 'owner');
+		await db.createAlias('registered-source', 'owner');
+		await db.createUser('registered-source', 'source@example.com');
+
+		assert.deepEqual(await db.findAliases('owner'), ['valid-guest']);
+		assert.equal(await db.findAliasOwner('registered-source'), undefined);
+		assert.equal(await db.findAliasOwner('valid-guest'), 'owner');
+	});
+});
+
 test('postgres auth store retries its table setup after a failed first attempt', async () => {
 	let setups = 0;
 	const db = createPostgresAuthDb({

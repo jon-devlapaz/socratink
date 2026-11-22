@@ -36,7 +36,7 @@ const QuestionnaireItemSchema = v.pipe(
 );
 
 export const QuestionnaireSchema = v.strictObject({
-	kind: v.picklist(['question', 'quiz']),
+	kind: v.picklist(['question', 'quiz', 'reveal-consent']),
 	submitLabel: boundedString(80),
 	items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(1)),
 });

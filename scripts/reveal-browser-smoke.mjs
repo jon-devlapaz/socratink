@@ -102,6 +102,15 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		guestTurns += 1;
 		await answer(baselineChoice, baselineReason);
 		await answer(comparisonChoice, comparisonReason);
+		const consent = page.locator('#active-turn .questionnaire');
+		const consentLine = 'I can show a full answer.';
+		await consent.getByText(consentLine, { exact: true }).waitFor();
+		assert.equal((await page.locator('#active-turn').innerText()).includes(assistanceText), false);
+		await page.reload();
+		await consent.getByText(consentLine, { exact: true }).waitFor();
+		assert.deepEqual(await consent.getByRole('button').allTextContents(), ['See it', 'Try once more']);
+		await consent.getByRole('button', { name: 'See it', exact: true }).click();
+		guestTurns += 1;
 		// The settled turn, not the pending turn that may show the same text live.
 		const supplied = page.locator('#active-turn .turn.assistant .reveal-copy');
 		await supplied.waitFor();

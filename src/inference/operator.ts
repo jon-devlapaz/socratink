@@ -17,10 +17,12 @@ const localChatModelLimits = {
 	maxTokens: 131_100,
 } as const;
 
+// The gateway routes each model to whichever provider serves it. Providers cap
+// output differently (MiMo caps it at 131,072 tokens), so ask for far less.
 const hostedGatewayLimits = {
 	reasoning: true,
 	contextWindow: 204_800,
-	maxTokens: 131_100,
+	maxTokens: 32_768,
 } as const;
 
 /** The operator's model, or undefined when a hosted deploy has no credential. */
@@ -32,6 +34,7 @@ export function resolveChatModel(environment: ChatModelEnvironment): ChatModel |
 			providerId: chatProviderId,
 			baseUrl: appConfig.vercelAiGatewayBaseUrl,
 			modelId: appConfig.vercelAiGatewayModelId,
+			fallbackModelIds: appConfig.vercelAiGatewayFallbackModelIds,
 			apiKey,
 			...hostedGatewayLimits,
 		};

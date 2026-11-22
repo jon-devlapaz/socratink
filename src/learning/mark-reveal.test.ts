@@ -33,3 +33,13 @@ test('an unmarked turn is corrected once when help was asked for or content look
 	assert.equal(reason(asked('hint'), 'Hint text', { revealed: true }), undefined, 'a marked turn needs nothing');
 	assert.equal(reason(asked('hint'), 'Hint text', { alreadyRetried: true }), undefined, 'one correction per input');
 });
+
+test('a reply to "Try once more" is checked, so an unmarked explanation cannot slip past the declined card', () => {
+	const consent = questionnaireFromPresentQuestion({ prompt: 'I can show a full answer.', choices: [
+		{ value: 'see-it', label: 'See it' }, { value: 'try-once-more', label: 'Try once more' }] });
+	const declined = formatQuestionnaireAnswers(consent, [{ name: 'item', values: ['try-once-more'] }]);
+	const accepted = formatQuestionnaireAnswers(consent, [{ name: 'item', values: ['see-it'] }]);
+	assert.equal(reason(declined, 'Picture a slice of toast tilted toward the Sun.'), 'unmarked');
+	assert.equal(reason(accepted), undefined, 'See it is permission, not a plea for help');
+	assert.equal(reason('Try once more'), undefined, 'only the card answer counts');
+});

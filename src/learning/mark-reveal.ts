@@ -40,6 +40,9 @@ export function markRevealRetryReason(input: {
 }): MarkRevealRetryReason | undefined {
 	if (input.revealed || input.alreadyRetried) return undefined;
 	if (cardHelpReveal(input.learnerText)) return 'requested';
-	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)) return 'unmarked';
+	// "Try once more" on a consent card declines the reveal, so a reply to it that
+	// supplies content must be marked, and the consent card then withholds it again.
+	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
+		|| (input.learnerText.startsWith(questionnaireAnswerPrefix) && input.learnerText.endsWith(': Try once more'))) return 'unmarked';
 	return undefined;
 }

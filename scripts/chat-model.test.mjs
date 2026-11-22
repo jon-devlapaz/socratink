@@ -55,10 +55,11 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 			providerId: chatProviderId,
 			baseUrl: appConfig.vercelAiGatewayBaseUrl,
 			modelId: appConfig.vercelAiGatewayModelId,
+			fallbackModelIds: appConfig.vercelAiGatewayFallbackModelIds,
 			apiKey: 'gateway-key',
 			reasoning: true,
 			contextWindow: 204_800,
-			maxTokens: 131_100,
+			maxTokens: 32_768,
 		},
 	);
 }
@@ -68,10 +69,11 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		providerId: chatProviderId,
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
 		modelId: appConfig.vercelAiGatewayModelId,
+		fallbackModelIds: appConfig.vercelAiGatewayFallbackModelIds,
 		apiKey: 'oidc-token',
 		reasoning: true,
 		contextWindow: 204_800,
-		maxTokens: 131_100,
+		maxTokens: 32_768,
 	});
 }
 
@@ -80,10 +82,11 @@ import { chatProviderId } from '../src/config/chat-model.ts';
 		providerId: chatProviderId,
 		baseUrl: appConfig.vercelAiGatewayBaseUrl,
 		modelId: appConfig.vercelAiGatewayModelId,
+		fallbackModelIds: appConfig.vercelAiGatewayFallbackModelIds,
 		apiKey: 'gateway-key',
 		reasoning: true,
 		contextWindow: 204_800,
-		maxTokens: 131_100,
+		maxTokens: 32_768,
 	});
 }
 

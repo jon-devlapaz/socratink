@@ -2,11 +2,13 @@ import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { LiveDoc, ROOT_CONVERSATION_ID, type Cursor, type EntryRecord, type LiveState, type SubmissionRecord } from '@earendil-works/pi-durable';
 import type { AssistantMessage, Message } from '@earendil-works/pi-ai';
 import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './contract.ts';
-import { inputKind, messageText } from './extension.ts';
+import { inputKind } from './contract.ts';
+import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
+import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
-export type InputData = { requestId: string; selection?: ModelSelection };
+export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true };
 
 /** The reader is a single committed snapshot, independent of execution ownership. */
 export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
@@ -15,11 +17,13 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 	let cursor: Cursor | undefined;
 	let assistant: ProductMessage | undefined;
 	const tools = new Map<string, ProductTool>();
+	const consentRequired = new Set<string>();
 	do {
 		const page = await storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'ascending' }, 100, cursor, context);
 		for (const entry of page.items) {
 			if (entry.kind === inputKind) {
 				assistant = await beginSubmission(snapshot, storage, entry);
+				if ((entry.data as InputData).revealConsent) consentRequired.add(assistant.submissionId);
 				tools.clear();
 			} else if (assistant) appendEntry(assistant, entry, tools);
 		}
@@ -35,7 +39,7 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 	}
 	snapshot.messages = snapshot.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
-	return snapshot;
+	return withRevealConsent(snapshot, consentRequired);
 }
 
 async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, entry: EntryRecord): Promise<ProductMessage> {
@@ -74,8 +78,20 @@ function appendResult(assistant: ProductMessage, message: Extract<Message, { rol
 }
 
 function appendAssistant(target: ProductMessage, message: AssistantMessage) {
-	const text = messageText(message);
-	const reasoning = message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []).join('');
+	// Some gateway providers put reasoning in the reply text inside <think> tags.
+	// The learner never sees it as reply text: it can state the answer a card withholds.
+	const raw = messageText(message);
+	const closed = raw.lastIndexOf('</think>');
+	let text = closed < 0 ? raw : raw.slice(closed + '</think>'.length);
+	let inline = closed < 0 ? '' : raw.slice(0, closed);
+	const open = text.indexOf('<think>');
+	if (open >= 0) { inline += text.slice(open); text = text.slice(0, open); }
+	if (closed >= 0 || open >= 0) text = text.trim();
+	// Told to "write no text" after a mark check, the model sometimes writes that literally.
+	if (/^\(no text\)$/i.test(text.trim())) text = '';
+	inline = inline.replaceAll(/<\/?think>/g, '').trim();
+	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]
+		.filter(Boolean).join('\n\n');
 	if (text) target.text += `${target.text ? '\n\n' : ''}${text}`;
 	if (reasoning) target.reasoning = `${target.reasoning ? `${target.reasoning}\n\n` : ''}${reasoning}`;
 	const route = messageRoute(message);

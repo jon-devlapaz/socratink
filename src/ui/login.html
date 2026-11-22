@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="theme-color" content="#100f0f" />
-		<title>Log in · Socratink</title>
+		<meta name="theme-color" id="theme-color" content="#fffcf0" />
+		<script>
+			(function () {
+				var stored = localStorage.getItem('socratink-theme');
+				var dark = stored === 'dark' ||
+					(stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+				if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
+				document.getElementById('theme-color').setAttribute('content', dark ? '#100f0f' : '#fffcf0');
+			})();
+		</script>
+		<title>Sign in · Socratink</title>
 		<link
 			rel="icon"
 			type="image/svg+xml"
@@ -12,18 +21,16 @@
 		/>
 	</head>
 	<body class="login-page">
-		<div class="login-spot" aria-hidden="true"></div>
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 
-		<main class="login-shell">
-			<div class="login-aura" aria-hidden="true"></div>
+		<main id="main-content" class="login-shell" tabindex="-1">
 			<section class="login-card" aria-labelledby="login-title">
 				<header class="login-brand">
 					<a class="login-wordmark" href="/" aria-label="Socratink home">
 						<span class="login-mark" aria-hidden="true"></span>
 						<img class="login-wordmark-img" src="./brand-wordmark.png" alt="" />
 					</a>
-					<h1 id="login-title">Welcome back</h1>
-					<p class="login-lede">Log in to continue learning</p>
+					<h1 id="login-title">Sign in</h1>
 				</header>
 
 				<div class="login-body">

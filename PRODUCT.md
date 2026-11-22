@@ -19,6 +19,10 @@ The app provides a single-learner conversation with an AI learning partner:
   request for help, or looks like it supplies content, without `mark_reveal`
   gets one correction where the tutor decides whether to mark it.
 - Learner controls for pacing, an unaided attempt, cancellation, and recovery.
+- A History page in the menu that lists conversations used on this browser,
+  titled by the learner's first admitted message, and reopens one. Each
+  learner's list is kept in browser storage only and cleared on sign-out; it
+  does not follow a learner to another device.
 - Voice dictation as an input option, plus theme and text-size controls.
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
   ownership checks, and rate limits. Every learner uses the operator model route.
@@ -60,7 +64,6 @@ are parked. They are not built capabilities and not commitments.
 | Harness comparison that selected Pi Durable | Operator archive, `harness-comparison.tar.gz` |
 | Tinkery workflow scaffold | Operator archive, branch `ink-control-local` |
 | Defend-it mode, sound cues, spoken replies, magic-link sign-in, help guards | Issues #93, #89, #48, #31, #32, #65 |
-| Product knowledge vault | The private `socratink-brain` repository |
 
 The operator archive is on the operator's machine: local branches named
 `archive/2026-11-14/<name>` and `~/dev/archives/socratink-2026-11-14/`, which

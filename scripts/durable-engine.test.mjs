@@ -38,7 +38,7 @@ function chunk(response, delta, finish_reason = null) {
 }
 function finish(response, text = 'Completed reply.') { chunk(response, { content: text }); chunk(response, {}, 'stop'); response.end('data: [DONE]\n\n'); }
 async function until(read, predicate) {
-	for (let attempt = 0; attempt < 250; attempt++) { const value = await read(); if (predicate(value)) return value; await delay(20); }
+	for (let attempt = 0; attempt < 750; attempt++) { const value = await read(); if (predicate(value)) return value; await delay(20); }
 	throw new Error('Expected durable state was not reached.');
 }
 
@@ -156,7 +156,13 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		logTurn: (turn) => turns.push(turn) });
 	try {
 		await engine.submit('learner:failure', 'Synthetic private learner text.');
-		if (failures === 1) { await until(async () => responses.length, (count) => count === 2); finish(responses[1]); }
+		if (failures === 1) {
+			await until(async () => responses.length, (count) => count === 1);
+			const failedAt = Date.now();
+			await until(async () => responses.length, (count) => count === 2);
+			assert.ok(Date.now() - failedAt >= 1_500, 'a failed model request waits before it retries, so a rate limit can clear');
+			finish(responses[1]);
+		}
 		await Promise.all(background);
 		const completed = await engine.snapshot('learner:failure');
 		assert.equal(completed.submissions[0].outcome, failures === 1 ? 'completed' : 'failed');
@@ -166,6 +172,7 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		if (failures === 3) assert.equal(completed.submissions[0].error, 'The model request could not complete.');
 		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
 		assert.equal(turns[0].model, failures === 1 ? 'synthetic-route' : 'synthetic', 'a turn without a routed reply logs the configured model');
+		assert.equal(turns[0].providerStatus, failures === 1 ? undefined : 500, 'a failed turn records the provider HTTP status');
 		assert.equal(JSON.stringify(turns).includes('Synthetic private'), false, 'turn records carry no learner or provider text');
 	} finally { await engine.close(); }
 }, failures));
@@ -195,6 +202,36 @@ for (const retryAfterCrash of [false, true]) test(`SIGKILL recovery logs once${r
 	} finally { child.kill('SIGKILL'); await engine.close(); }
 }, retryAfterCrash ? [2] : 0));
 
+for (const [name, streamed, hidden] of [
+	['a closed block', '<think>Rayleigh scattering explains it.</think>\n\nWhat do you notice at sunset?', 'Rayleigh'],
+	['an unbalanced block', '<think> ∝ 1/λ</think>\n<think>⁴)\n- The sky would look black.</think>\n\nWhat do you notice at sunset?', 'black'],
+	['an unclosed block', 'What do you notice at sunset?<think>The sky would look black.', 'black'],
+]) test(`reasoning that a provider sends in <think> tags (${name}) never shows as reply text`, async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:think', 'Hello.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], streamed);
+		const settled = await until(() => engine.snapshot('learner:think'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.equal(reply.text, 'What do you notice at sunset?');
+		assert.ok(reply.reasoning.includes(hidden), 'the tagged text stays available as reasoning');
+	} finally { await engine.close(); }
+}));
+
+test('a literal "(no text)" reply, written after a mark check, never shows', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:empty', 'Hello.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], '(no text)');
+		const settled = await until(() => engine.snapshot('learner:empty'), (value) => value.submissions[0]?.outcome === 'completed');
+		assert.equal(JSON.stringify(settled.messages).includes('(no text)'), false);
+	} finally { await engine.close(); }
+}));
+
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');
 	const lines = [];
@@ -202,7 +239,7 @@ test('a turn log line names route, hashed session, model, latency and status, ne
 	console.log = (line) => lines.push(line);
 	try {
 		logTurn({ conversationId: 'guest-user:nonce', submissionId: '4', latencyMs: 812, model: 'synthetic/model', status: 'completed' });
-		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed' });
+		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed', providerStatus: 429 });
 	} finally { console.log = log; }
 	const [completed, failed] = lines.map((line) => JSON.parse(line));
 	assert.deepEqual(Object.keys(completed), ['event', 'route', 'session', 'submission', 'model', 'latencyMs', 'status']);
@@ -211,5 +248,6 @@ test('a turn log line names route, hashed session, model, latency and status, ne
 	assert.match(completed.session, /^[0-9a-f]{12}$/);
 	assert.equal(failed.session, completed.session, 'turns of one conversation share a session hash');
 	assert.equal(lines.join('').includes('guest-user'), false);
-	assert.deepEqual({ model: failed.model, status: failed.status, error: failed.error }, { model: null, status: 'failed', error: 'model_request_failed' });
+	assert.deepEqual({ model: failed.model, status: failed.status, error: failed.error, providerStatus: failed.providerStatus },
+		{ model: null, status: 'failed', error: 'model_request_failed', providerStatus: 429 });
 });

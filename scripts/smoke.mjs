@@ -240,6 +240,13 @@ const scriptedProviderTurns = [
 		finishReason: 'tool_calls',
 	},
 	{
+		expectedMessages: [`Questionnaire answers:\n- I can show a full answer.: See it`],
+		text: assistanceText,
+		tools: [{ id: 'call_permitted_reveal', name: 'mark_reveal', arguments: revealExample },
+			presentQuestionCall('call_permitted_revision', revisedPresent)],
+		finishReason: 'tool_calls',
+	},
+	{
 		expectedMessages: [baselineAnswer, comparisonAnswer, revisedAnswer],
 		text: finalSummary,
 		finishReason: 'stop',
@@ -282,7 +289,7 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
 
 	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the smoke should use exactly ten provider calls');
+	assert.ok(turn, 'the smoke should use exactly eleven provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -407,8 +414,16 @@ try {
 	);
 	questionnaireFromReply(comparison, comparisonQuestionnaire, 'comparison');
 
-	const revision = await client.read(
+	const pendingReveal = await client.read(
 		await client.send({ message: { kind: 'user', body: comparisonAnswer } }),
+	);
+	assert.equal(pendingReveal.text, '', 'the answer waits for permission');
+	assert.equal(pendingReveal.data?.reveal, undefined);
+	const consent = pendingReveal.data?.questionnaire?.at(-1);
+	assert.deepEqual(consent.items[0].choices.map((choice) => choice.label), ['See it', 'Try once more']);
+	const seeAnswer = formatQuestionnaireAnswers(consent, [{ name: 'item', values: ['see-it'] }]);
+	const revision = await client.read(
+		await client.send({ message: { kind: 'user', body: seeAnswer } }),
 	);
 	assert.equal(revision.text, assistanceText);
 	questionnaireFromReply(revision, revisedQuestionnaire, 'revision');
@@ -418,7 +433,7 @@ try {
 		await client.send({ message: { kind: 'user', body: revisedAnswer } }),
 	);
 	assert.equal(complete.text, finalSummary);
-	assert.equal(providerTurns, 6, 'the completed loop should make exactly six provider calls');
+	assert.equal(providerTurns, 7, 'the completed loop includes one permitted reveal provider call');
 
 	await stopApp(appProcess);
 	appProcess = startApp(appPort, providerPort);
@@ -434,6 +449,8 @@ try {
 			{ role: 'You', text: baselineAnswer },
 			{ role: 'Assistant', text: '' },
 			{ role: 'You', text: comparisonAnswer },
+			{ role: 'Assistant', text: '' },
+			{ role: 'You', text: seeAnswer },
 			{ role: 'Assistant', text: assistanceText },
 			{ role: 'You', text: revisedAnswer },
 			{ role: 'Assistant', text: finalSummary },
@@ -443,14 +460,15 @@ try {
 	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'history cannot unsay the unboxed list');
 	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
-	assert.deepEqual(visibleTurns[5]?.questionnaire, revisedQuestionnaire);
-	assert.equal(visibleTurns[5]?.tools, undefined, 'mark_reveal is not card chrome');
-	assert.deepEqual(visibleTurns[5]?.reveal, revealExample, 'supplied text keeps its display mark after restart');
-	assert.equal(visibleTurns[7]?.questionnaire, undefined, 'final summary should not present a questionnaire');
-	assert.equal(visibleTurns[7]?.tools, undefined, 'final summary should not show tool chrome');
+	assert.deepEqual(visibleTurns[5]?.questionnaire, consent);
+	assert.deepEqual(visibleTurns[7]?.questionnaire, revisedQuestionnaire);
+	assert.equal(visibleTurns[7]?.tools, undefined, 'mark_reveal is not card chrome');
+	assert.deepEqual(visibleTurns[7]?.reveal, revealExample, 'supplied text keeps its display mark after restart');
+	assert.equal(visibleTurns[9]?.questionnaire, undefined, 'final summary should not present a questionnaire');
+	assert.equal(visibleTurns[9]?.tools, undefined, 'final summary should not show tool chrome');
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
-		[baselineQuestionnaire, comparisonQuestionnaire, revisedQuestionnaire],
+		[baselineQuestionnaire, comparisonQuestionnaire, consent, revisedQuestionnaire],
 		'completed loop should restore all questionnaire data parts',
 	);
 	assert.deepEqual(
@@ -475,7 +493,7 @@ try {
 	);
 	assert.equal(scaffold.text, scaffoldText, 'the correction labels the reply without repeating it');
 	assert.deepEqual(scaffold.data?.reveal?.at(-1), scaffoldReveal, 'an unmarked reply to a plea for help gets one correction');
-	assert.equal(providerTurns, 10, 'only the unmarked reply takes a second provider call');
+	assert.equal(providerTurns, 11, 'consent adds one reveal call; only the unmarked reply takes a correction call');
 	const relabeled = visibleTurnsFromHistory(await client.history()).slice(-4);
 	assert.deepEqual(relabeled.map(({ role, text, reveal }) => ({ role, text, reveal })), [
 		{ role: 'You', text: hintRequest, reveal: undefined },

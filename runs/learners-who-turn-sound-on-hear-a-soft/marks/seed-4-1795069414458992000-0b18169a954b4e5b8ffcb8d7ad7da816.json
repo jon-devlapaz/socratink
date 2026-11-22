@@ -1,0 +1,15 @@
+{
+  "item": "seed-4",
+  "result": "passed",
+  "evidence": "Operator judged the PR's Vercel preview at head ed46cdb (round Sound button) on their phone before merge and replied 'Publish and merge' to the message asking 'Reply merge if the tick and the toggle feel right on your phone.' The first preview failed: operator screenshot at 2026-11-19T06:14Z showed Sound as bare text among round icon buttons; ed46cdb fixed it before this verdict.",
+  "reviewer": "jon-devlapaz",
+  "source": "project chat cmsg_01HpLSkmbLdxh9PX1LVX2D7YVRKNNK8jKu3LdCDEQ8pyj8",
+  "seed_definition": "6aea1495bf683fdf7ba66a7a0f53b3cfb10151c9c5ea5f5f53c3f952a234ebdd",
+  "relay": {
+    "words": "Publish and merge",
+    "where": "Claude project chat, message cmsg_01HpLSkmbLdxh9PX1LVX2D7YVRKNNK8jKu3LdCDEQ8pyj8, 2026-11-19T06:18:28Z, replying to cmsg_01HpLSkmbLdxh9PX1LVX2D7YVvyDTVWgWsod6ifE9cpeDH (preview of head ed46cdb)",
+    "sha256": "1602f2ffc4751596f4c10adec8c9d16568f733e3b331fa688780fd466ed01092"
+  },
+  "candidate": "45b461b205b7edb61a3c4040b08d27677856427259fb840fa27d3b00d434379e",
+  "time_ns": 1795069414458992000
+}

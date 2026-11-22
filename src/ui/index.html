@@ -30,6 +30,7 @@
 		</script>
 	</head>
 	<body class="conversation-empty">
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<button
 			class="peek-handle"
 			id="peek-handle"
@@ -58,7 +59,7 @@
 				<span class="sr-only">Open menu</span>
 			</button>
 
-			<main class="stage">
+			<main id="main-content" class="stage" tabindex="-1">
 				<section class="active-node" aria-label="Current step">
 					<button
 						class="trail-toggle"
@@ -100,6 +101,7 @@
 					<label class="sr-only" for="message">Message Socratink</label>
 					<textarea
 						id="message"
+						autocomplete="off"
 						name="message"
 						rows="2"
 						required
@@ -212,6 +214,7 @@
 						</span>
 						<span>Appearance</span>
 					</button>
+					<button id="sound-toggle" type="button" aria-pressed="false"><span class="orb-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path class="sound-waves" d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7a7 7 0 0 1 0 10" /><path class="sound-mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5" /></svg></span><span id="sound-label">Sound off</span></button>
 					<button id="start-over" type="button">
 						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
 							<path
@@ -229,6 +232,12 @@
 							/>
 						</svg>
 						<span>Start over</span>
+					</button>
+					<button id="history-trigger" type="button" aria-haspopup="dialog">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M5 6.5h14M5 12h14M5 17.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg>
+						<span>History</span>
 					</button>
 					<a id="auth-link" href="/login.html">
 						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -248,11 +257,44 @@
 						</svg>
 						<span id="auth-link-label">Sign in</span>
 					</a>
+					<button id="feedback-trigger" type="button" aria-haspopup="dialog" hidden>
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M20 5H4v12h4v3l4-3h8zM8 9h8m-8 4h5"
+								stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
+						</svg>
+						<span>Feedback</span>
+					</button>
 				</nav>
 				<div class="menu-handle" id="menu-handle" aria-hidden="true"></div>
 			</div>
 		</div>
 
+		<dialog id="history-dialog" aria-labelledby="history-title">
+			<div class="history-page">
+				<div class="history-head">
+					<h2 id="history-title">History</h2>
+					<button id="history-close" type="button">Back to conversation</button>
+				</div>
+				<p class="history-note">Conversations from this browser. Choose one to open it.</p>
+				<p id="history-empty" hidden>Your conversations appear here after you send a message.</p>
+				<ol id="history-list" aria-labelledby="history-title"></ol>
+			</div>
+		</dialog>
+
+		<dialog id="feedback-dialog" aria-labelledby="feedback-title">
+			<form id="feedback-form">
+				<h2 id="feedback-title" tabindex="-1" autofocus>Send feedback</h2>
+				<p id="feedback-notice">Your feedback goes to the Socratink team through Modem.</p>
+				<label>Message<textarea name="message" rows="5" required></textarea></label>
+				<label>Name (optional)<input name="name" autocomplete="name" maxlength="256"></label>
+				<label id="feedback-email-label">Email (optional)<input name="email" type="email" autocomplete="email" maxlength="320"></label>
+				<p id="feedback-status" role="status"></p>
+				<div class="feedback-actions">
+					<button id="feedback-close" type="button">Close</button>
+					<button id="feedback-send" type="submit">Send feedback</button>
+				</div>
+			</form>
+		</dialog>
 		<script type="module" src="/main.ts"></script>
 	</body>
 </html>

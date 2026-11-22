@@ -1,0 +1,30 @@
+{
+  "result": "passed",
+  "candidate": {
+    "head": "ed46cdbc5a22996185be3672412e774b67811a09",
+    "tree": "45b461b205b7edb61a3c4040b08d27677856427259fb840fa27d3b00d434379e"
+  },
+  "inputs": "c5a84476b335feda37241b2b0e6fbb08392e8625dffc2e5b15378ce97434c2a3",
+  "policy": "29df6ec28500a7c2aad10e39c80f654da489c8524d728acbd4bd40e8e1d4c5e3",
+  "test_lock": null,
+  "checklist": "57ba36d7351a32661148961de4e997372ceb4e8c53b5cb399645741dc886cbbd",
+  "manual_marks": {
+    "seed-4": "2599e84631b42b2fd738b4b8f18ef0301fbfd6b16edd55e6913273490da12462",
+    "seed-5": "4cfd4e5837b8e16264bb0b55d1e382b66f3e01bf18987d9e5795e9e3f0a88551"
+  },
+  "checklist_items": {},
+  "seed_checks": {
+    "seed-1": "proven",
+    "seed-2": "proven",
+    "seed-3": "proven",
+    "seed-4": "attested",
+    "seed-5": "attested"
+  },
+  "red_at_base": {
+    "base": "efa55c7d679eff5f5d67e45d64c9d6c74014ec4a",
+    "seeds": [
+      "seed-1 red at base, green at candidate"
+    ]
+  },
+  "log": "c57e1d0ead0c00ae221072ca1241a8d1f8d8fd398c6f0c599f647a32043f916f"
+}

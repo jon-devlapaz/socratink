@@ -1,0 +1,580 @@
+$ pnpm check:file-size && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:auth-db && pnpm test:guest-turns && pnpm test:oauth && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:ask-before-reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:live-reply && pnpm test:sound-cues && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm test:durable && pnpm build && pnpm test:static-routing
+$ node --test scripts/check-file-size.test.mjs && node scripts/check-file-size.mjs
+✔ the size gate checks new source before staging and leaves ignored output alone (225.918375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 268.631542
+File size check: 158 files within 1000 lines.
+$ tsc --noEmit
+$ node scripts/chat-model.test.mjs
+Chat model routing contract passed.
+$ node --test scripts/model-route.test.mjs
+✔ reads routing headers the same way the Pi harness does (12.777667ms)
+✔ stamps and recovers nested socratink route metadata (0.204792ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 86.718167
+$ node --test scripts/database-config.test.mjs
+✔ uses Postgres when DATABASE_URL is configured (0.678792ms)
+✔ fails closed in production or Vercel when DATABASE_URL is missing (0.209333ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.061792
+$ node --test scripts/session.test.mjs
+✔ fails closed in production or Vercel when SESSION_SECRET is missing (0.66325ms)
+✔ uses SESSION_SECRET when configured and a local secret otherwise (0.091417ms)
+✔ conversation ids are userId:nonce and reject foreign prefixes (0.153292ms)
+✔ conversation ids honor aliases and ignore malformed alias entries (0.08225ms)
+✔ rate limiter uses the injected clock and counter (0.10825ms)
+✔ chat routes reject a foreign conversation id with 403 (21.227208ms)
+✔ chat routes rate-limit a session with a fake clock (2.291292ms)
+✔ signed session cookie is HttpOnly and named socratink-session (0.956667ms)
+✔ session cookie payload is a versioned userId plus random nonce (0.246375ms)
+✔ minted guest cookie carries a guest payload and reuses the session id (1.638208ms)
+✔ privilege change kills the previous cookie bytes and keeps the owned id (3.695334ms)
+✔ signed and Chat admission each consume exactly one shared allowance (1.854709ms)
+✔ secure cookies follow only the hosted security environment (0.203667ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.438458
+$ node --test scripts/session-client.test.mjs
+✔ loadAuthProviders returns server flags and fails closed without providers (13.790541ms)
+✔ readOrCreateSession mints a guest session when none exists (1.240917ms)
+✔ loginErrorCopy explains known OAuth failures and ignores unknown codes (0.103084ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.278083
+$ node --test scripts/auth-db.test.mjs
+✔ resolveAuthConfig resolves google and github providers and redirectBaseUrl (0.587ms)
+✔ resolveAuthConfig rejects production redirectBaseUrl in local development (0.284083ms)
+✔ resolveAuthStoreTarget uses postgres when DATABASE_URL is set, sqlite otherwise (0.551833ms)
+✔ AuthDb operations: users, oauth_accounts, and aliases (8.64675ms)
+✔ postgres auth store retries its table setup after a failed first attempt (0.370792ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97.263792
+$ node --test scripts/guest-turns.test.mjs
+✔ guest turn gate allows registered users without turn cap (29.185708ms)
+✔ guest allowance is ten turns (0.160875ms)
+✔ guest turn gate enforces 10-turn limit for guests and increments counter (11.215792ms)
+✔ guest quota survives raw downstream responses and keeps attempt charging and exemptions (11.764709ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148.519125
+$ node --test scripts/oauth.test.mjs
+✔ OAuth login routes redirect with PKCE parameters and set oauth_state cookie (21.54075ms)
+✔ OAuth callback rejects missing or invalid state parameters (3.867125ms)
+✔ Google callback creates a new user from the guest session and keeps the session id (13.486417ms)
+✔ Google callback links a returning guest to an existing account via alias (9.698708ms)
+✔ Google callback attaches a new provider to an existing email user (7.691792ms)
+✔ Google callback rejects unverified email without touching the session (4.679625ms)
+✔ GitHub callback creates a user from a verified primary email (6.648125ms)
+✔ GitHub callback rejects when no email is verified (3.815375ms)
+✔ GitHub email selection prefers verified non-noreply addresses (0.166667ms)
+✔ GitHub callback accepts a verified secondary email when the primary is unverified (5.962875ms)
+✔ OAuth callback redirects to auth_failed when token exchange fails (4.164625ms)
+✔ OAuth callback rejects a mismatched state parameter (4.14275ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 196.838166
+$ node --test scripts/questionnaire-ui.test.mjs
+✔ reads a validated questionnaire from live reply data and restored history parts (0.788541ms)
+✔ fails closed on malformed or oversized structured questionnaire data (0.805292ms)
+✔ formats selected, freeform, skipped and help answers as explicit learner text (0.241292ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.780167
+$ node --test scripts/present-question.test.mjs
+✔ slugs duplicate labels and keeps an explicit value when it is unique (0.918792ms)
+✔ treats lettered or cued lists as unboxed choices, not explanatory traces (0.503375ms)
+✔ ignores skill maps, subskill lists before an open question, and command lists (0.665709ms)
+✔ retries once for an unboxed choice list (0.117875ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.183917
+$ node --test scripts/reveal.test.mjs
+✔ accepts a kind and optional target, and rejects unknown kinds (1.003875ms)
+✔ reads the last data-reveal part (0.106083ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 80.555417
+$ node --test scripts/reveal-ui.test.mjs
+✔ hint survives history and labels active and earlier supplied text (2.516ms)
+✔ worked_example survives history and labels active and earlier supplied text (0.298708ms)
+✔ partial survives history and labels active and earlier supplied text (0.231292ms)
+✔ full_answer survives history and labels active and earlier supplied text (0.191ms)
+✔ an answered card shows its question and the answer shows as the learner's (0.554458ms)
+✔ completed replies use the last validated reveal write (0.089375ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.638
+$ node --test scripts/ask-before-reveal.test.mjs
+✔ full_answer: see-it, intermediate text and restored pending choice (860.695083ms)
+✔ full_answer: try-once-more, intermediate text and restored pending choice (975.637792ms)
+✔ worked_example: see-it, intermediate text and restored pending choice (735.104375ms)
+✔ worked_example: try-once-more, intermediate text and restored pending choice (963.273ms)
+✔ a hint arrives without a consent card and keeps its provenance (246.518167ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3964.303792
+$ node --test scripts/conversation-client.test.mjs
+(node:90102) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ recheck waits longer than a mid-stream FreeLLMAPI teaching reply (0.61175ms)
+✔ forwards admission-read stream events to the conversation listener (0.675875ms)
+✔ a 404 read leaves the admission in recovery without resending (0.195833ms)
+✔ cancel before observed admission stays unknown and never enables resend (0.487958ms)
+✔ send interruption before observed admission recovers without resend (0.14075ms)
+✔ cancel after admission waits for an aborted settlement before saying Canceled (0.239541ms)
+✔ renders the reply when completion wins the cancel race (0.2325ms)
+✔ a bounded abort failure becomes recoverable and never claims the reply stopped (0.213833ms)
+✔ bare-id recheck does not complete a marker-only reply from prior-turn tools alone (0.190666ms)
+✔ an admitted observation failure reattaches to the same submission without sending again (0.142125ms)
+✔ reload hydrates an unsettled admission and reads only its submissionId without overlap (0.259333ms)
+✔ restore without an unsettled admission returns to idle without sending (0.056375ms)
+✔ openChatConversation namespaces and reuses the stored conversation id (2.298333ms)
+✔ openChatConversation keeps a stored conversation id owned by an alias (0.137167ms)
+✔ reload does not revive an older unsettled record after a newer submission settled (0.100042ms)
+✔ Retry resends exactly once only after an aborted settlement is confirmed (0.283834ms)
+✔ a confirmed failed settlement can retry once (0.097875ms)
+✔ not-admitted terminal state carries the envelope error code (0.156292ms)
+✔ a confirmed not-admitted send can retry once (0.07875ms)
+✔ a confirmed stop can send a different message without retrying the old one (0.106875ms)
+✔ rejects every overlapping admission attempt (0.100458ms)
+✔ maps user-facing errors without treating cancellation as a generic failure (0.055375ms)
+✔ recovery locks the composer; a confirmed stop leaves it open (0.046959ms)
+✔ rejects oversized learner messages before admission (8.94975ms)
+✔ treats an empty assistant reply as a confirmed failure (0.173542ms)
+✔ treats a marker-only assistant reply as a confirmed failure (0.063917ms)
+✔ completes marker-only text when the reply includes a questionnaire (0.496042ms)
+✔ startNewChatConversation stores a shared reset token before reload (0.116041ms)
+✔ watchChatConversationReset syncs other tabs to the new conversation id (0.100375ms)
+✔ watchChatConversationReset reloads when both keys already hold the same id (0.060625ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115.056333
+$ node --test scripts/chat-turns.test.mjs
+✔ projects only visible learner and assistant turns from conversation history (1.411417ms)
+✔ projects assistant tool calls from dynamic-tool parts (0.201833ms)
+✔ keeps mark_reveal off the card and skips a reveal-only empty turn (0.111959ms)
+✔ shows card answers and steering in the learner's own words (0.144584ms)
+✔ history pairs a card answer with the card it answers (0.085375ms)
+✔ dedupes only an adjacent failed or aborted learner retry with the same text (0.0945ms)
+✔ dedupes a contiguous aborted submission group with a partial assistant before its retry (0.082667ms)
+✔ preserves a non-adjacent failed same-text attempt across another exchange (0.078042ms)
+✔ splits the latest learner and closing reply into the current beat (0.097625ms)
+✔ groups earlier turns into learner-started steps (0.102041ms)
+✔ maps the stored assistant role to the Socratink display label (0.056333ms)
+✔ projects the routed model from assistant response metadata (0.0855ms)
+✔ skips marker-only assistant history rows after stripping (0.050458ms)
+✔ strips internal assistant markers before history is shown (0.046666ms)
+✔ assistant text removes only parentheticals or sentences naming internal tools (0.424417ms)
+✔ learnerVisibleAssistantText removes stacked internal markers (0.0445ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 94.8955
+$ node --test scripts/live-reply.test.mjs
+✔ live text from the server events equals the settled reply text, across text, tool call, text (1.638958ms)
+✔ a reply of several messages shows its last, as the settled reply does (0.128208ms)
+✔ leading markers are stripped when complete and held while half-arrived (0.125791ms)
+✔ live text hides completed and unfinished bookkeeping that names internal tools (0.448ms)
+✔ only text deltas reach the learner; reasoning and other events do not (0.122584ms)
+✔ a mark_reveal call marks the live text as soon as it arrives (0.315625ms)
+✔ text the server would still check for an unmarked reveal waits for the mark (0.17975ms)
+✔ a reveal cue mid-stream freezes the text already shown until the mark arrives (0.078375ms)
+✔ a turn held from its start still shows nothing (0.136333ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96.73775
+$ node --test scripts/sound-cues.test.mjs
+✔ Sound defaults off and the plain menu toggle saves its state (2482.0875ms)
+✔ saved Sound on requires a user gesture before audio can start (402.60775ms)
+✔ one fresh reply ticks only after completion, quietly and briefly (2039.39325ms)
+✔ marked assistance stays silent for hints and supplied answers (2669.54075ms)
+✔ restored history and recovered completion stay silent (396.690708ms)
+✔ Sound off stays silent, including when turned off during a reply (3088.302833ms)
+✔ reduced motion stays silent even when changed during a reply (2023.884459ms)
+✔ duplicate completion delivery produces one tick total (2022.781916ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15416.09125
+$ node --test scripts/tool-card.test.mjs
+✔ projects dynamic-tool parts into name, state, and output (1.342584ms)
+✔ stream events advance one tool from running to done or failed (0.220959ms)
+✔ a late input event does not reopen a settled tool (0.064166ms)
+✔ formats object output as JSON and labels each execution state (0.069125ms)
+✔ keeps present_question output off the card once the form is up (0.071917ms)
+✔ keeps mark_reveal off the card, and present_question once the form is up (0.084417ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 80.752291
+$ node --test scripts/thinking.test.mjs
+✔ the browser snapshot never carries raw model reasoning, pending or settled (0.836583ms)
+✔ live events stream reply text only, even while reasoning arrives first (0.190459ms)
+✔ a reveal call reaches the browser before the text it labels, even in one poll (0.123917ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.474708
+$ node --test scripts/chat-markdown.test.mjs
+✔ malformed table-like text terminates and remains readable (60.626416ms)
+✔ each code copy control resets independently (0.701084ms)
+✔ repeated copies reset once and destroyed renderers clear pending resets (0.130542ms)
+✔ a clipboard write resolved after destroy cannot schedule a stale reset (0.124458ms)
+✔ a clipboard write resolved after update cannot schedule a stale reset (0.457334ms)
+✔ a rejected clipboard write does not announce a successful copy (0.180667ms)
+✔ treats raw HTML as paragraph text (0.167958ms)
+✔ rejects unsafe hrefs and keeps http(s), mailto, and relative links (0.117292ms)
+✔ keeps parentheses inside markdown link hrefs (0.115208ms)
+✔ keeps pipes inside inline code and escaped cells (0.268542ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 137.375292
+$ node --test scripts/dictation.test.mjs
+✔ detects unprefixed, prefixed, and unsupported constructors (0.833667ms)
+✔ starts synchronously from click and projects starting, listening, stopping, and idle (0.457334ms)
+✔ a final Send message command strips itself and submits once after end (1.130542ms)
+✔ matches only Send message in final command position (0.182667ms)
+✔ voice send fails closed for empty, non-command, and errored transcripts (0.532375ms)
+✔ trusted typing, paste, and composition edits preserve their value and invalidate late results (0.2205ms)
+✔ stopForReview blocks active submission until recognition ends (0.150541ms)
+✔ a bounded fallback aborts capture when stop never reaches end (2051.112375ms)
+✔ cancel and request locking abort capture and ignore late events (0.377459ms)
+✔ permission denial disables dictation for the page session and never restarts (0.3135ms)
+✔ unexpected end and backgrounding never leave a false listening state (0.139875ms)
+✔ destroy removes listeners, aborts capture, and prevents late mutation (0.068667ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2122.608042
+$ node --test scripts/steering.test.mjs
+✔ steering messages are prefixed learner turns, not capability claims (0.423458ms)
+✔ copy uses a selected snippet when present, otherwise the whole turn (0.082667ms)
+✔ steering chips send once; copy writes the turn without sending (0.693666ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.999917
+$ node --test scripts/client-id.test.mjs
+(node:96060) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ openChatConversation makes a conversation id without crypto.randomUUID (2.109792ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 77.99375
+$ node --test scripts/runtime-monitor.test.mjs scripts/monitor-dispatch.test.mjs scripts/monitor-cadence.test.mjs
+▶ cadence check uses completed production scans and fails closed through the HTTP boundary
+  ✔ recent scan (51.813875ms)
+  ✔ 45-minute boundary (50.287ms)
+  ✔ stale scan (49.4435ms)
+  ✔ recovery uses successful scan from failed workflow (53.099417ms)
+  ✔ current run cannot hide gap (52.752542ms)
+  ✔ preview cannot hide gap (52.021458ms)
+  ✔ newer failed scan does not hide older success (49.193709ms)
+  ✔ later run order does not hide fresh rerun (50.361125ms)
+  ✔ no prior runs (50.675042ms)
+  ✔ no successful scan (48.970416ms)
+  ✔ preview only (48.867625ms)
+  ✔ missing timestamp (49.238416ms)
+  ✔ invalid timestamp (46.720417ms)
+  ✔ future timestamp (50.508167ms)
+  ✔ wrong branch (48.817791ms)
+  ✔ unfinished run (49.52675ms)
+  ✔ invalid run id (48.272792ms)
+  ✔ missing runs (52.576292ms)
+  ✔ more than10 runs (55.633875ms)
+  ✔ missing jobs (51.59175ms)
+  ✔ incomplete job list (51.933708ms)
+  ✔ missing steps (52.823709ms)
+  ✔ malformed JSON (54.88175ms)
+  ✔ HTTP failure (54.221209ms)
+  ✔ network failure (36.545792ms)
+  ✔ oversized response is canceled (49.504208ms)
+  ✔ missing token sends no request (37.424291ms)
+  ✔ invalid current run sends no request (40.446459ms)
+  ✔ bounded10-run search (57.179541ms)
+✔ cadence check uses completed production scans and fails closed through the HTTP boundary (1454.494542ms)
+▶ scheduled entry point dispatches only the production monitor
+  ✔ production (13.904166ms)
+  ✔ preview (0.269541ms)
+  ✔ missing environment (0.899625ms)
+  ✔ public request (0.164333ms)
+  ✔ wrong schedule (0.120959ms)
+  ✔ wrong method (0.096042ms)
+  ✔ missing credential (0.124875ms)
+  ✔ denied dispatch (0.849ms)
+  ✔ redirect rejected (0.24425ms)
+  ✔ unexpected success body (0.222542ms)
+  ✔ network failure (0.1345ms)
+✔ scheduled entry point dispatches only the production monitor (41.191541ms)
+✔ schedule is private and fits the current Hobby interval (2.648916ms)
+▶ runtime monitor fails closed and keeps log contents private through the HTTP boundary
+  ✔ clean (56.233916ms)
+  ✔ HTTP202 retains runtime errors with context (50.500416ms)
+  ✔ HTTP5xx without runtime logs (49.978167ms)
+  ✔ known pg warning (50.330625ms)
+  ✔ fatal never suppressed (47.828709ms)
+  ✔ other warning not suppressed (51.656417ms)
+  ✔ malformed JSON (49.028ms)
+  ✔ API error body (52.167292ms)
+  ✔ truncated message (47.9185ms)
+  ✔ more pages (52.790125ms)
+  ✔ missing pagination (46.859333ms)
+  ✔ missing rows (47.502416ms)
+  ✔ over100 rows (46.769ms)
+  ✔ oversized body is canceled (55.666209ms)
+  ✔ missing error logs (47.857583ms)
+  ✔ unused extra timestamp type (46.819708ms)
+  ✔ stale row (47.569541ms)
+  ✔ future row (50.08075ms)
+  ✔ invalid timestamp (53.686084ms)
+  ✔ wrong environment (56.130167ms)
+  ✔ wrong project (54.220708ms)
+  ✔ unexpected log level (49.611917ms)
+  ✔ wrong HTTP filter (55.991792ms)
+  ✔ HTTP permission failure (57.030542ms)
+  ✔ network failure (37.11925ms)
+  ✔ missing token sends no request (34.748042ms)
+  ✔ explicit preview (52.696334ms)
+  ✔ wrong preview (51.239333ms)
+  ✔ invalid target (37.607542ms)
+✔ runtime monitor fails closed and keeps log contents private through the HTTP boundary (1446.294333ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 73
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1498.169042
+$ node --test src/inference/*.test.ts src/learning/*.test.ts src/server/durable/*.test.ts scripts/durable-storage.test.mjs scripts/durable-engine.test.mjs scripts/durable-reconnect.test.mjs scripts/feedback-agent.test.mjs
+✔ another instance reads live reasoning, rejects a competing turn, and ownership closes after settlement (295.14525ms)
+✔ a follower opened before the conversation exists matches a fresh snapshot at every step of a turn (187.745041ms)
+✔ cross-instance cancellation persists and does not abort the next admission (267.916375ms)
+✔ an execution slice leaves accepted work pending, releases ownership, and a later request recovers it (237.952167ms)
+✔ native retry monitoring: transient failure recovers (73.05375ms)
+✔ native retry monitoring: exhausted retries settle once (177.200166ms)
+✔ SIGKILL recovery logs once (328.366834ms)
+✔ SIGKILL recovery logs once and still reports a later provider retry (432.024583ms)
+✔ a turn log line names route, hashed session, model, latency and status, never the conversation id (1.097417ms)
+✔ a reply survives the server ending the events stream at its time cap mid-turn (2104.889458ms)
+✔ a reply survives the network dropping the events connection mid-reply, as the UI coordinator sees it (1963.841667ms)
+✔ an uninterrupted turn needs one events connection, and a connection after settlement returns at once (1972.414792ms)
+✔ a Neon pooled URL uses only its matching direct endpoint for execution ownership (3.1765ms)
+✔ Postgres storage connects on first use and retries after a failed start (32.923959ms)
+✔ sqlite: reserves ID 1 for the immutable root conversation (7.665833ms)
+✔ sqlite: receives a durable commit once before resolving, and never a refused one (5.483583ms)
+✔ sqlite: commits mixed table writes atomically and rolls all of them back on failure (4.359167ms)
+✔ sqlite: detaches retained writes and every returned record (3.769416ms)
+✔ sqlite: detaches prototype-like JSON keys without changing object prototypes (3.553625ms)
+✔ sqlite: indexes entries committed out of ID order (4.565167ms)
+✔ sqlite: continues an entry cursor below its last item after a newer commit (3.571ms)
+✔ sqlite: paginates conversations by opaque cursor in ascending ID order (3.337792ms)
+✔ sqlite: filters and pages conversations by durable owner edges (4.866792ms)
+✔ sqlite: scans deep fork history newest-first through every ancestor cap (9.112375ms)
+✔ sqlite: scans tables in either ID order and continues a cursor in its order (5.504833ms)
+✔ sqlite: replaces complete task records and pages filtered task scans (4.453625ms)
+✔ sqlite: stores owners and scans waiting and completing tasks by status (4.669667ms)
+✔ sqlite: stores and scans sleeping tasks by status (3.3375ms)
+✔ sqlite: indexes request IDs per conversation and replaces complete submission records (4.376666ms)
+✔ sqlite: stores passive write submissions without input-only lifecycle states (4.139208ms)
+✔ sqlite: stores continue submissions, which have no entry and are never queued (5.090291ms)
+✔ sqlite: reconstructs rewindable documents and preserves half-open incarnations (5.277209ms)
+✔ sqlite: streams long document tails across root replacement deltas (19.740458ms)
+✔ sqlite: copies stored document bases independently and rejects ambiguous sources (7.963583ms)
+✔ sqlite: uses bases for version transitions and rejects historical reads of current-only documents (4.341416ms)
+✔ sqlite: indexes logical addresses and exact-scope scans independently (4.026917ms)
+✔ sqlite: keeps document lifecycle failures atomic and gives create-plus-retire an empty lifetime (4.524125ms)
+✔ sqlite: refuses a creation and a change of one document in one commit, in either order (3.691125ms)
+✔ sqlite: rolls back record tables and secondary indexes when a document command fails (4.410584ms)
+✔ sqlite: keeps indexed string identities lossless (5.710167ms)
+✔ sqlite: keeps one global record ID namespace and rejects exhausted ID minting (4.00575ms)
+✔ sqlite: commits batches in order, each with its seq, checked against the earlier ones (4.930792ms)
+✔ sqlite: stores the batches before the first one refused, and none after it (3.583583ms)
+✔ sqlite: refuses a later batch its own malformed actions fail, keeping the batches before it (3.899959ms)
+✔ sqlite: resolves a batched copy against the state the earlier batches left (4.74325ms)
+✔ sqlite: rejects every operation after close (2.99ms)
+✔ sqlite: another manager reads committed progress without taking execution ownership (6.234541ms)
+✔ sqlite: a refreshed reader applies only later commits and refuses a gap (6.651209ms)
+✔ sqlite: ownership is released on close and unused IDs remain reserved (4.187916ms)
+✔ tutor sends one approved draft with the right account on its Modem connection (485.156ms)
+✔ every learner uses the current operator model and limits (1.10325ms)
+✔ saved learner and retired model selections fall back to the current operator route (0.162541ms)
+✔ each generation resolves the current operator settings (0.098875ms)
+✔ operator status reports the route and missing hosted configuration refuses every turn (1.966041ms)
+✔ card help reads back as assistance on the card it asked about (1.521041ms)
+✔ an unmarked turn is corrected once when help was asked for or content looks supplied (0.467167ms)
+✔ the teaching policy is the vendored socratic-tutor skill followed by Socratink bindings (0.905167ms)
+✔ the tutor keeps tool names and bookkeeping out of learner text (0.093708ms)
+✔ questions use current validation and presentation; reveals retain provenance without ending the turn (1.327583ms)
+✔ the shared correction policy permits only one extra attempt (1.063958ms)
+✔ a GET reads the private history snapshot without submitting work (17.197625ms)
+✔ a send with no model provider is refused before admission, with a reason the browser can show (2.324708ms)
+✔ an admitted send answers with only its submission id (0.791958ms)
+✔ a settled conversation sends one reset with every reply, then ends (15.536958ms)
+✔ a pending reply streams from its start after the reset, then settles and ends (2.47425ms)
+✔ a long pending turn gets heartbeats and ends at the time cap (65.017958ms)
+✔ a failed poll errors the stream and still closes the follower (4.873958ms)
+✔ a dropped client stops the snapshot loop (32.195083ms)
+✔ the bridge serves events as an uncached event stream (4.197ms)
+✔ operator transport preserves keys, limits, live route headers and persisted response metadata (100.649834ms)
+✔ reflected credentials are removed from live failures, route headers and reopened native records without changing retries (68.842375ms)
+ℹ tests 71
+ℹ suites 0
+ℹ pass 71
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6302.425
+$ vite build && vite build --config vite.config.ui.ts
+vite v8.2.1 building ssr environment for production...
+[2Ktransforming...✓ 50 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/app.mjs                    0.09 kB │ gzip:  0.09 kB
+dist/server.mjs                 0.65 kB │ gzip:  0.41 kB │ map:   1.04 kB
+dist/chunks/app-C0L6SoAB.mjs  117.40 kB │ gzip: 33.29 kB │ map: 227.73 kB
+
+✓ built in 26ms
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 60 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/404.html                             1.50 kB │ gzip:  0.73 kB
+dist/client/login.html                           3.16 kB │ gzip:  1.48 kB
+dist/client/assets/brand-wordmark-Df9HARvW.png   8.21 kB
+dist/client/index.html                          10.42 kB │ gzip:  3.10 kB
+dist/client/assets/paper-mono-C37UQ3VR.woff2    53.27 kB
+dist/client/assets/notFound-CgNnqslE.css        10.41 kB │ gzip:  3.10 kB
+dist/client/assets/login-BiFuefOY.css           12.23 kB │ gzip:  3.55 kB
+dist/client/assets/main-BWs6QYTm.css            48.34 kB │ gzip:  9.62 kB
+dist/client/assets/login-DSXAZxfo.js             0.60 kB │ gzip:  0.36 kB
+dist/client/assets/session-CMUuC2Yn.js           2.63 kB │ gzip:  1.19 kB
+dist/client/assets/main-De4GD2Ms.js             71.23 kB │ gzip: 22.99 kB
+
+✓ built in 68ms
+$ node --test scripts/static-routing.test.mjs
+✔ hosted login alias reaches the static login document without a loop (0.636625ms)
+✔ Vercel keeps API ownership and native filesystem/404 handling (0.082ms)
+✔ production build ships branded recovery and existing static entries (2.69725ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 43.705875

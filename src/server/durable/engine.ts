@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
-import { Harness, LiveDoc, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import type { Engine, EngineOptions, ModelSelection, Snapshot, TurnRecord } from './contract.ts';
-import { inputKind, productRegistry } from './extension.ts';
+import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
+import { inputKind, type Engine, type EngineOptions, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { productRegistry } from './extension.ts';
+import { feedbackExtension } from './feedback-extension.ts';
 import { readSnapshot, type InputData } from './projection.ts';
 import { conversationModels, modelRef } from './provider.ts';
 import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
@@ -65,7 +66,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		let failed = false;
 		const reportFailed = () => { if (!failed && !owner.interrupted) { failed = true; report('submission_failed'); } };
 		const started = Date.now();
-		let ended: Pick<TurnRecord, 'status' | 'model'> = { status: 'unsettled' };
+		let ended: Pick<TurnRecord, 'status' | 'model' | 'providerStatus'> = { status: 'unsettled' };
 		const checkCancellation = () => {
 			if (cancellation || cancelled || owner.interrupted) return;
 			cancellation = (async () => {
@@ -87,7 +88,16 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
 					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
 					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
-					if (submission?.outcome === 'failed') reportFailed();
+					if (submission?.outcome === 'failed') {
+						reportFailed();
+						// The last failed reply's error starts with the provider's HTTP status
+						// ("429 ..."). Keep only that number: the rest can echo request text.
+						const recent = await owner.storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
+						const reply = recent.items.flatMap((entry) => [...(entry.model ?? [])].reverse())
+							.find((message) => message.role === 'assistant' && message.stopReason === 'error');
+						const status = reply?.role === 'assistant' ? /^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1] : undefined;
+						if (status) ended.providerStatus = Number(status);
+					}
 				}
 			} catch { ended = { status: 'error' }; reportFailed(); }
 			finally {
@@ -129,7 +139,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				}
 				const requestId = randomUUID();
 				const submission = await owner.root.submit({ type: 'input', content: text, whenBusy: 'reject', requestId,
-					entry: { kind: inputKind, data: { requestId, ...(selection ? { selection } : {}) } } }, context);
+					entry: { kind: inputKind, data: { requestId, revealConsent: true, ...(selection ? { selection } : {}) } } }, context);
 				run(id, owner, submission.id);
 				return String(submission.id);
 			} catch (error) {
@@ -176,9 +186,12 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		} while (cursor);
 		return undefined;
 	}, (config) => { modelId = config.modelId; });
-	const harness = await Harness.open(storage, { models, registry: productRegistry(),
+	const registry = productRegistry();
+	const feedback = await feedbackExtension(id);
+	if (feedback) registry.install(feedback);
+	const harness = await Harness.open(storage, { models, registry,
 		settings: { compaction: { enabled: false }, stream: { maxRetries: 0 },
-			retry: { maxRetries: 2, baseDelayMs: 50 }, progress: { persistWithinMs: 50 } },
+			retry: { maxRetries: 2, baseDelayMs: 2_000 }, progress: { persistWithinMs: 50 } },
 	}, context);
 	try {
 		root = await harness.root(context, { agent: { model: modelRef, maxTurns: 8 } });

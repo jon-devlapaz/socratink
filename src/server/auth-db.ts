@@ -54,6 +54,10 @@ CREATE TABLE IF NOT EXISTS socratink_user_aliases (
 	created_at TEXT NOT NULL
 );`;
 
+// An older alias can name a registered account as its source. That account owns its own history.
+const GUEST_ALIAS_FILTER_SQL =
+	'NOT EXISTS (SELECT 1 FROM socratink_users WHERE id = socratink_user_aliases.guest_user_id)';
+
 const POSTGRES_FIND_USER_BY_EMAIL_SQL =
 	'SELECT id, email, created_at FROM socratink_users WHERE email = $1';
 const POSTGRES_FIND_USER_BY_ID_SQL =
@@ -72,9 +76,9 @@ const POSTGRES_CREATE_ALIAS_SQL = `INSERT INTO socratink_user_aliases (guest_use
 VALUES ($1, $2, $3)
 ON CONFLICT (guest_user_id) DO UPDATE SET durable_user_id = EXCLUDED.durable_user_id`;
 const POSTGRES_FIND_ALIASES_SQL =
-	'SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = $1';
+	`SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = $1 AND ${GUEST_ALIAS_FILTER_SQL}`;
 const POSTGRES_FIND_ALIAS_OWNER_SQL =
-	'SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = $1';
+	`SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = $1 AND ${GUEST_ALIAS_FILTER_SQL}`;
 
 const SQLITE_FIND_USER_BY_EMAIL_SQL =
 	'SELECT id, email, created_at FROM socratink_users WHERE email = ?';
@@ -94,9 +98,9 @@ const SQLITE_CREATE_ALIAS_SQL = `INSERT INTO socratink_user_aliases (guest_user_
 VALUES (?, ?, ?)
 ON CONFLICT (guest_user_id) DO UPDATE SET durable_user_id = excluded.durable_user_id`;
 const SQLITE_FIND_ALIASES_SQL =
-	'SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = ?';
+	`SELECT guest_user_id FROM socratink_user_aliases WHERE durable_user_id = ? AND ${GUEST_ALIAS_FILTER_SQL}`;
 const SQLITE_FIND_ALIAS_OWNER_SQL =
-	'SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = ?';
+	`SELECT durable_user_id FROM socratink_user_aliases WHERE guest_user_id = ? AND ${GUEST_ALIAS_FILTER_SQL}`;
 
 export function createAuthDb(target: DatabaseTarget): AuthDb {
 	switch (target.kind) {

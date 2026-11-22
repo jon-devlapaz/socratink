@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { appConfig } from '../src/config/app.config.ts';
+import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
@@ -43,6 +44,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					await page.keyboard.press('b');
 					assert.equal(await form.locator('input:checked').count(), 2);
 				}
+				assert.deepEqual(sent, [], 'ordinary choices still require submission');
 				await form.getByLabel('Your reason', { exact: true }).fill('My own reasoning');
 				if (kind === 'skip') await form.getByRole('button', { name: 'Skip', exact: true }).click();
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -71,7 +73,39 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 			}
 		}
 	}
-	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; hint and I don\'t know; shortcuts, reasoning, Enter, validation and narrow/wide screens.');
+	for (const width of [390, 1280]) {
+		for (const choice of ['See it', 'Try once more']) {
+			for (const activation of ['click', 'Enter', 'Space']) {
+				const context = await browser.newContext({ viewport: { width, height: 900 } });
+				const page = await context.newPage();
+				page.setDefaultTimeout(5_000);
+				const sent = [];
+				const definition = { ...questionnaireFromPresentQuestion({
+					prompt: 'I can show a full answer.', choices: ['See it', 'Try once more'],
+				}), kind: 'reveal-consent' };
+				await context.route('**/*', route => respond(route, { origin, session, definition, sent }));
+				try {
+					await page.goto(origin);
+					const form = page.locator('#active-turn .questionnaire');
+					await form.waitFor();
+					assert.deepEqual(await form.getByRole('button').allTextContents(), ['See it', 'Try once more']);
+					assert.equal(await form.locator('input').count(), 0);
+					const button = form.getByRole('button', { name: choice, exact: true });
+					await button.focus();
+					assert.equal(await button.evaluate(node => document.activeElement === node && node.tabIndex === 0), true);
+					if (activation === 'click') await button.click();
+					else await button.press(activation);
+					await page.getByText('Recorded reply', { exact: true }).waitFor();
+					assert.deepEqual(sent, [`Questionnaire answers:\n- I can show a full answer.: ${choice}`]);
+					results.push({ kind: 'reveal-consent', width, choice, activation, passed: true });
+				} finally {
+					await writeFile(`${out}/proof.json`, `${JSON.stringify(results, null, 2)}\n`);
+					await context.close();
+				}
+			}
+		}
+	}
+	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; hint and I don\'t know; shortcuts, reasoning, Enter, validation and narrow/wide screens; consent choices by click, Enter and Space.');
 }
 
 // A help request replaces any selection or reasoning on the card.

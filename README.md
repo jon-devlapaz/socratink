@@ -24,6 +24,17 @@ Local conversation and authentication databases use separate SQLite files
 under `.cache/`. Configuration owners are `src/config/database.ts`, `auth.ts`,
 `session.ts`, and `src/inference/operator.ts`.
 
+## In-app feedback
+
+Set `VITE_MODEM_FEEDBACK_TOKEN` in `src/ui/.env.local` for local use. In Vercel,
+set it on the Socratink project and build a new deployment. This channel token
+is public and included in the browser build. Manage it in Modem under
+Settings → Integrations → In-app feedback.
+
+Open **Feedback** from the main menu. Guests can include a name and email.
+For a signed-in user, Socratink uses the account email. The tutor can offer
+to send a report through Modem and waits for the learner to approve the draft.
+
 ## Identity, models, and hosted configuration
 
 The app creates a signed guest session. Its allowance is set by
@@ -147,3 +158,12 @@ more than once. Vercel Hobby retains runtime logs for one hour, so a long
 scheduler outage can lose evidence. The log API does not report gaps within
 returned history. This is a basic failure monitor, not an on-call guarantee or
 a check of model quality. It makes no model calls.
+
+Vercel Schedules also runs the private `api/tutor-probe.ts` function once a day
+at 13:00 UTC, in production only. It makes one real call through the same
+gateway, model, key and output limit as a learner's turn, with the fixed prompt
+"Reply with the single word: ok" and no learner data. After a 429 it waits 5
+seconds and tries once more. A reply without text, a timeout after 60 seconds or
+any other status logs `probe_failed` with the provider's HTTP status only. The
+runtime monitor then fails its next run. The probe costs about one cent a month.
+It checks the gateway, provider and request shape, not the chat engine.

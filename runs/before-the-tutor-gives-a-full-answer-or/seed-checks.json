@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "cmd": "pnpm install --frozen-lockfile && node --test scripts/ask-before-reveal.test.mjs",
+      "cwd": ".",
+      "expect": "Proposed procedure: start a fresh synthetic conversation for each case and submit \u201cJust tell me the answer.\u201d For each protected kind, supply a deterministic tutor response whose protected content is \u201cThe answer is 42.\u201d Verify a one-line description and existing question-card controls appear while that content remains absent at every streamed and settled state. Choose \u201cTry once more\u201d and verify no protected content appears and the learner can attempt again. Repeat from a fresh pending choice, choose \u201cSee it\u201d, and verify the corresponding content appears with its reveal provenance. Reload a pending choice and verify it still withholds the content. In a separate fresh case submit \u201cGive me a hint.\u201d and verify a hint appears without a consent step. All assertions must pass; a missing test file must fail the runner.",
+      "failure_case": "Protected content appears before permission, appears after \u201cTry once more\u201d or pending-state reload, is withheld after \u201cSee it\u201d, or an ordinary hint requires consent.",
+      "kind": "provisional",
+      "missing": "scripts/ask-before-reveal.test.mjs does not exist in the inspected script listing. Add behavior-specific integration assertions for full_answer and worked_example, both learner choices, instant hints, intermediate visible states and restored pending choices. The intended red assertion is that protected content is absent before permission; no red run has been observed.",
+      "source": "Confirmed goal, Done when line; package.json:23-44 establishes node --test for scripts/*.test.mjs; README.md:11-18 establishes dependency setup; src/ui/live-reply.ts:16-56 identifies the streaming boundary",
+      "statement": "before a full answer or a worked example, the tutor says in one line what it is about to give, and gives it only after the learner chooses to see it or to try once more.",
+      "id": "seed-1",
+      "activation": {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/ask-before-reveal.test.mjs",
+        "cwd": ".",
+        "evidence": "Prerequisite exists at scripts/ask-before-reveal.test.mjs. The integration test enters openEngine with a local synthetic provider and checks both protected kinds, both choices, intermediate browser snapshots and live views, restored pending cards, one-turn permission, and immediate hints. Before implementation, four protected cases failed with protected content must not reach the browser before permission; the hint case passed."
+      },
+      "description": "before a full answer or a worked example, the tutor says in one line what it is about to give, and gives it only after the learner chooses to see it or to try once more.",
+      "origin": "agent-confirmed-seed",
+      "locked": true
+    },
+    {
+      "cmd": "pnpm install --frozen-lockfile && node --test scripts/reveal.test.mjs scripts/reveal-ui.test.mjs src/learning/policy.test.ts",
+      "cwd": ".",
+      "expect": "Proposed, not run: after frozen-lockfile installation, all selected existing assertions pass. These checks guard parsing, assistance provenance and unchanged teaching policy; they do not establish the new consent behavior.",
+      "failure_case": "Supplied assistance loses its provenance in history, invalid reveal metadata is accepted, or the pinned teaching skill changes.",
+      "kind": "cmd",
+      "source": "README.md:11-18; package.json:31-33,44; scripts/reveal.test.mjs:9-28; scripts/reveal-ui.test.mjs:15-45; src/learning/policy.test.ts:11-38",
+      "statement": "Existing reveal provenance and teaching-policy assertions remain intact.",
+      "id": "seed-2",
+      "description": "Existing reveal provenance and teaching-policy assertions remain intact.",
+      "origin": "agent-confirmed-seed",
+      "locked": true
+    },
+    {
+      "cmd": "pnpm install --frozen-lockfile && pnpm check && pnpm smoke",
+      "cwd": ".",
+      "expect": "Proposed, not run: install dependencies in the checkout, then run the repository check and deterministic fake-provider smoke suites. Both exit successfully. Installation and supported Node/pnpm versions are prerequisites; suite success alone does not prove learner consent or learning effectiveness.",
+      "failure_case": "The change introduces a type error, breaks an existing card or reveal assertion, or causes deterministic conversation smoke recovery to fail.",
+      "kind": "cmd",
+      "source": "AGENTS.md:33-36; README.md:11-18,71-85; package.json:16-19; scripts/smoke.mjs:1-14",
+      "statement": "Repository check and deterministic smoke suites pass after the change.",
+      "id": "seed-3",
+      "description": "Repository check and deterministic smoke suites pass after the change.",
+      "origin": "agent-confirmed-seed",
+      "locked": true
+    },
+    {
+      "failure_case": "The interaction introduces a badge, pill, border or separate new control surface, or makes the existing choice controls inaccessible.",
+      "how_to_judge": "Taste inspects the implemented pending-reveal interaction on narrow and desktop layouts, including keyboard focus and both themes. Does the one-line preview remain clear without added chrome, pills, borders or badges, using the existing question card buttons? The answer can require copy, spacing or existing-control presentation repairs, not acceptance of unverified consent behavior.",
+      "kind": "judge",
+      "source": "Confirmed goal; DESIGN.md:9-20,37-40,48-51",
+      "statement": "The consent interaction keeps the yohaku look and uses the existing question card buttons.",
+      "id": "seed-4",
+      "description": "The consent interaction keeps the yohaku look and uses the existing question card buttons.",
+      "origin": "agent-confirmed-seed",
+      "locked": true
+    }
+  ]
+}

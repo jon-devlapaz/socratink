@@ -14,6 +14,7 @@ import {
 	createRateLimiter,
 } from './server/rate-limit.ts';
 import { mountSessionRoutes } from './server/session.ts';
+import { mountFeedbackRoute } from './server/feedback-route.ts';
 import { reportFailure } from './server/logging.ts';
 import type { Inference } from './inference/index.ts';
 
@@ -40,6 +41,7 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 			: context.json({ status: 'unconfigured', inference: 'unconfigured' }, 503);
 	});
 	mountSessionRoutes(app, { secret: sessionSecret, authDb });
+	mountFeedbackRoute(app, { secret: sessionSecret, authDb });
 	if (authConfig) {
 		mountOAuthRoutes(app, {
 			config: authConfig,

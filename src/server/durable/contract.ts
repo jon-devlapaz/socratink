@@ -1,9 +1,13 @@
 import type { DatabaseTarget } from '../../config/database.ts';
 import type { ModelRouteRecord } from '../../config/model-route.ts';
 
+export const inputKind = 'socratink.input';
+
 export type ModelSelection = { provider: string; modelId: string };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;
+	/** Models the gateway tries in order when the primary model fails. */
+	fallbackModelIds?: readonly string[];
 };
 export type Outcome = 'completed' | 'failed' | 'aborted';
 export type ProductTool = {
@@ -19,6 +23,8 @@ export type Snapshot = { revision: number; messages: ProductMessage[]; submissio
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;
 	status: Outcome | 'interrupted' | 'error' | 'unsettled';
+	/** The provider's HTTP status for a failed turn, when its error names one. Never its text. */
+	providerStatus?: number;
 };
 export type EngineOptions = {
 	target: DatabaseTarget;

@@ -1,0 +1,25 @@
+✔ full_answer: see-it, intermediate text and restored pending choice (856.539209ms)
+✔ full_answer: try-once-more, intermediate text and restored pending choice (993.763417ms)
+✔ worked_example: see-it, intermediate text and restored pending choice (757.07125ms)
+✔ worked_example: try-once-more, intermediate text and restored pending choice (974.6645ms)
+✔ a hint arrives without a consent card and keeps its provenance (247.951292ms)
+✔ hint survives history and labels active and earlier supplied text (2.331209ms)
+✔ worked_example survives history and labels active and earlier supplied text (0.279709ms)
+✔ partial survives history and labels active and earlier supplied text (0.244292ms)
+✔ full_answer survives history and labels active and earlier supplied text (0.201417ms)
+✔ an answered card shows its question and the answer shows as the learner's (0.585792ms)
+✔ completed replies use the last validated reveal write (0.119291ms)
+✔ accepts a kind and optional target, and rejects unknown kinds (1.061583ms)
+✔ reads the last data-reveal part (0.129667ms)
+✔ the teaching policy is the vendored socratic-tutor skill followed by Socratink bindings (0.688333ms)
+✔ the tutor keeps tool names and bookkeeping out of learner text (0.076167ms)
+✔ questions use current validation and presentation; reveals retain provenance without ending the turn (1.023958ms)
+✔ the shared correction policy permits only one extra attempt (0.364209ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4024.865209

@@ -70,7 +70,13 @@ try {
 	assert.equal(fixture.calls.filter((call) => call.marker === 'DURABLE_PI_ALIAS').every((call) => call.key === 'operator'), true);
 	assert.deepEqual(freshAssistant.metadata.socratink, { routedModel: 'synthetic/routed-model', fallbackAttempts: 1 });
 	assert.equal((await pool.query('SELECT count(*)::int AS count FROM socratink_pi.commits')).rows[0].count > 0, true);
-	const beta = await oauth(first, await mintSessionFixture(first.origin), 'synthetic-beta');
+	const beta = await oauth(first, owner, 'synthetic-beta');
+	assert.notEqual(beta.userId, owner.userId);
+	assert.deepEqual(beta.aliases, []);
+	const switchedBack = await oauth(first, beta, 'synthetic-alpha');
+	assert.equal(switchedBack.userId, owner.userId);
+	assert.deepEqual(switchedBack.aliases, [aliasId]);
+	report.checks.push('Switching to a new account and back to an existing account preserves separate ownership and the original guest history.');
 	for (const method of ['GET', 'POST']) {
 		const denied = await fetch(piClient.url, { method, headers: { cookie: beta.cookie, 'content-type': 'application/json' },
 			...(method === 'POST' ? { body: JSON.stringify({ kind: 'user', body: 'Foreign attempt' }) } : {}) });
@@ -78,7 +84,7 @@ try {
 	}
 	assert.equal((await fetch(piClient.url)).status, 401);
 	assert.equal((await fetch(piClient.url, { headers: { cookie: oldCookie } })).status, 401);
-	report.piBrowser = await verifyDurableHistoryBrowser({ app: first, session: owner, conversationId: piId,
+	report.piBrowser = await verifyDurableHistoryBrowser({ app: first, session: switchedBack, conversationId: piId,
 		expectedText: piText, question: question.prompt, reveal: true, out: join(out, 'pi-browser') });
 	report.checks.push('New alias conversation uses Pi PostgreSQL storage and the operator route; question, hint and route metadata survive browser reload; foreign and revoked cookies are denied.');
 	stage = 'overlapping-learners';
