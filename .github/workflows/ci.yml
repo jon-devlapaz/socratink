@@ -53,6 +53,9 @@ jobs:
         env:
           REQUEST_PATH_SMOKE_OUT: .cache/browser-proof/request-path
 
+      - name: Model-check Cancel targeting (TLA+)
+        run: pnpm verify:formal
+
       - name: Verify Pi execution and browser recovery
         run: pnpm smoke:durable
         env:
