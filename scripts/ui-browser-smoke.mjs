@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { appConfig } from '../src/config/app.config.ts';
+import { conversationTitle } from '../src/config/conversations.ts';
 import { guestTurnLimit } from '../src/server/guest-turns.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
 
@@ -231,37 +232,31 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.locator('#history-dialog[open]').waitFor();
 	}
 
-	await check('history-title-from-server-history', async (page, fixture) => {
-		fixture.mode = 'history-learner';
+	await check('history-says-when-it-cannot-load', async (page, fixture) => {
 		await page.goto(origin);
-		await page.getByText('Restored reply', { exact: true }).waitFor();
+		await send(page, 'A question to list');
+		await page.locator('#active-turn').getByText('Fresh reply', { exact: true }).waitFor();
+		fixture.listFailures = 1;
 		await openHistory(page);
-		assert.equal(await historyRows(page).count(), 1);
-		assert.equal(await historyRows(page).nth(0).innerText(), 'Check the admission\nOpen now');
+		await page.getByText('History could not load. Check your connection and try again.').waitFor();
+		assert.equal(await historyRows(page).count(), 0);
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'history-retry');
+		await page.getByRole('button', { name: 'Try again', exact: true }).click();
+		await historyRows(page).first().waitFor();
+		assert.match(await historyRows(page).nth(0).innerText(), /^A question to list\nOpen now$/);
+		assert.equal(await page.locator('#history-retry').isHidden(), true);
 	});
 
-	await check('history-title-skips-refused-first-message', async (page, fixture) => {
-		fixture.mode = 'admission-failure';
+	await check('history-removes-browser-stored-titles', async (page) => {
+		await page.addInitScript(() => {
+			if (sessionStorage.getItem('seeded')) return;
+			sessionStorage.setItem('seeded', '1');
+			localStorage.setItem('socratink-chat-history:browser-user', '[{"id":"browser-user:x","title":"Old private title","usedAt":1}]');
+			localStorage.setItem('socratink-chat-history', '[]');
+		});
 		await page.goto(origin);
-		await send(page, 'Rejected first words');
-		await page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
-		await send(page, 'My real admitted question');
-		await page.getByText('Fresh reply', { exact: true }).waitFor();
-		assert.deepEqual(fixture.sent, ['Rejected first words', 'My real admitted question']);
-		await openHistory(page);
-		assert.match(await historyRows(page).nth(0).innerText(), /^My real admitted question\n/);
-	});
-
-	await check('history-forgotten-on-sign-out', async (page) => {
-		await page.goto(origin);
-		await send(page, 'A private question');
-		await page.getByText('Fresh reply', { exact: true }).waitFor();
-		const titles = () => page.evaluate((prefix) => Object.keys(localStorage)
-			.filter((key) => key.startsWith(prefix)).map((key) => localStorage.getItem(key)).join(''), appConfig.chatHistoryStorageKey);
-		assert.match(await titles(), /A private question/);
-		await page.locator('#peek-handle').click();
-		await Promise.all([page.waitForURL('**/api/session/logout'), page.getByRole('link', { name: 'Sign out' }).click()]);
-		assert.equal(await titles(), '');
+		await page.locator('#message[placeholder]:enabled').waitFor();
+		assert.deepEqual(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('socratink-chat-history'))), []);
 	});
 
 	await check('history-waits-for-pending-work', async (page, fixture) => {
@@ -391,6 +386,10 @@ function createServices(origin, session) {
 	const fixture = {
 		mode: 'success',
 		sent: [],
+		// Stands in for the server's conversation index; the rules themselves
+		// are proven by conversation-index.test.mjs and the real-server smoke.
+		conversations: [],
+		listFailures: 0,
 		aborts: 0,
 		modelHeaders: [],
 		finishReply() { releaseReply(); },
@@ -401,6 +400,13 @@ function createServices(origin, session) {
 			}
 			if (url.pathname === `${appConfig.sessionPath}/logout`) {
 				return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Signed out</p>' });
+			}
+			if (url.pathname === appConfig.conversationsPath) {
+				if (fixture.listFailures > 0) {
+					fixture.listFailures -= 1;
+					return json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
+				}
+				return json({ conversations: [...fixture.conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) });
 			}
 			if (url.pathname === appConfig.authProvidersPath) return json({ google: fixture.mode === 'guest-limit', github: fixture.mode === 'guest-limit' });
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
@@ -419,22 +425,14 @@ function createServices(origin, session) {
 					return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 				}
 				submissionId = `browser-submission-${fixture.sent.length}`;
+				const id = decodeURIComponent(url.pathname.slice(appConfig.chatAgentPath.length + 1));
+				const updatedAt = new Date(Date.UTC(2026, 10, 22, 12, fixture.sent.length)).toISOString();
+				const known = fixture.conversations.find((row) => row.id === id);
+				if (known) known.updatedAt = updatedAt;
+				else fixture.conversations.push({ id, title: conversationTitle(route.request().postDataJSON().body), updatedAt });
 				return json({ submissionId }, 202);
 			}
 			if (!url.pathname.endsWith('/events')) {
-				if (fixture.mode === 'history-learner') return json({ messages: [
-					{ id: 'q', role: 'assistant', display: 'visible', parts: [
-						{ type: 'text', text: 'Where would you start?' },
-						{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
-							name: 'item', prompt: 'Which step?', required: true, multiple: false,
-							choices: [{ value: 'check', label: 'Check the admission' }, { value: 'retry', label: 'Retry' }],
-						}] } },
-					] },
-					{ id: 'a', role: 'user', display: 'visible', submissionId: 'restored-1',
-						parts: [{ type: 'text', text: 'Questionnaire answers:\n- Which step?: Check the admission', state: 'done' }] },
-					{ id: 'r', role: 'assistant', display: 'visible', submissionId: 'restored-1',
-						parts: [{ type: 'text', text: 'Restored reply', state: 'done' }] },
-				], settlements: [{ submissionId: 'restored-1', outcome: 'completed' }] });
 				if (fixture.mode === 'guest-limit') return json({ messages: [{
 					role: 'assistant', display: 'visible', parts: [
 						{ type: 'text', text: 'What would you check?' },

@@ -1,35 +1,62 @@
-import { pastConversations } from './client/conversation-history.ts';
+import type { ConversationSummary } from '../config/conversations.ts';
+import { fetchConversations } from './client/conversation-list.ts';
 import { switchChatConversation } from './client/conversation.ts';
 import { requireElement } from './dom.ts';
 import './history.css';
 
 type HistoryOptions = Readonly<{
-	userId: string;
-	aliases: readonly string[];
 	currentId: string;
 	closeMenu: () => void;
 	beforeSwitch: () => void;
 }>;
+
+/** Titles once kept in browser storage, before History moved to the server. */
+const legacyHistoryKeyPrefix = 'socratink-chat-history';
 
 export function mountHistory(options: HistoryOptions) {
 	const trigger = requireElement<HTMLButtonElement>('#history-trigger');
 	const dialog = requireElement<HTMLDialogElement>('#history-dialog');
 	const list = requireElement<HTMLOListElement>('#history-list');
 	const empty = requireElement<HTMLElement>('#history-empty');
+	const status = requireElement<HTMLElement>('#history-status');
+	const retry = requireElement<HTMLButtonElement>('#history-retry');
 	const close = requireElement<HTMLButtonElement>('#history-close');
+	forgetLegacyHistory();
+	let latest = 0;
 
 	trigger.addEventListener('click', () => {
 		options.closeMenu();
-		render();
 		dialog.showModal();
+		void load();
 	});
+	retry.addEventListener('click', () => void load());
 	// The dialog returns focus to the control that opened the menu.
 	close.addEventListener('click', () => dialog.close());
 
-	function render() {
-		const entries = pastConversations(options.userId, options.aliases);
-		empty.hidden = entries.length > 0;
-		list.hidden = entries.length === 0;
+	async function load() {
+		const request = ++latest;
+		show({ status: 'Loading…' });
+		const entries = await fetchConversations().catch(() => undefined);
+		if (request !== latest || !dialog.open) return;
+		if (!entries) {
+			show({ status: 'History could not load. Check your connection and try again.', retry: true });
+			retry.focus();
+			return;
+		}
+		show({ empty: entries.length === 0 });
+		render(entries);
+	}
+
+	function show(state: { status?: string; retry?: boolean; empty?: boolean }) {
+		status.textContent = state.status ?? '';
+		status.hidden = !state.status;
+		retry.hidden = !state.retry;
+		empty.hidden = !state.empty;
+		list.hidden = Boolean(state.status) || Boolean(state.empty);
+		if (state.status) list.replaceChildren();
+	}
+
+	function render(entries: readonly ConversationSummary[]) {
 		list.replaceChildren(...entries.map((entry) => {
 			const item = document.createElement('li');
 			const open = document.createElement('button');
@@ -41,8 +68,8 @@ export function mountHistory(options: HistoryOptions) {
 			// Color is never the only signal for the open conversation.
 			const when = document.createElement(current ? 'span' : 'time');
 			when.className = 'history-when';
-			if (when instanceof HTMLTimeElement) when.dateTime = new Date(entry.usedAt).toISOString();
-			when.textContent = current ? 'Open now' : usedLabel(entry.usedAt);
+			if (when instanceof HTMLTimeElement) when.dateTime = entry.updatedAt;
+			when.textContent = current ? 'Open now' : usedLabel(entry.updatedAt);
 			open.append(title, when);
 			if (current) {
 				open.setAttribute('aria-current', 'true');
@@ -59,7 +86,15 @@ export function mountHistory(options: HistoryOptions) {
 	}
 }
 
-function usedLabel(usedAt: number, now = new Date()): string {
+function forgetLegacyHistory() {
+	try {
+		for (const key of Object.keys(localStorage)) if (key.startsWith(legacyHistoryKeyPrefix)) localStorage.removeItem(key);
+	} catch {
+		// Without storage access there is nothing to remove.
+	}
+}
+
+function usedLabel(usedAt: string, now = new Date()): string {
 	const used = new Date(usedAt);
 	if (used.toDateString() === now.toDateString()) {
 		return used.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });

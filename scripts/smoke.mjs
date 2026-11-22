@@ -10,7 +10,7 @@ import { markRevealRetryBodies } from '../src/learning/mark-reveal.ts';
 import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { appConfig } from '../src/config/app.config.ts';
-import { conversationTitle } from '../src/config/conversation-title.ts';
+import { conversationTitle } from '../src/config/conversations.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
