@@ -152,11 +152,14 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			try { return await follower.snapshot(); } finally { await follower.close(); }
 		},
 		follow,
-		async abort(id) {
-			const pending = (await snapshot(id)).submissions.filter((entry) => !entry.outcome);
-			if (!pending.length) return;
-			await manager.cancel(id, Math.max(...pending.map((entry) => Number(entry.id))));
+		async abort(id, submissionId) {
+			// Cancel through this submission only: a later one, such as a reply another
+			// tab started after this one settled, keeps running.
+			const pending = (await snapshot(id)).submissions.some((entry) => entry.id === submissionId && !entry.outcome);
+			if (!pending) return false;
+			await manager.cancel(id, Number(submissionId));
 			await recover(id);
+			return true;
 		},
 		async close() {
 			if (closed) return;

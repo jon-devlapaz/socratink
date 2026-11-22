@@ -1,3 +1,4 @@
+import { steeringPrefix } from '../config/chat-message.ts';
 import { questionnaireAnswerPrefix, questionnaireHelpText, type QuestionnaireHelp } from '../questionnaire.ts';
 import { revealToolName, type RevealDefinition } from '../reveal.ts';
 
@@ -45,4 +46,18 @@ export function markRevealRetryReason(input: {
 	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
 		|| (input.learnerText.startsWith(questionnaireAnswerPrefix) && input.learnerText.endsWith(': Try once more'))) return 'unmarked';
 	return undefined;
+}
+
+// Only plain requests for the answer itself. "just tell me" counts when it ends a
+// line, so "just tell me if I'm right" does not.
+const answerRequest = /\b(?:(?:just )?(?:tell|give|show) me the (?:full )?answer\b|just tell me(?: it)?(?=[\s.!]*$))/im;
+
+/** True when the learner's own words ask for the answer, anywhere in the
+ * message, including a first message that also asks the question. Card answers,
+ * steering, quoted lines and fenced code are not the learner's request. */
+export function asksForAnswer(learnerText: string): boolean {
+	if (learnerText.startsWith(questionnaireAnswerPrefix) || learnerText.startsWith(steeringPrefix)) return false;
+	const own = learnerText.replace(/^(```|~~~)[^\n]*\n[\s\S]*?(?:^\1[^\n]*$|(?![\s\S]))/gm, '')
+		.split('\n').filter((line) => !line.trimStart().startsWith('>')).join('\n');
+	return answerRequest.test(own);
 }

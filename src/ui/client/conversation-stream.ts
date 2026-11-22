@@ -24,8 +24,8 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 		send({ message, signal }: { message: { kind: 'user'; body: string }; signal?: AbortSignal }) {
 			return json<WireAdmission>('', { method: 'POST', body: JSON.stringify(message), signal });
 		},
-		abort({ signal }: { signal?: AbortSignal } = {}) {
-			return json<{ aborted: boolean }>('/abort', { method: 'POST', signal });
+		abort({ submissionId, signal }: { submissionId: string; signal?: AbortSignal }) {
+			return json<{ aborted: boolean }>('/abort', { method: 'POST', body: JSON.stringify({ submissionId }), signal });
 		},
 		history({ signal }: { signal?: AbortSignal } = {}) {
 			return json<WireSnapshot>('', { signal });

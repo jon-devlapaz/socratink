@@ -340,6 +340,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await page.locator('#active-turn .request-state').count(), 1);
 		assert.equal(await page.locator('#active-turn .request-state .turn-label').textContent(), 'Canceled');
 		assert.equal(fixture.aborts, 1);
+		assert.deepEqual(fixture.abortBodies, [{ submissionId: 'browser-submission-1' }], 'Cancel names the reply it stops');
 		assert.deepEqual(fixture.sent, ['Stop this reply']);
 	});
 
@@ -393,6 +394,7 @@ function createServices(origin, session) {
 		conversations: [],
 		listFailures: 0,
 		aborts: 0,
+		abortBodies: [],
 		modelHeaders: [],
 		finishReply() { releaseReply(); },
 		async handle(route, url) {
@@ -416,6 +418,7 @@ function createServices(origin, session) {
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
 			if (url.pathname.endsWith('/abort')) {
 				fixture.aborts += 1;
+				fixture.abortBodies.push(route.request().postDataJSON());
 				releaseAbort();
 				return json({ aborted: true });
 			}

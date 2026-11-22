@@ -143,7 +143,7 @@ try {
 	const observerClient = clientFor(first, owner, 'remote-cancel');
 	const cancelling = await ownerClient.send({ message: { kind: 'user', body: 'DURABLE_REMOTE_CANCEL' } });
 	await until(() => fixture.count('DURABLE_REMOTE_CANCEL') === 1, 'remote cancel provider call');
-	assert.equal((await observerClient.abort({ signal: AbortSignal.timeout(3_000) })).aborted, true);
+	assert.equal((await observerClient.abort({ submissionId: cancelling.submissionId, signal: AbortSignal.timeout(3_000) })).aborted, true);
 	await assert.rejects(ownerClient.read(cancelling, { signal: AbortSignal.timeout(15_000) }), (error) => error.failure === 'aborted');
 	const cancelledHistory = await observerClient.history();
 	assert.equal(cancelledHistory.settlements.at(-1).outcome, 'aborted');

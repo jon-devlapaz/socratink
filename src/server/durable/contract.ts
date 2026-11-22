@@ -40,6 +40,7 @@ export type Engine = {
 	/** Repeated snapshots of one conversation that read only new commits. Call
 	 * snapshot() one at a time, and close() when done. */
 	follow: (conversationId: string) => { snapshot: () => Promise<Snapshot>; close: () => Promise<void> };
-	abort: (conversationId: string) => Promise<void>;
+	/** Cancels one submission if it is still pending, and says whether it was. */
+	abort: (conversationId: string, submissionId: string) => Promise<boolean>;
 	close: () => Promise<void>;
 };
