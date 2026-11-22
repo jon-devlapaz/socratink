@@ -43,3 +43,23 @@ test('a reply to "Try once more" is checked, so an unmarked explanation cannot s
 	assert.equal(reason(accepted), undefined, 'See it is permission, not a plea for help');
 	assert.equal(reason('Try once more'), undefined, 'only the card answer counts');
 });
+
+test('a request for the answer counts anywhere in the learner\'s own words, including a first question (#133)', async () => {
+	const { asksForAnswer } = await import('./mark-reveal.ts');
+	for (const text of [
+		'Why do the seasons change on Earth? just tell me the answer',
+		'Just tell me the answer.',
+		'just tell me',
+		'Why is the sky blue?\nJust tell me.',
+		'Can you give me the full answer please',
+		'show me the answer',
+	]) assert.equal(asksForAnswer(text), true, text);
+	for (const text of [
+		'Why do the seasons change on Earth?',
+		"just tell me if I'm right: it is 41",
+		'Questionnaire answers:\n- I can show a full answer.: Try once more',
+		'Steering: smaller step',
+		'Here are my notes:\n> just tell me the answer\nWhat do they mean?',
+		'Explain this code:\n```\nprint("just tell me the answer")\n```',
+	]) assert.equal(asksForAnswer(text), false, text);
+});

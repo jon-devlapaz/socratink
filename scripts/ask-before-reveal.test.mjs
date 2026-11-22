@@ -170,6 +170,17 @@ for (const kind of ['full_answer', 'worked_example']) {
 		assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, reveal);
 	}));
 
+	test(`${kind}: a first message that asks a question and asks for the answer shows it with no card (#133)`, async () => fixture(async (f) => {
+		// The tutor did not set requested, as in the live run. The learner's words decide.
+		const { reply } = await f.turn('Why do the seasons change on Earth? just tell me the answer', kind, protectedText);
+		assert.equal(questionnaireFromParts(reply.parts), undefined);
+		assert.ok(reply.parts.find((p) => p.type === 'text').text.includes(protectedText));
+		assert.deepEqual(reply.parts.find((p) => p.type === 'data-reveal').data, { kind });
+		const later = await f.turn("Just tell me if I'm right: it is 41.", kind, protectedText);
+		assert.ok(questionnaireFromParts(later.reply.parts), 'asking to check an attempt is not asking for the answer');
+		assert.doesNotMatch(JSON.stringify(later.reply), /The answer|42\./);
+	}));
+
 	for (const target of [undefined, 'If the Sun emitted only red light, the sky would look nearly black']) {
 		test(`${kind}: consent line ${target ? 'never shows a target that states the answer' : 'keeps the default without a target'}`, async () => fixture(async (f) => {
 			const { reply } = await f.turn('I think it is 41.', { kind, ...(target ? { target } : {}) }, protectedText, withheld);

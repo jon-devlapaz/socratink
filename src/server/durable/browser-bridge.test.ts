@@ -34,7 +34,7 @@ test('a send with no model provider is refused before admission, with a reason t
 	const engine: Engine = {
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => { throw new Error('Unconfigured inference must not admit work'); },
-		abort: async () => {},
+		abort: async () => false,
 		follow: () => { throw new Error('Plain requests must not follow'); },
 		close: async () => {},
 	};
@@ -51,7 +51,7 @@ test('an admitted send answers with only its submission id', async () => {
 	const engine: Engine = {
 		snapshot: async () => ({ revision: 0, messages: [], submissions: [] }),
 		submit: async () => 'submission-1',
-		abort: async () => {},
+		abort: async () => false,
 		follow: () => { throw new Error('Plain requests must not follow'); },
 		close: async () => {},
 	};
@@ -62,4 +62,28 @@ test('an admitted send answers with only its submission id', async () => {
 		headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'user', body: 'Hello' }) });
 	assert.equal(response.status, 202);
 	assert.deepEqual(await response.json(), { submissionId: 'submission-1' });
+});
+
+test('Cancel stops only the submission it names', async () => {
+	const aborts: [string, string][] = [];
+	const engine: Engine = {
+		snapshot: async () => { throw new Error('Cancel reads pending work in the engine'); },
+		submit: async () => { throw new Error('Cancel must not submit work'); },
+		abort: async (id, submissionId) => { aborts.push([id, submissionId]); return submissionId === '2'; },
+		follow: () => { throw new Error('Plain requests must not follow'); },
+		close: async () => {},
+	};
+	const app = new Hono();
+	mountBrowserBridge(app, engine, async () => ({ provider: 'synthetic', modelId: 'synthetic' }));
+	const cancel = (body?: unknown) => app.request('/learner:two-tabs/abort', { method: 'POST',
+		...(body === undefined ? {} : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }) });
+	for (const body of [undefined, {}, { submissionId: 2 }, { submissionId: 'latest' }]) {
+		const refused = await cancel(body);
+		assert.equal(refused.status, 400, 'a Cancel that names no submission could stop another tab\'s reply');
+		assert.equal((await refused.json()).error.type, 'invalid_abort');
+	}
+	assert.deepEqual(aborts, []);
+	assert.deepEqual(await (await cancel({ submissionId: '1' })).json(), { aborted: false });
+	assert.deepEqual(await (await cancel({ submissionId: '2' })).json(), { aborted: true });
+	assert.deepEqual(aborts, [['learner:two-tabs', '1'], ['learner:two-tabs', '2']]);
 });

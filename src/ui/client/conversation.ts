@@ -78,6 +78,7 @@ type PendingRequest = {
 	controller: AbortController;
 	admission?: SubmissionReference;
 	canceling: boolean;
+	sendError?: unknown;
 	admissionResult: Deferred<SubmissionReference | undefined>;
 	cancelResult: Deferred<ChatRequestState>;
 };
@@ -229,55 +230,22 @@ export class ChatRequestCoordinator {
 		if (!pending || this.commandPending) return this.state;
 		this.commandPending = true;
 		pending.canceling = true;
+		// Stop following the reply, but let the send finish: Cancel must name the
+		// submission it stops, so it waits for the server to give that id.
 		pending.controller.abort();
 		this.state = { kind: 'canceling', text: pending.text };
-		const abortRequest = this.conversation.abort({ signal: this.abortSignal() }).then(
-			(result) => ({ result }),
-			(error: unknown) => ({ error }),
-		);
-		let admissionKnown = true;
 		let admission: SubmissionReference | undefined;
 		try {
 			admission = await awaitWithSignal(pending.admissionResult.promise, this.settlementSignal());
 		} catch {
-			admissionKnown = false;
-			admission = pending.admission;
-		}
-		const abortOutcome = await abortRequest;
-		if ('error' in abortOutcome) {
-			const error = abortOutcome.error;
-			const state = this.recoveryState(
+			// No id yet, so no Cancel is sent: it could stop another tab's later reply.
+			return this.finishCancel(pending, this.recoveryState(
 				pending,
-				`Cancellation could not be confirmed. ${chatTurnErrorMessage(error)}`,
-				admission,
-			);
-			return this.finishCancel(pending, state);
+				'Cancellation is waiting for the server to confirm this message. Recheck before retrying.',
+			));
 		}
-		const abortResult = abortOutcome.result;
-		if (!admissionKnown) {
-			return this.finishCancel(
-				pending,
-				this.recoveryState(
-					pending,
-					'Cancellation was requested, but admission status is still unknown. Recheck before retrying.',
-					admission,
-				),
-			);
-		}
-
-		if (admission) {
-			const state = await this.readTerminal(pending, admission);
-			return this.finishCancel(pending, state);
-		}
-		return this.finishCancel(
-			pending,
-			this.recoveryState(
-				pending,
-				abortResult.aborted
-					? 'Cancellation was requested, but admission and settlement are still unknown. Recheck before retrying.'
-					: 'No active work was found, but admission is still unknown. Recheck before retrying.',
-			),
-		);
+		if (!admission) return this.finishCancel(pending, this.sendFailedState(pending, pending.sendError));
+		return this.finishCancel(pending, await this.abortAdmitted(pending, admission));
 	}
 
 	async recheck(): Promise<ChatRequestState> {
@@ -285,25 +253,16 @@ export class ChatRequestCoordinator {
 		this.commandPending = true;
 		const pending = this.pending;
 		if (!pending) return this.releaseCommand(this.state);
-		if (this.state.admission) {
-			return this.releaseCommand(await this.readTerminal(pending, this.state.admission));
-		}
-		try {
-			await this.conversation.abort({ signal: this.abortSignal() });
-			return this.releaseCommand(
-				this.recoveryState(
-					pending,
-					'Admission and settlement are still unknown. Recheck later or start over.',
-				),
-			);
-		} catch (error) {
-			return this.releaseCommand(
-				this.recoveryState(
-					pending,
-					`Cancellation still cannot be confirmed. ${chatTurnErrorMessage(error)}`,
-				),
-			);
-		}
+		// A send that was still in flight at Cancel can report its id later.
+		const admission = this.state.admission ?? pending.admission;
+		if (admission && pending.canceling) return this.releaseCommand(await this.abortAdmitted(pending, admission));
+		if (admission) return this.releaseCommand(await this.readTerminal(pending, admission));
+		return this.releaseCommand(
+			this.recoveryState(
+				pending,
+				'Admission and settlement are still unknown. Recheck later or start over.',
+			),
+		);
 	}
 
 	acknowledgeCompleted(): void {
@@ -317,10 +276,10 @@ export class ChatRequestCoordinator {
 		try {
 			const admission = await this.conversation.send({
 				message: { kind: 'user', body: pending.text },
-				signal: pending.controller.signal,
 			});
 			pending.admission = admission;
 			pending.admissionResult.resolve(admission);
+			if (pending.canceling) return pending.cancelResult.promise;
 			onAdmitted?.();
 			const reply = await this.conversation.read(admission, {
 				signal: pending.controller.signal,
@@ -329,22 +288,40 @@ export class ChatRequestCoordinator {
 			if (pending.canceling) return pending.cancelResult.promise;
 			return this.completedState(pending, reply);
 		} catch (error) {
+			if (!pending.admission) pending.sendError = error;
 			pending.admissionResult.resolve(pending.admission);
 			if (pending.canceling) return pending.cancelResult.promise;
 			if (pending.admission) return this.errorAfterAdmission(pending, error);
-			if (error instanceof ChatApiError) {
-				return this.terminalState(
-					pending,
-					'not-admitted',
-					chatTurnErrorMessage(error),
-					envelopeType(error),
-				);
-			}
-			return this.recoveryState(
+			return this.sendFailedState(pending, error);
+		}
+	}
+
+	private sendFailedState(pending: PendingRequest, error: unknown): ChatRequestState {
+		if (error instanceof ChatApiError) {
+			return this.terminalState(
 				pending,
-				`Sending may have been interrupted before admission was confirmed. ${chatTurnErrorMessage(error)}`,
+				'not-admitted',
+				chatTurnErrorMessage(error),
+				envelopeType(error),
 			);
 		}
+		return this.recoveryState(
+			pending,
+			`Sending may have been interrupted before admission was confirmed. ${chatTurnErrorMessage(error)}`,
+		);
+	}
+
+	private async abortAdmitted(pending: PendingRequest, admission: SubmissionReference): Promise<ChatRequestState> {
+		try {
+			await this.conversation.abort({ submissionId: admission.submissionId, signal: this.abortSignal() });
+		} catch (error) {
+			return this.recoveryState(
+				pending,
+				`Cancellation could not be confirmed. ${chatTurnErrorMessage(error)}`,
+				admission,
+			);
+		}
+		return this.readTerminal(pending, admission);
 	}
 
 	private async readTerminal(pending: PendingRequest, admission: SubmissionReference) {

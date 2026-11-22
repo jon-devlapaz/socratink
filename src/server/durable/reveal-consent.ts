@@ -1,8 +1,11 @@
 import { formatQuestionnaireAnswers, questionnaireFromPresentQuestion, type QuestionnaireDefinition } from '../../questionnaire.ts';
 import { parseRevealDefinition, revealToolName, type RevealDefinition } from '../../reveal.ts';
+import { asksForAnswer } from '../../learning/mark-reveal.ts';
 import type { ProductMessage, Snapshot } from './contract.ts';
 
-function protectedReveal(message: ProductMessage, permission: RevealDefinition | undefined): RevealDefinition | undefined {
+function protectedReveal(message: ProductMessage, permission: RevealDefinition | 'asked' | undefined): RevealDefinition | undefined {
+	// The learner asked for the answer in words, so no card stands between them and it.
+	if (permission === 'asked') return undefined;
 	const reveals = [
 		...(message.data?.reveal ?? []),
 		...(message.tools ?? []).filter((tool) => tool.name === revealToolName && !tool.isError).map((tool) => tool.input),
@@ -23,13 +26,13 @@ function consentCard(reveal: RevealDefinition): QuestionnaireDefinition {
 
 export function withRevealConsent(snapshot: Snapshot, consentRequired: ReadonlySet<string>): Snapshot {
 	let pending: RevealDefinition | undefined;
-	let permission: RevealDefinition | undefined;
+	let permission: RevealDefinition | 'asked' | undefined;
 	const completed = new Set(snapshot.submissions.filter((s) => s.outcome === 'completed').map((s) => s.id));
 	const messages = snapshot.messages.map((message): ProductMessage => {
 		if (message.role === 'user') {
 			const card = pending ? consentCard(pending) : undefined;
 			permission = card && message.text === formatQuestionnaireAnswers(card, [{ name: 'item', values: ['see-it'] }])
-				? pending : undefined;
+				? pending : asksForAnswer(message.text) ? 'asked' : undefined;
 			pending = undefined;
 			return message;
 		}
