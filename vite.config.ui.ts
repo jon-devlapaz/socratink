@@ -18,6 +18,17 @@ export default defineConfig({
 			if (value === undefined) throw new Error(`Unknown HTML constant ${placeholder}`);
 			return value;
 		}),
+	}, {
+		name: 'vercel-web-analytics',
+		apply: 'build',
+		transformIndexHtml(_html, { path }) {
+			if (process.env.VERCEL_ENV !== 'production' || (path !== '/index.html' && path !== '/login.html')) return;
+			return [{
+				tag: 'script',
+				attrs: { defer: true, src: '/_vercel/insights/script.js' },
+				injectTo: 'head',
+			}];
+		},
 	}],
 	build: {
 		outDir: '../../dist/client',
