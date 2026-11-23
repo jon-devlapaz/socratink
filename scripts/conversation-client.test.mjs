@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ChatApiError, ChatTurnError } from '../src/config/chat-wire.ts';
 import { appConfig } from '../src/config/app.config.ts';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
@@ -31,6 +32,58 @@ function abortablePendingRead(signal) {
 		signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 	});
 }
+
+test('a reader ignores another tab’s turn and closes the stream when its own reply settles', async (t) => {
+	const snapshot = {
+		messages: [
+			{ id: 'first-reply', role: 'assistant', submissionId: 'first', parts: [{ type: 'text', text: 'First reply' }] },
+			{ id: 'second-user', role: 'user', submissionId: 'second', parts: [{ type: 'text', text: 'Another question' }] },
+		],
+		settlements: [{ submissionId: 'first', outcome: 'completed' }],
+	};
+	let canceled = false;
+	const stream = new ReadableStream({
+		start(controller) {
+			const events = [
+				{ type: 'conversation-reset', snapshot: { ...snapshot, settlements: [] } },
+				{ type: 'message-started', submissionId: 'second', messageId: 'second-reply' },
+				{ type: 'message-delta', messageId: 'second-reply', kind: 'text', delta: 'Different reply' },
+				{ type: 'tool-input', messageId: 'second-reply', toolCallId: 'another-call', toolName: 'tool', input: {} },
+				{ type: 'tool-output', toolCallId: 'another-call', output: 'Another result' },
+				{ type: 'conversation-reset', snapshot },
+			];
+			controller.enqueue(new TextEncoder().encode(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')));
+			// The second turn keeps the stream open until it settles.
+			const timer = setTimeout(() => controller.close(), 100);
+			t.after(() => clearTimeout(timer));
+		},
+		cancel() { canceled = true; },
+	});
+	t.mock.method(globalThis, 'fetch', async () => new Response(stream));
+	const seen = [];
+	const result = await createStreamClient({ url: '/conversation' }).read('first', { onEvent: event => seen.push(event) });
+	assert.equal(result.text, 'First reply');
+	assert.deepEqual(seen, []);
+	assert.equal(canceled, true);
+});
+
+test('reconnects back off when each connection closes after replaying the same pending turn', async (t) => {
+	const delays = [];
+	const schedule = setTimeout;
+	t.mock.method(globalThis, 'setTimeout', (callback, ms) => {
+		delays.push(ms);
+		return schedule(callback, 0);
+	});
+	let connections = 0;
+	t.mock.method(globalThis, 'fetch', async () => {
+		connections += 1;
+		const snapshot = { messages: [{ role: 'user', submissionId: 'first', parts: [] }],
+			settlements: connections === 3 ? [{ submissionId: 'first', outcome: 'completed' }] : [] };
+		return new Response(`data: ${JSON.stringify({ type: 'conversation-reset', snapshot })}\n\n`);
+	});
+	await createStreamClient({ url: '/conversation' }).read('first');
+	assert.deepEqual(delays, [250, 500]);
+});
 
 test('recheck waits longer than a mid-stream FreeLLMAPI teaching reply', () => {
 	assert.ok(settlementReadTimeoutMs >= 90_000);
