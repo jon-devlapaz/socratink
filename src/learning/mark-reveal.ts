@@ -27,7 +27,7 @@ export function cardHelpReveal(learnerText: string): RevealDefinition | undefine
 }
 
 const helpRequest = /\b(?:hints?|clue|just tell me|tell me the answer|give me the answer|what(?:'s| is) the answer|i (?:don'?t|do not) know|idk|no idea|i'?m stuck|i am stuck|explain (?:it|this|that)|show me how)\b/i;
-const revealCue = /\b(?:here'?s a hint|hint:|the (?:answer|key idea|trick) is|worked example|here'?s how (?:it|this) works)/i;
+export const revealCue = /\b(?:here'?s a hint|hint:|the (?:answer|key idea|trick) is|worked example|here'?s how (?:it|this) works)/i;
 
 export function markRevealRetryReason(input: {
 	readonly revealed: boolean;

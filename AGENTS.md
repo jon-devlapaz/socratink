@@ -24,6 +24,10 @@ New capabilities need an explicit request.
 Keep learner work distinct from AI help. Use `present_question` for defined
 choices or diagnostics. Preserve reveal provenance. The tutor rates subskills
 and mastery within a conversation by the policy in `src/learning/`.
+A tutor-behaviour bug gets a scenario in `evals/tutor/` that fails on the live
+model before the fix; a new rule goes in `src/learning/behaviour-rules.ts`.
+Prompt or model changes report a `pnpm eval:tutor --live --runs 3` summary.
+`--live` calls a paid model: ask first.
 Tests and synthetic runs do not establish retention, transfer, mastery,
 learning effectiveness, or production readiness.
 Keep secrets and learner data out of source and logs. Use synthetic data for
