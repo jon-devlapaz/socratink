@@ -86,6 +86,10 @@ are saved under `.cache/reveal/`.
 `pnpm verify:formal` model-checks Cancel targeting with TLA+ (Java 11+; it
 downloads a checksum-pinned `tla2tools.jar`). See `.claude/skills/verify-cancel/SKILL.md`.
 
+To drive the real app as a learner in a browser (streamed replies, two tabs,
+dropped streams) and save screenshot proof, see
+`.claude/skills/verify-socratink/SKILL.md`. It uses a scripted model by default.
+
 To verify PostgreSQL restart and rollback, build the candidate and previous
 revision in separate directories, then run:
 
