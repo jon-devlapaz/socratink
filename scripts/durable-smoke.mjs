@@ -94,7 +94,7 @@ try {
 	const cancel = clientFor(app, session, 'cancel');
 	const cancelled = await cancel.send({ message: { kind: 'user', body: 'DURABLE_CANCEL' } });
 	await until(() => fixture.count('DURABLE_CANCEL') === 1, 'cancelled provider call');
-	assert.equal((await cancel.abort()).aborted, true);
+	assert.equal((await cancel.abort({ submissionId: cancelled.submissionId })).aborted, true);
 	await assert.rejects(cancel.read(cancelled, { signal: AbortSignal.timeout(15_000) }),
 		(error) => error.failure === 'aborted');
 	const cancelledHistory = await cancel.history();

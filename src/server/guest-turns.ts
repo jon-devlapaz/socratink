@@ -8,7 +8,7 @@ import { guestTurnLimit } from '../config/guest-turns.ts';
 import { readSession } from './session.ts';
 import type { AuthDb } from './auth-db.ts';
 
-export const guestTurnsCookieName = 'socratink-guest-turns';
+const guestTurnsCookieName = 'socratink-guest-turns';
 export { guestTurnLimit } from '../config/guest-turns.ts';
 export const guestTurnsHeader = 'X-Socratink-Guest-Turns';
 
@@ -17,7 +17,7 @@ export const guestTurnLimitError = {
 	message: 'Sign in to continue this conversation.',
 } as const;
 
-export async function readGuestTurnCount(
+async function readGuestTurnCount(
 	context: Context,
 	secret: string,
 ): Promise<number> {
@@ -55,7 +55,6 @@ export function guestTurnGateMiddleware(options: {
 
 		const updated = count + 1;
 		await next();
-		// The chat route returns a raw Response, so attach the counter to the finalized response.
 		await setSignedCookie(context, guestTurnsCookieName, String(updated), options.secret, {
 			path: '/',
 			httpOnly: true,

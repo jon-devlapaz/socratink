@@ -16,7 +16,6 @@ export function applyRequestControlState(
 	const controls = chatRequestControls(state);
 	elements.input.disabled = controls.composerLocked;
 	elements.button.disabled = controls.composerLocked;
-	// Both leave this conversation, so both wait for pending work.
 	elements.startOver.disabled = controls.startOverDisabled;
 	elements.history.disabled = controls.startOverDisabled;
 	elements.lockup.classList.toggle('is-working', controls.busy);

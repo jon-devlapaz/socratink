@@ -1,0 +1,111 @@
+// Scripted learner conversations. All learner text is synthetic. `next` reads the turns
+// so far and returns the next learner message, or null to stop.
+//
+// To add one: a live tutor-behaviour bug gets a scenario here that fails on the live
+// model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
+import type { WireMessage } from '../../src/config/chat-wire.ts';
+import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
+import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+
+export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
+type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
+export type Scenario = {
+	name: string;
+	issue?: number;
+	summary: string;
+	maxTurns?: number;
+	next: (turns: readonly Turn[]) => NextMessage | null;
+	expect: (turns: readonly Turn[]) => CheckResult[];
+};
+type Step = { say: string; help?: QuestionnaireHelp; plain?: true };
+
+function consentAnswer(card: QuestionnaireDefinition, value: 'see-it' | 'try-once-more'): string {
+	return formatQuestionnaireAnswers(card, [{ name: card.items[0]?.name ?? 'item', values: [value] }]);
+}
+
+/** Answers a pending tutor card the way the UI would: the first choice, with the step as
+ * reasoning, or the card's help. With no card, or a plain step, sends the text. */
+function learnerMessage(step: Step, previous: WireMessage | undefined): string {
+	const card = cardOf(previous);
+	const item = card?.items[0];
+	if (!card || !item || step.plain) return step.say;
+	if (card.kind === 'reveal-consent') return consentAnswer(card, 'see-it');
+	if (step.help) return formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: step.help }]);
+	const choice = item.choices[0]?.value;
+	return formatQuestionnaireAnswers(card, [{ name: item.name, values: choice ? [choice] : [], ...(item.input ? { freeform: step.say } : {}) }]);
+}
+
+/** A fixed list of steps. An unplanned consent card gets "See it" without using a step. */
+function scripted(steps: readonly Step[]): Scenario['next'] {
+	return (turns) => {
+		const previous = turns.at(-1)?.reply;
+		const card = cardOf(previous);
+		if (card?.kind === 'reveal-consent') return { text: consentAnswer(card, 'see-it'), autoConsent: true };
+		const step = steps[turns.filter((turn) => !turn.autoConsent).length];
+		return step ? { text: learnerMessage(step, previous), step: step.say } : null;
+	};
+}
+
+const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn) => turn.step === say)?.reply;
+
+export const scenarios: readonly Scenario[] = [
+	{
+		name: 'just-tell-me-first-message',
+		issue: 133,
+		summary: 'A first message that asks a question and says "just tell me the answer" gets the answer, with no consent card.',
+		next: scripted([{ say: 'Why do the seasons change on Earth? just tell me the answer' }]),
+		expect: (turns) => [expectRequestedReveal(turns[0]?.reply)],
+	},
+	{
+		name: 'just-tell-me-later',
+		issue: 133,
+		summary: '"just tell me the answer" typed after the diagnostic starts gets the answer, with no consent card.',
+		next: scripted([
+			{ say: 'I want to understand how vaccines train the immune system.' },
+			{ say: 'I think they put a weak germ in you, but I am not sure why that helps.' },
+			{ say: 'just tell me the answer', plain: true },
+		]),
+		expect: (turns) => {
+			const reply = stepReply(turns, 'just tell me the answer');
+			return [reply ? expectRequestedReveal(reply) : skipped('just-tell-me', 'script did not reach the request')];
+		},
+	},
+	{
+		name: 'i-dont-know-is-marked',
+		summary: '"I don\'t know" gets a short explanation marked with mark_reveal.',
+		next: scripted([{ say: 'Teach me why ice floats on water.' }, { say: "I don't know.", help: 'unknown' }]),
+		expect: (turns) => {
+			const reply = stepReply(turns, "I don't know.");
+			return [reply ? expectMarkedHelp(reply, 'dont-know-marked') : skipped('dont-know-marked', 'script ended early')];
+		},
+	},
+	{
+		name: 'hint-is-marked',
+		summary: 'A hint request gets a hint marked with mark_reveal, and no consent card.',
+		next: scripted([{ say: 'Help me understand how binary search finds an item in a sorted list.' }, { say: 'Can I have a hint?', help: 'hint' }]),
+		expect: (turns) => {
+			const reply = stepReply(turns, 'Can I have a hint?');
+			return [reply ? expectMarkedHelp(reply, 'hint-marked') : skipped('hint-marked', 'script ended early')];
+		},
+	},
+	{
+		name: 'try-once-more-no-notes',
+		issue: 136,
+		summary: 'After wrong answers lead to a consent card, "Try once more" gets one question and no notes about the answer.',
+		maxTurns: 8,
+		next: (turns) => {
+			if (turns.at(-1)?.tryOnceMore) return null;
+			const previous = turns.at(-1)?.reply;
+			const card = cardOf(previous);
+			if (card?.kind === 'reveal-consent') return { text: consentAnswer(card, 'try-once-more'), tryOnceMore: true };
+			const say = ['Help me understand why the sky is blue.', 'Because it reflects the ocean.',
+				'Because air itself is blue, like paint.', 'I still think it is the ocean reflecting up.',
+				'Maybe the Sun is blue?', 'I give up, I have no idea.'][turns.length];
+			return say ? { text: learnerMessage({ say }, previous) } : null;
+		},
+		expect: (turns) => {
+			const turn = turns.find((t) => t.tryOnceMore);
+			return [turn ? expectTryOnceMore(turn.reply) : skipped('try-once-more-withholds', 'the tutor never offered a consent card in this run')];
+		},
+	},
+];

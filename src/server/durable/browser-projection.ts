@@ -1,8 +1,6 @@
 import type { WirePart, WireSnapshot } from '../../config/chat-wire.ts';
 import type { ProductTool, Snapshot } from './contract.ts';
 
-/** The browser's view of a Pi conversation. Raw model reasoning stays on the
- * server: learners never receive it, live or in history. */
 export function project(conversationId: string, state: Snapshot): WireSnapshot {
 	const pending = new Set(state.submissions.filter((s) => !s.outcome).map((s) => s.id));
 	const messages: WireSnapshot['messages'] = state.messages.map((m) => ({

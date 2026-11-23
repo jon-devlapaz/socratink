@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["api/*.ts", "scripts/*.mjs", ".claude/skills/verify-socratink/**/*.mjs"],
+  "ignoreBinaries": ["java"],
+  "ignoreUnresolved": ["/sound-cues.ts"]
+}

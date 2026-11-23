@@ -3,7 +3,7 @@ import { appConfig } from '../config/app.config.ts';
 import { userIdFromConversationId } from '../config/session.ts';
 import type { ModelConfig, ModelSelection } from '../server/durable/contract.ts';
 
-export type InferenceRoute = 'gateway' | 'local';
+type InferenceRoute = 'gateway' | 'local';
 export type InferenceStatus = { state: 'ready'; route: InferenceRoute } | { state: 'unconfigured' };
 
 export class InferenceUnavailableError extends Error {
@@ -34,8 +34,6 @@ export function createInference(options: { operator: () => ChatModel | undefined
 	};
 }
 
-/** The request config for the operator's model: what a learner's turn and the
- * daily tutor probe both send. */
 export function modelConfig(operator: ChatModel): ModelConfig {
 	return { provider: operator.providerId, modelId: operator.modelId,
 		apiKey: operator.apiKey, baseUrl: operator.baseUrl, reasoning: operator.reasoning,

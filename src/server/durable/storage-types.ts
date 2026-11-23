@@ -1,4 +1,4 @@
-export type LogRecord = { seq: number; writes: string };
+type LogRecord = { seq: number; writes: string };
 export type LogState = { format: number; nextId: number; commits: LogRecord[] };
 export type LogLease = {
 	state: LogState;

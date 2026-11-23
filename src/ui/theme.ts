@@ -12,7 +12,7 @@ function storedAppearance(): Appearance | null {
 	return null;
 }
 
-export function resolvedAppearance(): Appearance {
+function resolvedAppearance(): Appearance {
 	return (
 		storedAppearance() ??
 		(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')

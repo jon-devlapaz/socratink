@@ -6,7 +6,7 @@
 		<meta name="theme-color" id="theme-color" content="#fffcf0" />
 		<script>
 			(function () {
-				var stored = localStorage.getItem('socratink-theme');
+				var stored = localStorage.getItem('%SOCRATINK_THEME_STORAGE_KEY%');
 				var dark = stored === 'dark' ||
 					(stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 				if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;

@@ -179,7 +179,6 @@ export function mountDictation(options: Readonly<{
 			try {
 				active.recognition.abort();
 			} catch {
-				// The browser may already have ended capture.
 			}
 		}
 	}
@@ -270,6 +269,9 @@ export function mountDictation(options: Readonly<{
 		addRecognitionListener(active, 'result', (rawEvent) => {
 			if (!isActive(active)) return;
 			const event = rawEvent as RecognitionEventLike;
+			for (const index of active.interim.keys()) {
+				if (index >= event.results.length) active.interim.delete(index);
+			}
 			for (let index = event.resultIndex; index < event.results.length; index += 1) {
 				const result = event.results[index];
 				if (!result) continue;

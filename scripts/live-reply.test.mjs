@@ -4,7 +4,7 @@ import { replyFrom } from '../src/config/chat-wire.ts';
 import { initialProgress, progressEvents } from '../src/server/durable/browser-events.ts';
 import { project } from '../src/server/durable/browser-projection.ts';
 import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
-import { learnerVisibleAssistantText } from '../src/ui/assistant-text.ts';
+import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { createLiveReply } from '../src/ui/live-reply.ts';
 
 // Failure cases: live text differs from the settled reply; a half-arrived
@@ -40,7 +40,7 @@ test('live text from the server events equals the settled reply text, across tex
 	}
 	const settled = project('c', { revision: 9, messages: [question, { role: 'assistant', submissionId: 's1', ...states.at(-1) }],
 		submissions: [{ ...pending[0], outcome: 'completed' }] });
-	const final = learnerVisibleAssistantText(replyFrom(settled, 's1').text);
+	const final = learnerVisibleText(replyFrom(settled, 's1').text);
 	assert.deepEqual(seen, ['Fir', 'First part.', 'First part.\n\nSecond **part**', final]);
 	assert.equal(final, 'First part.\n\nSecond **part**.');
 });

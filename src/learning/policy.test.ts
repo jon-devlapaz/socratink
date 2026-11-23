@@ -65,3 +65,8 @@ test('every tool parameter is a plain typed JSON schema that strict providers ac
 	};
 	for (const tool of learningToolDefinitions) assert.deepEqual(bare(tool.parameters as Record<string, unknown>, tool.name), []);
 });
+
+test('every behaviour rule the tutor eval checks quotes a sentence of the system prompt', async () => {
+	const { behaviourRules } = await import('./behaviour-rules.ts');
+	for (const [id, rule] of Object.entries(behaviourRules)) assert.ok(systemPrompt.includes(rule.policy), `${id}: ${rule.policy}`);
+});

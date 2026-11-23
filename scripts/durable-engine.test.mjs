@@ -107,9 +107,9 @@ test('cross-instance cancellation persists and does not abort the next admission
 	const first = await openEngine(options);
 	const second = await openEngine(options);
 	try {
-		await first.submit('learner:abort', 'Stop this.');
+		const stopped = await first.submit('learner:abort', 'Stop this.');
 		await until(() => second.snapshot('learner:abort'), (value) => !!value.messages[1]?.reasoning);
-		await second.abort('learner:abort');
+		assert.equal(await second.abort('learner:abort', stopped), true);
 		await until(() => second.snapshot('learner:abort'), (value) => value.submissions[0]?.outcome === 'aborted');
 		await first.close();
 		await second.submit('learner:abort', 'Next turn.');
@@ -117,6 +117,28 @@ test('cross-instance cancellation persists and does not abort the next admission
 		finish(responses[1]);
 		const completed = await until(() => second.snapshot('learner:abort'), (value) => value.submissions[1]?.outcome === 'completed');
 		assert.equal(completed.submissions.length, 2);
+	} finally { await first.close(); await second.close(); }
+}));
+
+test('a late Cancel for a settled reply leaves the next reply from another tab running', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const first = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	const second = await openEngine(options);
+	try {
+		const earlier = await first.submit('learner:two-tabs', 'First tab.');
+		await until(async () => responses.length, (value) => value === 1);
+		finish(responses[0]);
+		await until(() => second.snapshot('learner:two-tabs'), (value) => value.submissions[0]?.outcome === 'completed');
+		await Promise.all(background);
+		const later = await first.submit('learner:two-tabs', 'Second tab.');
+		await until(() => second.snapshot('learner:two-tabs'), (value) => !!value.messages[3]?.reasoning);
+		assert.equal(await second.abort('learner:two-tabs', earlier), false, 'the earlier reply had already settled');
+		await delay(300);
+		assert.equal((await second.snapshot('learner:two-tabs')).submissions[1].outcome, undefined, 'the later reply keeps running');
+		finish(responses[1]);
+		const settled = await until(() => second.snapshot('learner:two-tabs'), (value) => !!value.submissions[1]?.outcome);
+		assert.equal(settled.submissions[1].id, later);
+		assert.equal(settled.submissions[1].outcome, 'completed');
 	} finally { await first.close(); await second.close(); }
 }));
 

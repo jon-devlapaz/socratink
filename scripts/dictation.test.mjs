@@ -281,6 +281,26 @@ test('a final Send message command strips itself and submits once after end', ()
 	}
 });
 
+test('removes interim words withdrawn by the speech service before the final send command', () => {
+	const harness = setup();
+	let sends = 0;
+	const controller = harness.mount({ onSendRequested: () => { sends += 1; } });
+	try {
+		harness.toggle.click();
+		const recognition = FakeRecognition.instances.at(-1);
+		recognition.emit('start');
+		recognition.result([{ text: 'Answer', final: false }, { text: 'maybe', final: false }]);
+		assert.equal(harness.input.value, 'Answer maybe');
+		recognition.result([{ text: 'Answer. Send message.', final: true }]);
+		assert.equal(harness.input.value, 'Answer.');
+		recognition.emit('end');
+		assert.equal(sends, 1);
+	} finally {
+		controller.destroy();
+		harness.restore();
+	}
+});
+
 test('matches only Send message in final command position', () => {
 	assert.equal(stripVoiceSendCommand('Answer. Send message!'), 'Answer.');
 	assert.equal(stripVoiceSendCommand('Answer. send, message'), 'Answer.');

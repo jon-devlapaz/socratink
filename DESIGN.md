@@ -52,12 +52,18 @@ hairline dividers. A selected row receives a small verdigris wash and left
 rule. The reasoning field stays distinct from tutor help.
 
 The consent card keeps its two direct actions, "See it" and "Try once more".
-Only the first uses accent text. The second stays neutral. Do not change the
+"Try once more" is the primary button. "See it" is secondary. Do not change the
 submission contract or add an extra confirmation step for a visual change.
 
-Buttons use small radii, neutral paper fills, and quiet ink borders. There
-are no solid teal blocks. The composer has a neutral paper fill and a hairline
-edge, with no invitation glow. Sign-in uses the same folio rules, not a dark
+Buttons are Kinetik UI buttons drawn in paper and ink, and `buttons.css` owns
+them. Every button is a pill with a hairline edge. A primary button is ink
+with a soft top sheen and an inset highlight; use one per place, for the
+forward action (send, submit, "Try once more", send feedback). A secondary
+button is a paper pill. A ghost button has no fill until hover, for quiet
+tools such as Skip, Hint, steering, Cancel, and the microphone. Icon buttons
+are circles. There are no solid teal blocks.
+The composer has a neutral paper fill and a hairline edge, with no invitation
+glow. Sign-in uses the same folio rules, not a dark
 floating card. Shadows must identify a meaningful state, not decoration.
 
 ## Alignment
@@ -79,11 +85,19 @@ must not look like learner work. The tutor alone rates subskills through the
 teaching policy. A visual state does not establish mastery.
 
 Interactive controls hold at least 44px touch targets. Native choice inputs
-use their enclosing label as the touch target. Keyboard focus uses a 2px
-verdigris outline. The composer also outlines its container while focused.
+use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
 Preserve reduced-motion alternatives, safe-area spacing, adjustable text size,
 and explicit as well as system light/dark preferences. Code and tables scroll
 within their own regions, never across the whole page.
+
+## Motion
+
+Kinetik UI (kinetikui.singhgourav.site, MIT) is the motion reference. Port
+its ideas into plain CSS and TypeScript; do not add its React components.
+Motion uses opacity, blur, and scale, never width, height, or position, so the
+conversation never moves when a control appears or a reply ends. Springs use
+`--spring-pop` from `styles.css`. The composer hint blurs in on focus, and the
+send arrow sinks while the tutor has the turn, then pops back.
 
 ## Browser support
 

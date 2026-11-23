@@ -34,7 +34,14 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			onPayload: async (params: unknown, model: Model<Api>) => {
 				const next = (await request?.onPayload?.(params, model)) ?? params;
 				const fallbacks = selected.config.fallbackModelIds;
-				return fallbacks?.length ? { ...(next as object), models: [...fallbacks] } : next;
+				const hostedTutor = selected.model.baseUrl === appConfig.vercelAiGatewayBaseUrl
+					&& selected.model.id === appConfig.vercelAiGatewayModelId;
+				if (!hostedTutor && !fallbacks?.length) return next;
+				return {
+					...(next as object),
+					...(fallbacks?.length ? { models: [...fallbacks] } : {}),
+					...(hostedTutor ? { reasoning: { effort: 'none' } } : {}),
+				};
 			},
 			onResponse: async (response: Parameters<NonNullable<StreamOptions['onResponse']>>[0], model: Model<Api>) => {
 				const captured = routingFromHeaders(response.headers);
@@ -44,7 +51,10 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			},
 		};
 		return { selected, options, route: (message: AssistantMessage) => {
-			const routedModel = route?.routedModel ?? message.responseModel?.trim();
+			// pi-ai records the chunk's model only when it differs from the request, so a
+			// reply with no other source came from the model that was asked for.
+			const routedModel = route?.routedModel ?? message.responseModel?.trim()
+				?? (message.stopReason === 'error' ? undefined : selected.model.id);
 			return routedModel ? { routedModel, ...(fallbackAttempts ? { fallbackAttempts } : {}) } : undefined;
 		} };
 	}
@@ -85,7 +95,6 @@ export function operatorApiModel(config: ModelConfig): Model<'openai-completions
 	};
 }
 
-/** A product-owned field travels with Pi's normal live and committed message. */
 export function messageRoute(message: Message): ModelRouteRecord | undefined {
 	return message.role === 'assistant' ? modelRouteFromMetadata((message as RoutedMessage).socratinkRoute) : undefined;
 }
@@ -95,8 +104,6 @@ function withRoute(source: AssistantMessageEventStream, route: (message: Assista
 	const redact = credentialRedactor(apiKey);
 	const annotate = (message: AssistantMessage): RoutedMessage => {
 		const captured = route(message);
-		// Provider errors and headers are untrusted. Remove this request's key
-		// before Pi publishes or commits them; preserve status and retry wording.
 		return { ...message,
 			...(message.errorMessage ? { errorMessage: redact(message.errorMessage) } : {}),
 			...(message.responseModel ? { responseModel: redact(message.responseModel) } : {}),
@@ -123,4 +130,9 @@ function credentialRedactor(apiKey: string | undefined): (text: string) => strin
 	const encoded = encodeURIComponent(apiKey);
 	const variants = [...new Set([apiKey, encoded, encoded.replace(/%[\dA-F]{2}/g, (part) => part.toLowerCase())])];
 	return (text) => variants.reduce((result, secret) => result.split(secret).join('[redacted]'), text);
+}
+
+export function providerHttpStatus(errorMessage: string | undefined): number | undefined {
+	const status = /^\s*([1-5]\d\d)\b/.exec(errorMessage ?? '')?.[1];
+	return status ? Number(status) : undefined;
 }

@@ -3,14 +3,15 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { DatabaseTarget } from '../config/database.ts';
 import { sharedPostgresPool } from './postgres-pool.ts';
+import { setupOnce } from './setup-once.ts';
 
-export type UserRow = Readonly<{
+type UserRow = Readonly<{
 	id: string;
 	email: string;
 	createdAt: string;
 }>;
 
-export type OAuthAccountRow = Readonly<{
+type OAuthAccountRow = Readonly<{
 	provider: string;
 	providerUserId: string;
 	userId: string;
@@ -54,7 +55,6 @@ CREATE TABLE IF NOT EXISTS socratink_user_aliases (
 	created_at TEXT NOT NULL
 );`;
 
-// An older alias can name a registered account as its source. That account owns its own history.
 const GUEST_ALIAS_FILTER_SQL =
 	'NOT EXISTS (SELECT 1 FROM socratink_users WHERE id = socratink_user_aliases.guest_user_id)';
 
@@ -119,18 +119,12 @@ function openPostgresAuthDb(connectionString: string): AuthDb {
 	const pool = sharedPostgresPool(connectionString);
 	return createPostgresAuthDb({
 		query: (text, values) => pool.query(text, values),
-		// The shared pool outlives this store; see sharedPostgresPool.
 		end: async () => {},
 	});
 }
 
 export function createPostgresAuthDb(client: AuthPgClient): AuthDb {
-	let ready: Promise<void> | undefined;
-	// A failed setup is forgotten so the next request retries it.
-	const ensure = () => (ready ??= client.query(CREATE_TABLES_SQL).then(() => undefined, (error) => {
-		ready = undefined;
-		throw error;
-	}));
+	const ensure = setupOnce(() => client.query(CREATE_TABLES_SQL));
 
 	return {
 		async findUserByEmail(email) {

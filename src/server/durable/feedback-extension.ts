@@ -108,7 +108,6 @@ async function approved(api: HookApi, context: Context, callId: string, message:
 				if (!confirming) {
 					calls.push(...response.content.flatMap((block) => block.type === 'toolCall' && block.name === feedback.toolName ? [block.id] : []));
 				} else {
-					// Consume only the preceding turn's offer, never an older offer or a tool result.
 					const text = messageText(response).trim();
 					if (!text) continue;
 					const start = text.lastIndexOf(draftStart);

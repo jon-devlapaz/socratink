@@ -4,12 +4,13 @@ import type { ModelRouteRecord } from '../../config/model-route.ts';
 export const inputKind = 'socratink.input';
 
 export type ModelSelection = { provider: string; modelId: string };
+export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true; tryOnceMore?: true };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;
 	/** Models the gateway tries in order when the primary model fails. */
 	fallbackModelIds?: readonly string[];
 };
-export type Outcome = 'completed' | 'failed' | 'aborted';
+type Outcome = 'completed' | 'failed' | 'aborted';
 export type ProductTool = {
 	id: string; name: string; input: Record<string, unknown>; output?: string; isError?: boolean; state: 'running' | 'done';
 };
@@ -17,13 +18,11 @@ export type ProductMessage = {
 	role: 'user' | 'assistant'; submissionId: string; text: string; reasoning?: string;
 	data?: Record<string, unknown[]>; tools?: ProductTool[]; metadata?: { socratink: ModelRouteRecord };
 };
-export type Submission = { id: string; text: string; outcome?: Outcome; error?: string };
+type Submission = { id: string; text: string; outcome?: Outcome; error?: string; tryOnceMore?: true };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };
-/** How one execution of a turn ended, for logs: no learner text. */
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;
 	status: Outcome | 'interrupted' | 'error' | 'unsettled';
-	/** The provider's HTTP status for a failed turn, when its error names one. Never its text. */
 	providerStatus?: number;
 };
 export type EngineOptions = {
@@ -40,6 +39,7 @@ export type Engine = {
 	/** Repeated snapshots of one conversation that read only new commits. Call
 	 * snapshot() one at a time, and close() when done. */
 	follow: (conversationId: string) => { snapshot: () => Promise<Snapshot>; close: () => Promise<void> };
-	abort: (conversationId: string) => Promise<void>;
+	/** Cancels one submission if it is still pending, and says whether it was. */
+	abort: (conversationId: string, submissionId: string) => Promise<boolean>;
 	close: () => Promise<void>;
 };

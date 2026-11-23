@@ -21,8 +21,6 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 			events.push({ type: 'message-started', messageId: message.id, submissionId: message.submissionId });
 			state.started.push(message.id);
 		}
-		// Tool calls go first: a mark_reveal call must reach the browser before
-		// the supplied text it labels, even when both arrive in one poll.
 		for (const part of message.parts) {
 			if (part.type !== 'dynamic-tool') continue;
 			const previous = state.tools[part.toolCallId];
@@ -50,7 +48,6 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 		state.settled.push(settlement.submissionId);
 		settled = true;
 	}
-	// The final reset carries user rows, tool data, metadata and completed parts.
 	if (settled) events.push({ type: 'conversation-reset', snapshot });
 	return events;
 }

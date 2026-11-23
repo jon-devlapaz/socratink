@@ -1,14 +1,11 @@
 import type { WireEventBody } from '../config/chat-wire.ts';
 import { markRevealRetryReason } from '../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName, type RevealDefinition } from '../reveal.ts';
-import { learnerVisibleAssistantText } from './assistant-text.ts';
+import { learnerVisibleText } from '../learning/learner-text.ts';
 
 /** What the pending turn shows of a reply that is still arriving. Empty
  * markdown shows nothing. */
 export type LiveReplyView = { markdown: string; reveal?: RevealDefinition };
-
-// A leading marker whose closing « » run has not arrived yet.
-const partialLeadingMarker = /^«(?:[A-Z][A-Z0-9_]*)?$/u;
 
 /** Folds one turn's live events into the reply text the learner may see now.
  * The text equals the settled reply's text, because the server streams each
@@ -35,7 +32,6 @@ export function createLiveReply(learnerText: string) {
 				return true;
 			}
 			if (event.type === 'tool-input' && event.toolName === revealToolName) {
-				// An invalid input fails the tool and records nothing, like at settlement.
 				const parsed = parseRevealDefinition(event.input);
 				if (!parsed) return false;
 				reveal = parsed;
@@ -44,11 +40,11 @@ export function createLiveReply(learnerText: string) {
 			return false;
 		},
 		view(): LiveReplyView {
-			const text = learnerVisibleAssistantText([...texts.values()].at(-1) ?? '');
+			const text = learnerVisibleText([...texts.values()].at(-1) ?? '');
 			const unmarked = markRevealRetryReason({
 				revealed: Boolean(reveal), learnerText, assistantText: text, alreadyRetried: false,
 			});
-			if (partialLeadingMarker.test(text) || unmarked) return { markdown: shown };
+			if (unmarked) return { markdown: shown };
 			shown = text;
 			return reveal ? { markdown: text, reveal } : { markdown: text };
 		},

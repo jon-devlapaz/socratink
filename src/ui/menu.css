@@ -18,11 +18,6 @@
 	cursor: grabbing;
 }
 
-.peek-handle:focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
-}
-
 .peek-handle::after,
 .menu-handle::after {
 	content: "";
@@ -45,10 +40,8 @@
 }
 
 .peek-handle:hover::after,
-.peek-handle:focus-visible::after,
 .peek-handle:active::after,
 .menu-handle:hover::after,
-.menu-handle:focus-visible::after,
 .menu-handle:active::after {
 	background: var(--ink);
 	opacity: 1;
@@ -129,11 +122,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 .encounter-active .brand-name {
 	opacity: 0;
 	transform: translateX(calc(-100% - 0.54em)) scaleX(0.88);
-}
-
-.brand-lockup:focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
 }
 
 .encounter-active .brand-lockup:focus-visible .brand-name {
@@ -219,7 +207,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	padding: 0.4rem 0 0.2rem;
 }
 
-/* Keep six or more tiles from wrapping as a full row and a single tile. */
 @media (max-width: 34.15rem) {
 	.menu-orbs:has(> :nth-child(6 of :not([hidden]))) {
 		max-width: min(22rem, calc(100% - 2rem));
@@ -251,27 +238,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 }
 
 .menu-orbs a:hover,
-.menu-orbs a:focus-visible,
-.menu-orbs button:hover,
-.menu-orbs button:focus-visible {
+.menu-orbs button:hover {
 	color: var(--ink);
-	background: transparent;
-	box-shadow: none;
-	outline: 2px solid var(--accent);
-}
-
-.menu-orbs a:hover > svg,
-.menu-orbs button:hover > svg,
-.menu-orbs button:hover > .orb-glyph {
-	background: var(--path-hover);
-	box-shadow: var(--shadow-border-hover);
-}
-
-.menu-orbs a:focus-visible > svg,
-.menu-orbs button:focus-visible > svg,
-.menu-orbs button:focus-visible > .orb-glyph {
-	background: var(--path-hover);
-	box-shadow: none;
 }
 
 .menu-orbs a:active,
@@ -291,9 +259,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0.85rem;
-	border-radius: 0.6rem;
-	background: transparent;
-	box-shadow: var(--shadow-border);
 	box-sizing: content-box;
 	color: var(--ink);
 }

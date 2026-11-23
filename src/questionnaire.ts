@@ -35,7 +35,7 @@ const QuestionnaireItemSchema = v.pipe(
 	),
 );
 
-export const QuestionnaireSchema = v.strictObject({
+const QuestionnaireSchema = v.strictObject({
 	kind: v.picklist(['question', 'quiz', 'reveal-consent']),
 	submitLabel: boundedString(80),
 	items: v.pipe(v.array(QuestionnaireItemSchema), v.minLength(1), v.maxLength(1)),
@@ -127,8 +127,6 @@ export type QuestionnaireAnswer = {
 	help?: QuestionnaireHelp;
 };
 
-/** The answer text for each card help request. The server reads these back to
- * record the turn as assistance, so they are the one owner of that wording. */
 export const questionnaireHelpText: Record<QuestionnaireHelp, string> = {
 	hint: 'Asked for a hint.',
 	unknown: "I don't know.",
@@ -148,7 +146,7 @@ export function questionnaireFromParts(
 	return part ? parseQuestionnaireDefinition(part.data) : undefined;
 }
 
-export const questionnaireDataName = 'questionnaire';
+const questionnaireDataName = 'questionnaire';
 export const questionnaireAnswerPrefix = 'Questionnaire answers:';
 export const questionnaireToolName = 'present_question';
 

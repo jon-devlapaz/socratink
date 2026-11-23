@@ -28,7 +28,6 @@
 	}
 }
 
-/* Frost sits behind the transcript so the bookmark can join the card edge. */
 .active-node::before {
 	content: '';
 	position: absolute;
@@ -122,8 +121,11 @@ html[data-type-size='small'] .active-node {
 	);
 }
 
-.turn-spacer {
-	flex: 0 0 auto;
+/* A short conversation rests on the composer; the space above it stays empty.
+ * The pseudo-element takes only free space, so a long conversation scrolls as before. */
+.active-scroll::before {
+	content: '';
+	flex: 1 1 0;
 	pointer-events: none;
 }
 
@@ -183,8 +185,7 @@ html[data-type-size='small'] .active-node {
 	cursor: pointer;
 }
 
-.trail-toggle:hover,
-.trail-toggle:focus-visible {
+.trail-toggle:hover {
 	color: color-mix(in srgb, var(--ink) 10%, var(--chip-strong));
 }
 
@@ -192,9 +193,7 @@ html[data-type-size='small'] .active-node {
 	color: color-mix(in srgb, var(--accent) 28%, var(--chip-strong));
 }
 
-/* Hover/open: the tab fill occupies the node's 1px slot so the outline stays one stroke. */
 .trail-toggle:hover::before,
-.trail-toggle:focus-visible::before,
 .trail-toggle[aria-expanded='true']::before {
 	content: '';
 	position: absolute;
@@ -205,10 +204,6 @@ html[data-type-size='small'] .active-node {
 	height: 1px;
 	background: currentColor;
 	pointer-events: none;
-}
-
-.trail-toggle:focus-visible {
-	outline: 2px solid var(--accent);
 }
 
 .trail-toggle[hidden] {
@@ -309,7 +304,6 @@ html[data-type-size='small'] .active-node {
 }
 
 .history-turn.you {
-	/* Same lanes as the live turn: You is the right-hand landmark. */
 	padding-left: 12%;
 	text-align: right;
 }
@@ -331,7 +325,6 @@ html[data-type-size='small'] .active-node {
 	padding: 0.55rem var(--conversation-text-inset) 1.2rem;
 }
 
-/* With no earlier-steps tab above it, the first turn keeps clear of the card's edge. */
 .trail-toggle[hidden] + .active-scroll #active-turn {
 	padding-top: 1.05rem;
 }
@@ -348,37 +341,8 @@ html[data-type-size='small'] .active-node {
 	z-index: 2;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.3rem;
 	width: max-content;
 	margin: 0 auto;
-	padding: 0.4rem 0.75rem;
-	border: 0;
-	border-radius: 0.4rem;
-	color: var(--ink);
-	background: var(--paper);
-	cursor: pointer;
-	font-size: 0.78rem;
-	text-decoration: underline;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 0.3em;
-	text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent);
-	transition-property: scale, box-shadow, background-color;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
-}
-
-.jump-latest:hover,
-.jump-latest:focus-visible {
-	box-shadow: none;
-	outline: 2px solid var(--accent);
-}
-
-.jump-latest:focus-visible {
-	box-shadow: none;
-}
-
-.jump-latest:active {
-	scale: 0.96;
 }
 
 .jump-latest svg {
@@ -475,49 +439,13 @@ html[data-type-size='small'] .active-node {
 }
 
 .thinking-cancel {
-	min-width: 44px;
-	min-height: 44px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 2rem;
-	height: 2rem;
 	margin: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 6px;
-	color: var(--quiet);
-	background: none;
-	cursor: pointer;
-	transition-property: color, background-color, scale, box-shadow;
-	transition-duration: 150ms;
-	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .thinking-cancel-icon {
 	display: block;
 	width: 1rem;
 	height: 1rem;
-}
-
-.thinking-cancel:hover,
-.thinking-cancel:focus-visible {
-	color: var(--ink);
-	background: color-mix(in srgb, var(--ink) 6%, transparent);
-}
-
-.thinking-cancel:focus-visible {
-	outline: 2px solid var(--accent);
-	box-shadow: none;
-}
-
-.thinking-cancel:active:not(:disabled) {
-	scale: 0.96;
-}
-
-.thinking-cancel:disabled {
-	cursor: default;
-	opacity: 0.6;
 }
 
 .thinking-toggle {
@@ -538,14 +466,8 @@ html[data-type-size='small'] .active-node {
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
-.thinking-toggle:hover,
-.thinking-toggle:focus-visible {
+.thinking-toggle:hover {
 	opacity: 0.8;
-}
-
-.thinking-toggle:focus-visible {
-	outline: 2px solid var(--accent);
-	box-shadow: none;
 }
 
 .thinking-shimmer {
@@ -679,29 +601,6 @@ html[data-type-size='small'] .active-node {
 .request-action {
 	width: max-content;
 	margin-top: 0.45rem;
-	padding: 0.35rem 0.65rem;
-	border: 1px solid var(--rule);
-	border-radius: 0.4rem;
-	color: var(--ink);
-	background: var(--chip);
-	cursor: pointer;
-	font: inherit;
-	font-size: calc(0.72rem * var(--type-scale));
-}
-
-.request-action:hover,
-.request-action:focus-visible {
-	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-	outline: 2px solid var(--accent);
-}
-
-.request-action:focus-visible {
-	box-shadow: none;
-}
-
-.request-action:disabled {
-	cursor: default;
-	opacity: 0.6;
 }
 
 .request-actions {
@@ -758,18 +657,12 @@ html[data-type-size='small'] .active-node {
 		min-width: 44px;
 		min-height: 44px;
 	}
-
-	.thinking-cancel {
-		width: 44px;
-		height: 44px;
-	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.active-node,
 	.trail-toggle,
 	.trail-mark,
-	.jump-latest,
 	#active-turn.is-exiting {
 		transition: none;
 	}
@@ -790,8 +683,7 @@ html[data-type-size='small'] .active-node {
 	}
 
 	.thinking-toggle,
-	.thinking-chevron,
-	.thinking-cancel {
+	.thinking-chevron {
 		transition: none;
 	}
 
@@ -800,9 +692,7 @@ html[data-type-size='small'] .active-node {
 		transform: none;
 	}
 
-	.jump-latest:active,
-	.trail-toggle:active .trail-mark,
-	.thinking-cancel:active:not(:disabled) {
+	.trail-toggle:active .trail-mark {
 		scale: none;
 	}
 }
@@ -811,7 +701,6 @@ body.conversation-empty .active-node {
 	display: none;
 }
 
-/* The landing page's voice on an empty page: one serif line, nothing else. */
 body.conversation-empty .stage::before {
 	content: "Make the thinking your own.";
 	display: block;
