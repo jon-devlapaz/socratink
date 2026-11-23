@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatQuestionnaireAnswers, questionnaireFromPresentQuestion } from '../questionnaire.ts';
+import * as v from 'valibot';
+import { formatQuestionnaireAnswers, PresentQuestionInputSchema, questionnaireFromPresentQuestion } from '../questionnaire.ts';
 import { cardHelpReveal, markRevealRetryReason } from './mark-reveal.ts';
 
 // Failure cases: card help goes unlabeled, an ordinary card answer reads as
@@ -18,6 +19,19 @@ test('card help reads back as assistance on the card it asked about', () => {
 	assert.deepEqual(cardHelpReveal(asked('unknown')), { kind: 'partial', target: 'Which half do you search next?' });
 	assert.equal(cardHelpReveal(answered), undefined);
 	assert.equal(cardHelpReveal('Asked for a hint.'), undefined, 'only a card answer counts as card help');
+});
+
+test('card help on a prompt that spans lines still reads back as help (#65)', () => {
+	const multiline = questionnaireFromPresentQuestion({ prompt: 'A list has 16 items.\nWhich half do you search next?', choices: ['Left', 'Right'] });
+	const help = formatQuestionnaireAnswers(multiline, [{ name: 'item', values: [], help: 'hint' }]);
+	assert.deepEqual(cardHelpReveal(help), { kind: 'hint', target: 'A list has 16 items.\nWhich half do you search next?' });
+});
+
+test('a card cannot offer a choice that reads the same as its help buttons (#65)', () => {
+	for (const label of ['Asked for a hint.', "I don't know.", ' i don\'t know. ']) {
+		assert.equal(v.safeParse(PresentQuestionInputSchema, { prompt: 'Which is it?', choices: ['Left', label] }).success, false, label);
+	}
+	assert.equal(v.safeParse(PresentQuestionInputSchema, { prompt: 'Which is it?', choices: ['Left', "I don't know yet"] }).success, true);
 });
 
 test('an unmarked turn is corrected once when help was asked for or content looks supplied', () => {

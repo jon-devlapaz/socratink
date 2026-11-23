@@ -6,6 +6,8 @@ import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
 import { asksForNoText, splitReasoning } from '../../learning/learner-text.ts';
+import { cardHelpReveal } from '../../learning/mark-reveal.ts';
+import { revealToolName } from '../../reveal.ts';
 import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
@@ -39,10 +41,24 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 		const tool = tools.get(slot.callId);
 		if (tool && slot.output) tool.output = slot.output;
 	}
+	labelCardHelp(snapshot);
 	const projected = withRevealConsent(snapshot, consentRequired);
 	projected.messages = projected.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
 	return projected;
+}
+
+/** A completed reply to the card's Hint or I don't know gave assistance, so it
+ * carries that help label even when the tutor never marked it (#65). The
+ * learner's click is the record, so older history gets the label too. */
+function labelCardHelp(snapshot: Snapshot) {
+	for (const submission of snapshot.submissions) {
+		const help = submission.outcome === 'completed' ? cardHelpReveal(submission.text) : undefined;
+		const reply = help && snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === submission.id);
+		if (!reply || reply.data?.reveal?.length
+			|| reply.tools?.some((tool) => tool.name === revealToolName && tool.state === 'done' && !tool.isError)) continue;
+		(reply.data ??= {}).reveal = [help];
+	}
 }
 
 async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, entry: EntryRecord): Promise<ProductMessage> {
