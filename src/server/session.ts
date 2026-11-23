@@ -59,7 +59,7 @@ export async function readSession(
 	return session;
 }
 
-export function sessionFromContext(context: Context): SessionCookie | undefined {
+function sessionFromContext(context: Context): SessionCookie | undefined {
 	return sessionSlot(context) ?? undefined;
 }
 
@@ -80,7 +80,7 @@ export async function writeSessionCookie(
 	setSessionSlot(context, cookie);
 }
 
-export function clearSessionCookie(context: Context, environment: SessionEnvironment = {}): void {
+function clearSessionCookie(context: Context, environment: SessionEnvironment = {}): void {
 	deleteCookie(context, sessionCookieName, {
 		path: '/',
 		secure: sessionUsesSecureCookie(environment),

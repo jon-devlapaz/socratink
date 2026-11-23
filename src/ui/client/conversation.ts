@@ -20,7 +20,7 @@ import { createStreamClient, type StreamClient } from './conversation-stream.ts'
 type ChatTurnClient = Pick<StreamClient, 'send' | 'read' | 'abort'>;
 type SubmissionReference = WireAdmission;
 
-export const abortRequestTimeoutMs = 5_000;
+const abortRequestTimeoutMs = 5_000;
 export const settlementReadTimeoutMs = 90_000;
 
 export type ChatRequestState =

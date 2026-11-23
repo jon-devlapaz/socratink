@@ -3,7 +3,7 @@ export type ModelRouteRecord = {
 	readonly fallbackAttempts?: number;
 };
 
-export function decodeRoute(value: string): string {
+function decodeRoute(value: string): string {
 	try {
 		return decodeURIComponent(value);
 	} catch {
@@ -54,7 +54,7 @@ export function modelRouteFromMetadata(metadata: unknown): ModelRouteRecord | un
 	};
 }
 
-export function formatModelRoute(record: ModelRouteRecord | undefined): string | undefined {
+function formatModelRoute(record: ModelRouteRecord | undefined): string | undefined {
 	if (!record?.routedModel) return undefined;
 	const fallback =
 		record.fallbackAttempts && record.fallbackAttempts > 0 ? ` · ↻${record.fallbackAttempts}` : '';

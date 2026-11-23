@@ -28,12 +28,12 @@ const internalNotePatterns = [
 	/\[(?:internal|note|reveal|hint)[^\]]*\]/i,
 ];
 
-export function textOf(message: WireMessage | undefined): string {
+function textOf(message: WireMessage | undefined): string {
 	return (message?.parts ?? []).flatMap((part) => part.type === 'text' ? [part.text] : []).join('\n\n');
 }
 
 /** Reveals the reply recorded: the app's data parts plus mark_reveal tool parts. */
-export function revealsOf(message: WireMessage | undefined): RevealDefinition[] {
+function revealsOf(message: WireMessage | undefined): RevealDefinition[] {
 	return (message?.parts ?? []).flatMap((part) => {
 		if (part.type === `data-${revealDataName}` && 'data' in part) return [part.data];
 		if (part.type === 'dynamic-tool' && part.toolName === revealToolName && part.state !== 'output-error') return [part.input];

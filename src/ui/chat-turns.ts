@@ -13,7 +13,7 @@ import { steeringSaidText } from './steering.ts';
 import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
-export type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
+type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
 
 export type DisplayedTurn = {
 	reveal?: RevealDefinition;

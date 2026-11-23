@@ -2,7 +2,7 @@ export type RateLimitClock = {
 	now(): number;
 };
 
-export type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number };
+type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number };
 
 export type RateLimiter = {
 	consume(key: string): RateLimitResult;

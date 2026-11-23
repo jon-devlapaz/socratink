@@ -3,7 +3,7 @@ import { appConfig } from '../config/app.config.ts';
 import { userIdFromConversationId } from '../config/session.ts';
 import type { ModelConfig, ModelSelection } from '../server/durable/contract.ts';
 
-export type InferenceRoute = 'gateway' | 'local';
+type InferenceRoute = 'gateway' | 'local';
 export type InferenceStatus = { state: 'ready'; route: InferenceRoute } | { state: 'unconfigured' };
 
 export class InferenceUnavailableError extends Error {
