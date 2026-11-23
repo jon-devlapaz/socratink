@@ -18,7 +18,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 	const scroller = requireChild<HTMLElement>(card, '.active-scroll');
 	const jumpButton = requireChild<HTMLButtonElement>(card, '#jump-latest');
 	const activeTurn = requireChild<HTMLElement>(card, '#active-turn');
-	const spacer = requireChild<HTMLElement>(card, '#turn-spacer');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	let following = true;
 	let ignoreScroll = 0;
@@ -68,24 +67,8 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		});
 	}
 
-	function isLiveContent(turn: HTMLElement): boolean {
-		return turn.classList.contains('you') || turn.classList.contains('pending');
-	}
-
-	function syncSpacer() {
-		const lastTurn = activeTurn.querySelector<HTMLElement>(':scope > .turn:last-of-type');
-		const withoutSpacer = scroller.scrollHeight - spacer.offsetHeight;
-		if (withoutSpacer > scroller.clientHeight + 1 || !lastTurn || !isLiveContent(lastTurn)) {
-			spacer.style.height = '0px';
-			return;
-		}
-		const used = activeTurn.getBoundingClientRect().height;
-		spacer.style.height = `${Math.max(0, scroller.clientHeight - used)}px`;
-	}
-
 	function pinCurrentStart() {
 		following = true;
-		syncSpacer();
 		const anchor = activeTurn.querySelector<HTMLElement>(':scope > .turn');
 		if (!anchor) {
 			syncChrome();
@@ -100,7 +83,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 
 	function followLiveEdge() {
 		following = true;
-		syncSpacer();
 		withProgrammaticScroll(() => {
 			scroller.scrollTop = scroller.scrollHeight;
 		});
@@ -108,7 +90,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 
 	function scrollToStart() {
 		following = false;
-		syncSpacer();
 		withProgrammaticScroll(() => {
 			scroller.scrollTop = 0;
 		});
@@ -126,13 +107,11 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 	async function preserveAround(mutate: () => void | Promise<void>) {
 		if (scroller.scrollTop <= 1) {
 			await mutate();
-			syncSpacer();
 			syncChrome();
 			return;
 		}
 		const before = activeTurn.getBoundingClientRect().top;
 		await mutate();
-		syncSpacer();
 		withProgrammaticScroll(() => {
 			scroller.scrollTop += activeTurn.getBoundingClientRect().top - before;
 		});
@@ -193,7 +172,6 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		grow(mutate) {
 			const atEdge = atLiveEdge();
 			mutate();
-			syncSpacer();
 			if (following && atEdge) {
 				withProgrammaticScroll(() => {
 					scroller.scrollTop = scroller.scrollHeight;
