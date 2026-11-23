@@ -11,6 +11,7 @@ import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { openEngine } from '../src/server/durable/engine.ts';
 import { createDurableStorage } from '../src/server/durable/storage.ts';
 import { readSnapshot } from '../src/server/durable/projection.ts';
+import { learnerVisibleText } from '../src/learning/learner-text.ts';
 
 async function fixture(run, failures = 0) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-durable-engine-'));
@@ -254,6 +255,24 @@ test('a literal "(no text)" reply, written after a mark check, never shows', asy
 	} finally { await engine.close(); }
 }));
 
+test('a card written as JSON text is retried as a real card and never shows as text (#164)', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	const json = '{"prompt":"After checking the middle element, what happens next?","choices":["Search the left half only","Recheck the full list"],"reasoning":true}';
+	try {
+		await engine.submit('learner:json-card', 'Teach me binary search.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], `Each check halves the list.\n\n${json}`);
+		await until(async () => responses.length, (count) => count === 2);
+		chunk(responses[1], { tool_calls: [{ index: 0, id: 'card_1', type: 'function',
+			function: { name: 'present_question', arguments: json } }] });
+		chunk(responses[1], {}, 'tool_calls');
+		responses[1].end('data: [DONE]\n\n');
+		const settled = await until(() => engine.snapshot('learner:json-card'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.equal(reply.data?.questionnaire?.[0]?.items?.[0]?.prompt, 'After checking the middle element, what happens next?');
+		assert.equal(learnerVisibleText(reply.text), 'Each check halves the list.');
+		assert.equal(responses.length, 2);
 test('card help the tutor never marks is still labelled from the click (#65)', async () => fixture(async ({ responses, options }) => {
 	const background = [];
 	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });

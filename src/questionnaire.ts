@@ -66,6 +66,10 @@ export const PresentQuestionInputSchema = v.strictObject({
 
 export type PresentQuestionInput = v.InferOutput<typeof PresentQuestionInputSchema>;
 
+/** Where a present_question input written out as JSON text, not called,
+ * begins: an object opening on one of its keys (#164). */
+export const presentQuestionJson = /\{\s*"(?:prompt|choices)"\s*:/u;
+
 export const presentQuestionExample = {
 	prompt: 'Which recovery action should the client take first?',
 	choices: ['Recheck the admitted request', 'Send the same message again'],

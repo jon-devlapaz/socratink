@@ -23,6 +23,11 @@ test('the reply from #136 fails on its internal notes', () => {
 	assert.deepEqual(failing(reply(text)), ['no-internal-notes', 'ends-on-question']);
 });
 
+test('a present_question call written as JSON text fails on its internal notes (#164)', () => {
+	const text = 'Look at the middle first.\n\n{"prompt":"What happens next?","choices":[{"label":"Left half","value":"left"}],"reasoning":true}';
+	assert.ok(failing(reply(text)).includes('no-internal-notes'));
+});
+
 test('two questions fail; a skill map fence and a quoted question do not count', () => {
 	assert.deepEqual(failing(reply('What is a vector? And what is a scalar?')), ['one-question']);
 	const map = '```text\nWhy? ███░░ 3/5\n```\n\n> Is this a quote?\n\nWhich force pulls the apple down?';

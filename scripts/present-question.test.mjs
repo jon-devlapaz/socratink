@@ -102,3 +102,11 @@ test('retries once for an unboxed choice list', () => {
 		undefined,
 	);
 });
+
+test('retries once when the card is written as JSON text instead of a call (#164)', () => {
+	const assistantText = 'Look at the middle.\n\n{"prompt":"What happens next?","choices":["Left half","Full list"],"reasoning":true}';
+	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText, alreadyRetried: false }), 'asText');
+	assert.equal(presentQuestionRetryReason({ toolCalls: [{ tool: presentQuestionToolName, isError: false }], assistantText, alreadyRetried: false }), undefined);
+	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText, alreadyRetried: true }), undefined);
+	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText: 'In JSON, `{"a": 1}` is an object. What is a key?', alreadyRetried: false }), undefined);
+});

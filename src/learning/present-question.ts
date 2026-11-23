@@ -1,4 +1,4 @@
-import { presentQuestionExample, questionnaireToolName } from '../questionnaire.ts';
+import { presentQuestionExample, presentQuestionJson, questionnaireToolName } from '../questionnaire.ts';
 
 export const presentQuestionToolName = questionnaireToolName;
 
@@ -9,6 +9,7 @@ export const presentQuestionToolDescription =
 
 export const presentQuestionRetryBodies = {
 	unboxed: `Those options must be boxed with present_question. Do not list choices in markdown. Call present_question now with ${presentQuestionExampleJson}.`,
+	asText: `Your reply wrote the question card as JSON text, which the learner cannot use. Call present_question now with that input, shaped like ${presentQuestionExampleJson}. Write no text.`,
 } as const;
 
 export type PresentQuestionRetryReason = keyof typeof presentQuestionRetryBodies;
@@ -39,6 +40,7 @@ export function presentQuestionRetryReason(input: {
 	if (input.alreadyRetried) return undefined;
 	const calls = input.toolCalls.filter((call) => call.tool === presentQuestionToolName);
 	if (calls.some((call) => !call.isError)) return undefined;
+	if (presentQuestionJson.test(input.assistantText)) return 'asText';
 	if (looksLikeUnboxedChoices(input.assistantText)) return 'unboxed';
 	return undefined;
 }
