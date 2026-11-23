@@ -19,9 +19,10 @@ async function fixture(run) {
 	const directory = await mkdtemp(resolve('.cache/ask-before-reveal-'));
 	const responses = [];
 	const server = createServer(async (request, response) => {
-		for await (const _chunk of request) {}
+		let input = '';
+		for await (const chunk of request) input += chunk;
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
-		responses.push(response);
+		responses.push({ response, request: JSON.parse(input) });
 	});
 	await new Promise((done) => server.listen(0, '127.0.0.1', done));
 	const work = [];
@@ -43,7 +44,7 @@ async function fixture(run) {
 	try {
 		await run({ snapshot, poll,
 			async restart() { await Promise.all(work); await engine.close(); engine = await openEngine(options); },
-			async turn(learner, reveal, text, inspect = () => {}) {
+			async turn(learner, reveal, text, inspect = () => {}, guardedRounds) {
 				const input = typeof reveal === 'string' ? { kind: reveal } : reveal;
 				const count = responses.length;
 				const submissionId = await engine.submit(id, learner);
@@ -51,6 +52,11 @@ async function fixture(run) {
 				const progress = initialProgress();
 				const observe = async () => {
 					const state = await snapshot();
+					if (guardedRounds) {
+						const reply = state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant');
+						assert.ok(!reply || reply.parts.every((part) => part.type === 'text'),
+							'a guarded reply never shows a second card or any tool data');
+					}
 					for (const event of progressEvents(state, progress)) {
 						if (event.type === 'message-started' && event.submissionId !== submissionId) continue;
 						if (event.type === 'message-delta' && event.messageId !== `${submissionId}:assistant`) continue;
@@ -61,7 +67,29 @@ async function fixture(run) {
 					return state;
 				};
 				await poll(observe, () => responses.length > count);
-				const first = responses[count];
+				if (guardedRounds) {
+					for (const [index, round] of guardedRounds.entries()) {
+						await poll(observe, () => responses.length > count + index);
+						const { response, request } = responses[count + index];
+						assert.equal(request.tool_choice, 'none');
+						assert.match(JSON.stringify(request.messages), /I think it is 41/, 'the learner’s attempt stays in context');
+						assert.doesNotMatch(JSON.stringify(request.messages), /The answer is 42|add one to your guess/,
+							'the withheld answer and rejected replies are absent from the next request');
+						emit(response, { role: 'assistant', content: round.text });
+						await delay(100);
+						await observe();
+						if (round.reveal) {
+							emit(response, { tool_calls: [{ index: 0, id: `blocked_${count + index}`, type: 'function',
+								function: { name: 'mark_reveal', arguments: JSON.stringify({ kind: round.reveal }) } }] });
+						}
+						finish(response, round.reveal ? 'tool_calls' : 'stop');
+					}
+					const state = await poll(observe, (value) => value.settlements.some((s) => s.submissionId === submissionId));
+					await Promise.all(work);
+					assert.equal(responses.length - count, guardedRounds.length, 'the guarded action uses at most one correction');
+					return { state, submissionId, reply: state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant') };
+				}
+				const first = responses[count].response;
 				let writer = first;
 				if (input) {
 					emit(first, { role: 'assistant', content: beforeMark });
@@ -70,7 +98,7 @@ async function fixture(run) {
 						function: { name: 'mark_reveal', arguments: JSON.stringify(input) } }] });
 					finish(first, 'tool_calls');
 					await poll(observe, () => responses.length > count + 1);
-					writer = responses[count + 1];
+					writer = responses[count + 1].response;
 				}
 				emit(writer, { role: 'assistant', content: text.slice(0, 10) });
 				await delay(100); await observe();
@@ -138,7 +166,9 @@ for (const kind of ['full_answer', 'worked_example']) {
 				});
 				assert.ok(questionnaireFromParts(again.reply.parts), 'permission applies to one reveal only');
 			} else {
-				await f.turn(answer, kind, protectedText, withheld);
+				const question = 'What would you try next?';
+				const tried = await f.turn(answer, undefined, '', withheld, [{ reveal: kind, text: protectedText }, { text: question }]);
+				assert.deepEqual(tried.reply.parts, [{ type: 'text', state: 'done', text: question }]);
 				await f.turn('Let me try again.', undefined, 'What would you try next?', withheld);
 				const retry = await f.turn('I think it is 41.', kind, protectedText, withheld);
 				assert.ok(questionnaireFromParts(retry.reply.parts), 'an attempt does not grant permission');
@@ -146,6 +176,36 @@ for (const kind of ['full_answer', 'worked_example']) {
 		}));
 	}
 }
+
+test('Try once more hides a marked hint and settles only the corrected question', async () => fixture(async (f) => {
+	const pending = await f.turn('I think it is 41.', 'full_answer', protectedText, withheld);
+	const card = questionnaireFromParts(pending.reply.parts);
+	const answer = formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: ['try-once-more'] }]);
+	const hint = 'Hint: add one to your guess.';
+	const question = 'What could you try to check your guess?';
+	const tried = await f.turn(answer, undefined, '', (value) => {
+		withheld(value);
+		assert.doesNotMatch(JSON.stringify(value), /add one|mark_reveal/);
+	}, [{ reveal: 'hint', text: hint }, { text: question }]);
+	assert.deepEqual(tried.reply.parts, [{ type: 'text', state: 'done', text: question }]);
+}));
+
+test('Try once more rejects repeated bad replies and can be retried after reopening', async () => fixture(async (f) => {
+	const pending = await f.turn('I think it is 41.', 'full_answer', protectedText, withheld);
+	const card = questionnaireFromParts(pending.reply.parts);
+	const answer = formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: ['try-once-more'] }]);
+	const bad = [{ text: 'Hint: add one to your guess.' }, { reveal: 'full_answer', text: protectedText }];
+	const tried = await f.turn(answer, undefined, '', (value) => {
+		withheld(value);
+		assert.doesNotMatch(JSON.stringify(value), /add one/);
+	}, bad);
+	assert.equal(tried.reply, undefined);
+	assert.equal(tried.state.settlements.find((s) => s.submissionId === tried.submissionId)?.outcome, 'failed');
+	await f.restart();
+	const question = 'How would you check whether it is 41?';
+	const retry = await f.turn(answer, undefined, '', withheld, [{ text: question }]);
+	assert.deepEqual(retry.reply.parts, [{ type: 'text', state: 'done', text: question }]);
+}));
 
 test('an unmarked reply streams before settlement', async () => fixture(async (f) => {
 	let streamed = false;

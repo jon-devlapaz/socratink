@@ -31,7 +31,7 @@ async function runScenario(engine: Engine, scenario: Scenario, conversationId: s
 				...(turn.outcome === 'completed' ? {} : { detail: `turn ended ${turn.outcome}` }) },
 			...(turn.reply ? replyChecks(turn.reply).map((c) => ({ ...c, turn: index })) : []),
 		]),
-		...(turns.every((turn) => turn.outcome === 'completed') ? scenario.expect(turns) : []),
+		...scenario.expect(turns),
 	];
 	return { turns, checks };
 }

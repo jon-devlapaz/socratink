@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import { inputKind, type Engine, type EngineOptions, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { inputKind, type Engine, type EngineOptions, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
-import { readSnapshot, type InputData } from './projection.ts';
+import { readSnapshot } from './projection.ts';
 import { conversationModels, modelRef, providerHttpStatus } from './provider.ts';
+import { choseTryOnceMore } from './reveal-consent.ts';
 import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
 
 export class DurableBusyError extends Error {
@@ -124,14 +125,17 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			const owner = await claim(id);
 			if (!owner) throw new DurableBusyError();
 			try {
-				const pending = (await readSnapshot(owner.storage)).submissions.find((entry) => !entry.outcome);
+				const state = await readSnapshot(owner.storage);
+				const pending = state.submissions.find((entry) => !entry.outcome);
 				if (pending) {
 					report('submission_recovery'); run(id, owner, Number(pending.id) as SubmissionId);
 					throw new DurableBusyError();
 				}
 				const requestId = randomUUID();
+				const tryOnceMore = choseTryOnceMore(state, text);
 				const submission = await owner.root.submit({ type: 'input', content: text, whenBusy: 'reject', requestId,
-					entry: { kind: inputKind, data: { requestId, revealConsent: true, ...(selection ? { selection } : {}) } } }, context);
+					entry: { kind: inputKind, data: { requestId, revealConsent: true,
+						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } }, context);
 				run(id, owner, submission.id);
 				return String(submission.id);
 			} catch (error) {

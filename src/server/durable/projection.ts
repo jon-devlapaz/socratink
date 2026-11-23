@@ -1,7 +1,7 @@
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { LiveDoc, ROOT_CONVERSATION_ID, type Cursor, type EntryRecord, type LiveState, type SubmissionRecord } from '@earendil-works/pi-durable';
 import type { AssistantMessage, Message } from '@earendil-works/pi-ai';
-import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './contract.ts';
+import type { InputData, ProductMessage, ProductTool, Snapshot } from './contract.ts';
 import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
@@ -9,14 +9,13 @@ import { splitReasoning } from '../../learning/learner-text.ts';
 import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
-export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true };
-
 export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
 	const snapshot: Snapshot = { revision: storage.revision, messages: [], submissions: [] };
 	if (!await storage.conversation(ROOT_CONVERSATION_ID, context)) return snapshot;
 	let cursor: Cursor | undefined;
 	let assistant: ProductMessage | undefined;
 	const tools = new Map<string, ProductTool>();
+	let tryOnceMore = false;
 	const consentRequired = new Set<string>();
 	do {
 		const page = await storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'ascending' }, 100, cursor, context);
@@ -24,8 +23,9 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 			if (entry.kind === inputKind) {
 				assistant = await beginSubmission(snapshot, storage, entry);
 				if ((entry.data as InputData).revealConsent) consentRequired.add(assistant.submissionId);
+				tryOnceMore = (entry.data as InputData).tryOnceMore === true;
 				tools.clear();
-			} else if (assistant) appendEntry(assistant, entry, tools);
+			} else if (assistant) appendEntry(assistant, entry, tools, tryOnceMore);
 		}
 		cursor = page.next;
 	} while (cursor);
@@ -37,9 +37,10 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 		const tool = tools.get(slot.callId);
 		if (tool && slot.output) tool.output = slot.output;
 	}
-	snapshot.messages = snapshot.messages.filter((message) => message.role === 'user'
+	const projected = withRevealConsent(snapshot, consentRequired);
+	projected.messages = projected.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
-	return withRevealConsent(snapshot, consentRequired);
+	return projected;
 }
 
 async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, entry: EntryRecord): Promise<ProductMessage> {
@@ -47,16 +48,26 @@ async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, en
 	if (!record) throw new Error('Input has no durable submission.');
 	const submissionId = String(record.id);
 	const text = entry.model?.map(messageText).join('') ?? '';
-	snapshot.submissions.push({ id: submissionId, text, ...settlement(record) });
+	snapshot.submissions.push({ id: submissionId, text, ...settlement(record),
+		...((entry.data as InputData).tryOnceMore ? { tryOnceMore: true } : {}) });
 	snapshot.messages.push({ role: 'user', submissionId, text });
 	const assistant: ProductMessage = { role: 'assistant', submissionId, text: '' };
 	snapshot.messages.push(assistant);
 	return assistant;
 }
 
-function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<string, ProductTool>) {
+function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<string, ProductTool>, tryOnceMore: boolean) {
 	for (const message of entry.model ?? []) {
 		if (message.role === 'assistant') {
+			// Each attempt replaces the previous candidate. Only the final question can be shown.
+			if (tryOnceMore) {
+				assistant.text = '';
+				delete assistant.reasoning;
+				delete assistant.tools;
+				delete assistant.data;
+				delete assistant.metadata;
+				tools.clear();
+			}
 			appendAssistant(assistant, message);
 			for (const call of message.content.filter((block) => block.type === 'toolCall')) {
 				const tool: ProductTool = { id: `${entry.id}:${call.id}`, name: call.name, input: call.arguments, state: 'running' };
