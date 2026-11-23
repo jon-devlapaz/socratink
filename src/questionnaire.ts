@@ -52,13 +52,23 @@ const PresentQuestionChoiceSchema = v.union([
 	}),
 ]);
 
+// A choice worded like a help button would read back as a help request.
+const helpLike = (choice: v.InferOutput<typeof PresentQuestionChoiceSchema>) =>
+	Object.values(questionnaireHelpText).some((text) =>
+		(typeof choice === 'string' ? choice : choice.label).trim().toLowerCase() === text.toLowerCase());
+
 export const PresentQuestionInputSchema = v.strictObject({
 	prompt: boundedString(320),
-	choices: v.pipe(v.array(PresentQuestionChoiceSchema), v.minLength(2), v.maxLength(8)),
+	choices: v.pipe(v.array(PresentQuestionChoiceSchema), v.minLength(2), v.maxLength(8),
+		v.check((choices) => !choices.some(helpLike), 'A choice cannot repeat a help button; the card already offers Hint and I don\'t know.')),
 	reasoning: v.optional(v.boolean()),
 });
 
 export type PresentQuestionInput = v.InferOutput<typeof PresentQuestionInputSchema>;
+
+/** Where a present_question input written out as JSON text, not called,
+ * begins: an object opening on one of its keys (#164). */
+export const presentQuestionJson = /\{\s*"(?:prompt|choices)"\s*:/u;
 
 export const presentQuestionExample = {
 	prompt: 'Which recovery action should the client take first?',
