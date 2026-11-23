@@ -100,7 +100,6 @@ export function createActiveTurn(
 		wrap.append(
 			createSteeringBar({
 				sourceText: item.text,
-				showUnaidedLabel: Boolean(item.reveal),
 				selectionRoot: wrap,
 				onSteer: handlers.onSteer,
 			}),

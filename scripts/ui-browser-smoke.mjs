@@ -90,7 +90,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
 				if (source === 'composer') await send(page, 'Keep my unsent question');
-				else if (source === 'steering') await page.getByRole('button', { name: 'Too fast: need a smaller step', exact: true }).click();
+				else if (source === 'steering') await page.getByRole('button', { name: 'Smaller step', exact: true }).click();
 				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
 				await page.locator('.chat-gate-card').waitFor();
 				const expected = source === 'composer' ? 'Keep my unsent question'
