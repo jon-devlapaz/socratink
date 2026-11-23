@@ -273,6 +273,9 @@ test('a card written as JSON text is retried as a real card and never shows as t
 		assert.equal(reply.data?.questionnaire?.[0]?.items?.[0]?.prompt, 'After checking the middle element, what happens next?');
 		assert.equal(learnerVisibleText(reply.text), 'Each check halves the list.');
 		assert.equal(responses.length, 2);
+	} finally { await engine.close(); }
+}));
+
 test('card help the tutor never marks is still labelled from the click (#65)', async () => fixture(async ({ responses, options }) => {
 	const background = [];
 	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
