@@ -129,33 +129,6 @@
 
 .code-block-copy {
 	flex: none;
-	padding: 0.28rem 0.58rem;
-	border: 0;
-	border-radius: 0.4rem;
-	color: var(--ink);
-	background: var(--chip-strong);
-	box-shadow: var(--shadow-border);
-	cursor: pointer;
-	font: inherit;
-	font-size: 0.68rem;
-	font-weight: 600;
-	transition-property: scale, background-color, box-shadow;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
-}
-
-.code-block-copy:hover,
-.code-block-copy:focus-visible {
-	box-shadow: none;
-	outline: 2px solid var(--accent);
-}
-
-.code-block-copy:focus-visible {
-	box-shadow: none;
-}
-
-.code-block-copy:active {
-	scale: 0.96;
 }
 
 .code-block pre {
