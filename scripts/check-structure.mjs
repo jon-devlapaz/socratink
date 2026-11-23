@@ -4,6 +4,8 @@ import { pathToFileURL } from 'node:url';
 
 const DDL = /\bCREATE\s+(?:UNIQUE\s+)?(?:TABLE|SCHEMA|INDEX)\b/;
 const POSTGRES = /from 'pg'|\bAuthPgClient\b|\$1\b/;
+const HIDDEN_TEXT = /«(?:\[A-Z|\(\?:\[A-Z|[A-Z]{2})|think>|\(no text\\?\)|\bno reveal\b|\bmark_reveal\|present_question\b/;
+const TEXT_RULE = /\/(?:\\.|[^/\n])+\/[dgimsuy]*|\.(?:indexOf|lastIndexOf|startsWith|endsWith|includes|replaceAll|replace|split)\(\s*['"`][^'"`\n]*['"`]/g;
 
 export const rules = [
 	{
@@ -12,6 +14,14 @@ export const rules = [
 		check: (text) => DDL.test(text) && POSTGRES.test(text) && !/\bsetupOnce\(/.test(text),
 		fix: 'sends schema setup to Postgres without setupOnce(). Wrap the setup in setupOnce() from src/server/setup-once.ts. '
 			+ 'It runs on first use and forgets a failure, so the next request retries instead of the instance staying broken (#78, #80).',
+	},
+	{
+		name: 'learner-text-owner',
+		applies: (file) => /^(src|api)\/.*\.ts$/.test(file) && !/\.test\.ts$/.test(file) && file !== 'src/learning/learner-text.ts',
+		check: (text) => (text.match(TEXT_RULE) ?? []).some((rule) => HIDDEN_TEXT.test(rule)),
+		fix: 'filters tutor text the learner must not see outside src/learning/learner-text.ts. Add the rule to '
+			+ 'learnerVisibleText() or splitReasoning() there instead, so live and settled replies both drop it '
+			+ '(#25, #117, #116, #131, #136 each fixed one path and missed the other).',
 	},
 ];
 

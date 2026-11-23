@@ -8,7 +8,7 @@ import {
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
-import { learnerVisibleAssistantText } from '../src/ui/assistant-text.ts';
+import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
 
 const questionnaire = {
@@ -384,7 +384,7 @@ test('assistant text removes only parentheticals or sentences naming internal to
 		['The present_questionnaire field is data.', 'The present_questionnaire field is data.'],
 	];
 	for (const [text, expected] of cases) {
-		assert.equal(learnerVisibleAssistantText(text), expected);
+		assert.equal(learnerVisibleText(text), expected);
 		assert.equal(displayedAssistantTurn({ text })?.text, expected);
 		const history = visibleTurnsFromHistory({ settlements: [], messages: [
 			{ role: 'assistant', display: 'visible', parts: [{ type: 'text', text }] },
@@ -406,19 +406,19 @@ test('a reply after Try once more shows only the question, never notes on the re
 		['A reveal can help later. What do you notice?', 'A reveal can help later. What do you notice?'],
 	];
 	for (const [text, expected] of cases) {
-		assert.equal(learnerVisibleAssistantText(text), expected);
+		assert.equal(learnerVisibleText(text), expected);
 		const history = visibleTurnsFromHistory({ settlements: [], messages: [
 			{ role: 'assistant', display: 'visible', parts: [{ type: 'text', text }] },
 		] });
 		assert.equal(history[0]?.text, expected);
 	}
-	assert.doesNotMatch(learnerVisibleAssistantText(live), /answer shown|no reveal/i);
+	assert.doesNotMatch(learnerVisibleText(live), /answer shown|no reveal/i);
 });
 
-test('learnerVisibleAssistantText removes stacked internal markers', () => {
+test('learnerVisibleText removes stacked internal markers', () => {
 	assert.equal(
-		learnerVisibleAssistantText('«STATION_IDENT» «DEBUG_ONLY» Hello'),
+		learnerVisibleText('«STATION_IDENT» «DEBUG_ONLY» Hello'),
 		'Hello',
 	);
-	assert.equal(learnerVisibleAssistantText('No marker here.'), 'No marker here.');
+	assert.equal(learnerVisibleText('No marker here.'), 'No marker here.');
 });
