@@ -70,6 +70,14 @@ test('an answered card shows its question and the answer shows as the learner\'s
 	});
 });
 
+test('earlier steps preserve the learner’s literal symbols and line breaks', () => {
+	const words = '# My calculation\n\n3 * 4 * 5 = 60';
+	const [turn] = visibleTurnsFromHistory({ settlements: [], messages: [message('user', words)] });
+	withDocument(() => {
+		assert.ok(descendants(createHistoryStep([turn], 0)).some((node) => node.textContent === words));
+	});
+});
+
 test('completed replies use the last validated reveal write', () => {
 	assert.equal(revealFromReply(undefined), undefined);
 	assert.equal(revealFromReply({ reveal: [] }), undefined);

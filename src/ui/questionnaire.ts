@@ -82,6 +82,7 @@ export function createQuestionnaire(
 		onSubmit([answer]);
 	});
 	form.addEventListener('keydown', (event) => {
+		if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
 		if (event.target instanceof HTMLInputElement && event.target.type === 'text') return;
 		const shortcutChoice = item.choices.find(
 			(choice) => choice.shortcut?.toLowerCase() === event.key.toLowerCase(),

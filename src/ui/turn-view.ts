@@ -331,6 +331,7 @@ function appendTurnCopy(
 }
 
 function historyBodyText(item: DisplayedTurn): string {
+	if (item.role === 'You') return item.shownText ?? item.text;
 	const compact = compactMarkdownText(item.shownText ?? item.text);
 	if (compact) return compact;
 	if (item.questionnaire) return item.questionnaire.items.map((question) => question.prompt).join(' ');

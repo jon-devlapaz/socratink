@@ -110,7 +110,7 @@
 	white-space: nowrap;
 }
 
-.dictation-toggle {
+.dictation-toggle:not([hidden]) {
 	position: relative;
 	display: grid;
 	width: 44px;

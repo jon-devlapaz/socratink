@@ -103,6 +103,7 @@
 						id="message"
 						autocomplete="off"
 						name="message"
+						disabled
 						rows="2"
 						required
 					></textarea>
@@ -143,7 +144,7 @@
 									<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="8" width="8" height="8" rx="1" /></svg>
 								</span>
 							</button>
-							<button aria-label="Send message" type="submit">
+							<button aria-label="Send message" type="submit" disabled>
 								<span aria-hidden="true">↑</span>
 							</button>
 						</div>
@@ -154,7 +155,7 @@
 			</footer>
 		</div>
 
-		<div class="menu-layer" id="menu-layer" aria-hidden="true">
+		<div class="menu-layer" id="menu-layer" aria-hidden="true" inert>
 			<button
 				class="menu-backdrop"
 				id="menu-backdrop"
