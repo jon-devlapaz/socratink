@@ -85,8 +85,7 @@
 	transition: background-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), scale 150ms var(--ease-out);
 }
 
-.questionnaire-choice:hover,
-.questionnaire-choice:has(input:focus-visible) {
+.questionnaire-choice:hover {
 	background: var(--path-hover);
 	box-shadow: none;
 }
@@ -149,11 +148,6 @@
 	color: var(--ink);
 	background: var(--chip);
 	font: inherit;
-}
-
-.questionnaire-freeform-label input:focus-visible {
-	border-color: color-mix(in srgb, var(--accent) 60%, transparent);
-	outline: 2px solid var(--accent);
 }
 
 .questionnaire-actions {

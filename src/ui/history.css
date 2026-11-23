@@ -121,11 +121,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-#history-list button:focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: -2px;
-}
-
 @media (min-width: 48rem) {
 	#history-dialog {
 		padding-top: max(1.25rem, 6vh);
