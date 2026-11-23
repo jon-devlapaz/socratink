@@ -1,8 +1,12 @@
 /** The one owner of what the learner may see of the tutor's text. Every past
  * leak was a rule added on one path and missed on the other: markers (#25),
  * reasoning in <think> tags (#117), tool names and reveal notes (#116, #136),
- * a literal "(no text)" (#131). check:structure keeps these rules here. */
+ * a literal "(no text)" (#131), and prose answering a correction that asked
+ * for no text (first live eval). check:structure keeps these rules here. */
 
+import { markRevealRetryBodies } from './mark-reveal.ts';
+
+const noTextCorrections: readonly string[] = Object.values(markRevealRetryBodies);
 const leadingMarkers = /^(?:«[A-Z][A-Z0-9_]*»\s*)+/u;
 const partialLeadingMarker = /^«(?:[A-Z][A-Z0-9_]*)?$/u;
 const internalToolName = /\b(?:mark_reveal|present_question)\b/u;
@@ -42,4 +46,10 @@ export function learnerVisibleText(text: string): string {
 			(sentence) => internalToolName.test(sentence)
 				|| (revealNote.test(sentence) && !sentence.trimEnd().endsWith('?')) ? '' : sentence)
 		.trim();
+}
+
+/** Whether a correction told the tutor to write no text. Whatever text it
+ * writes after one is addressed to the correction, never to the learner. */
+export function asksForNoText(correction: string): boolean {
+	return noTextCorrections.includes(correction);
 }

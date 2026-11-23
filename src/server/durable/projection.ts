@@ -5,7 +5,7 @@ import type { ModelSelection, ProductMessage, ProductTool, Snapshot } from './co
 import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
-import { splitReasoning } from '../../learning/learner-text.ts';
+import { asksForNoText, splitReasoning } from '../../learning/learner-text.ts';
 import { withRevealConsent } from './reveal-consent.ts';
 import type { CommittedStorage } from './storage.ts';
 
@@ -16,6 +16,7 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 	if (!await storage.conversation(ROOT_CONVERSATION_ID, context)) return snapshot;
 	let cursor: Cursor | undefined;
 	let assistant: ProductMessage | undefined;
+	let silenced = false;
 	const tools = new Map<string, ProductTool>();
 	const consentRequired = new Set<string>();
 	do {
@@ -25,14 +26,15 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 				assistant = await beginSubmission(snapshot, storage, entry);
 				if ((entry.data as InputData).revealConsent) consentRequired.add(assistant.submissionId);
 				tools.clear();
-			} else if (assistant) appendEntry(assistant, entry, tools);
+				silenced = false;
+			} else if (assistant) silenced = appendEntry(assistant, entry, tools, silenced);
 		}
 		cursor = page.next;
 	} while (cursor);
 	const record = await storage.findDocument({ kind: LiveDoc.definition.kind,
 		scope: { kind: 'conversation', conversationId: ROOT_CONVERSATION_ID } }, 'current', context);
 	const live = record ? (await storage.document(record.id, 'current', context))?.value as LiveState | undefined : undefined;
-	if (assistant && live?.generation?.message) appendAssistant(assistant, live.generation.message);
+	if (assistant && live?.generation?.message) appendAssistant(assistant, live.generation.message, silenced);
 	for (const slot of live?.tools ?? []) {
 		const tool = tools.get(slot.callId);
 		if (tool && slot.output) tool.output = slot.output;
@@ -54,10 +56,11 @@ async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, en
 	return assistant;
 }
 
-function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<string, ProductTool>) {
+function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<string, ProductTool>, silenced: boolean): boolean {
 	for (const message of entry.model ?? []) {
+		if (message.role === 'user' && asksForNoText(messageText(message))) silenced = true;
 		if (message.role === 'assistant') {
-			appendAssistant(assistant, message);
+			appendAssistant(assistant, message, silenced);
 			for (const call of message.content.filter((block) => block.type === 'toolCall')) {
 				const tool: ProductTool = { id: `${entry.id}:${call.id}`, name: call.name, input: call.arguments, state: 'running' };
 				(assistant.tools ??= []).push(tool);
@@ -66,6 +69,7 @@ function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<s
 		}
 		if (message.role === 'toolResult') appendResult(assistant, message, tools);
 	}
+	return silenced;
 }
 
 function appendResult(assistant: ProductMessage, message: Extract<Message, { role: 'toolResult' }>, tools: Map<string, ProductTool>) {
@@ -77,8 +81,10 @@ function appendResult(assistant: ProductMessage, message: Extract<Message, { rol
 	}
 }
 
-function appendAssistant(target: ProductMessage, message: AssistantMessage) {
-	const { text, reasoning: inline } = splitReasoning(messageText(message));
+function appendAssistant(target: ProductMessage, message: AssistantMessage, silenced: boolean) {
+	const split = splitReasoning(messageText(message));
+	const text = silenced ? '' : split.text;
+	const inline = silenced ? [split.text, split.reasoning].filter(Boolean).join('\n\n') : split.reasoning;
 	const reasoning = [...message.content.flatMap((block) => block.type === 'thinking' && !block.redacted ? [block.thinking] : []), inline]
 		.filter(Boolean).join('\n\n');
 	if (text) target.text += `${target.text ? '\n\n' : ''}${text}`;
