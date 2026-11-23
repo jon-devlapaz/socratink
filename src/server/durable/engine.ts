@@ -6,7 +6,7 @@ import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
 import { readSnapshot } from './projection.ts';
 import { conversationModels, modelRef, providerHttpStatus } from './provider.ts';
-import { choseTryOnceMore } from './reveal-consent.ts';
+import { choseTryOnceMore, rejectedTryOnceMoreEdits } from './reveal-consent.ts';
 import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
 
 export class DurableBusyError extends Error {
@@ -133,11 +133,17 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				}
 				const requestId = randomUUID();
 				const tryOnceMore = choseTryOnceMore(state, text);
-				const submission = await owner.root.submit({ type: 'input', content: text, whenBusy: 'reject', requestId,
+				const input = { type: 'input', content: text, whenBusy: 'reject', requestId,
 					entry: { kind: inputKind, data: { requestId, revealConsent: true,
-						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } }, context);
-				run(id, owner, submission.id);
-				return String(submission.id);
+						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } } as const;
+				const edits = await rejectedTryOnceMoreEdits(owner.root, state.submissions.at(-1), context);
+				const submissionId = edits.length ? await owner.root.commit(async (tx) => {
+					const submitted = await owner.root.submit(tx, input);
+					await tx.appendEntry(owner.root.id, { kind: 'socratink.try-once-more-context', edits });
+					return submitted;
+				}, context) : (await owner.root.submit(input, context)).id;
+				run(id, owner, submissionId);
+				return String(submissionId);
 			} catch (error) {
 				if (!owner.done) { await owner.stop(); active.delete(id); }
 				throw error;

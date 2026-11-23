@@ -111,7 +111,8 @@ async function fixture(run) {
 				finish(writer);
 				const state = await poll(observe, (value) => value.settlements.some((s) => s.submissionId === submissionId));
 				await Promise.all(work);
-				return { state, reply: state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant') };
+				return { state, request: responses[count].request,
+					reply: state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant') };
 			},
 		});
 	} finally {
@@ -188,6 +189,15 @@ test('Try once more hides a marked hint and settles only the corrected question'
 		assert.doesNotMatch(JSON.stringify(value), /add one|mark_reveal/);
 	}, [{ reveal: 'hint', text: hint }, { text: question }]);
 	assert.deepEqual(tried.reply.parts, [{ type: 'text', state: 'done', text: question }]);
+	await f.restart();
+	const followUp = await f.turn('I think it could be 40.', undefined, 'What did you check?');
+	assert.ok(followUp.request.messages.some((m) => m.role === 'assistant' && m.content === question));
+	assert.ok(!/add one to your guess|The learner chose Try once more/.test(JSON.stringify(followUp.request.messages)),
+		'rejected hint and correction stay out of the first ordinary request after reopening');
+	const later = await f.turn('I checked by counting.', undefined, 'How did you count?');
+	assert.ok(later.request.messages.some((m) => m.role === 'assistant' && m.content === question));
+	assert.ok(!/add one to your guess|The learner chose Try once more/.test(JSON.stringify(later.request.messages)),
+		'rejected hint and correction stay out of later requests');
 }));
 
 test('Try once more rejects repeated bad replies and can be retried after reopening', async () => fixture(async (f) => {
@@ -205,6 +215,10 @@ test('Try once more rejects repeated bad replies and can be retried after reopen
 	const question = 'How would you check whether it is 41?';
 	const retry = await f.turn(answer, undefined, '', withheld, [{ text: question }]);
 	assert.deepEqual(retry.reply.parts, [{ type: 'text', state: 'done', text: question }]);
+	const followUp = await f.turn('I can count again.', undefined, 'What would you count?');
+	assert.ok(followUp.request.messages.some((m) => m.role === 'assistant' && m.content === question));
+	assert.ok(!/add one to your guess|The learner chose Try once more/.test(JSON.stringify(followUp.request.messages)),
+		'rejected replies from the failed attempt stay out after a successful retry');
 }));
 
 test('an unmarked reply streams before settlement', async () => fixture(async (f) => {
