@@ -2,8 +2,8 @@
  * Each rule quotes the system prompt sentence it tests; policy.test.ts fails when a
  * quote leaves the prompt, so a removed rule cannot keep a passing check. */
 export const behaviourRules = {
-	'one-question': { policy: 'Ask ONE question at a time.', issues: [] },
-	'ends-on-question': { policy: 'End the message immediately after the question', issues: [] },
+	'one-question': { policy: 'Ask ONE question at a time.', issues: [163] },
+	'ends-on-question': { policy: 'End the message immediately after the question', issues: [163] },
 	'choices-boxed': { policy: 'Never write the choices as a numbered, lettered, or bullet list in text', issues: [] },
 	'no-internal-notes': { policy: 'Never mention internal tools or bookkeeping to the learner.', issues: [136] },
 	'reveal-marked': { policy: 'whenever a turn supplies target content, call mark_reveal before writing the reveal text', issues: [] },

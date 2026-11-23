@@ -128,6 +128,7 @@ test('a policy-following tutor passes every scenario', async () => {
 test('a tutor with the known bugs fails every behaviour rule, each where expected', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, BehaviourRuleId[]> = {
+		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
 		'try-once-more-no-notes': ['no-internal-notes', 'ends-on-question', 'try-once-more-withholds'],

@@ -50,6 +50,13 @@ const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn)
 
 export const scenarios: readonly Scenario[] = [
 	{
+		name: 'first-turn-diagnostic',
+		issue: 163,
+		summary: 'A first message on a broad topic starts the diagnostic with exactly one question, not a numbered batch.',
+		next: scripted([{ say: 'Help me understand how rainbows form.' }]),
+		expect: () => [],
+	},
+	{
 		name: 'just-tell-me-first-message',
 		issue: 133,
 		summary: 'A first message that asks a question and says "just tell me the answer" gets the answer, with no consent card.',
