@@ -51,7 +51,10 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			},
 		};
 		return { selected, options, route: (message: AssistantMessage) => {
-			const routedModel = route?.routedModel ?? message.responseModel?.trim();
+			// pi-ai records the chunk's model only when it differs from the request, so a
+			// reply with no other source came from the model that was asked for.
+			const routedModel = route?.routedModel ?? message.responseModel?.trim()
+				?? (message.stopReason === 'error' ? undefined : selected.model.id);
 			return routedModel ? { routedModel, ...(fallbackAttempts ? { fallbackAttempts } : {}) } : undefined;
 		} };
 	}
