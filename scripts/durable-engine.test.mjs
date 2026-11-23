@@ -291,6 +291,24 @@ test('card help the tutor never marks is still labelled from the click (#65)', a
 	} finally { await engine.close(); }
 }));
 
+test('a reveal after the learner asks for the answer is recorded as requested, even when the tutor omits it (#133)', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:asked', 'Why do the seasons change? Just tell me the answer.');
+		await until(async () => responses.length, (count) => count === 1);
+		chunk(responses[0], { tool_calls: [{ index: 0, id: 'reveal_1', type: 'function',
+			function: { name: 'mark_reveal', arguments: JSON.stringify({ kind: 'full_answer' }) } }] });
+		chunk(responses[0], {}, 'tool_calls');
+		responses[0].end('data: [DONE]\n\n');
+		await until(async () => responses.length, (count) => count === 2);
+		finish(responses[1], 'Seasons come from the tilt of the axis. If Earth had no tilt, what would change?');
+		const settled = await until(() => engine.snapshot('learner:asked'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.deepEqual(reply.data?.reveal, [{ kind: 'full_answer', requested: true }]);
+	} finally { await engine.close(); }
+}));
+
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');
 	const lines = [];
