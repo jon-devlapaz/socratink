@@ -160,6 +160,9 @@ test('a turn that fails at the provider records why', async () => {
 		const failed = result?.checks.find((c) => c.check === 'turn-completed');
 		assert.equal(failed?.status, 'fail');
 		assert.match(failed?.detail ?? '', /^turn ended failed: .*400/);
+		// The provider's own words and the time it took survive, so a failed run shows its cause.
+		assert.match(failed?.detail ?? '', /synthetic bad request/);
+		assert.match(failed?.detail ?? '', /after \d+ ms/);
 	} finally {
 		server.closeAllConnections();
 		await new Promise((done) => server.close(done));

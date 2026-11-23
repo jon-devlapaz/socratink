@@ -4,17 +4,23 @@
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import type { Engine, EngineOptions, Snapshot } from '../../src/server/durable/contract.ts';
+import type { Engine, EngineOptions, Snapshot, TurnRecord } from '../../src/server/durable/contract.ts';
+import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
+import { ROOT_CONVERSATION_ID } from '@earendil-works/pi-durable';
 import { openEngine } from '../../src/server/durable/engine.ts';
+import { createDurableStorage } from '../../src/server/durable/storage.ts';
 import { project } from '../../src/server/durable/browser-projection.ts';
 import { replyChecks, type CheckName, type CheckResult } from './checks.ts';
 import type { Scenario, Turn } from './scenarios.ts';
 
+type TurnDiagnostics = Partial<Pick<TurnRecord, 'providerStatus' | 'latencyMs'>> & { providerError?: string };
+
 export type ScenarioResult = { scenario: string; run: number; turns: Turn[]; checks: CheckResult[] };
 
-// Submission errors are generic on purpose; `providerStatus` adds the HTTP status the engine logged.
+// Submission errors are generic on purpose; `turnLog` adds what the engine logged: the
+// HTTP status, the provider's redacted error text and the turn's latency.
 async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number,
-	providerStatus: (conversationId: string, submissionId: string) => Promise<number | undefined>): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
+	turnLog: (conversationId: string, submissionId: string) => Promise<TurnDiagnostics | undefined>): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
 	const turns: Turn[] = [];
 	while (turns.length < (scenario.maxTurns ?? 6)) {
 		const next = scenario.next(turns);
@@ -25,8 +31,9 @@ async function runScenario(engine: Engine, scenario: Scenario, conversationId: s
 		const submission = state.submissions.find((s) => s.id === submissionId);
 		const outcome = submission?.outcome ?? 'timeout';
 		const reply = project(conversationId, state).messages.find((m) => m.submissionId === submissionId && m.role === 'assistant');
-		const status = outcome === 'completed' ? undefined : await providerStatus(conversationId, submissionId);
-		const error = [submission?.error, status ? `provider status ${status}` : undefined].filter(Boolean).join(' ');
+		const log = outcome === 'completed' ? undefined : await turnLog(conversationId, submissionId);
+		const error = [submission?.error, log?.providerStatus ? `provider status ${log.providerStatus}` : undefined,
+			log?.providerError ? `(${log.providerError})` : undefined, log?.latencyMs ? `after ${log.latencyMs} ms` : undefined].filter(Boolean).join(' ');
 		turns.push({ ...flags, learner: text, outcome, reply, ...(error ? { error } : {}) });
 		if (outcome !== 'completed') break;
 	}
@@ -57,14 +64,19 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 	await mkdir('.cache', { recursive: true });
 	const directory = await mkdtemp(resolve('.cache/tutor-eval-db-'));
 	const work: Promise<void>[] = [];
-	const statuses = new Map<string, number>();
-	const engine = await openEngine({ target: { kind: 'sqlite', filename: join(directory, 'pi.sqlite') },
+	const logs = new Map<string, TurnRecord>();
+	const target = { kind: 'sqlite', filename: join(directory, 'pi.sqlite') } as const;
+	const engine = await openEngine({ target,
 		resolveModel: options.resolveModel, keepAlive: (promise) => work.push(promise),
-		logTurn: (turn) => { if (turn.providerStatus) statuses.set(`${turn.conversationId}:${turn.submissionId}`, turn.providerStatus); } });
-	// The engine logs a turn after it settles, so wait for its work before reading.
-	const providerStatus = async (conversationId: string, submissionId: string) => {
+		logTurn: (turn) => logs.set(`${turn.conversationId}:${turn.submissionId}`, turn) });
+	// The engine logs a turn after it settles, so wait for its work before reading. The turn
+	// log carries no provider text, so the eval reads the provider's (redacted) error from its
+	// own temporary database before that is removed.
+	const turnLog = async (conversationId: string, submissionId: string): Promise<TurnDiagnostics> => {
 		await Promise.allSettled(work);
-		return statuses.get(`${conversationId}:${submissionId}`);
+		const log = logs.get(`${conversationId}:${submissionId}`);
+		return { ...(log?.providerStatus ? { providerStatus: log.providerStatus } : {}), ...(log ? { latencyMs: log.latencyMs } : {}),
+			...await providerError(target, conversationId) };
 	};
 	const results: ScenarioResult[] = [];
 	try {
@@ -72,7 +84,7 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 			for (const scenario of options.scenarios) {
 				let outcome: Omit<ScenarioResult, 'scenario' | 'run'>;
 				try {
-					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000, providerStatus);
+					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000, turnLog);
 				} catch (error) {
 					outcome = { turns: [], checks: [{ check: 'scenario-ran', status: 'fail', detail: error instanceof Error ? error.message : String(error) }] };
 				}
@@ -87,6 +99,19 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 		await rm(directory, { recursive: true, force: true });
 	}
 	return results;
+}
+
+/** The last provider error the conversation stored, already redacted by the provider adapter. */
+async function providerError(target: EngineOptions['target'], conversationId: string): Promise<{ providerError?: string }> {
+	const manager = createDurableStorage(target);
+	try {
+		const storage = await manager.read(conversationId);
+		const recent = await storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
+		const failed = recent.items.flatMap((entry) => [...(entry.model ?? [])].reverse())
+			.find((message) => message.role === 'assistant' && message.stopReason === 'error');
+		const text = failed?.role === 'assistant' ? failed.errorMessage?.slice(0, 500) : undefined;
+		return text ? { providerError: text } : {};
+	} catch { return {}; } finally { await manager.close(); }
 }
 
 export type Counts = { pass: number; fail: number; skip: number };
