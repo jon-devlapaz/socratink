@@ -489,14 +489,3 @@ html:has(.menu-layer.is-open) .app-canvas {
 	justify-content: flex-end;
 	gap: 0.5rem;
 }
-
-.start-over-actions button {
-	min-height: 44px;
-	padding: 0.5rem 0.7rem;
-	font: inherit;
-	color: var(--ink);
-	border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
-	border-radius: 0.5rem;
-	background: var(--paper);
-	cursor: pointer;
-}
