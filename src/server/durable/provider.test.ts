@@ -40,6 +40,22 @@ test('the hosted tutor sends explicit disabled reasoning and keeps its fallback 
 	assert.deepEqual(requests[0]?.body.models, [...appConfig.vercelAiGatewayFallbackModelIds]);
 });
 
+test('a reply from the requested hosted model is labelled with it (the gateway sends no route header)', async (t) => {
+	// AI Gateway names the serving model in each chunk; pi-ai keeps it only when it differs from the request.
+	t.mock.method(globalThis, 'fetch', async () => new Response(
+		`data: {"id":"gen_1","model":"${appConfig.vercelAiGatewayModelId}","choices":[{"index":0,"delta":{"content":"Ready."},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n`,
+		{ headers: { 'content-type': 'text/event-stream' } }));
+	const operator = resolveChatModel({ VERCEL: '1', AI_GATEWAY_API_KEY: 'synthetic-key' });
+	assert(operator);
+	const models = conversationModels({
+		target: { kind: 'sqlite', filename: ':memory:' },
+		resolveModel: async () => modelConfig(operator),
+	}, 'learner:synthetic', async () => undefined);
+	const message = await models.streamSimple(models.getModel(modelRef.provider, modelRef.modelId)!, { messages: [] }).result();
+	assert.equal(message.stopReason, 'stop');
+	assert.deepEqual(messageRoute(message), { routedModel: appConfig.vercelAiGatewayModelId });
+});
+
 test('operator transport preserves keys, limits, live route headers and persisted response metadata', async () => {
 	const requests: { path: string; authorization: string | undefined; body: Record<string, unknown> }[] = [];
 	const server = createServer(async (request, response) => {
