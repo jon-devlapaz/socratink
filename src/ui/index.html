@@ -283,6 +283,17 @@
 			</div>
 		</dialog>
 
+		<dialog id="start-over-dialog" aria-labelledby="start-over-title" aria-describedby="start-over-note">
+			<form method="dialog">
+				<h2 id="start-over-title">Start a new conversation?</h2>
+				<p id="start-over-note">Your draft will be deleted. You can reopen this conversation from History.</p>
+				<div class="start-over-actions">
+					<button value="keep" autofocus>Keep this conversation</button>
+					<button value="start" id="start-over-confirm">Start new conversation</button>
+				</div>
+			</form>
+		</dialog>
+
 		<dialog id="feedback-dialog" aria-labelledby="feedback-title">
 			<form id="feedback-form">
 				<h2 id="feedback-title" tabindex="-1" autofocus>Send feedback</h2>

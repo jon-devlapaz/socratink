@@ -314,11 +314,6 @@ export function mountChatSurface(options: Readonly<{
 	initAppearance(appearance);
 	initTypeSize(typeSize);
 	const sound = mountSoundCues(requireElement<HTMLButtonElement>('#sound-toggle'));
-	startOver.addEventListener('click', () => {
-		dictation.cancel();
-		draft.clear();
-		startNewChatConversation(options.userId);
-	});
 	watchChatConversationReset(() => {
 		draft.clear();
 		location.reload();
@@ -327,6 +322,18 @@ export function mountChatSurface(options: Readonly<{
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
 	const closeMenu = mountMenuSheet(elements, {
 		reduceMotion,
+	});
+	const startOverDialog = requireElement<HTMLDialogElement>('#start-over-dialog');
+	startOver.addEventListener('click', () => {
+		closeMenu();
+		startOverDialog.returnValue = '';
+		startOverDialog.showModal();
+	});
+	startOverDialog.addEventListener('close', () => {
+		if (startOverDialog.returnValue !== 'start') return requireElement<HTMLButtonElement>('#menu-trigger').focus();
+		dictation.cancel();
+		draft.clear();
+		startNewChatConversation(options.userId);
 	});
 	mountHistory({
 		currentId: conversation.id,
