@@ -280,7 +280,7 @@ export function mountChatSurface(options: Readonly<{
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
 			document.body.classList.toggle('conversation-empty', nothingSaidYet);
-			input.placeholder = nothingSaidYet ? 'What are you working on?' : '';
+			input.placeholder = nothingSaidYet ? 'What are you working on?' : 'Your reply';
 			document.body.classList.toggle(
 				'questionnaire-active',
 				Boolean(current.at(-1)?.questionnaire && requestState.kind === 'idle'),

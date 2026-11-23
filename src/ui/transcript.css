@@ -126,6 +126,16 @@ html[data-type-size='small'] .active-node {
 	pointer-events: none;
 }
 
+/* A short conversation sits in the middle of the space above the composer.
+ * The pseudo-elements share only free space, so a live turn's spacer and a
+ * long conversation leave them at zero height. */
+.active-scroll::before,
+.active-scroll::after {
+	content: '';
+	flex: 1 1 0;
+	pointer-events: none;
+}
+
 .active-node:focus-within {
 	box-shadow: none;
 }
@@ -812,7 +822,7 @@ body.conversation-empty .stage::before {
 	display: block;
 	align-self: stretch;
 	width: min(580px, 100%);
-	margin: auto auto 0;
+	margin: auto;
 	padding-bottom: 1.25rem;
 	color: var(--ink);
 	font-family: var(--font-serif);
