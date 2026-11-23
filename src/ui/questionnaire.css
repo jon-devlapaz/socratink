@@ -69,26 +69,6 @@
 
 .questionnaire-choices > button {
 	flex: 0 0 auto;
-	min-height: 44px;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	color: var(--muted);
-	background: transparent;
-	font-size: calc(0.95rem * var(--type-scale, 1));
-	text-decoration: underline;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 0.3em;
-	text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
-}
-
-.questionnaire-choices > button + button {
-	color: var(--accent);
-	text-decoration-color: currentColor;
-}
-
-.questionnaire-choices > button:hover {
-	text-decoration-color: currentColor;
 }
 
 .questionnaire-choice {
@@ -183,45 +163,17 @@
 	gap: 0.5rem;
 }
 
-.questionnaire-button {
-	min-height: 44px;
-	border: 0;
-	border-radius: 9px;
-	padding: 0.55rem 0.8rem;
-	cursor: pointer;
-	font-size: 0.82rem;
-	font-weight: 500;
-	transition-property: scale, opacity;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
-}
-
 .questionnaire-button[hidden] {
 	display: none;
 }
 
-.questionnaire-button:active:not(:disabled) {
-	scale: 0.96;
-}
-
-.questionnaire-button:focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
-}
-
-.questionnaire-button-primary {
-	color: var(--accent);
-	border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-	background: var(--paper-2);
-}
-
 .questionnaire-button-ghost {
-	min-inline-size: 44px;
-	padding-inline: 0;
-	text-align: start;
-	background: transparent;
 	margin-right: auto;
-	color: var(--muted);
+}
+
+/* The first ghost's text starts on the prompt's leading edge. */
+.questionnaire-button-ghost:first-child {
+	margin-left: -1.1rem;
 }
 
 .questionnaire-button-ghost:has(+ .questionnaire-button-ghost) {
@@ -243,13 +195,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.questionnaire-choice,
-	.questionnaire-button {
+	.questionnaire-choice {
 		transition: none;
 	}
 
-	.questionnaire-choice:active,
-	.questionnaire-button:active:not(:disabled) {
+	.questionnaire-choice:active {
 		scale: 1;
 	}
 }

@@ -38,8 +38,7 @@
 }
 
 #feedback-form input,
-#feedback-form textarea,
-.feedback-actions button {
+#feedback-form textarea {
 	font: inherit;
 	color: var(--ink);
 	border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
@@ -63,17 +62,4 @@
 	gap: 0.5rem;
 }
 
-.feedback-actions button {
-	min-height: 44px;
-	cursor: pointer;
-}
-
-#feedback-send {
-	background: var(--send-fill);
-	color: var(--send-ink);
-}
-
-#feedback-send:disabled {
-	opacity: 0.6;
-	cursor: default;
-}
+/* Buttons take their look from buttons.css. */

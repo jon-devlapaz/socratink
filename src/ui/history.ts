@@ -3,6 +3,7 @@ import { fetchConversations } from './client/conversation-list.ts';
 import { switchChatConversation } from './client/conversation.ts';
 import { requireElement } from './dom.ts';
 import './history.css';
+import './buttons.css';
 
 type HistoryOptions = Readonly<{
 	currentId: string;

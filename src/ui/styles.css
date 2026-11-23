@@ -42,8 +42,6 @@
 	--chip: var(--paper-2);
 	--chip-strong: var(--paper);
 	--highlight: transparent;
-	--send-ink: var(--paper);
-	--send-fill: var(--accent);
 	--mark-fill: var(--ink);
 	--wordmark-filter: none;
 	--panel-shadow: none;
@@ -305,22 +303,6 @@ body.questionnaire-active .stage {
 	transition: opacity 200ms var(--ease-out) 60ms, filter 260ms var(--ease-out) 60ms, scale 500ms var(--spring-pop) 60ms;
 }
 
-.composer-send button[type='submit'] {
-	display: grid;
-	width: 44px;
-	height: 44px;
-	place-items: center;
-	border: 0;
-	border-radius: 0.4rem;
-	color: var(--send-ink);
-	background: var(--send-fill);
-	cursor: pointer;
-	font-size: 1rem;
-	line-height: 1;
-	transition-property: scale, opacity;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
-}
 
 .composer-send button[type='submit'] span {
 	display: block;
@@ -337,14 +319,6 @@ body.questionnaire-active .stage {
 	transition: filter 160ms var(--ease-out), scale 160ms var(--ease-out);
 }
 
-.composer-send button[type='submit']:active:not(:disabled) {
-	scale: 0.92;
-}
-
-.composer-send button[type='submit']:disabled {
-	cursor: wait;
-	opacity: 0.42;
-}
 
 .skip-link {
 	position: fixed;
@@ -415,7 +389,6 @@ body.questionnaire-active .stage {
 	.app-canvas,
 	.composer-shell::before,
 	#chat,
-	.composer-send button[type='submit'],
 	.composer-send button[type='submit'] span,
 	.composer-hint,
 	#chat:focus-within .composer-hint {
@@ -427,10 +400,6 @@ body.questionnaire-active .stage {
 		opacity: 1;
 		transform: none;
 		filter: none;
-	}
-
-	.composer-send button[type='submit']:active:not(:disabled) {
-		scale: none;
 	}
 }
 

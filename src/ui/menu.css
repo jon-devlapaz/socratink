@@ -254,23 +254,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 .menu-orbs button:hover,
 .menu-orbs button:focus-visible {
 	color: var(--ink);
-	background: transparent;
-	box-shadow: none;
-	outline: 2px solid var(--accent);
-}
-
-.menu-orbs a:hover > svg,
-.menu-orbs button:hover > svg,
-.menu-orbs button:hover > .orb-glyph {
-	background: var(--path-hover);
-	box-shadow: var(--shadow-border-hover);
-}
-
-.menu-orbs a:focus-visible > svg,
-.menu-orbs button:focus-visible > svg,
-.menu-orbs button:focus-visible > .orb-glyph {
-	background: var(--path-hover);
-	box-shadow: none;
 }
 
 .menu-orbs a:active,
@@ -290,9 +273,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0.85rem;
-	border-radius: 0.6rem;
-	background: transparent;
-	box-shadow: var(--shadow-border);
 	box-sizing: content-box;
 	color: var(--ink);
 }

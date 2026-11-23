@@ -1,5 +1,6 @@
 import { loadAuthProviders, loginErrorCopy } from './session.ts';
 import './login.css';
+import './buttons.css';
 
 const url = new URL(location.href);
 if (url.searchParams.has('error')) {
