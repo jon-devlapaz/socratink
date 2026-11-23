@@ -2,20 +2,16 @@ import { steeringPrefix } from '../config/chat-message.ts';
 
 export type SteeringKind = 'smaller-step' | 'try-unaided';
 
-const steeringCopy: Record<SteeringKind, { label: string; ariaLabel: string; body: string; said: string; icon: string[] }> = {
+const steeringCopy: Record<SteeringKind, { label: string; body: string; said: string }> = {
 	'smaller-step': {
 		label: 'Smaller step',
-		ariaLabel: 'Too fast: need a smaller step',
 		body: 'smaller step. The last turn moved too fast or assumed more footing than I have. Slow down to one smaller step, and check a missing assumption before continuing.',
 		said: 'Smaller step, please.',
-		icon: ['M3 13h3.5v3.5H3V13Zm5-4.5H11.5V12H8V8.5Zm5-4.5H16.5V7.5H13V4Z'],
 	},
 	'try-unaided': {
-		label: 'Try unaided',
-		ariaLabel: 'I want to try unaided',
+		label: 'Try on my own',
 		body: 'try unaided. I have enough footing. Withhold the next reveal and let me attempt the target.',
 		said: 'Let me try this unaided.',
-		icon: ['M8 5.75a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Z', 'M3.75 14.25c0-1.4 1.9-2.5 4.25-2.5s4.25 1.1 4.25 2.5'],
 	},
 };
 
@@ -54,7 +50,6 @@ function selectedTextIn(root: Node): string {
 export type SteeringBarOptions = {
 	sourceText: string;
 	onSteer: (kind: SteeringKind) => void;
-	showUnaidedLabel?: boolean;
 	selectionRoot?: Node;
 	writeClipboard?: (text: string) => Promise<boolean>;
 };
@@ -62,7 +57,6 @@ export type SteeringBarOptions = {
 export function createSteeringBar({
 	sourceText,
 	onSteer,
-	showUnaidedLabel = false,
 	selectionRoot,
 	writeClipboard = writeClipboardText,
 }: SteeringBarOptions): HTMLElement {
@@ -71,67 +65,37 @@ export function createSteeringBar({
 	bar.setAttribute('role', 'group');
 	bar.setAttribute('aria-label', 'Steer this turn');
 	for (const kind of steeringKinds) {
-		bar.append(
-			createSteeringAction({
-				label: steeringCopy[kind].label,
-				ariaLabel: steeringCopy[kind].ariaLabel,
-				icon: steeringCopy[kind].icon,
-				showLabel: kind === 'try-unaided' && showUnaidedLabel,
-				onClick: () => {
-					for (const action of bar.querySelectorAll('button')) action.disabled = true;
-					onSteer(kind);
-				},
-			}),
-		);
+		const action = document.createElement('button');
+		action.type = 'button';
+		action.className = 'steering-action steering-action--text';
+		action.textContent = steeringCopy[kind].label;
+		action.addEventListener('click', () => {
+			for (const button of bar.querySelectorAll('button')) button.disabled = true;
+			onSteer(kind);
+		});
+		bar.append(action);
 	}
-	const copy = createSteeringAction({
-		label: 'Copy',
-		ariaLabel: 'Copy this turn',
-		icon: [
-			'M6.25 6.25h6.5v6.5h-6.5v-6.5Z',
+	const copy = document.createElement('button');
+	copy.type = 'button';
+	copy.className = 'steering-action';
+	copy.setAttribute('aria-label', 'Copy this turn');
+	const tipId = `steering-tip-${Math.random().toString(36).slice(2, 9)}`;
+	copy.setAttribute('aria-describedby', tipId);
+	copy.append(
+		createSteeringIcon([
+			'M6.25 6.25h6.5v6.5h-6.5V6.25Z',
 			'M3.75 3.75h6.25v1.1H4.85v5.15H3.75V3.75Z',
-		],
-		onClick: () => {
-			void copyTurnSnippet(selectionRoot ?? bar, sourceText, copy, writeClipboard);
-		},
+		]),
+		createSteeringTip(tipId, 'Copy'),
+	);
+	copy.addEventListener('click', () => {
+		void copyTurnSnippet(selectionRoot ?? bar, sourceText, copy, writeClipboard);
 	});
 	bar.append(copy);
 	return bar;
 }
 
 const steeringKinds = ['smaller-step', 'try-unaided'] as const satisfies readonly SteeringKind[];
-
-function createSteeringAction({
-	label,
-	ariaLabel,
-	icon,
-	showLabel = false,
-	onClick,
-}: {
-	label: string;
-	ariaLabel: string;
-	icon: readonly string[];
-	showLabel?: boolean;
-	onClick: () => void;
-}): HTMLButtonElement {
-	const button = document.createElement('button');
-	button.type = 'button';
-	button.className = 'steering-action';
-	button.setAttribute('aria-label', ariaLabel);
-	button.append(createSteeringIcon(icon));
-	if (showLabel) {
-		button.className = 'steering-action with-label';
-		const copy = document.createElement('span');
-		copy.textContent = label;
-		button.append(copy);
-	} else {
-		const tipId = `steering-tip-${Math.random().toString(36).slice(2, 9)}`;
-		button.setAttribute('aria-describedby', tipId);
-		button.append(createSteeringTip(tipId, label));
-	}
-	button.addEventListener('click', onClick);
-	return button;
-}
 
 function createSteeringIcon(paths: readonly string[]): SVGSVGElement {
 	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

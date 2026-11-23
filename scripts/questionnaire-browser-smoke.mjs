@@ -38,6 +38,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					assert.deepEqual(sent, []);
 				}
 				await form.locator('fieldset').focus();
+				await page.keyboard.press('Control+a');
+				assert.equal(await form.locator('input:checked').count(), 0, 'browser commands keep their normal meaning');
 				await page.keyboard.press('a');
 				assert.equal(await form.locator('input[value="first"]').isChecked(), true);
 				if (kind === 'multiple') {

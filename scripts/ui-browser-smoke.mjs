@@ -90,7 +90,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
 				if (source === 'composer') await send(page, 'Keep my unsent question');
-				else if (source === 'steering') await page.getByRole('button', { name: 'Too fast: need a smaller step', exact: true }).click();
+				else if (source === 'steering') await page.getByRole('button', { name: 'Smaller step', exact: true }).click();
 				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
 				await page.locator('.chat-gate-card').waitFor();
 				const expected = source === 'composer' ? 'Keep my unsent question'
@@ -118,6 +118,39 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			});
 		}
 	}
+
+	await check('controls-before-app-startup', async (page) => {
+		await page.route('**/assets/*.js', (route) => route.abort());
+		await page.goto(origin);
+		assert.deepEqual({
+			composerDisabled: await page.locator('#message').isDisabled(),
+			sendDisabled: await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(),
+			menuInert: await page.locator('#menu-layer').evaluate((node) => node.inert),
+		}, { composerDisabled: true, sendDisabled: true, menuInert: true });
+	});
+
+	await check('menu-returns-focus-to-its-opener', async (page) => {
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		for (const selector of ['#menu-trigger', '#peek-handle']) {
+			const trigger = page.locator(selector);
+			await trigger.focus();
+			await page.keyboard.press('Enter');
+			await page.locator('#menu-layer.is-open').waitFor();
+			await page.keyboard.press('Escape');
+			assert.equal(await trigger.evaluate((node) => document.activeElement === node), true, selector);
+		}
+	});
+
+	await check('unavailable-dictation-stays-hidden', async (page) => {
+		await page.addInitScript(() => {
+			window.SpeechRecognition = undefined;
+			window.webkitSpeechRecognition = undefined;
+		});
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		assert.equal(await page.locator('#dictation-toggle').isVisible(), false);
+	});
 
 	await check('composer-draft-scope', async (page, fixture) => {
 		await page.goto(origin);
