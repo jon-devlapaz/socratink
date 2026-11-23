@@ -61,7 +61,7 @@ with a soft top sheen and an inset highlight; use one per place, for the
 forward action (send, submit, "Try once more", send feedback). A secondary
 button is a paper pill. A ghost button has no fill until hover, for quiet
 tools such as Skip, Hint, steering, Cancel, and the microphone. Icon buttons
-are circles. Focus is a 3px verdigris ring. There are no solid teal blocks.
+are circles. There are no solid teal blocks.
 The composer has a neutral paper fill and a hairline edge, with no invitation
 glow. Sign-in uses the same folio rules, not a dark
 floating card. Shadows must identify a meaningful state, not decoration.
@@ -85,8 +85,7 @@ must not look like learner work. The tutor alone rates subskills through the
 teaching policy. A visual state does not establish mastery.
 
 Interactive controls hold at least 44px touch targets. Native choice inputs
-use their enclosing label as the touch target. Keyboard focus uses a 2px
-verdigris outline, except buttons, which use a 3px verdigris ring. The composer also outlines its container while focused.
+use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
 Preserve reduced-motion alternatives, safe-area spacing, adjustable text size,
 and explicit as well as system light/dark preferences. Code and tables scroll
 within their own regions, never across the whole page.

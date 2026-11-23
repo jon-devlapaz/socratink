@@ -130,8 +130,13 @@ a:not(.turn-markdown a) {
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
+	outline: none;
+}
+
+@media (forced-colors: active) {
+	button:focus-visible {
+		border-color: ButtonBorder !important;
+	}
 }
 
 ::selection {
@@ -234,11 +239,6 @@ body.questionnaire-active .stage {
 	border: var(--composer-border-width) solid var(--rule);
 	border-radius: 0.6rem;
 	background: var(--paper);
-	transition: border-color 150ms var(--ease-out);
-}
-
-#chat:focus-within {
-	border-color: var(--accent);
 }
 
 #message {
@@ -257,10 +257,6 @@ body.questionnaire-active .stage {
 	background: transparent;
 	font-size: 1rem;
 	line-height: 1.5;
-	outline: none;
-}
-
-#message:focus-visible {
 	outline: none;
 }
 
@@ -334,11 +330,6 @@ body.questionnaire-active .stage {
 
 .skip-link:not(:focus) {
 	clip-path: inset(50%);
-}
-
-.skip-link:focus {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
 }
 
 .sr-only {

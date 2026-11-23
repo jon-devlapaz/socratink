@@ -8,7 +8,6 @@
 	--btn-height: 2.5rem;
 	--btn-height-sm: 2rem;
 	--btn-font: 0.875rem;
-	--btn-ring: 0 0 0 3px color-mix(in oklch, var(--accent) 35%, transparent);
 	--btn-primary-fill: var(--ink);
 	--btn-primary-ink: var(--paper);
 	--btn-primary-edge: color-mix(in oklch, var(--ink), black 30%);
@@ -134,18 +133,6 @@
 	background-color: var(--btn-primary-hover);
 }
 
-:is(
-	.questionnaire-actions .questionnaire-button-primary,
-	.questionnaire-choices > button:last-child,
-	#feedback-send,
-	.composer-send button[type='submit'],
-	.dictation-toggle[data-state='listening'],
-	.dictation-toggle[data-state='stopping']
-):focus-visible {
-	outline: none;
-	box-shadow: var(--btn-primary-inset), var(--btn-ring);
-}
-
 /* Secondary: a paper pill. */
 .questionnaire-choices > button:not(:last-child),
 .request-action,
@@ -176,21 +163,6 @@
 	background-color: var(--btn-secondary-hover);
 }
 
-:is(
-	.questionnaire-choices > button:not(:last-child),
-	.request-action,
-	#history-close,
-	#history-retry,
-	.feedback-actions button:not(#feedback-send),
-	.login-oauth-btn,
-	.jump-latest,
-	.code-block-copy
-):focus-visible {
-	outline: none;
-	color: var(--ink);
-	box-shadow: var(--btn-secondary-inset), var(--btn-ring);
-}
-
 /* Ghost: quiet until the pointer or focus arrives. */
 .questionnaire-actions .questionnaire-button-ghost,
 .steering-action,
@@ -209,17 +181,6 @@
 ):hover:not(:disabled) {
 	color: var(--ink);
 	background: var(--btn-secondary-fill);
-}
-
-:is(
-	.questionnaire-actions .questionnaire-button-ghost,
-	.steering-action,
-	.thinking-cancel,
-	.dictation-toggle:not([data-state='listening']):not([data-state='stopping'])
-):focus-visible {
-	outline: none;
-	color: var(--ink);
-	box-shadow: var(--btn-ring);
 }
 
 /* Press, settle on the spring, and disabled. */
@@ -274,15 +235,6 @@
 :is(.menu-orbs a, .menu-orbs button):hover > :is(svg, .orb-glyph) {
 	background: var(--btn-secondary-hover);
 	box-shadow: inset 0 0 0 1px var(--btn-secondary-edge), var(--btn-secondary-inset);
-}
-
-:is(.menu-orbs a, .menu-orbs button):focus-visible {
-	outline: none;
-}
-
-:is(.menu-orbs a, .menu-orbs button):focus-visible > :is(svg, .orb-glyph) {
-	background: var(--btn-secondary-hover);
-	box-shadow: inset 0 0 0 1px var(--btn-secondary-edge), var(--btn-secondary-inset), var(--btn-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {

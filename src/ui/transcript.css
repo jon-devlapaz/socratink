@@ -185,8 +185,7 @@ html[data-type-size='small'] .active-node {
 	cursor: pointer;
 }
 
-.trail-toggle:hover,
-.trail-toggle:focus-visible {
+.trail-toggle:hover {
 	color: color-mix(in srgb, var(--ink) 10%, var(--chip-strong));
 }
 
@@ -195,7 +194,6 @@ html[data-type-size='small'] .active-node {
 }
 
 .trail-toggle:hover::before,
-.trail-toggle:focus-visible::before,
 .trail-toggle[aria-expanded='true']::before {
 	content: '';
 	position: absolute;
@@ -206,10 +204,6 @@ html[data-type-size='small'] .active-node {
 	height: 1px;
 	background: currentColor;
 	pointer-events: none;
-}
-
-.trail-toggle:focus-visible {
-	outline: 2px solid var(--accent);
 }
 
 .trail-toggle[hidden] {
@@ -472,14 +466,8 @@ html[data-type-size='small'] .active-node {
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
-.thinking-toggle:hover,
-.thinking-toggle:focus-visible {
+.thinking-toggle:hover {
 	opacity: 0.8;
-}
-
-.thinking-toggle:focus-visible {
-	outline: 2px solid var(--accent);
-	box-shadow: none;
 }
 
 .thinking-shimmer {

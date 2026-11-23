@@ -79,6 +79,56 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		});
 	}
 
+	for (const forcedColors of ['none', 'active']) {
+		await check(`keyboard-focus-decoration-${forcedColors}`, async (page, fixture) => {
+			await page.emulateMedia({ forcedColors });
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.goto(origin);
+			const input = page.locator('#message:enabled');
+			await input.waitFor();
+			await skipToMain(page);
+			const composer = page.locator('#chat');
+			const composerBefore = await readFocusPaint(composer);
+			await page.keyboard.press('Tab');
+			await assertNoFocusDecoration(input, composer, composerBefore);
+			await page.locator('#menu-trigger').focus();
+			await input.click({ position: { x: 24, y: 20 } });
+			assert.equal(await input.evaluate((node) => node === document.activeElement), true);
+			assert.deepEqual(await readFocusPaint(composer), composerBefore, 'clicking keeps the composer fill and border');
+			await page.keyboard.type('Keyboard draft');
+
+			const send = page.getByRole('button', { name: 'Send message', exact: true });
+			const sendBefore = await readFocusPaint(send);
+			await page.keyboard.press('Tab');
+			if (await page.locator('#dictation-toggle:focus').count()) await page.keyboard.press('Tab');
+			await assertNoFocusDecoration(send, send, sendBefore);
+
+			await page.locator('#peek-handle').press('Enter');
+			const startOver = page.locator('#start-over');
+			const icon = startOver.locator(':scope > svg');
+			const iconBefore = await readFocusPaint(icon);
+			await page.locator('#sound-toggle').press('Tab');
+			await assertNoFocusDecoration(startOver, icon, iconBefore);
+
+			fixture.mode = 'guest-limit';
+			await page.goto(origin);
+			const question = page.getByRole('form', { name: 'Questions' });
+			const choice = question.getByRole('radio').first();
+			const choiceRow = question.locator('label.questionnaire-choice').first();
+			await choice.waitFor();
+			const choiceBefore = await readFocusPaint(choiceRow);
+			await question.locator('fieldset').press('Tab');
+			await assertNoFocusDecoration(choice, choiceRow, choiceBefore);
+
+			await page.goto(`${origin}/login.html`);
+			await skipToMain(page);
+			const provider = page.locator('.login-oauth-btn').first();
+			const providerBefore = await readFocusPaint(provider);
+			await page.locator('.login-wordmark').press('Tab');
+			await assertNoFocusDecoration(provider, provider, providerBefore);
+		});
+	}
+
 	for (const width of [390, 1280]) {
 		for (const source of ['composer', 'steering', 'question']) {
 			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
@@ -392,6 +442,26 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	console.log(`UI browser passed: ${results.length} keyboard, retry, cancel, and operator scenarios.`);
 }
 
+async function readFocusPaint(locator) {
+	return locator.evaluate(async (node) => {
+		await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
+		const style = getComputedStyle(node);
+		return {
+			backgroundColor: style.backgroundColor,
+			borderColor: style.borderColor,
+			boxShadow: style.boxShadow,
+		};
+	});
+}
+
+async function assertNoFocusDecoration(control, paintTarget, before) {
+	assert.equal(await control.evaluate((node) => node.matches(':focus-visible')), true,
+		`${control} receives keyboard focus`);
+	assert.equal(await control.evaluate((node) => getComputedStyle(node).outlineStyle), 'none',
+		`${control} has no focus outline`);
+	assert.deepEqual(await readFocusPaint(paintTarget), before, `${paintTarget} keeps its fill, border, and shadow on keyboard focus`);
+}
+
 async function skipToMain(page) {
 	const link = page.getByRole('link', { name: 'Skip to main content', exact: true });
 	assert.equal(await link.evaluate((node) => getComputedStyle(node).clipPath), 'inset(50%)');
@@ -399,7 +469,7 @@ async function skipToMain(page) {
 	assert.equal(await link.evaluate((node) => {
 		const rect = node.getBoundingClientRect();
 		const style = getComputedStyle(node);
-		return document.activeElement === node && style.clipPath === 'none' && style.outlineStyle === 'solid'
+		return document.activeElement === node && style.clipPath === 'none' && style.outlineStyle === 'none'
 			&& rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight;
 	}), true);
 	await page.keyboard.press('Enter');
