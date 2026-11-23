@@ -81,6 +81,18 @@ test('a failed poll errors the stream and still closes the follower', async () =
 	assert.equal(engine.closes, 1);
 });
 
+test('aborting the request during a failed read still closes the stream', { timeout: 1_000 }, async () => {
+	const request = new AbortController();
+	const engine = engineOf([]);
+	engine.follow = () => ({
+		async snapshot() { request.abort(); throw new Error('Interrupted read.'); },
+		async close() { engine.closes++; },
+	});
+	const { events } = await frames(conversationEvents(engine, 'c', request.signal, fast));
+	assert.deepEqual(events, []);
+	assert.equal(engine.closes, 1);
+});
+
 test('a dropped client stops the snapshot loop', async () => {
 	const engine = engineOf([{ revision: 1, messages: [question], submissions: [{ id: 's2', text: 'Synthetic question' }] }]);
 	const reader = conversationEvents(engine, 'c', new AbortController().signal, fast).getReader();
