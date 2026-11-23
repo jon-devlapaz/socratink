@@ -26,6 +26,7 @@ const internalNotePatterns = [
 	/\b(?:this|that) (?:turn|reply) (?:is|was) (?:a |an )?(?:hint|reveal|partial|full[ _]answer|worked[ _]example)\b/i,
 	/\((?:full[ _]answer|worked[ _]example|reveal)\b[^)]{0,40}\)/i,
 	/\[(?:internal|note|reveal|hint)[^\]]*\]/i,
+	/\{\s*"(?:prompt|choices)"\s*:/, // a present_question call written as text (#164)
 ];
 
 function textOf(message: WireMessage | undefined): string {

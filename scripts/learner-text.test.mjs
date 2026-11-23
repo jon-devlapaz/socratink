@@ -17,6 +17,7 @@ const leaks = [
 	['#116 a tool name in bookkeeping', 'What changes? (No mark_reveal needed, diagnostic only.) Try again.', 'mark_reveal', 'What changes? Try again.'],
 	['#131 a literal "(no text)"', '(no text)', '(no text)', ''],
 	['#136 a reveal note', 'Close. No answer shown. What happens to the key?', 'No answer shown', 'Close. What happens to the key?'],
+	['#164 a present_question call written as text', 'Look at the middle element first.\n\n{"prompt":"After checking the middle element, what happens next?","choices":[{"label":"Search the left half only","value":"left_half_only"},{"label":"Recheck the full list","value":"full_list_recompare"}],"reasoning":true}', '"prompt"', 'Look at the middle element first.'],
 	['a reveal note in the reply itself (first live eval wording)', 'What color would the sky look on the Moon?\n\nYour last reply only asked a question and supplied no target content, so no reveal was marked.', 'no reveal was marked', 'What color would the sky look on the Moon?'],
 ];
 
