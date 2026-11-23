@@ -43,7 +43,7 @@ export function turnSnippetToCopy(sourceText: string, selectedText = ''): string
 	return selected || sourceText;
 }
 
-export function selectedTextIn(root: Node): string {
+function selectedTextIn(root: Node): string {
 	const selection = globalThis.getSelection?.();
 	if (!selection || selection.isCollapsed) return '';
 	const anchor = selection.anchorNode;

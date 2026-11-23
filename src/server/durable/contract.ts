@@ -9,7 +9,7 @@ export type ModelConfig = ModelSelection & {
 	/** Models the gateway tries in order when the primary model fails. */
 	fallbackModelIds?: readonly string[];
 };
-export type Outcome = 'completed' | 'failed' | 'aborted';
+type Outcome = 'completed' | 'failed' | 'aborted';
 export type ProductTool = {
 	id: string; name: string; input: Record<string, unknown>; output?: string; isError?: boolean; state: 'running' | 'done';
 };
@@ -17,7 +17,7 @@ export type ProductMessage = {
 	role: 'user' | 'assistant'; submissionId: string; text: string; reasoning?: string;
 	data?: Record<string, unknown[]>; tools?: ProductTool[]; metadata?: { socratink: ModelRouteRecord };
 };
-export type Submission = { id: string; text: string; outcome?: Outcome; error?: string };
+type Submission = { id: string; text: string; outcome?: Outcome; error?: string };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;

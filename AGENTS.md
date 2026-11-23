@@ -39,6 +39,8 @@ Run `pnpm check` and `pnpm smoke` before handoff unless the user narrows the
 checks or the environment prevents them. Report what ran and what is unproven.
 Do not weaken tests to make them pass. Use browser or live checks when needed
 and authorized.
+If knip (`pnpm check:unused`) flags code, delete it or remove the `export`.
+Add a `knip.json` ignore entry only with a reason in the PR.
 Inspect `git status --short` before editing and handoff. Preserve unrelated work.
 Stage, commit, amend, push, create branches, or open PRs only when asked.
 For **git golden**, run `scripts/git-golden.sh`. Stop on failure and report every

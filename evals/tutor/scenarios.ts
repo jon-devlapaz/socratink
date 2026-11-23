@@ -8,7 +8,7 @@ import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type Question
 import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
-export type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
+type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 export type Scenario = {
 	name: string;
 	issue?: number;
@@ -19,13 +19,13 @@ export type Scenario = {
 };
 type Step = { say: string; help?: QuestionnaireHelp; plain?: true };
 
-export function consentAnswer(card: QuestionnaireDefinition, value: 'see-it' | 'try-once-more'): string {
+function consentAnswer(card: QuestionnaireDefinition, value: 'see-it' | 'try-once-more'): string {
 	return formatQuestionnaireAnswers(card, [{ name: card.items[0]?.name ?? 'item', values: [value] }]);
 }
 
 /** Answers a pending tutor card the way the UI would: the first choice, with the step as
  * reasoning, or the card's help. With no card, or a plain step, sends the text. */
-export function learnerMessage(step: Step, previous: WireMessage | undefined): string {
+function learnerMessage(step: Step, previous: WireMessage | undefined): string {
 	const card = cardOf(previous);
 	const item = card?.items[0];
 	if (!card || !item || step.plain) return step.say;

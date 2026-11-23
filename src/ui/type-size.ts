@@ -11,7 +11,7 @@ function storedTypeSize(): TypeSize | null {
 	return isTypeSize(value) ? value : null;
 }
 
-export function resolvedTypeSize(): TypeSize {
+function resolvedTypeSize(): TypeSize {
 	return storedTypeSize() ?? 'medium';
 }
 

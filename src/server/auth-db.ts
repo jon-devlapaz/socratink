@@ -5,13 +5,13 @@ import type { DatabaseTarget } from '../config/database.ts';
 import { sharedPostgresPool } from './postgres-pool.ts';
 import { setupOnce } from './setup-once.ts';
 
-export type UserRow = Readonly<{
+type UserRow = Readonly<{
 	id: string;
 	email: string;
 	createdAt: string;
 }>;
 
-export type OAuthAccountRow = Readonly<{
+type OAuthAccountRow = Readonly<{
 	provider: string;
 	providerUserId: string;
 	userId: string;

@@ -12,7 +12,7 @@ import type { Scenario, Turn } from './scenarios.ts';
 
 export type ScenarioResult = { scenario: string; run: number; turns: Turn[]; checks: CheckResult[] };
 
-export async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
+async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
 	const turns: Turn[] = [];
 	while (turns.length < (scenario.maxTurns ?? 6)) {
 		const next = scenario.next(turns);
