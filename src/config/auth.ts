@@ -3,7 +3,7 @@ import { resolveDatabaseTarget, type DatabaseTarget } from './database.ts';
 
 export const localAuthFilename = '.cache/socratink/auth.db';
 
-export type OAuthProviderConfig = Readonly<{
+type OAuthProviderConfig = Readonly<{
 	clientId: string;
 	clientSecret: string;
 }>;

@@ -1,11 +1,13 @@
 import { existsSync } from 'node:fs';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
-import { resolveAuthConfig } from './config/auth.ts';
+import { resolveAuthConfig, resolveAuthStoreTarget } from './config/auth.ts';
 import { appConfig } from './config/app.config.ts';
 import { resolveSessionSecret } from './config/session.ts';
 import { getAuthDb } from './server/auth-runtime.ts';
 import { requireChatSession } from './server/chat-access.ts';
+import { mountConversationHistory } from './server/conversation-history-route.ts';
+import { createConversationIndex } from './server/conversation-index.ts';
 import { guestTurnGateMiddleware } from './server/guest-turns.ts';
 import { mountOAuthRoutes } from './server/oauth.ts';
 import {
@@ -20,6 +22,7 @@ import type { Inference } from './inference/index.ts';
 
 const sessionSecret = resolveSessionSecret(process.env);
 const authDb = getAuthDb();
+const conversationIndex = createConversationIndex(resolveAuthStoreTarget(process.env));
 const authConfig = resolveAuthConfig(process.env);
 const chatRateLimiter = createRateLimiter({
 	windowMs: chatRateLimitWindowMs,
@@ -33,7 +36,6 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 		return context.json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
 	});
 
-	// Unconfigured inference fails the health check so the monitor alerts before a learner does.
 	app.get('/healthz', (context) => {
 		const status = inference.operatorStatus();
 		return status.state === 'ready'
@@ -58,6 +60,7 @@ export function createApp(chatRouter: Hono, inference: Pick<Inference, 'operator
 		`${appConfig.chatAgentPath}/*`,
 		requireChatSession({ secret: sessionSecret, rateLimiter: chatRateLimiter, authDb }),
 	);
+	mountConversationHistory(app, { secret: sessionSecret, rateLimiter: chatRateLimiter, authDb, index: conversationIndex });
 
 	app.route(appConfig.chatAgentPath, chatRouter);
 	app.all('/api/*', (context) =>

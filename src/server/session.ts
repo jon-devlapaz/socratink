@@ -44,8 +44,6 @@ export function mountSessionRoutes(app: Hono, options: { secret: string; authDb:
 	});
 }
 
-// HMAC-verified cookie after guest revocation. Cached on the request so chat
-// middleware and handlers do not re-hit users/aliases.
 export async function readSession(
 	context: Context,
 	secret: string,
@@ -61,7 +59,7 @@ export async function readSession(
 	return session;
 }
 
-export function sessionFromContext(context: Context): SessionCookie | undefined {
+function sessionFromContext(context: Context): SessionCookie | undefined {
 	return sessionSlot(context) ?? undefined;
 }
 
@@ -82,7 +80,7 @@ export async function writeSessionCookie(
 	setSessionSlot(context, cookie);
 }
 
-export function clearSessionCookie(context: Context, environment: SessionEnvironment = {}): void {
+function clearSessionCookie(context: Context, environment: SessionEnvironment = {}): void {
 	deleteCookie(context, sessionCookieName, {
 		path: '/',
 		secure: sessionUsesSecureCookie(environment),

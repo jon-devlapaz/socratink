@@ -24,37 +24,43 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 		send({ message, signal }: { message: { kind: 'user'; body: string }; signal?: AbortSignal }) {
 			return json<WireAdmission>('', { method: 'POST', body: JSON.stringify(message), signal });
 		},
-		abort({ signal }: { signal?: AbortSignal } = {}) {
-			return json<{ aborted: boolean }>('/abort', { method: 'POST', signal });
+		abort({ submissionId, signal }: { submissionId: string; signal?: AbortSignal }) {
+			return json<{ aborted: boolean }>('/abort', { method: 'POST', body: JSON.stringify({ submissionId }), signal });
 		},
 		history({ signal }: { signal?: AbortSignal } = {}) {
 			return json<WireSnapshot>('', { signal });
 		},
 		async read(target: WireAdmission | string, { signal, onEvent }: ReadOptions = {}): Promise<WireReply> {
 			const submissionId = typeof target === 'string' ? target : target.submissionId;
-			const fresh = deduplicator();
+			const fresh = deduplicator(submissionId);
 			let retryMs = firstRetryMs;
 			for (;;) {
 				signal?.throwIfAborted();
 				let latest: WireSnapshot | undefined;
+				let settlement: WireSnapshot['settlements'][number] | undefined;
 				try {
 					const response = await fetch(`${url}/events`, { headers: headers(), signal, cache: 'no-store' });
 					if (!response.ok) {
 						if (response.status < 500) throw await apiError(response);
+						await response.body?.cancel();
 					} else {
 						for await (const event of serverEvents(response.body!)) {
-							retryMs = firstRetryMs;
-							if (event.type === 'conversation-reset') latest = event.snapshot;
+							if (event.type === 'conversation-reset') {
+								latest = event.snapshot;
+								settlement = latest.settlements.find((entry) => entry.submissionId === submissionId);
+								if (settlement) break;
+							}
 							const forward = fresh(event);
-							if (forward) await onEvent?.(forward);
+							if (forward) {
+								retryMs = firstRetryMs;
+								await onEvent?.(forward);
+							}
 						}
 					}
 				} catch (error) {
 					if (signal?.aborted) throw signal.reason;
 					if (error instanceof ChatApiError) throw error;
-					// A dropped connection reconnects below.
 				}
-				const settlement = latest?.settlements.find((s) => s.submissionId === submissionId);
 				if (latest && settlement) {
 					if (settlement.outcome === 'completed') return { ...replyFrom(latest, submissionId), submissionId };
 					throw new ChatTurnError({ submissionId, failure: settlement.outcome, error: settlement.error });
@@ -62,10 +68,8 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 				if (latest && !hasPendingTurn(latest) && !latest.messages.some((m) => m.submissionId === submissionId)) {
 					throw new ChatTurnError({ submissionId, failure: 'terminal_event_missing' });
 				}
-				if (!latest) {
-					await pause(retryMs, signal);
-					retryMs = Math.min(retryMs * 2, lastRetryMs);
-				}
+				await pause(retryMs, signal);
+				retryMs = Math.min(retryMs * 2, lastRetryMs);
 			}
 		},
 	};
@@ -76,7 +80,7 @@ export type StreamClient = ReturnType<typeof createStreamClient>;
 async function apiError(response: Response): Promise<ChatApiError> {
 	const text = await response.text();
 	let body: unknown = text;
-	try { body = JSON.parse(text); } catch { /* keep the text */ }
+	try { body = JSON.parse(text); } catch {}
 	return new ChatApiError(response.status, body);
 }
 
@@ -84,27 +88,41 @@ async function* serverEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<W
 	const reader = body.getReader();
 	const decoder = new TextDecoder();
 	let buffer = '';
-	for (;;) {
-		const { done, value } = await reader.read();
-		if (done) return;
-		buffer += decoder.decode(value, { stream: true });
-		let end: number;
-		while ((end = buffer.indexOf('\n\n')) >= 0) {
-			const block = buffer.slice(0, end);
-			buffer = buffer.slice(end + 2);
-			const data = block.split('\n').filter((line) => line.startsWith('data: ')).map((line) => line.slice(6)).join('\n');
-			if (data) yield JSON.parse(data) as WireEvent;
+	try {
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) return;
+			buffer += decoder.decode(value, { stream: true });
+			let end: number;
+			while ((end = buffer.indexOf('\n\n')) >= 0) {
+				const block = buffer.slice(0, end);
+				buffer = buffer.slice(end + 2);
+				const data = block.split('\n').filter((line) => line.startsWith('data: ')).map((line) => line.slice(6)).join('\n');
+				if (data) yield JSON.parse(data) as WireEvent;
+			}
 		}
+	} finally {
+		await reader.cancel().catch(() => {});
+		reader.releaseLock();
 	}
 }
 
-/** Each connection replays pending turns from their start. Pass on only what
- * this reader has not delivered yet. Resets are state, not progress. */
-function deduplicator() {
+function deduplicator(submissionId: string) {
+	const otherMessages = new Set<string>();
+	const otherTools = new Set<string>();
 	const once = new Set<string>();
 	const delivered = new Map<string, string>();
 	let replayed = new Map<string, string>();
 	return (event: WireEvent): WireEvent | undefined => {
+		if (event.type === 'message-started' && event.submissionId && event.submissionId !== submissionId) {
+			otherMessages.add(event.messageId);
+		}
+		if ('messageId' in event && otherMessages.has(event.messageId)) {
+			if (event.type === 'tool-input') otherTools.add(event.toolCallId);
+			return undefined;
+		}
+		if ('toolCallId' in event && otherTools.has(event.toolCallId)) return undefined;
+		if (event.type === 'submission-settled' && event.submissionId !== submissionId) return undefined;
 		switch (event.type) {
 			case 'conversation-reset':
 				replayed = new Map();
@@ -135,6 +153,7 @@ function hasPendingTurn(snapshot: WireSnapshot): boolean {
 }
 
 function pause(ms: number, signal?: AbortSignal): Promise<void> {
+	signal?.throwIfAborted();
 	return new Promise((resolve, reject) => {
 		const timer = setTimeout(done, ms);
 		function done() { signal?.removeEventListener('abort', stop); resolve(); }

@@ -69,6 +69,7 @@ pnpm smoke
 pnpm smoke:durable
 pnpm test:durable:postgres
 pnpm smoke:durable:postgres
+pnpm verify:formal
 pnpm audit --prod
 ```
 
@@ -82,6 +83,13 @@ checks. They use the `playwright` dev dependency; `CHROME_PATH` and
 `PLAYWRIGHT_MODULE` can point to existing installations. Screenshots and results
 are saved under `.cache/reveal/`.
 
+`pnpm verify:formal` model-checks Cancel targeting with TLA+ (Java 11+; it
+downloads a checksum-pinned `tla2tools.jar`). See `.claude/skills/verify-cancel/SKILL.md`.
+
+To drive the real app as a learner in a browser (streamed replies, two tabs,
+dropped streams) and save screenshot proof, see
+`.claude/skills/verify-socratink/SKILL.md`. It uses a scripted model by default.
+
 To verify PostgreSQL restart and rollback, build the candidate and previous
 revision in separate directories, then run:
 
@@ -93,6 +101,28 @@ This needs a running Docker daemon and a locally available `postgres:17-alpine`
 image. It creates and removes its own database container, uses synthetic OAuth
 and model responses, and saves a report of session and conversation recovery.
 The previous build runs against a disposable copy of that test data.
+
+### Tutor behaviour eval
+
+`pnpm eval:tutor --live` runs scripted learner conversations against the real
+tutor model through the durable engine, tools, and consent card. It checks what
+the learner sees: one question per turn, reveals marked with `mark_reveal`, no
+internal notes (#136), and "just tell me" shown without a consent card (#133).
+It calls a paid model, so it refuses to run without `--live`.
+
+```sh
+VERCEL=1 AI_GATEWAY_API_KEY=... pnpm eval:tutor --live --runs 3
+pnpm eval:tutor --list
+```
+
+Without `VERCEL=1` it uses the `JON_LOCAL_*` model. `--only` picks scenarios by
+name. Transcripts and results go to `.cache/tutor-eval/`. A failed check exits 1.
+Rules live in `src/learning/behaviour-rules.ts`, each quoting the system prompt
+sentence it tests; scenarios and checks live in `evals/tutor/`.
+`pnpm test:tutor-eval` (part of `pnpm check`) proves each rule's check fails on a
+scripted buggy tutor and passes a policy-following one, with a fake model.
+The checks are text heuristics over synthetic runs: a pass does not establish
+teaching quality or learning effectiveness.
 
 For an interaction check, start a conversation, complete an open-ended turn
 and a question card, inspect the earlier-step trail, and reload to check
@@ -167,3 +197,8 @@ seconds and tries once more. A reply without text, a timeout after 60 seconds or
 any other status logs `probe_failed` with the provider's HTTP status only. The
 runtime monitor then fails its next run. The probe costs about one cent a month.
 It checks the gateway, provider and request shape, not the chat engine.
+
+Each Vercel preview build ends with the same call (`scripts/preview-probe.mjs`).
+If it fails, the build fails and prints the provider's HTTP status only, so a
+preview whose model call fails never reaches a taster. Production and local
+builds call nothing. It costs one tiny call per preview build.

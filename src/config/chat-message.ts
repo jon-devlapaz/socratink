@@ -1,4 +1,4 @@
-export const maxLearnerMessageLength = 16_000;
+const maxLearnerMessageLength = 16_000;
 export const steeringPrefix = 'Steering:';
 
 export function learnerMessageLengthError(text: string): string | undefined {

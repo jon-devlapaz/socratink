@@ -11,9 +11,50 @@ import { ROOT_CONVERSATION_ID, type EntryId } from '@earendil-works/pi-durable';
 import { commitWrites } from '@earendil-works/pi-durable/testing';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { isRetryableAssistantError } from '@earendil-works/pi-ai/utils/retry';
+import { appConfig } from '../../config/app.config.ts';
+import { modelConfig } from '../../inference/index.ts';
+import { resolveChatModel } from '../../inference/operator.ts';
 import { conversationModels, messageRoute, modelRef } from './provider.ts';
 import { openEngine } from './engine.ts';
 import type { EngineOptions, ModelConfig } from './contract.ts';
+
+test('the hosted tutor sends explicit disabled reasoning and keeps its fallback models', async (t) => {
+	const requests: { url: string; body: Record<string, unknown> }[] = [];
+	t.mock.method(globalThis, 'fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+		requests.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+		return new Response('data: {"choices":[{"index":0,"delta":{"content":"Ready."},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
+			{ headers: { 'content-type': 'text/event-stream' } });
+	});
+	const operator = resolveChatModel({ VERCEL: '1', AI_GATEWAY_API_KEY: 'synthetic-key' });
+	assert(operator);
+	const models = conversationModels({
+		target: { kind: 'sqlite', filename: ':memory:' },
+		resolveModel: async () => modelConfig(operator),
+	}, 'learner:synthetic', async () => undefined);
+	const response = await models.streamSimple(models.getModel(modelRef.provider, modelRef.modelId)!, { messages: [] }).result();
+	assert.equal(response.stopReason, 'stop');
+	assert.equal(requests.length, 1);
+	assert.equal(requests[0]?.url, `${appConfig.vercelAiGatewayBaseUrl}/chat/completions`);
+	assert.equal(requests[0]?.body.model, appConfig.vercelAiGatewayModelId);
+	assert.deepEqual(requests[0]?.body.reasoning, { effort: 'none' });
+	assert.deepEqual(requests[0]?.body.models, [...appConfig.vercelAiGatewayFallbackModelIds]);
+});
+
+test('a reply from the requested hosted model is labelled with it (the gateway sends no route header)', async (t) => {
+	// AI Gateway names the serving model in each chunk; pi-ai keeps it only when it differs from the request.
+	t.mock.method(globalThis, 'fetch', async () => new Response(
+		`data: {"id":"gen_1","model":"${appConfig.vercelAiGatewayModelId}","choices":[{"index":0,"delta":{"content":"Ready."},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n`,
+		{ headers: { 'content-type': 'text/event-stream' } }));
+	const operator = resolveChatModel({ VERCEL: '1', AI_GATEWAY_API_KEY: 'synthetic-key' });
+	assert(operator);
+	const models = conversationModels({
+		target: { kind: 'sqlite', filename: ':memory:' },
+		resolveModel: async () => modelConfig(operator),
+	}, 'learner:synthetic', async () => undefined);
+	const message = await models.streamSimple(models.getModel(modelRef.provider, modelRef.modelId)!, { messages: [] }).result();
+	assert.equal(message.stopReason, 'stop');
+	assert.deepEqual(messageRoute(message), { routedModel: appConfig.vercelAiGatewayModelId });
+});
 
 test('operator transport preserves keys, limits, live route headers and persisted response metadata', async () => {
 	const requests: { path: string; authorization: string | undefined; body: Record<string, unknown> }[] = [];
@@ -39,6 +80,8 @@ test('operator transport preserves keys, limits, live route headers and persiste
 		const configs: Record<string, ModelConfig> = {
 			operator: { provider: 'jon-local', modelId: 'auto', apiKey: 'operator-synthetic', baseUrl,
 				reasoning: true, contextWindow: 1048576, maxTokens: 131100 },
+			fallback: { provider: 'jon-local', modelId: 'primary', apiKey: 'fallback-synthetic', baseUrl,
+				contextWindow: 128000, maxTokens: 4096, fallbackModelIds: ['second/model'] },
 		};
 		const options: EngineOptions = { target: { kind: 'sqlite', filename: ':memory:' }, resolveModel: async (id) => configs[id]! };
 		const responses = await Promise.all(Object.keys(configs).map(async (id) => {
@@ -61,6 +104,9 @@ test('operator transport preserves keys, limits, live route headers and persiste
 		assert.equal(byKey('operator-synthetic').body.model, 'auto');
 		assert.equal(byKey('operator-synthetic').body.max_tokens ?? byKey('operator-synthetic').body.max_completion_tokens, 131100);
 		assert.equal(byKey('operator-synthetic').body.reasoning_effort, undefined);
+		assert.equal(byKey('operator-synthetic').body.reasoning, undefined);
+		assert.equal(byKey('operator-synthetic').body.models, undefined, 'a config without fallbacks sends none');
+		assert.deepEqual(byKey('fallback-synthetic').body.models, ['second/model'], 'learner turns ask the gateway to fall back');
 		const file = join(directory, 'metadata.sqlite');
 		let storage = await openNodeSqliteStorage(file);
 		await commitWrites(storage, [{ type: 'conversation', value: { id: ROOT_CONVERSATION_ID } },

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { appConfig } from '../src/config/app.config.ts';
+import { conversationTitle } from '../src/config/conversations.ts';
 import { guestTurnLimit } from '../src/server/guest-turns.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
 
@@ -78,6 +79,56 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		});
 	}
 
+	for (const forcedColors of ['none', 'active']) {
+		await check(`keyboard-focus-decoration-${forcedColors}`, async (page, fixture) => {
+			await page.emulateMedia({ forcedColors });
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.goto(origin);
+			const input = page.locator('#message:enabled');
+			await input.waitFor();
+			await skipToMain(page);
+			const composer = page.locator('#chat');
+			const composerBefore = await readFocusPaint(composer);
+			await page.keyboard.press('Tab');
+			await assertNoFocusDecoration(input, composer, composerBefore);
+			await page.locator('#menu-trigger').focus();
+			await input.click({ position: { x: 24, y: 20 } });
+			assert.equal(await input.evaluate((node) => node === document.activeElement), true);
+			assert.deepEqual(await readFocusPaint(composer), composerBefore, 'clicking keeps the composer fill and border');
+			await page.keyboard.type('Keyboard draft');
+
+			const send = page.getByRole('button', { name: 'Send message', exact: true });
+			const sendBefore = await readFocusPaint(send);
+			await page.keyboard.press('Tab');
+			if (await page.locator('#dictation-toggle:focus').count()) await page.keyboard.press('Tab');
+			await assertNoFocusDecoration(send, send, sendBefore);
+
+			await page.locator('#peek-handle').press('Enter');
+			const startOver = page.locator('#start-over');
+			const icon = startOver.locator(':scope > svg');
+			const iconBefore = await readFocusPaint(icon);
+			await page.locator('#sound-toggle').press('Tab');
+			await assertNoFocusDecoration(startOver, icon, iconBefore);
+
+			fixture.mode = 'guest-limit';
+			await page.goto(origin);
+			const question = page.getByRole('form', { name: 'Questions' });
+			const choice = question.getByRole('radio').first();
+			const choiceRow = question.locator('label.questionnaire-choice').first();
+			await choice.waitFor();
+			const choiceBefore = await readFocusPaint(choiceRow);
+			await question.locator('fieldset').press('Tab');
+			await assertNoFocusDecoration(choice, choiceRow, choiceBefore);
+
+			await page.goto(`${origin}/login.html`);
+			await skipToMain(page);
+			const provider = page.locator('.login-oauth-btn').first();
+			const providerBefore = await readFocusPaint(provider);
+			await page.locator('.login-wordmark').press('Tab');
+			await assertNoFocusDecoration(provider, provider, providerBefore);
+		});
+	}
+
 	for (const width of [390, 1280]) {
 		for (const source of ['composer', 'steering', 'question']) {
 			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
@@ -89,7 +140,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
 				if (source === 'composer') await send(page, 'Keep my unsent question');
-				else if (source === 'steering') await page.getByRole('button', { name: 'Too fast: need a smaller step', exact: true }).click();
+				else if (source === 'steering') await page.getByRole('button', { name: 'Smaller step', exact: true }).click();
 				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
 				await page.locator('.chat-gate-card').waitFor();
 				const expected = source === 'composer' ? 'Keep my unsent question'
@@ -117,6 +168,39 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			});
 		}
 	}
+
+	await check('controls-before-app-startup', async (page) => {
+		await page.route('**/assets/*.js', (route) => route.abort());
+		await page.goto(origin);
+		assert.deepEqual({
+			composerDisabled: await page.locator('#message').isDisabled(),
+			sendDisabled: await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(),
+			menuInert: await page.locator('#menu-layer').evaluate((node) => node.inert),
+		}, { composerDisabled: true, sendDisabled: true, menuInert: true });
+	});
+
+	await check('menu-returns-focus-to-its-opener', async (page) => {
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		for (const selector of ['#menu-trigger', '#peek-handle']) {
+			const trigger = page.locator(selector);
+			await trigger.focus();
+			await page.keyboard.press('Enter');
+			await page.locator('#menu-layer.is-open').waitFor();
+			await page.keyboard.press('Escape');
+			assert.equal(await trigger.evaluate((node) => document.activeElement === node), true, selector);
+		}
+	});
+
+	await check('unavailable-dictation-stays-hidden', async (page) => {
+		await page.addInitScript(() => {
+			window.SpeechRecognition = undefined;
+			window.webkitSpeechRecognition = undefined;
+		});
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		assert.equal(await page.locator('#dictation-toggle').isVisible(), false);
+	});
 
 	await check('composer-draft-scope', async (page, fixture) => {
 		await page.goto(origin);
@@ -194,6 +278,8 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				await page.locator('#peek-handle').click();
 				await page.getByRole('button', { name: 'History' }).click();
 				await page.locator('#history-dialog[open]').waitFor();
+				// History loads from the server each time it opens.
+				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
 			await ready();
 			await page.locator('#peek-handle').click();
@@ -250,37 +336,31 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.locator('#history-dialog[open]').waitFor();
 	}
 
-	await check('history-title-from-server-history', async (page, fixture) => {
-		fixture.mode = 'history-learner';
+	await check('history-says-when-it-cannot-load', async (page, fixture) => {
 		await page.goto(origin);
-		await page.getByText('Restored reply', { exact: true }).waitFor();
+		await send(page, 'A question to list');
+		await page.locator('#active-turn').getByText('Fresh reply', { exact: true }).waitFor();
+		fixture.listFailures = 1;
 		await openHistory(page);
-		assert.equal(await historyRows(page).count(), 1);
-		assert.equal(await historyRows(page).nth(0).innerText(), 'Check the admission\nOpen now');
+		await page.getByText('History could not load. Check your connection and try again.').waitFor();
+		assert.equal(await historyRows(page).count(), 0);
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'history-retry');
+		await page.getByRole('button', { name: 'Try again', exact: true }).click();
+		await historyRows(page).first().waitFor();
+		assert.match(await historyRows(page).nth(0).innerText(), /^A question to list\nOpen now$/);
+		assert.equal(await page.locator('#history-retry').isHidden(), true);
 	});
 
-	await check('history-title-skips-refused-first-message', async (page, fixture) => {
-		fixture.mode = 'admission-failure';
+	await check('history-removes-browser-stored-titles', async (page) => {
+		await page.addInitScript(() => {
+			if (sessionStorage.getItem('seeded')) return;
+			sessionStorage.setItem('seeded', '1');
+			localStorage.setItem('socratink-chat-history:browser-user', '[{"id":"browser-user:x","title":"Old private title","usedAt":1}]');
+			localStorage.setItem('socratink-chat-history', '[]');
+		});
 		await page.goto(origin);
-		await send(page, 'Rejected first words');
-		await page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
-		await send(page, 'My real admitted question');
-		await page.getByText('Fresh reply', { exact: true }).waitFor();
-		assert.deepEqual(fixture.sent, ['Rejected first words', 'My real admitted question']);
-		await openHistory(page);
-		assert.match(await historyRows(page).nth(0).innerText(), /^My real admitted question\n/);
-	});
-
-	await check('history-forgotten-on-sign-out', async (page) => {
-		await page.goto(origin);
-		await send(page, 'A private question');
-		await page.getByText('Fresh reply', { exact: true }).waitFor();
-		const titles = () => page.evaluate((prefix) => Object.keys(localStorage)
-			.filter((key) => key.startsWith(prefix)).map((key) => localStorage.getItem(key)).join(''), appConfig.chatHistoryStorageKey);
-		assert.match(await titles(), /A private question/);
-		await page.locator('#peek-handle').click();
-		await Promise.all([page.waitForURL('**/api/session/logout'), page.getByRole('link', { name: 'Sign out' }).click()]);
-		assert.equal(await titles(), '');
+		await page.locator('#message[placeholder]:enabled').waitFor();
+		assert.deepEqual(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('socratink-chat-history'))), []);
 	});
 
 	await check('history-waits-for-pending-work', async (page, fixture) => {
@@ -362,6 +442,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await page.locator('#active-turn .request-state').count(), 1);
 		assert.equal(await page.locator('#active-turn .request-state .turn-label').textContent(), 'Canceled');
 		assert.equal(fixture.aborts, 1);
+		assert.deepEqual(fixture.abortBodies, [{ submissionId: 'browser-submission-1' }], 'Cancel names the reply it stops');
 		assert.deepEqual(fixture.sent, ['Stop this reply']);
 	});
 
@@ -380,6 +461,26 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	console.log(`UI browser passed: ${results.length} keyboard, retry, cancel, and operator scenarios.`);
 }
 
+async function readFocusPaint(locator) {
+	return locator.evaluate(async (node) => {
+		await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
+		const style = getComputedStyle(node);
+		return {
+			backgroundColor: style.backgroundColor,
+			borderColor: style.borderColor,
+			boxShadow: style.boxShadow,
+		};
+	});
+}
+
+async function assertNoFocusDecoration(control, paintTarget, before) {
+	assert.equal(await control.evaluate((node) => node.matches(':focus-visible')), true,
+		`${control} receives keyboard focus`);
+	assert.equal(await control.evaluate((node) => getComputedStyle(node).outlineStyle), 'none',
+		`${control} has no focus outline`);
+	assert.deepEqual(await readFocusPaint(paintTarget), before, `${paintTarget} keeps its fill, border, and shadow on keyboard focus`);
+}
+
 async function skipToMain(page) {
 	const link = page.getByRole('link', { name: 'Skip to main content', exact: true });
 	assert.equal(await link.evaluate((node) => getComputedStyle(node).clipPath), 'inset(50%)');
@@ -387,7 +488,7 @@ async function skipToMain(page) {
 	assert.equal(await link.evaluate((node) => {
 		const rect = node.getBoundingClientRect();
 		const style = getComputedStyle(node);
-		return document.activeElement === node && style.clipPath === 'none' && style.outlineStyle === 'solid'
+		return document.activeElement === node && style.clipPath === 'none' && style.outlineStyle === 'none'
 			&& rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight;
 	}), true);
 	await page.keyboard.press('Enter');
@@ -410,7 +511,12 @@ function createServices(origin, session) {
 	const fixture = {
 		mode: 'success',
 		sent: [],
+		// Stands in for the server's conversation index; the rules themselves
+		// are proven by conversation-index.test.mjs and the real-server smoke.
+		conversations: [],
+		listFailures: 0,
 		aborts: 0,
+		abortBodies: [],
 		modelHeaders: [],
 		finishReply() { releaseReply(); },
 		async handle(route, url) {
@@ -421,10 +527,20 @@ function createServices(origin, session) {
 			if (url.pathname === `${appConfig.sessionPath}/logout`) {
 				return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Signed out</p>' });
 			}
+			if (url.pathname === appConfig.conversationsPath) {
+				if (fixture.listFailures > 0) {
+					fixture.listFailures -= 1;
+					return json({ error: { type: 'internal_error', message: 'Unable to complete this request.' } }, 500);
+				}
+				// A real server takes time; the page must wait for the list, not race it.
+				await new Promise((resolve) => setTimeout(resolve, 250));
+				return json({ conversations: [...fixture.conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) });
+			}
 			if (url.pathname === appConfig.authProvidersPath) return json({ google: fixture.mode === 'guest-limit', github: fixture.mode === 'guest-limit' });
 			if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
 			if (url.pathname.endsWith('/abort')) {
 				fixture.aborts += 1;
+				fixture.abortBodies.push(route.request().postDataJSON());
 				releaseAbort();
 				return json({ aborted: true });
 			}
@@ -438,22 +554,14 @@ function createServices(origin, session) {
 					return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 				}
 				submissionId = `browser-submission-${fixture.sent.length}`;
+				const id = decodeURIComponent(url.pathname.slice(appConfig.chatAgentPath.length + 1));
+				const updatedAt = new Date(Date.UTC(2026, 10, 22, 12, fixture.sent.length)).toISOString();
+				const known = fixture.conversations.find((row) => row.id === id);
+				if (known) known.updatedAt = updatedAt;
+				else fixture.conversations.push({ id, title: conversationTitle(route.request().postDataJSON().body), updatedAt });
 				return json({ submissionId }, 202);
 			}
 			if (!url.pathname.endsWith('/events')) {
-				if (fixture.mode === 'history-learner') return json({ messages: [
-					{ id: 'q', role: 'assistant', display: 'visible', parts: [
-						{ type: 'text', text: 'Where would you start?' },
-						{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
-							name: 'item', prompt: 'Which step?', required: true, multiple: false,
-							choices: [{ value: 'check', label: 'Check the admission' }, { value: 'retry', label: 'Retry' }],
-						}] } },
-					] },
-					{ id: 'a', role: 'user', display: 'visible', submissionId: 'restored-1',
-						parts: [{ type: 'text', text: 'Questionnaire answers:\n- Which step?: Check the admission', state: 'done' }] },
-					{ id: 'r', role: 'assistant', display: 'visible', submissionId: 'restored-1',
-						parts: [{ type: 'text', text: 'Restored reply', state: 'done' }] },
-				], settlements: [{ submissionId: 'restored-1', outcome: 'completed' }] });
 				if (fixture.mode === 'guest-limit') return json({ messages: [{
 					role: 'assistant', display: 'visible', parts: [
 						{ type: 'text', text: 'What would you check?' },

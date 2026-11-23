@@ -7,7 +7,7 @@ export type SessionUser = {
 	kind: 'guest' | 'registered';
 };
 
-export async function readSession(): Promise<SessionUser | undefined> {
+async function readSession(): Promise<SessionUser | undefined> {
 	try {
 		const response = await fetch(appConfig.sessionPath, { credentials: 'same-origin' });
 		if (!response.ok) return undefined;
@@ -25,7 +25,7 @@ export async function readOrCreateSession(): Promise<SessionUser | undefined> {
 	}
 }
 
-export async function createSession(): Promise<SessionUser> {
+async function createSession(): Promise<SessionUser> {
 	const response = await fetch(appConfig.sessionPath, {
 		method: 'POST',
 		credentials: 'same-origin',

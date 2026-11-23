@@ -1,6 +1,3 @@
-// dist/app.mjs exists only after `pnpm build`. @ts-ignore stays valid
-// both before that file exists and after a local build.
-// @ts-ignore
 import app from '../dist/app.mjs';
 
 export default {

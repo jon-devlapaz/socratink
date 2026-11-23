@@ -1,7 +1,6 @@
 import { readOrCreateSession } from './session.ts';
 import { mountChatSurface } from './chat-surface.ts';
 import { mountFeedback } from './feedback.ts';
-import { forgetPastConversations } from './client/conversation-history.ts';
 import './styles.css';
 import './menu.css';
 import './transcript.css';
@@ -11,6 +10,7 @@ import './questionnaire.css';
 import './tool-card.css';
 import './dictation.css';
 import './steering.css';
+import './buttons.css';
 
 void (async () => {
 	const session = await readOrCreateSession();
@@ -23,7 +23,6 @@ void (async () => {
 	if (authLink && authLinkLabel && session.kind === 'registered') {
 		authLink.href = '/api/session/logout';
 		authLinkLabel.textContent = 'Sign out';
-		authLink.addEventListener('click', () => forgetPastConversations(session.userId, session.aliases));
 	}
 	const closeMenu = mountChatSurface({
 		userId: session.userId,

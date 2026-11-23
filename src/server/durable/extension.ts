@@ -10,7 +10,8 @@ import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../le
 import { cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
-import { inputKind } from './contract.ts';
+import { inputKind, type InputData } from './contract.ts';
+import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
@@ -30,58 +31,95 @@ export function productRegistry() {
 			},
 		})),
 		hooks: [
-			hook(ToolTask, { afterTool: async (call, result, api, context) => {
-				const entries = await currentInputEntries(api, context);
-				const assistantIndex = entries.findLastIndex((entry) => entry.kind === 'pi.assistant');
-				const assistant = entries[assistantIndex];
-				const calls = assistant?.model?.flatMap((message) =>
-					message.role === 'assistant' ? message.content.filter((block) => block.type === 'toolCall') : []) ?? [];
-				const earlier = entries.slice(0, assistantIndex);
-				let hasQuestion = false;
-				let invalidQuestion = false;
-				for (const round of calls) {
-					if (round.name !== 'present_question') continue;
-					try { hasQuestion ||= executeTool(round.name, round.arguments).terminate; }
-					catch { invalidQuestion = true; }
-				}
-				// A successful question ends the turn. Pi requires every call of a
-				// mixed tool round to request termination, including a reveal beside it.
-				// A reveal that answers a correction ends the turn too, so the reply is not repeated.
-				const correctedReveal = calls.every((round) => round.name === revealToolName)
-					&& corrections(earlier).some((body) => revealBodies.includes(body));
-				const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal;
-				// A card help request is assistance even when the tutor answers with
-				// only another card, which leaves no yield to correct.
-				const help = hasQuestion && call.name === 'present_question' && !result.isError
-					&& !revealed(earlier) && !calls.some((round) => round.name === revealToolName)
-					? cardHelpReveal(learnerText(entries)) : undefined;
-				return terminate || help ? { ...result,
-					...(help ? { details: { ...(result.details as object), reveal: [help] } } : {}),
-					control: { ...result.control, ...(terminate ? { terminate: true } : {}) } } : result;
-			} }),
-			hook(GenerationTask, { onYield: async (answer, api, context) => {
-				const entries = await currentInputEntries(api, context);
-				const messages = entries.flatMap((entry) => entry.model ?? []);
-				const alreadyRetried = corrections(entries).length > 0;
-				const question = presentQuestionRetryReason({
-					toolCalls: messages.flatMap((message) => message.role === 'toolResult'
-						? [{ tool: message.toolName, isError: message.isError }] : []),
-					assistantText: messageText(answer),
-					alreadyRetried,
-				});
-				if (question) return { continue: presentQuestionRetryBodies[question] };
-				const reveal = markRevealRetryReason({
-					revealed: revealed(entries), learnerText: learnerText(entries), assistantText: messageText(answer), alreadyRetried,
-				});
-				return reveal ? { continue: markRevealRetryBodies[reveal] } : undefined;
-			} }),
+			hook(ToolTask, {
+				beforeTool: async (_call, api, context) => {
+					if (isTryOnceMore(await currentInputEntries(api, context))) return { block: tryOnceMoreCorrection };
+				},
+				afterTool: async (call, result, api, context) => {
+					const entries = await currentInputEntries(api, context);
+					const assistantIndex = entries.findLastIndex((entry) => entry.kind === 'pi.assistant');
+					const earlier = entries.slice(0, assistantIndex);
+					if (isTryOnceMore(entries)) return {
+						isError: true, output: [{ type: 'text', text: tryOnceMoreCorrection }],
+						control: { terminate: triedCorrection(earlier) },
+					};
+					const assistant = entries[assistantIndex];
+					const calls = assistant?.model?.flatMap((message) =>
+						message.role === 'assistant' ? message.content.filter((block) => block.type === 'toolCall') : []) ?? [];
+					let hasQuestion = false;
+					let invalidQuestion = false;
+					for (const round of calls) {
+						if (round.name !== 'present_question') continue;
+						try { hasQuestion ||= executeTool(round.name, round.arguments).terminate; }
+						catch { invalidQuestion = true; }
+					}
+					// Pi requires every call of a mixed tool round to request termination, including a reveal beside it.
+					const correctedReveal = calls.every((round) => round.name === revealToolName)
+						&& corrections(earlier).some((body) => revealBodies.includes(body));
+					const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal;
+					const help = hasQuestion && call.name === 'present_question' && !result.isError
+						&& !revealed(earlier) && !calls.some((round) => round.name === revealToolName)
+						? cardHelpReveal(learnerText(entries)) : undefined;
+					return terminate || help ? { ...result,
+						...(help ? { details: { ...(result.details as object), reveal: [help] } } : {}),
+						control: { ...result.control, ...(terminate ? { terminate: true } : {}) } } : result;
+				},
+			}),
+			hook(GenerationTask, {
+				beforeRequest: async ({ messages }, api, context) => {
+					const entries = await currentInputEntries(api, context, true);
+					const input = entries.findLastIndex((entry) => entry.kind === inputKind);
+					if (!isTryOnceMore(entries.slice(input))) return;
+					const prior = input > 0 && entries[0]?.kind === inputKind
+						? entries[0].model?.find((message) => message.role === 'user') : undefined;
+					const boundary = prior ? messages.findLastIndex((message) => message.role === 'user'
+						&& message.timestamp === prior.timestamp && messageText(message) === messageText(prior)) : -1;
+					// Leave the withheld answer and any rejected replies out of this question request.
+					const history = boundary < 0 ? messages.filter((message) => message.role === 'system') : messages.slice(0, boundary + 1);
+					const content = triedCorrection(entries.slice(input))
+						? `${tryOnceMoreCorrection} The previous reply did not meet this format.` : tryOnceMoreCorrection;
+					return { messages: [...history, { role: 'user', content, timestamp: Date.now() }] };
+				},
+				beforeProviderRequest: async ({ payload }, api, context) => {
+					// The product's provider adapter builds a Chat Completions body for the selected model.
+					if (!isTryOnceMore(await currentInputEntries(api, context))) return;
+					return { payload: { ...(payload as object), tool_choice: 'none' } };
+				},
+				onYield: async (answer, api, context) => {
+					const entries = await currentInputEntries(api, context);
+					if (isTryOnceMore(entries)) {
+						const valid = !answer.content.some((block) => block.type === 'toolCall') && isTryOnceMoreQuestion(messageText(answer));
+						return valid || triedCorrection(entries) ? undefined : { continue: tryOnceMoreCorrection };
+					}
+					const messages = entries.flatMap((entry) => entry.model ?? []);
+					const alreadyRetried = corrections(entries).length > 0;
+					const question = presentQuestionRetryReason({
+						toolCalls: messages.flatMap((message) => message.role === 'toolResult'
+							? [{ tool: message.toolName, isError: message.isError }] : []),
+						assistantText: messageText(answer),
+						alreadyRetried,
+					});
+					if (question) return { continue: presentQuestionRetryBodies[question] };
+					const reveal = markRevealRetryReason({
+						revealed: revealed(entries), learnerText: learnerText(entries), assistantText: messageText(answer), alreadyRetried,
+					});
+					return reveal ? { continue: markRevealRetryBodies[reveal] } : undefined;
+				},
+			}),
 		],
 	});
 	return registry;
 }
 
-/** The correction bodies already sent for this input. A failed question also
- * counts, because it already causes Pi's next tool-continuation request. */
+function isTryOnceMore(entries: readonly EntryRecord[]): boolean {
+	return (entries[0]?.data as InputData | undefined)?.tryOnceMore === true && entries[0]?.kind === inputKind;
+}
+
+function triedCorrection(entries: readonly EntryRecord[]): boolean {
+	return entries.some((entry) => entry.model?.some((message) => (message.role === 'user' || message.role === 'toolResult')
+		&& messageText(message) === tryOnceMoreCorrection));
+}
+
 function corrections(entries: readonly EntryRecord[]): string[] {
 	return entries.flatMap((entry) => (entry.model ?? []).flatMap((message) => {
 		if (message.role === 'toolResult' && message.toolName === 'present_question' && message.isError) return [message.toolName];
@@ -99,14 +137,14 @@ function learnerText(entries: readonly EntryRecord[]): string {
 	return entries.find((entry) => entry.kind === inputKind)?.model?.map(messageText).join('') ?? '';
 }
 
-async function currentInputEntries(api: HookApi, context: Context): Promise<EntryRecord[]> {
+async function currentInputEntries(api: HookApi, context: Context, includeConsentInput = false): Promise<EntryRecord[]> {
 	const entries: EntryRecord[] = [];
 	let cursor;
 	do {
 		const page = await api.entries({ order: 'descending' }, 100, cursor, context);
 		for (const entry of page.items) {
 			entries.push(entry);
-			if (entry.kind === inputKind) return entries.reverse();
+			if (entry.kind === inputKind && (!includeConsentInput || !isTryOnceMore([entry]))) return entries.reverse();
 		}
 		cursor = page.next;
 	} while (cursor);

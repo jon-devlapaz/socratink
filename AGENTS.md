@@ -24,6 +24,10 @@ New capabilities need an explicit request.
 Keep learner work distinct from AI help. Use `present_question` for defined
 choices or diagnostics. Preserve reveal provenance. The tutor rates subskills
 and mastery within a conversation by the policy in `src/learning/`.
+A tutor-behaviour bug gets a scenario in `evals/tutor/` that fails on the live
+model before the fix; a new rule goes in `src/learning/behaviour-rules.ts`.
+Prompt or model changes report a `pnpm eval:tutor --live --runs 3` summary.
+`--live` calls a paid model: ask first.
 Tests and synthetic runs do not establish retention, transfer, mastery,
 learning effectiveness, or production readiness.
 Keep secrets and learner data out of source and logs. Use synthetic data for
@@ -35,6 +39,8 @@ Run `pnpm check` and `pnpm smoke` before handoff unless the user narrows the
 checks or the environment prevents them. Report what ran and what is unproven.
 Do not weaken tests to make them pass. Use browser or live checks when needed
 and authorized.
+If knip (`pnpm check:unused`) flags code, delete it or remove the `export`.
+Add a `knip.json` ignore entry only with a reason in the PR.
 Inspect `git status --short` before editing and handoff. Preserve unrelated work.
 Stage, commit, amend, push, create branches, or open PRs only when asked.
 For **git golden**, run `scripts/git-golden.sh`. Stop on failure and report every

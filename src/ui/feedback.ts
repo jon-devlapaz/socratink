@@ -4,6 +4,7 @@ import { feedbackSubmissionId } from './client/random-id.ts';
 import { requireElement } from './dom.ts';
 import type { SessionUser } from './session.ts';
 import './feedback.css';
+import './buttons.css';
 
 type Payload = { submission_id: string; message: string; url: string; name?: string; email?: string };
 type Delivery = { kind: 'accepted' } | { kind: 'rejected' } | { kind: 'retry'; afterMs: number };

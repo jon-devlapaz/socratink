@@ -1,9 +1,7 @@
+import { steeringPrefix } from '../config/chat-message.ts';
 import { questionnaireAnswerPrefix, questionnaireHelpText, type QuestionnaireHelp } from '../questionnaire.ts';
 import { revealToolName, type RevealDefinition } from '../reveal.ts';
 
-/** Keeps assistance labeled. A turn that may have supplied target content
- * without mark_reveal gets one correction. A card help request always counts
- * as assistance, so it never ends unlabeled. */
 
 export const markRevealRetryBodies = {
 	requested: `The learner used the question card's help, so this turn gave assistance. Call ${revealToolName} now with the kind you gave: hint, worked_example, partial, or full_answer. Write no text.`,
@@ -28,9 +26,8 @@ export function cardHelpReveal(learnerText: string): RevealDefinition | undefine
 	return undefined;
 }
 
-// Cues only decide whether to ask; the model judges whether it supplied content.
 const helpRequest = /\b(?:hints?|clue|just tell me|tell me the answer|give me the answer|what(?:'s| is) the answer|i (?:don'?t|do not) know|idk|no idea|i'?m stuck|i am stuck|explain (?:it|this|that)|show me how)\b/i;
-const revealCue = /\b(?:here'?s a hint|hint:|the (?:answer|key idea|trick) is|worked example|here'?s how (?:it|this) works)/i;
+export const revealCue = /\b(?:here'?s a hint|hint:|the (?:answer|key idea|trick) is|worked example|here'?s how (?:it|this) works)/i;
 
 export function markRevealRetryReason(input: {
 	readonly revealed: boolean;
@@ -40,9 +37,21 @@ export function markRevealRetryReason(input: {
 }): MarkRevealRetryReason | undefined {
 	if (input.revealed || input.alreadyRetried) return undefined;
 	if (cardHelpReveal(input.learnerText)) return 'requested';
-	// "Try once more" on a consent card declines the reveal, so a reply to it that
-	// supplies content must be marked, and the consent card then withholds it again.
 	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
 		|| (input.learnerText.startsWith(questionnaireAnswerPrefix) && input.learnerText.endsWith(': Try once more'))) return 'unmarked';
 	return undefined;
+}
+
+// Only plain requests for the answer itself. "just tell me" counts when it ends a
+// line, so "just tell me if I'm right" does not.
+const answerRequest = /\b(?:(?:just )?(?:tell|give|show) me the (?:full )?answer\b|just tell me(?: it)?(?=[\s.!]*$))/im;
+
+/** True when the learner's own words ask for the answer, anywhere in the
+ * message, including a first message that also asks the question. Card answers,
+ * steering, quoted lines and fenced code are not the learner's request. */
+export function asksForAnswer(learnerText: string): boolean {
+	if (learnerText.startsWith(questionnaireAnswerPrefix) || learnerText.startsWith(steeringPrefix)) return false;
+	const own = learnerText.replace(/^(```|~~~)[^\n]*\n[\s\S]*?(?:^\1[^\n]*$|(?![\s\S]))/gm, '')
+		.split('\n').filter((line) => !line.trimStart().startsWith('>')).join('\n');
+	return answerRequest.test(own);
 }

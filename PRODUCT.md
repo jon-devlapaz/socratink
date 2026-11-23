@@ -19,10 +19,11 @@ The app provides a single-learner conversation with an AI learning partner:
   request for help, or looks like it supplies content, without `mark_reveal`
   gets one correction where the tutor decides whether to mark it.
 - Learner controls for pacing, an unaided attempt, cancellation, and recovery.
-- A History page in the menu that lists conversations used on this browser,
-  titled by the learner's first admitted message, and reopens one. Each
-  learner's list is kept in browser storage only and cleared on sign-out; it
-  does not follow a learner to another device.
+- A History page in the menu that lists a learner's conversations, titled by
+  their first admitted message, newest first, and reopens one. The server keeps
+  the list (`socratink_conversations`), so a signed-in learner sees it on every
+  device; a guest's list follows their guest session. Conversations from before
+  2026-11-22 are not listed, and learners cannot delete conversations yet.
 - Voice dictation as an input option, plus theme and text-size controls.
 - Signed guest sessions, configured Google/GitHub sign-in, conversation
   ownership checks, and rate limits. Every learner uses the operator model route.

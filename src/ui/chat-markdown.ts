@@ -1,5 +1,3 @@
-// Untrusted model text must stay in DOM text nodes, never raw HTML.
-
 import {
 	parseInline,
 	parseMarkdownBlocks,

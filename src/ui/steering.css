@@ -10,21 +10,18 @@
 
 .steering-action {
 	position: relative;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 44px;
-	height: 44px;
 	margin: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 6px;
-	color: var(--muted);
-	background: none;
-	cursor: pointer;
-	transition-property: color, background-color, scale, box-shadow;
-	transition-duration: 150ms;
-	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.steering-action--text {
+	max-width: 100%;
+	padding-inline: 0.9rem;
+	font-size: calc(0.85rem * var(--type-scale, 1));
+}
+
+/* The first action's text starts on the turn's leading edge. */
+.steering-action--text:first-child {
+	margin-inline-start: -0.9rem;
 }
 
 .steering-icon {
@@ -33,21 +30,10 @@
 	height: 1rem;
 }
 
-.steering-action.with-label {
-	width: auto;
-	height: auto;
-	min-height: 44px;
-	gap: 0.35rem;
-	padding: 0.25rem 0.5rem;
-	color: var(--muted);
-	font-family: inherit;
-	font-size: calc(0.78rem * var(--type-scale, 1));
-}
-
 .steering-tip {
 	position: absolute;
 	bottom: calc(100% + 0.4rem);
-	left: 50%;
+	right: 0;
 	z-index: 8;
 	padding: 0.3rem 0.55rem;
 	border-radius: 6px;
@@ -61,91 +47,32 @@
 	pointer-events: none;
 	opacity: 0;
 	scale: 0.95;
-	translate: -50% 4px;
-	transform-origin: 50% 100%;
+	translate: 0 4px;
+	transform-origin: 100% 100%;
 	transition-property: opacity, scale, translate;
 	transition-duration: 150ms;
 	transition-delay: 0ms;
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
-.steering-action:first-child .steering-tip {
-	left: 0;
-	translate: 0 4px;
-	transform-origin: 0 100%;
-}
-
-.steering-action:last-child .steering-tip {
-	left: auto;
-	right: 0;
-	translate: 0 4px;
-	transform-origin: 100% 100%;
-}
-
 @media (hover: hover) {
 	.steering-action:hover .steering-tip {
 		opacity: 1;
 		scale: 1;
-		translate: -50% 0;
+		translate: 0 0;
 		transition-delay: 200ms;
 	}
-
-	.steering-action:first-child:hover .steering-tip,
-	.steering-action:last-child:hover .steering-tip {
-		translate: 0 0;
-	}
-
-	.steering-action:hover {
-		color: var(--ink);
-		background: color-mix(in srgb, var(--ink) 6%, transparent);
-	}
-}
-
-.steering-action:focus-visible {
-	color: var(--ink);
-	outline: 2px solid var(--accent);
-	box-shadow: none;
 }
 
 .steering-action:focus-visible .steering-tip {
 	opacity: 1;
 	scale: 1;
-	translate: -50% 0;
+	translate: 0 0;
 	transition-delay: 0ms;
 }
 
-.steering-action:first-child:focus-visible .steering-tip,
-.steering-action:last-child:focus-visible .steering-tip {
-	translate: 0 0;
-}
-
-.steering-action:active:not(:disabled) {
-	scale: 0.96;
-}
-
-.steering-action:disabled {
-	cursor: default;
-	opacity: 0.6;
-}
-
-@media (pointer: coarse) {
-	.steering-action {
-		width: 44px;
-		height: 44px;
-	}
-
-	.steering-action.with-label {
-		min-height: 44px;
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
-	.steering-action,
 	.steering-tip {
 		transition: none;
-	}
-
-	.steering-action:active:not(:disabled) {
-		scale: none;
 	}
 }

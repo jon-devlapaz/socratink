@@ -1,0 +1,276 @@
+/* Kinetik buttons, drawn in Socratink's paper and ink.
+ * After the Button in Kinetik UI (kinetikui.singhgourav.site, MIT, Gourav Singh):
+ * a pill with a hairline edge, a soft top sheen, and an inset highlight.
+ * Three kinds: primary (ink, one per place, the forward action), secondary
+ * (paper), and ghost (no fill until hover). Component files keep layout only. */
+
+:root {
+	--btn-height: 2.5rem;
+	--btn-height-sm: 2rem;
+	--btn-font: 0.875rem;
+	--btn-primary-fill: var(--ink);
+	--btn-primary-ink: var(--paper);
+	--btn-primary-edge: color-mix(in oklch, var(--ink), black 30%);
+	--btn-primary-sheen: linear-gradient(to bottom, rgb(255 255 255 / 0.14), transparent);
+	--btn-primary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.25);
+	--btn-primary-hover: color-mix(in oklch, var(--ink), var(--paper) 12%);
+	--btn-secondary-fill: var(--paper-2);
+	--btn-secondary-edge: color-mix(in oklch, var(--ink) 15%, transparent);
+	--btn-secondary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.7);
+	--btn-secondary-hover: color-mix(in oklch, var(--paper-2), var(--ink) 5%);
+}
+
+:root[data-theme="dark"] {
+	--btn-primary-edge: color-mix(in oklch, var(--ink), black 18%);
+	--btn-primary-sheen: linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 0.06));
+	--btn-primary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 0 rgb(0 0 0 / 0.08);
+	--btn-secondary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--btn-primary-edge: color-mix(in oklch, var(--ink), black 18%);
+		--btn-primary-sheen: linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 0.06));
+		--btn-primary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 0 rgb(0 0 0 / 0.08);
+		--btn-secondary-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+	}
+}
+
+/* Touch targets stay at 44px. */
+@media (pointer: coarse) {
+	:root {
+		--btn-height: 2.75rem;
+		--btn-height-sm: 2.75rem;
+	}
+}
+
+/* Shape shared by every kind. */
+.questionnaire-button,
+.questionnaire-choices > button,
+.request-action,
+#history-close,
+#history-retry,
+.feedback-actions button,
+.login-oauth-btn,
+.jump-latest,
+.code-block-copy,
+.steering-action,
+.thinking-cancel,
+.dictation-toggle:not([hidden]),
+.composer-send button[type='submit'] {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	min-width: var(--btn-height);
+	height: var(--btn-height);
+	min-height: 0;
+	padding: 0 1.1rem;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font: inherit;
+	font-size: var(--btn-font);
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		color 150ms var(--ease-out),
+		background-color 150ms var(--ease-out),
+		border-color 150ms var(--ease-out),
+		box-shadow 150ms var(--ease-out),
+		opacity 150ms var(--ease-out),
+		scale 500ms var(--spring-pop);
+}
+
+/* Small: inline tools that sit inside other content. */
+.code-block-copy,
+.request-action {
+	height: var(--btn-height-sm);
+	min-width: var(--btn-height-sm);
+	padding-inline: 0.8rem;
+	font-size: 0.75rem;
+}
+
+/* Icon only: a circle. */
+.steering-action:not(.steering-action--text),
+.thinking-cancel,
+.dictation-toggle:not([hidden]),
+.composer-send button[type='submit'] {
+	width: var(--btn-height);
+	padding: 0;
+}
+
+.composer-send button[type='submit'],
+.dictation-toggle:not([hidden]) {
+	width: 44px;
+	height: 44px;
+}
+
+/* Primary: the forward action. */
+.questionnaire-actions .questionnaire-button-primary,
+.questionnaire-choices > button:last-child,
+#feedback-send,
+.composer-send button[type='submit'],
+.dictation-toggle[data-state='listening'],
+.dictation-toggle[data-state='stopping'] {
+	border-color: var(--btn-primary-edge);
+	color: var(--btn-primary-ink);
+	background-color: var(--btn-primary-fill);
+	background-image: var(--btn-primary-sheen);
+	box-shadow: var(--btn-primary-inset);
+}
+
+:is(
+	.questionnaire-actions .questionnaire-button-primary,
+	.questionnaire-choices > button:last-child,
+	#feedback-send,
+	.composer-send button[type='submit'],
+	.dictation-toggle[data-state='listening'],
+	.dictation-toggle[data-state='stopping']
+):hover:not(:disabled) {
+	background-color: var(--btn-primary-hover);
+}
+
+/* Secondary: a paper pill. */
+.questionnaire-choices > button:not(:last-child),
+.request-action,
+#history-close,
+#history-retry,
+.feedback-actions button:not(#feedback-send),
+.login-oauth-btn,
+.jump-latest,
+.code-block-copy {
+	border-color: var(--btn-secondary-edge);
+	color: var(--muted);
+	background-color: var(--btn-secondary-fill);
+	background-image: none;
+	box-shadow: var(--btn-secondary-inset);
+}
+
+:is(
+	.questionnaire-choices > button:not(:last-child),
+	.request-action,
+	#history-close,
+	#history-retry,
+	.feedback-actions button:not(#feedback-send),
+	.login-oauth-btn,
+	.jump-latest,
+	.code-block-copy
+):hover:not(:disabled) {
+	color: var(--ink);
+	background-color: var(--btn-secondary-hover);
+}
+
+/* Ghost: quiet until the pointer or focus arrives. */
+.questionnaire-actions .questionnaire-button-ghost,
+.steering-action,
+.thinking-cancel,
+.dictation-toggle:not([hidden]):not([data-state='listening']):not([data-state='stopping']) {
+	color: var(--muted);
+	background: transparent;
+	box-shadow: none;
+}
+
+:is(
+	.questionnaire-actions .questionnaire-button-ghost,
+	.steering-action,
+	.thinking-cancel,
+	.dictation-toggle:not([data-state='listening']):not([data-state='stopping'])
+):hover:not(:disabled) {
+	color: var(--ink);
+	background: var(--btn-secondary-fill);
+}
+
+/* Press, settle on the spring, and disabled. */
+:is(
+	.questionnaire-button,
+	.questionnaire-choices > button,
+	.request-action,
+	#history-close,
+	#history-retry,
+	.feedback-actions button,
+	.login-oauth-btn,
+	.jump-latest,
+	.code-block-copy,
+	.steering-action,
+	.thinking-cancel,
+	.dictation-toggle,
+	.composer-send button[type='submit']
+):active:not(:disabled) {
+	scale: 0.95;
+	transition-duration: 150ms, 150ms, 150ms, 150ms, 150ms, 100ms;
+}
+
+:is(
+	.questionnaire-button,
+	.questionnaire-choices > button,
+	.request-action,
+	#history-close,
+	#history-retry,
+	.feedback-actions button,
+	.login-oauth-btn,
+	.jump-latest,
+	.code-block-copy,
+	.steering-action,
+	.thinking-cancel,
+	.dictation-toggle,
+	.composer-send button[type='submit']
+):disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+
+/* Menu orbs: the glyph is a Kinetik secondary circle above its label. */
+.menu-orbs > a > svg,
+.menu-orbs > button > svg,
+.menu-orbs .orb-glyph {
+	border-radius: 999px;
+	background: var(--btn-secondary-fill);
+	box-shadow: inset 0 0 0 1px var(--btn-secondary-edge), var(--btn-secondary-inset);
+	transition: background-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+
+:is(.menu-orbs a, .menu-orbs button):hover > :is(svg, .orb-glyph) {
+	background: var(--btn-secondary-hover);
+	box-shadow: inset 0 0 0 1px var(--btn-secondary-edge), var(--btn-secondary-inset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:is(
+		.questionnaire-button,
+		.questionnaire-choices > button,
+		.request-action,
+		#history-close,
+		#history-retry,
+		.feedback-actions button,
+		.login-oauth-btn,
+		.jump-latest,
+		.code-block-copy,
+		.steering-action,
+		.thinking-cancel,
+		.dictation-toggle,
+		.composer-send button[type='submit']
+	) {
+		transition: none;
+	}
+
+	:is(
+		.questionnaire-button,
+		.questionnaire-choices > button,
+		.request-action,
+		#history-close,
+		#history-retry,
+		.feedback-actions button,
+		.login-oauth-btn,
+		.jump-latest,
+		.code-block-copy,
+		.steering-action,
+		.thinking-cancel,
+		.dictation-toggle,
+		.composer-send button[type='submit']
+	):active:not(:disabled) {
+		scale: none;
+	}
+}

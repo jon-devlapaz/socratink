@@ -9,6 +9,8 @@ import { presentQuestionRetryBodies } from '../src/learning/present-question.ts'
 import { markRevealRetryBodies } from '../src/learning/mark-reveal.ts';
 import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
+import { appConfig } from '../src/config/app.config.ts';
+import { conversationTitle } from '../src/config/conversations.ts';
 import { revealExample } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { mintSessionFixture } from './session-fixture.mjs';
@@ -457,6 +459,14 @@ try {
 		],
 		'completed loop should restore the learner-visible turns in order',
 	);
+	const listed = await fetch(`${origin}${appConfig.conversationsPath}`, { headers: { cookie: session.cookie } });
+	assert.equal(listed.status, 200);
+	assert.deepEqual((await listed.json()).conversations.map(({ id, title }) => ({ id, title })),
+		[{ id: conversationId, title: conversationTitle(initialMessage) }],
+		'History lists the conversation after a restart, titled by its first admitted message');
+	assert.deepEqual((await (await fetch(`${origin}${appConfig.conversationsPath}`,
+		{ headers: { cookie: (await mintSessionFixture(origin)).cookie } })).json()).conversations, [],
+		'another learner sees none of it');
 	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'history cannot unsay the unboxed list');
 	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
 	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);

@@ -11,11 +11,6 @@ export type OwnedStorage = CommittedStorage & { cancelThrough: () => Promise<num
 export type ReadStorage = CommittedStorage & { refresh: () => Promise<void> };
 type Replayed = { memory: MemoryStorage; seq: number; minimumId: number };
 
-/** Pi 1.5 validates native records; dialect-specific logs commit them before
- * publication. Preview reads replay the full history into memory, and refresh
- * then applies only later commits. No connection or execution ownership is
- * retained for an idle conversation.
- */
 export function createDurableStorage(target: DatabaseTarget) {
 	const backend = target.kind === 'postgres' ? postgresLog(target.connectionString) : sqliteLog(target.filename);
 	return {
@@ -38,7 +33,6 @@ export function createDurableStorage(target: DatabaseTarget) {
 	};
 }
 
-/** Applies `state.commits` onto `into`, which must end exactly where they begin. */
 function replay(state: LogState, into: Replayed = { memory: new MemoryStorage(), seq: 0, minimumId: 2 }): Replayed {
 	if (state.format !== logFormat) throw new Error('Unsupported Pi storage format.');
 	if (state.nextId < 2 || (!Number.isSafeInteger(state.nextId) && state.nextId !== maximumId + 1)) throw new Error('Invalid Pi ID counter.');

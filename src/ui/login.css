@@ -106,16 +106,6 @@ body.login-page {
 	align-items: center;
 	justify-content: center;
 	gap: 0.65rem;
-	min-height: 44px;
-	padding: 0.65rem 0.9rem;
-	border-radius: 0.6rem;
-	border: 1px solid var(--rule);
-	background: var(--paper-2);
-	color: var(--ink);
-	font: inherit;
-	font-size: 0.875rem;
-	cursor: pointer;
-	transition: background-color 150ms var(--press), scale 150ms var(--press);
 }
 
 .login-oauth-btn svg {
@@ -124,20 +114,3 @@ body.login-page {
 	flex: none;
 }
 
-.login-oauth-btn:hover {
-	background: var(--path-hover);
-}
-
-.login-oauth-btn:active {
-	scale: 0.96;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.login-oauth-btn {
-		transition: none;
-	}
-
-	.login-oauth-btn:active {
-		scale: none;
-	}
-}

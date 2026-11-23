@@ -42,8 +42,6 @@
 	--chip: var(--paper-2);
 	--chip-strong: var(--paper);
 	--highlight: transparent;
-	--send-ink: var(--paper);
-	--send-fill: var(--accent);
 	--mark-fill: var(--ink);
 	--wordmark-filter: none;
 	--panel-shadow: none;
@@ -55,6 +53,8 @@
 	--ease-out: ease-out;
 	--press: cubic-bezier(0.2, 0, 0, 1);
 	--drawer: cubic-bezier(0.32, 0.72, 0, 1);
+	/* Kinetik's pop spring (stiffness 420, damping 24) sampled over 500ms. */
+	--spring-pop: linear(0, 0.071, 0.237, 0.44, 0.64, 0.811, 0.941, 1.03, 1.081, 1.101, 1.101, 1.087, 1.068, 1.046, 1.027, 1.012, 1.001, 0.994, 0.99, 0.989, 0.99, 0.992, 0.994, 0.996, 0.998, 1);
 	--drawer-ms: 500ms;
 	--dock-closed: 7.25rem;
 	--grab-bar-width: 36px;
@@ -130,8 +130,13 @@ a:not(.turn-markdown a) {
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
+	outline: none;
+}
+
+@media (forced-colors: active) {
+	button:focus-visible {
+		border-color: ButtonBorder !important;
+	}
 }
 
 ::selection {
@@ -234,23 +239,15 @@ body.questionnaire-active .stage {
 	border: var(--composer-border-width) solid var(--rule);
 	border-radius: 0.6rem;
 	background: var(--paper);
-	transition: border-color 150ms var(--ease-out);
-}
-
-/* One quiet signal: the hairline turns jade. The textarea draws no ring of its own. */
-#chat:focus-within {
-	border-color: var(--accent);
 }
 
 #message {
 	display: block;
 	width: 100%;
 	min-height: 6rem;
-	/* Grow with a long answer; older browsers keep the fixed height and scroll. */
 	field-sizing: content;
 	max-height: min(40dvh, 18rem);
 	overflow-y: auto;
-	/* Hide scrolled text in the bottom padding, where the footer row sits. */
 	-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	mask-image: linear-gradient(to bottom, black calc(100% - 3.5rem), transparent calc(100% - 3rem));
 	resize: none;
@@ -260,10 +257,6 @@ body.questionnaire-active .stage {
 	background: transparent;
 	font-size: 1rem;
 	line-height: 1.5;
-	outline: none;
-}
-
-#message:focus-visible {
 	outline: none;
 }
 
@@ -292,40 +285,36 @@ body.questionnaire-active .stage {
 .composer-hint {
 	color: var(--quiet);
 	font-size: 0.67rem;
+	opacity: 0;
+	filter: blur(6px);
+	scale: 0.85;
+	transition: opacity 120ms var(--ease-out), filter 120ms var(--ease-out), scale 120ms var(--ease-out);
 }
 
-.composer-send button[type='submit'] {
-	display: grid;
-	width: 44px;
-	height: 44px;
-	place-items: center;
-	border: 0;
-	border-radius: 0.4rem;
-	color: var(--send-ink);
-	background: var(--send-fill);
-	cursor: pointer;
-	font-size: 1rem;
-	line-height: 1;
-	transition-property: scale, opacity;
-	transition-duration: 150ms;
-	transition-timing-function: var(--ease-out);
+/* The hint blurs in only while the learner is writing, after Kinetik's Prompt Input. */
+#chat:focus-within .composer-hint {
+	opacity: 1;
+	filter: blur(0);
+	scale: 1;
+	transition: opacity 200ms var(--ease-out) 60ms, filter 260ms var(--ease-out) 60ms, scale 500ms var(--spring-pop) 60ms;
 }
+
 
 .composer-send button[type='submit'] span {
 	display: block;
 	color: inherit;
 	font-size: 1rem;
 	transform: translateY(1px);
+	transition: filter 220ms var(--ease-out), scale 500ms var(--spring-pop);
 }
 
-.composer-send button[type='submit']:active:not(:disabled) {
-	scale: 0.96;
+/* While the tutor has the turn, the arrow sinks and softens. It pops back when the learner may write. */
+.composer-send button[type='submit']:disabled span {
+	filter: blur(1.5px);
+	scale: 0.7;
+	transition: filter 160ms var(--ease-out), scale 160ms var(--ease-out);
 }
 
-.composer-send button[type='submit']:disabled {
-	cursor: wait;
-	opacity: 0.42;
-}
 
 .skip-link {
 	position: fixed;
@@ -341,11 +330,6 @@ body.questionnaire-active .stage {
 
 .skip-link:not(:focus) {
 	clip-path: inset(50%);
-}
-
-.skip-link:focus {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
 }
 
 .sr-only {
@@ -396,7 +380,9 @@ body.questionnaire-active .stage {
 	.app-canvas,
 	.composer-shell::before,
 	#chat,
-	.composer-send button[type='submit'] {
+	.composer-send button[type='submit'] span,
+	.composer-hint,
+	#chat:focus-within .composer-hint {
 		transition: none;
 	}
 
@@ -405,10 +391,6 @@ body.questionnaire-active .stage {
 		opacity: 1;
 		transform: none;
 		filter: none;
-	}
-
-	.composer-send button[type='submit']:active:not(:disabled) {
-		scale: none;
 	}
 }
 

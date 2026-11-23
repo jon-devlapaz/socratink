@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import { inputKind, type Engine, type EngineOptions, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { inputKind, type Engine, type EngineOptions, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
-import { readSnapshot, type InputData } from './projection.ts';
-import { conversationModels, modelRef } from './provider.ts';
+import { readSnapshot } from './projection.ts';
+import { conversationModels, modelRef, providerHttpStatus } from './provider.ts';
+import { choseTryOnceMore, rejectedTryOnceMoreEdits } from './reveal-consent.ts';
 import { createDurableStorage, type OwnedStorage, type ReadStorage } from './storage.ts';
 
 export class DurableBusyError extends Error {
@@ -14,9 +15,6 @@ export class DurableBusyError extends Error {
 type Owner = { storage: OwnedStorage; harness: Harness; root: Conversation; modelId: () => string | undefined;
 	stop: () => Promise<void>; done?: Promise<void>; interrupted: boolean };
 
-/** Execution ownership lasts only for an active turn. Readers use committed
- * snapshots without that lock; a later request recovers interrupted work.
- */
 export async function openEngine(options: EngineOptions): Promise<Engine> {
 	const manager = createDurableStorage(options.target);
 	const active = new Map<string, Owner>();
@@ -24,7 +22,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 	const retryAfter = new Map<string, ReturnType<typeof setTimeout>>();
 	let closed = false;
 	function report(category: 'submission_failed' | 'submission_recovery') {
-		try { options.report?.(category); } catch { /* Logging cannot undo accepted work. */ }
+		bestEffort(() => options.report?.(category));
 	}
 	async function snapshot(id: string): Promise<Snapshot> {
 		const reader = await manager.read(id);
@@ -37,7 +35,6 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				if (reader) await (await reader).refresh();
 				else reader = manager.read(id);
 				const value = await readSnapshot(await reader);
-				// A snapshot also recovers work a dead process left pending.
 				if (value.submissions.some((entry) => !entry.outcome)) await recover(id);
 				return value;
 			},
@@ -79,7 +76,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		};
 		const poll = setInterval(checkCancellation, 100);
 		const timer = setTimeout(() => { owner.interrupted = true; void owner.stop().catch(() => {}); }, options.executionMs ?? 240_000);
-		owner.done = (async () => {
+		const done = owner.done = (async () => {
 			try {
 				checkCancellation();
 				await owner.root.waitForIdle(context);
@@ -90,28 +87,24 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
 					if (submission?.outcome === 'failed') {
 						reportFailed();
-						// The last failed reply's error starts with the provider's HTTP status
-						// ("429 ..."). Keep only that number: the rest can echo request text.
 						const recent = await owner.storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
 						const reply = recent.items.flatMap((entry) => [...(entry.model ?? [])].reverse())
 							.find((message) => message.role === 'assistant' && message.stopReason === 'error');
-						const status = reply?.role === 'assistant' ? /^\s*([1-5]\d\d)\b/.exec(reply.errorMessage ?? '')?.[1] : undefined;
-						if (status) ended.providerStatus = Number(status);
+						const status = reply?.role === 'assistant' ? providerHttpStatus(reply.errorMessage) : undefined;
+						if (status) ended.providerStatus = status;
 					}
 				}
 			} catch { ended = { status: 'error' }; reportFailed(); }
 			finally {
 				clearInterval(poll); clearTimeout(timer);
-				try {
-					options.logTurn?.({ conversationId: id, submissionId: String(submissionId), latencyMs: Date.now() - started,
-						...ended, ...(owner.interrupted ? { status: 'interrupted' } : {}) });
-				} catch { /* Logging cannot undo accepted work. */ }
+				bestEffort(() => options.logTurn?.({ conversationId: id, submissionId: String(submissionId), latencyMs: Date.now() - started,
+					...ended, ...(owner.interrupted ? { status: 'interrupted' } : {}) }));
 				await cancellation?.catch(() => {});
 				await owner.stop().catch(reportFailed);
 				if (active.get(id) === owner) active.delete(id);
 			}
 		})();
-		try { options.keepAlive?.(owner.done); } catch { /* Admission is already durable. */ }
+		bestEffort(() => options.keepAlive?.(done));
 	}
 	async function recover(id: string) {
 		if (closed || active.has(id) || opening.has(id) || retryAfter.has(id)) return;
@@ -132,16 +125,25 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			const owner = await claim(id);
 			if (!owner) throw new DurableBusyError();
 			try {
-				const pending = (await readSnapshot(owner.storage)).submissions.find((entry) => !entry.outcome);
+				const state = await readSnapshot(owner.storage);
+				const pending = state.submissions.find((entry) => !entry.outcome);
 				if (pending) {
 					report('submission_recovery'); run(id, owner, Number(pending.id) as SubmissionId);
 					throw new DurableBusyError();
 				}
 				const requestId = randomUUID();
-				const submission = await owner.root.submit({ type: 'input', content: text, whenBusy: 'reject', requestId,
-					entry: { kind: inputKind, data: { requestId, revealConsent: true, ...(selection ? { selection } : {}) } } }, context);
-				run(id, owner, submission.id);
-				return String(submission.id);
+				const tryOnceMore = choseTryOnceMore(state, text);
+				const input = { type: 'input', content: text, whenBusy: 'reject', requestId,
+					entry: { kind: inputKind, data: { requestId, revealConsent: true,
+						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } } as const;
+				const edits = await rejectedTryOnceMoreEdits(owner.root, state.submissions.at(-1), context);
+				const submissionId = edits.length ? await owner.root.commit(async (tx) => {
+					const submitted = await owner.root.submit(tx, input);
+					await tx.appendEntry(owner.root.id, { kind: 'socratink.try-once-more-context', edits });
+					return submitted;
+				}, context) : (await owner.root.submit(input, context)).id;
+				run(id, owner, submissionId);
+				return String(submissionId);
 			} catch (error) {
 				if (!owner.done) { await owner.stop(); active.delete(id); }
 				throw error;
@@ -152,11 +154,14 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			try { return await follower.snapshot(); } finally { await follower.close(); }
 		},
 		follow,
-		async abort(id) {
-			const pending = (await snapshot(id)).submissions.filter((entry) => !entry.outcome);
-			if (!pending.length) return;
-			await manager.cancel(id, Math.max(...pending.map((entry) => Number(entry.id))));
+		async abort(id, submissionId) {
+			// Cancel through this submission only: a later one, such as a reply another
+			// tab started after this one settled, keeps running.
+			const pending = (await snapshot(id)).submissions.some((entry) => entry.id === submissionId && !entry.outcome);
+			if (!pending) return false;
+			await manager.cancel(id, Number(submissionId));
 			await recover(id);
+			return true;
 		},
 		async close() {
 			if (closed) return;
@@ -211,8 +216,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		else if (initial?.run) {
 			const task = await harness.getTask(initial.run.taskId, context);
 			const checkpoint = task?.state.checkpoint;
-			// The owner-claim signal already covers this interrupted request. Pi
-			// charges that same attempt as a retry when scheduling resumes.
+			// Pi charges this interrupted request as a retry when scheduling resumes.
 			if (task?.restarts !== undefined && checkpoint && typeof checkpoint === 'object' && !Array.isArray(checkpoint)
 				&& (checkpoint.phase === 'request' || checkpoint.phase === 'poll') && typeof checkpoint.attempt === 'number') {
 				lastRetry = `${task.id}:${checkpoint.attempt}`;
@@ -223,4 +227,8 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 	let closing: Promise<void> | undefined;
 	return { storage, harness, root, interrupted: false, modelId: () => modelId,
 		stop: () => closing ??= harness.close(context) };
+}
+
+function bestEffort(hook: () => void) {
+	try { hook(); } catch {}
 }

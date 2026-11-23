@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ChatApiError, ChatTurnError } from '../src/config/chat-wire.ts';
 import { appConfig } from '../src/config/app.config.ts';
+import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
@@ -31,6 +32,58 @@ function abortablePendingRead(signal) {
 		signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 	});
 }
+
+test('a reader ignores another tab’s turn and closes the stream when its own reply settles', async (t) => {
+	const snapshot = {
+		messages: [
+			{ id: 'first-reply', role: 'assistant', submissionId: 'first', parts: [{ type: 'text', text: 'First reply' }] },
+			{ id: 'second-user', role: 'user', submissionId: 'second', parts: [{ type: 'text', text: 'Another question' }] },
+		],
+		settlements: [{ submissionId: 'first', outcome: 'completed' }],
+	};
+	let canceled = false;
+	const stream = new ReadableStream({
+		start(controller) {
+			const events = [
+				{ type: 'conversation-reset', snapshot: { ...snapshot, settlements: [] } },
+				{ type: 'message-started', submissionId: 'second', messageId: 'second-reply' },
+				{ type: 'message-delta', messageId: 'second-reply', kind: 'text', delta: 'Different reply' },
+				{ type: 'tool-input', messageId: 'second-reply', toolCallId: 'another-call', toolName: 'tool', input: {} },
+				{ type: 'tool-output', toolCallId: 'another-call', output: 'Another result' },
+				{ type: 'conversation-reset', snapshot },
+			];
+			controller.enqueue(new TextEncoder().encode(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')));
+			// The second turn keeps the stream open until it settles.
+			const timer = setTimeout(() => controller.close(), 100);
+			t.after(() => clearTimeout(timer));
+		},
+		cancel() { canceled = true; },
+	});
+	t.mock.method(globalThis, 'fetch', async () => new Response(stream));
+	const seen = [];
+	const result = await createStreamClient({ url: '/conversation' }).read('first', { onEvent: event => seen.push(event) });
+	assert.equal(result.text, 'First reply');
+	assert.deepEqual(seen, []);
+	assert.equal(canceled, true);
+});
+
+test('reconnects back off when each connection closes after replaying the same pending turn', async (t) => {
+	const delays = [];
+	const schedule = setTimeout;
+	t.mock.method(globalThis, 'setTimeout', (callback, ms) => {
+		delays.push(ms);
+		return schedule(callback, 0);
+	});
+	let connections = 0;
+	t.mock.method(globalThis, 'fetch', async () => {
+		connections += 1;
+		const snapshot = { messages: [{ role: 'user', submissionId: 'first', parts: [] }],
+			settlements: connections === 3 ? [{ submissionId: 'first', outcome: 'completed' }] : [] };
+		return new Response(`data: ${JSON.stringify({ type: 'conversation-reset', snapshot })}\n\n`);
+	});
+	await createStreamClient({ url: '/conversation' }).read('first');
+	assert.deepEqual(delays, [250, 500]);
+});
 
 test('recheck waits longer than a mid-stream FreeLLMAPI teaching reply', () => {
 	assert.ok(settlementReadTimeoutMs >= 90_000);
@@ -94,36 +147,101 @@ test('a 404 read leaves the admission in recovery without resending', async () =
 	assert.deepEqual(reads, [admission]);
 });
 
-test('cancel before observed admission stays unknown and never enables resend', async () => {
+test('cancel before observed admission sends no Cancel and never enables resend', async () => {
 	let aborts = 0;
 	let sends = 0;
 	const conversation = {
 		async send({ signal }) {
 			sends += 1;
-			return abortablePendingRead(signal);
+			assert.equal(signal, undefined, 'Cancel must not drop the send that would name the submission');
+			return new Promise(() => {});
 		},
 		async read() {
 			throw new Error('should not read');
 		},
-		async abort({ signal }) {
-			assert.ok(signal);
+		async abort() {
 			aborts += 1;
 			return { aborted: false };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		settlementSignal: () => AbortSignal.abort(),
+	});
+	const running = coordinator.start('hello');
+	const state = await coordinator.cancel();
+
+	assert.equal(state.kind, 'recovery');
+	assert.equal(state.admission, undefined);
+	assert.match(state.detail, /waiting for the server to confirm/i);
+	assert.throws(() => coordinator.start('hello'), /already active/);
+	assert.equal((await coordinator.recheck()).kind, 'recovery');
+	assert.equal(sends, 1);
+	assert.equal(aborts, 0, 'a Cancel without a submission id could stop another tab\'s later reply');
+	void running;
+});
+
+test('a delayed admission after Cancel lets recheck stop that submission by id', async () => {
+	const aborts = [];
+	let admit;
+	const conversation = {
+		send() {
+			return new Promise((resolve) => { admit = resolve; });
+		},
+		async read(target) {
+			assert.equal(target, admission.submissionId);
+			throw executionError('aborted');
+		},
+		async abort({ submissionId, signal }) {
+			assert.ok(signal);
+			aborts.push(submissionId);
+			return { aborted: true };
+		},
+	};
+	const coordinator = new ChatRequestCoordinator(conversation, {
+		...coordinatorOptions,
+		settlementSignal: () => AbortSignal.abort(),
+	});
+	void coordinator.start('hello');
+	assert.equal((await coordinator.cancel()).kind, 'recovery');
+	admit(admission);
+	await Promise.resolve();
+	const state = await coordinator.recheck();
+	assert.deepEqual(aborts, ['sub-1']);
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'aborted');
+});
+
+test('cancel during send waits for admission, then stops only that submission', async () => {
+	const aborts = [];
+	let admit;
+	let reads = 0;
+	const conversation = {
+		send() {
+			return new Promise((resolve) => { admit = resolve; });
+		},
+		async read(target) {
+			reads += 1;
+			assert.equal(target, admission.submissionId, 'only the settlement read runs after Cancel');
+			throw executionError('aborted');
+		},
+		async abort({ submissionId }) {
+			aborts.push(submissionId);
+			return { aborted: true };
 		},
 	};
 	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
 	const running = coordinator.start('hello');
 	const canceled = coordinator.cancel();
-
+	await Promise.resolve();
+	assert.deepEqual(aborts, [], 'no Cancel goes out before the id is known');
+	admit(admission);
 	const state = await canceled;
-	assert.equal(state.kind, 'recovery');
-	assert.equal(state.admission, undefined);
-	assert.match(state.detail, /admission is still unknown/i);
-	assert.throws(() => coordinator.start('hello'), /already active/);
+	assert.deepEqual(aborts, ['sub-1']);
+	assert.equal(reads, 1);
+	assert.equal(state.kind, 'terminal');
+	assert.equal(state.outcome, 'aborted');
 	assert.equal(await running, state);
-	assert.equal((await coordinator.recheck()).kind, 'recovery');
-	assert.equal(sends, 1);
-	assert.equal(aborts, 2);
 });
 
 test('send interruption before observed admission recovers without resend', async () => {
@@ -164,7 +282,8 @@ test('cancel after admission waits for an aborted settlement before saying Cance
 			assert.equal(target, admission.submissionId);
 			throw executionError('aborted');
 		},
-		async abort() {
+		async abort({ submissionId }) {
+			assert.equal(submissionId, admission.submissionId, 'Cancel names the reply it stops');
 			return { aborted: true };
 		},
 	};
