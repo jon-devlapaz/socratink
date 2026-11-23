@@ -85,6 +85,15 @@ Preserve reduced-motion alternatives, safe-area spacing, adjustable text size,
 and explicit as well as system light/dark preferences. Code and tables scroll
 within their own regions, never across the whole page.
 
+## Motion
+
+Kinetik UI (kinetikui.singhgourav.site, MIT) is the motion reference. Port
+its ideas into plain CSS and TypeScript; do not add its React components.
+Motion uses opacity, blur, and scale, never width, height, or position, so the
+conversation never moves when a control appears or a reply ends. Springs use
+`--spring-pop` from `styles.css`. The composer hint blurs in on focus, and the
+send arrow sinks while the tutor has the turn, then pops back.
+
 ## Browser support
 
 Use Baseline Widely available features freely. Newly available features need
