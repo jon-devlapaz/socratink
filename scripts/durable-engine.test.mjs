@@ -276,6 +276,21 @@ test('a card written as JSON text is retried as a real card and never shows as t
 	} finally { await engine.close(); }
 }));
 
+test('card help the tutor never marks is still labelled from the click (#65)', async () => fixture(async ({ responses, options }) => {
+	const background = [];
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
+	try {
+		await engine.submit('learner:help', 'Questionnaire answers:\n- A list has 16 items.\nWhich half do you search next?: Asked for a hint.');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], 'Think about what the middle element tells you. Which side can you rule out?');
+		await until(async () => responses.length, (count) => count === 2);
+		finish(responses[1], '');
+		const settled = await until(() => engine.snapshot('learner:help'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.deepEqual(reply.data?.reveal, [{ kind: 'hint', target: 'A list has 16 items.\nWhich half do you search next?' }]);
+	} finally { await engine.close(); }
+}));
+
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');
 	const lines = [];

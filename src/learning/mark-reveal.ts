@@ -12,16 +12,17 @@ export type MarkRevealRetryReason = keyof typeof markRevealRetryBodies;
 
 const helpKinds: Record<QuestionnaireHelp, RevealDefinition['kind']> = { hint: 'hint', unknown: 'partial' };
 
-/** The reveal a card help request records when the tutor did not mark one. */
+/** The reveal a card help request records when the tutor did not mark one.
+ * A card holds one item, so help is the whole answer, whatever lines its
+ * prompt spans. */
 export function cardHelpReveal(learnerText: string): RevealDefinition | undefined {
-	if (!learnerText.startsWith(questionnaireAnswerPrefix)) return undefined;
-	for (const line of learnerText.split('\n')) {
-		for (const [help, text] of Object.entries(questionnaireHelpText) as [QuestionnaireHelp, string][]) {
-			const suffix = `: ${text}`;
-			if (!line.startsWith('- ') || !line.endsWith(suffix)) continue;
-			const target = line.slice(2, -suffix.length).trim();
-			return { kind: helpKinds[help], ...(target ? { target } : {}) };
-		}
+	const head = `${questionnaireAnswerPrefix}\n- `;
+	if (!learnerText.startsWith(head)) return undefined;
+	for (const [help, text] of Object.entries(questionnaireHelpText) as [QuestionnaireHelp, string][]) {
+		const suffix = `: ${text}`;
+		if (!learnerText.endsWith(suffix)) continue;
+		const target = learnerText.slice(head.length, -suffix.length).trim();
+		return { kind: helpKinds[help], ...(target ? { target } : {}) };
 	}
 	return undefined;
 }
