@@ -12,21 +12,27 @@ import type { Scenario, Turn } from './scenarios.ts';
 
 export type ScenarioResult = { scenario: string; run: number; turns: Turn[]; checks: CheckResult[] };
 
-// Submission errors are generic on purpose; `providerStatus` adds the HTTP status the engine logged.
+// Submission errors are generic on purpose; `providerStatus` adds the HTTP status the engine logged,
+// and `providerErrors` the request failures this process saw during the turn.
 async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number,
-	providerStatus: (conversationId: string, submissionId: string) => Promise<number | undefined>): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
+	providerStatus: (conversationId: string, submissionId: string) => Promise<number | undefined>,
+	providerErrors: () => string[]): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
 	const turns: Turn[] = [];
 	while (turns.length < (scenario.maxTurns ?? 6)) {
 		const next = scenario.next(turns);
 		if (!next) break;
 		const { text, ...flags } = next;
+		providerErrors();
+		const started = Date.now();
 		const submissionId = await engine.submit(conversationId, text);
 		const state = await settled(engine, conversationId, submissionId, turnTimeoutMs);
 		const submission = state.submissions.find((s) => s.id === submissionId);
 		const outcome = submission?.outcome ?? 'timeout';
 		const reply = project(conversationId, state).messages.find((m) => m.submissionId === submissionId && m.role === 'assistant');
 		const status = outcome === 'completed' ? undefined : await providerStatus(conversationId, submissionId);
-		const error = [submission?.error, status ? `provider status ${status}` : undefined].filter(Boolean).join(' ');
+		const seen = outcome === 'completed' ? [] : [...new Set(providerErrors())];
+		const error = outcome === 'completed' ? '' : [submission?.error, status ? `provider status ${status}` : undefined,
+			seen.length ? `request errors: ${seen.join(' | ')}` : undefined, `after ${Date.now() - started} ms`].filter(Boolean).join(' ');
 		turns.push({ ...flags, learner: text, outcome, reply, ...(error ? { error } : {}) });
 		if (outcome !== 'completed') break;
 	}
@@ -58,8 +64,14 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 	const directory = await mkdtemp(resolve('.cache/tutor-eval-db-'));
 	const work: Promise<void>[] = [];
 	const statuses = new Map<string, number>();
+	const keys = new Set<string>();
+	const watch = watchRequestFailures(keys);
 	const engine = await openEngine({ target: { kind: 'sqlite', filename: join(directory, 'pi.sqlite') },
-		resolveModel: options.resolveModel, keepAlive: (promise) => work.push(promise),
+		resolveModel: async (...args) => {
+			const config = await options.resolveModel(...args);
+			if (config.apiKey) keys.add(config.apiKey);
+			return config;
+		}, keepAlive: (promise) => work.push(promise),
 		logTurn: (turn) => { if (turn.providerStatus) statuses.set(`${turn.conversationId}:${turn.submissionId}`, turn.providerStatus); } });
 	// The engine logs a turn after it settles, so wait for its work before reading.
 	const providerStatus = async (conversationId: string, submissionId: string) => {
@@ -72,7 +84,7 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 			for (const scenario of options.scenarios) {
 				let outcome: Omit<ScenarioResult, 'scenario' | 'run'>;
 				try {
-					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000, providerStatus);
+					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000, providerStatus, watch.take);
 				} catch (error) {
 					outcome = { turns: [], checks: [{ check: 'scenario-ran', status: 'fail', detail: error instanceof Error ? error.message : String(error) }] };
 				}
@@ -84,9 +96,37 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 	} finally {
 		await Promise.allSettled(work);
 		await engine.close();
+		watch.restore();
 		await rm(directory, { recursive: true, force: true });
 	}
 	return results;
+}
+
+/** The engine keeps provider text out of its turn records, so the eval watches this
+ * process's fetch calls to report why a turn failed. Turns run one at a time, so a
+ * failure belongs to the turn in flight. A stream that breaks after a 2xx is not seen. */
+function watchRequestFailures(keys: ReadonlySet<string>) {
+	const original = globalThis.fetch;
+	const failures: string[] = [];
+	const redact = (text: string) => [...keys].reduce((result, key) => result.split(key).join('[redacted]'), text).slice(0, 300);
+	globalThis.fetch = async (input, init) => {
+		try {
+			const response = await original(input, init);
+			if (!response.ok) failures.push(redact(`HTTP ${response.status}: ${await response.clone().text().catch(() => '')}`));
+			return response;
+		} catch (error) {
+			failures.push(redact(describe(error)));
+			throw error;
+		}
+	};
+	return { take: () => failures.splice(0), restore: () => { globalThis.fetch = original; } };
+}
+
+function describe(error: unknown): string {
+	if (!(error instanceof Error)) return String(error);
+	const cause = error.cause instanceof Error ? error.cause : undefined;
+	const code = cause && 'code' in cause ? ` ${String(cause.code)}` : '';
+	return cause ? `${error.message} (${cause.message}${code})` : error.message;
 }
 
 export type Counts = { pass: number; fail: number; skip: number };
