@@ -42,7 +42,7 @@ async function fixture(run) {
 		throw new Error('Synthetic conversation did not reach the expected state.');
 	};
 	try {
-		await run({ snapshot, poll,
+		await run({ snapshot, poll, responses, submit: (learner) => engine.submit(id, learner), settle: () => Promise.all(work),
 			async restart() { await Promise.all(work); await engine.close(); engine = await openEngine(options); },
 			async turn(learner, reveal, text, inspect = () => {}, guardedRounds) {
 				const input = typeof reveal === 'string' ? { kind: reveal } : reveal;
@@ -177,6 +177,27 @@ for (const kind of ['full_answer', 'worked_example']) {
 		}));
 	}
 }
+
+test('prose that answers a no-text correction never reaches the browser, live or settled', async () => fixture(async (f) => {
+	const question = 'What color would the sky look on the Moon?';
+	const note = 'Your last reply only asked a question and supplied no target content, so no reveal was marked.';
+	const seen = [];
+	const watch = async () => { const state = await f.snapshot(); seen.push(JSON.stringify(state)); return state; };
+	const submissionId = await f.submit('I do not know.');
+	await f.poll(watch, () => f.responses.length === 1);
+	emit(f.responses[0].response, { role: 'assistant', content: question });
+	finish(f.responses[0].response);
+	await f.poll(watch, () => f.responses.length === 2);
+	emit(f.responses[1].response, { role: 'assistant', content: note.slice(0, 40) });
+	await delay(100); await watch();
+	emit(f.responses[1].response, { content: note.slice(40) });
+	finish(f.responses[1].response);
+	const state = await f.poll(watch, (value) => value.settlements.some((s) => s.submissionId === submissionId));
+	await f.settle();
+	assert.equal(seen.some((json) => json.includes('no target content') || json.includes('Your last reply')), false);
+	const reply = state.messages.find((m) => m.submissionId === submissionId && m.role === 'assistant');
+	assert.equal(reply.parts.find((p) => p.type === 'text').text, question);
+}));
 
 test('Try once more hides a marked hint and settles only the corrected question', async () => fixture(async (f) => {
 	const pending = await f.turn('I think it is 41.', 'full_answer', protectedText, withheld);
