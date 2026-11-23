@@ -40,8 +40,7 @@ export function conversationEvents(engine: Engine, id: string, signal: AbortSign
 					state = await follower.snapshot();
 				}
 			} catch (error) {
-				if (!stopped.aborted) controller.error(error);
-				return;
+				if (!stopped.aborted) { controller.error(error); return; }
 			} finally { await follower.close(); }
 			if (!stop.signal.aborted) controller.close();
 		},

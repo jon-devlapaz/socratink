@@ -30,8 +30,9 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 		menuFirst,
 	} = elements;
 	let menuOpen = false;
+	let opener = peekHandle;
 
-	function setMenuOpen(open: boolean) {
+	function setMenuOpen(open: boolean, trigger = peekHandle) {
 		if (menuOpen === open) return;
 		menuOpen = open;
 		menuPanel.classList.remove('is-dragging');
@@ -43,6 +44,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 		peekHandle.inert = open;
 		menuLayer.inert = !open;
 		if (open) {
+			opener = trigger;
 			menuPanel.style.transform = '';
 			menuFirst.focus();
 			return;
@@ -50,7 +52,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 		requestAnimationFrame(() => {
 			menuPanel.style.transform = '';
 		});
-		peekHandle.focus();
+		opener.focus();
 	}
 
 	function bindSheetHandle(handle: HTMLElement, { openOnDown = false } = {}) {
@@ -129,7 +131,7 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 		handle.addEventListener('pointercancel', finishDrag);
 	}
 
-	lockup.addEventListener('click', () => setMenuOpen(!menuOpen));
+	lockup.addEventListener('click', () => setMenuOpen(!menuOpen, lockup));
 	peekHandle.addEventListener('click', () => {
 		if (!menuOpen) setMenuOpen(true);
 	});
@@ -165,7 +167,6 @@ export function mountMenuSheet(elements: MenuSheetElements, options: MenuSheetOp
 			first.focus();
 		}
 	});
-	menuLayer.inert = true;
 	bindSheetHandle(menuHandle);
 	bindSheetHandle(peekHandle, { openOnDown: true });
 	return () => setMenuOpen(false);

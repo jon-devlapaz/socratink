@@ -34,7 +34,14 @@ export function conversationModels(options: EngineOptions, conversationId: strin
 			onPayload: async (params: unknown, model: Model<Api>) => {
 				const next = (await request?.onPayload?.(params, model)) ?? params;
 				const fallbacks = selected.config.fallbackModelIds;
-				return fallbacks?.length ? { ...(next as object), models: [...fallbacks] } : next;
+				const hostedTutor = selected.model.baseUrl === appConfig.vercelAiGatewayBaseUrl
+					&& selected.model.id === appConfig.vercelAiGatewayModelId;
+				if (!hostedTutor && !fallbacks?.length) return next;
+				return {
+					...(next as object),
+					...(fallbacks?.length ? { models: [...fallbacks] } : {}),
+					...(hostedTutor ? { reasoning: { effort: 'none' } } : {}),
+				};
 			},
 			onResponse: async (response: Parameters<NonNullable<StreamOptions['onResponse']>>[0], model: Model<Api>) => {
 				const captured = routingFromHeaders(response.headers);

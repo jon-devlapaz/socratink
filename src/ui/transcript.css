@@ -121,8 +121,11 @@ html[data-type-size='small'] .active-node {
 	);
 }
 
-.turn-spacer {
-	flex: 0 0 auto;
+/* A short conversation rests on the composer; the space above it stays empty.
+ * The pseudo-element takes only free space, so a long conversation scrolls as before. */
+.active-scroll::before {
+	content: '';
+	flex: 1 1 0;
 	pointer-events: none;
 }
 

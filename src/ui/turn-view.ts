@@ -100,7 +100,6 @@ export function createActiveTurn(
 		wrap.append(
 			createSteeringBar({
 				sourceText: item.text,
-				showUnaidedLabel: Boolean(item.reveal),
 				selectionRoot: wrap,
 				onSteer: handlers.onSteer,
 			}),
@@ -332,6 +331,7 @@ function appendTurnCopy(
 }
 
 function historyBodyText(item: DisplayedTurn): string {
+	if (item.role === 'You') return item.shownText ?? item.text;
 	const compact = compactMarkdownText(item.shownText ?? item.text);
 	if (compact) return compact;
 	if (item.questionnaire) return item.questionnaire.items.map((question) => question.prompt).join(' ');

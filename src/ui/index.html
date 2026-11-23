@@ -78,7 +78,6 @@
 					<div class="active-scroll">
 						<ol id="messages" hidden aria-label="Earlier steps"></ol>
 						<div id="active-turn"></div>
-						<div class="turn-spacer" id="turn-spacer" aria-hidden="true"></div>
 					</div>
 					<button class="jump-latest" id="jump-latest" type="button" hidden aria-label="Jump to latest">
 						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -103,6 +102,7 @@
 						id="message"
 						autocomplete="off"
 						name="message"
+						disabled
 						rows="2"
 						required
 					></textarea>
@@ -143,7 +143,7 @@
 									<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="8" width="8" height="8" rx="1" /></svg>
 								</span>
 							</button>
-							<button aria-label="Send message" type="submit">
+							<button aria-label="Send message" type="submit" disabled>
 								<span aria-hidden="true">↑</span>
 							</button>
 						</div>
@@ -154,7 +154,7 @@
 			</footer>
 		</div>
 
-		<div class="menu-layer" id="menu-layer" aria-hidden="true">
+		<div class="menu-layer" id="menu-layer" aria-hidden="true" inert>
 			<button
 				class="menu-backdrop"
 				id="menu-backdrop"
