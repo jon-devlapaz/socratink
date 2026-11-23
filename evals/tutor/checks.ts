@@ -54,8 +54,12 @@ function prose(text: string): string {
 		.split('\n').filter((line) => !/^\s*>/.test(line)).join('\n');
 }
 
+// A short tag such as "Why or why not?" belongs to the question before it.
+const tagQuestion = /^(?:and |or )?(?:why|how)(?: or why not| or how| not| so)?\?+$/i;
+
 export function questionsIn(text: string): string[] {
-	return (prose(text).match(/[^.!?\n]*\?+/g) ?? []).map((q) => q.trim()).filter((q) => q.replace(/\?+$/, '').trim() !== '');
+	const found = (prose(text).match(/[^.!?\n]*\?+/g) ?? []).map((q) => q.trim()).filter((q) => q.replace(/\?+$/, '').trim() !== '');
+	return found.filter((q, index) => index === 0 || !tagQuestion.test(q));
 }
 
 const result = (check: CheckName, pass: boolean, detail?: string): CheckResult =>
@@ -73,8 +77,7 @@ export function replyChecks(message: WireMessage): CheckResult[] {
 	const leaks = internalNotePatterns.flatMap((pattern) => learnerFacing.match(pattern)?.[0] ?? []);
 	const questions = questionsIn(text);
 	const asked = [...questions, ...(item ? [`card: ${item.prompt}`] : [])];
-	const last = questions.at(-1);
-	const afterLast = last && !item ? prose(text).slice(prose(text).lastIndexOf(last) + last.length).trim() : '';
+	const afterLast = questions.length && !item ? prose(text).slice(prose(text).lastIndexOf('?') + 1).trim() : '';
 	const cue = revealCue.exec(text)?.[0];
 	return [
 		result('no-internal-notes', leaks.length === 0, `matched: ${leaks.join(' | ')}`),

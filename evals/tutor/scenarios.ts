@@ -7,7 +7,7 @@ import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
 import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
-export type Turn = { learner: string; outcome: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
+export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 export type Scenario = {
 	name: string;

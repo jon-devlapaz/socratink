@@ -30,6 +30,11 @@ test('two questions fail; a skill map fence and a quoted question do not count',
 	assert.deepEqual(questionsIn(map), ['Which force pulls the apple down?']);
 });
 
+test('a short tag such as "Why or why not?" is part of the question before it', () => {
+	assert.deepEqual(failing(reply('Would any place still have seasons? Why or why not?')), []);
+	assert.deepEqual(failing(reply('Why or why not? What is a vector?')), ['one-question']);
+});
+
 test('a tutor card counts as the question, and a teaching cue needs a recorded reveal', () => {
 	const card: WirePart = { type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit',
 		items: [{ name: 'item', prompt: 'Which is denser?', required: true, multiple: false, choices: [{ value: 'a', label: 'Ice' }, { value: 'b', label: 'Water' }] }] } };
@@ -129,4 +134,26 @@ test('a tutor with the known bugs fails every behaviour rule, each where expecte
 	}
 	const covered = new Set(Object.values(expected).flat());
 	assert.deepEqual(Object.keys(behaviourRules).filter((id) => !covered.has(id as BehaviourRuleId)), [], 'every rule needs a bug the eval catches');
+});
+
+test('a turn that fails at the provider records why', async () => {
+	const server = createServer(async (request, response) => {
+		for await (const _chunk of request) { /* drain */ }
+		response.writeHead(400, { 'content-type': 'application/json' });
+		response.end(JSON.stringify({ error: { message: 'synthetic bad request' } }));
+	});
+	await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+	try {
+		const { port } = server.address() as AddressInfo;
+		const [first] = scenarios;
+		assert.ok(first);
+		const [result] = await runEval({ scenarios: [first], turnTimeoutMs: 20_000, resolveModel: async () => ({ provider: 'jon-local',
+			modelId: 'fake', apiKey: 'fake', baseUrl: `http://127.0.0.1:${port}/v1`, contextWindow: 128000, maxTokens: 4096 }) });
+		const failed = result?.checks.find((c) => c.check === 'turn-completed');
+		assert.equal(failed?.status, 'fail');
+		assert.match(failed?.detail ?? '', /^turn ended failed: .*400/);
+	} finally {
+		server.closeAllConnections();
+		await new Promise((done) => server.close(done));
+	}
 });

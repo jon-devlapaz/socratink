@@ -12,7 +12,9 @@ import type { Scenario, Turn } from './scenarios.ts';
 
 export type ScenarioResult = { scenario: string; run: number; turns: Turn[]; checks: CheckResult[] };
 
-async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
+// Submission errors are generic on purpose; `providerStatus` adds the HTTP status the engine logged.
+async function runScenario(engine: Engine, scenario: Scenario, conversationId: string, turnTimeoutMs: number,
+	providerStatus: (conversationId: string, submissionId: string) => Promise<number | undefined>): Promise<Omit<ScenarioResult, 'scenario' | 'run'>> {
 	const turns: Turn[] = [];
 	while (turns.length < (scenario.maxTurns ?? 6)) {
 		const next = scenario.next(turns);
@@ -20,15 +22,18 @@ async function runScenario(engine: Engine, scenario: Scenario, conversationId: s
 		const { text, ...flags } = next;
 		const submissionId = await engine.submit(conversationId, text);
 		const state = await settled(engine, conversationId, submissionId, turnTimeoutMs);
-		const outcome = state.submissions.find((s) => s.id === submissionId)?.outcome ?? 'timeout';
+		const submission = state.submissions.find((s) => s.id === submissionId);
+		const outcome = submission?.outcome ?? 'timeout';
 		const reply = project(conversationId, state).messages.find((m) => m.submissionId === submissionId && m.role === 'assistant');
-		turns.push({ ...flags, learner: text, outcome, reply });
+		const status = outcome === 'completed' ? undefined : await providerStatus(conversationId, submissionId);
+		const error = [submission?.error, status ? `provider status ${status}` : undefined].filter(Boolean).join(' ');
+		turns.push({ ...flags, learner: text, outcome, reply, ...(error ? { error } : {}) });
 		if (outcome !== 'completed') break;
 	}
 	const checks: CheckResult[] = [
 		...turns.flatMap((turn, index) => [
 			{ check: 'turn-completed' as const, status: turn.outcome === 'completed' ? 'pass' as const : 'fail' as const, turn: index,
-				...(turn.outcome === 'completed' ? {} : { detail: `turn ended ${turn.outcome}` }) },
+				...(turn.outcome === 'completed' ? {} : { detail: `turn ended ${turn.outcome}${turn.error ? `: ${turn.error}` : ''}` }) },
 			...(turn.reply ? replyChecks(turn.reply).map((c) => ({ ...c, turn: index })) : []),
 		]),
 		...scenario.expect(turns),
@@ -52,15 +57,22 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 	await mkdir('.cache', { recursive: true });
 	const directory = await mkdtemp(resolve('.cache/tutor-eval-db-'));
 	const work: Promise<void>[] = [];
+	const statuses = new Map<string, number>();
 	const engine = await openEngine({ target: { kind: 'sqlite', filename: join(directory, 'pi.sqlite') },
-		resolveModel: options.resolveModel, keepAlive: (promise) => work.push(promise) });
+		resolveModel: options.resolveModel, keepAlive: (promise) => work.push(promise),
+		logTurn: (turn) => { if (turn.providerStatus) statuses.set(`${turn.conversationId}:${turn.submissionId}`, turn.providerStatus); } });
+	// The engine logs a turn after it settles, so wait for its work before reading.
+	const providerStatus = async (conversationId: string, submissionId: string) => {
+		await Promise.allSettled(work);
+		return statuses.get(`${conversationId}:${submissionId}`);
+	};
 	const results: ScenarioResult[] = [];
 	try {
 		for (let run = 1; run <= (options.runs ?? 1); run += 1) {
 			for (const scenario of options.scenarios) {
 				let outcome: Omit<ScenarioResult, 'scenario' | 'run'>;
 				try {
-					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000);
+					outcome = await runScenario(engine, scenario, `learner:tutor-eval-${scenario.name}-${run}`, options.turnTimeoutMs ?? 300_000, providerStatus);
 				} catch (error) {
 					outcome = { turns: [], checks: [{ check: 'scenario-ran', status: 'fail', detail: error instanceof Error ? error.message : String(error) }] };
 				}
