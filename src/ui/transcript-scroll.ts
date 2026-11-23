@@ -123,6 +123,16 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		syncChrome();
 	}
 
+	/** A settled short turn moves from the top to the centre; slide it there. */
+	function glideFrom(before: number) {
+		const shift = before - activeTurn.getBoundingClientRect().top;
+		if (reduceMotion || Math.abs(shift) < 2) return;
+		activeTurn.animate([{ transform: `translateY(${shift}px)` }, { transform: 'none' }], {
+			duration: 320,
+			easing: 'cubic-bezier(0.2, 0, 0, 1)',
+		});
+	}
+
 	async function preserveAround(mutate: () => void | Promise<void>) {
 		if (scroller.scrollTop <= 1) {
 			await mutate();
@@ -183,9 +193,11 @@ export function attachTranscriptScroll(card: HTMLElement): TranscriptScroll {
 		scrollToStart,
 		async hold(mutate, landing = 'start') {
 			if (following) {
+				const before = activeTurn.getBoundingClientRect().top;
 				await mutate();
 				if (landing === 'live-edge') followLiveEdge();
 				else pinCurrentStart();
+				glideFrom(before);
 				return;
 			}
 			await preserveAround(mutate);
