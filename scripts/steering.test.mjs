@@ -94,9 +94,10 @@ test('steering chips send once; copy writes the turn without sending', async () 
 			},
 		});
 		const [smaller, unaided, copy] = bar.querySelectorAll('button');
-		assert.equal(smaller?.attributes['aria-label'], 'Too fast: need a smaller step');
-		assert.equal(unaided?.attributes['aria-label'], 'I want to try unaided');
+		assert.equal(smaller?.textContent, 'Smaller step');
+		assert.equal(unaided?.textContent, 'Try on my own');
 		assert.equal(copy?.attributes['aria-label'], 'Copy this turn');
+		assert.equal(copy?.childNodes[0]?.tagName, 'SVG');
 		copy.click();
 		await Promise.resolve();
 		await Promise.resolve();
