@@ -164,6 +164,9 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		await page.getByRole('button', { name: 'Keep this conversation' }).click();
+		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
+		await page.reload();
+		await ready(page);
 		assert.equal(await input.inputValue(), 'A draft for the old conversation');
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
