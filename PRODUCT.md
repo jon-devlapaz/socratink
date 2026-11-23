@@ -39,7 +39,10 @@ in [README.md](README.md).
 
 The app serves individual learners. Speaking to an audience and arguing a
 case with other people are later directions, not built capabilities.
-A later-day retention re-check is also not built.
+A later-day re-check is prompt-only: the final summary gives a save-state
+block, and a new conversation that starts with "resume from:" and that block
+asks one closed-book question per subskill before any help. The app does not
+store the map, schedule the re-check, or measure retention.
 
 The tutor rates subskill levels and mastery inside a conversation by the
 skill's strict evaluation rules. That rating is the tutor's judgment, not an

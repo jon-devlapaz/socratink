@@ -38,7 +38,7 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
 });
 
-type Request = { learner: string; afterTool: boolean; corrected: boolean };
+type Request = { learner: string; first: string; afterTool: boolean; corrected: boolean };
 type Step = { text: string } | { tool: string; args: unknown };
 const corrections: string[] = Object.values({ ...markRevealRetryBodies, ...presentQuestionRetryBodies });
 
@@ -51,7 +51,7 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 		const text = (content: unknown) => typeof content === 'string' ? content
 			: Array.isArray(content) ? content.map((part: { text?: string }) => part.text ?? '').join('') : '';
 		const users = messages.filter((m) => m.role === 'user').map((m) => text(m.content));
-		const step = tutor({ learner: users.findLast((u) => !corrections.includes(u)) ?? '',
+		const step = tutor({ learner: users.findLast((u) => !corrections.includes(u)) ?? '', first: users[0] ?? '',
 			afterTool: messages.at(-1)?.role === 'tool', corrected: corrections.includes(users.at(-1) ?? '') });
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
 		const emit = (delta: object, finish: string | null = null) =>
@@ -80,11 +80,14 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 const answer = 'Seasons come from the tilt of Earth\'s axis, about 23.5 degrees, which changes how directly sunlight hits each hemisphere.';
 const mark = (args: object): Step => ({ tool: 'mark_reveal', args });
 
-function goodTutor({ learner, afterTool, corrected }: Request): Step {
+function goodTutor({ learner, first, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (corrected) return { text: '' };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
+	if (first.startsWith('resume from:')) return { text: has(/don't know/i)
+		? 'Next one. A sealed jar in bright light runs out of carbon dioxide. Why does the plant stop making sugar?'
+		: 'Without notes: why does a leaf in bright light still need water to give off oxygen?' };
 	if (has(/just tell me/i)) return mark({ kind: 'full_answer', requested: true });
 	if (has(/Try once more/)) return { text: 'Which colour of sunlight do you think scatters most in air?' };
 	if (has(/don't know|Asked for a hint|hint\?/i)) return mark({ kind: has(/hint/i) ? 'hint' : 'partial' });
@@ -97,6 +100,7 @@ function goodTutor({ learner, afterTool, corrected }: Request): Step {
 function badTutor({ learner, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
+	if (has(/^resume from:/)) return { text: '```text\nlight reactions  [\u2588\u2588\u2588\u2588\u2591] 4/5\n```\n\nWhat do the light reactions make?' };
 	if (has(/just tell me|Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
 	if (has(/don't know|hint/i)) return { text: 'The key idea is density. Is ice less dense?' };
@@ -123,6 +127,7 @@ test('a tutor with the known bugs fails every behaviour rule, each where expecte
 		'try-once-more-no-notes': ['no-internal-notes', 'ends-on-question', 'try-once-more-withholds'],
 		'i-dont-know-is-marked': ['dont-know-marked', 'reveal-marked'],
 		'hint-is-marked': ['hint-marked', 'choices-boxed'],
+		'recheck-closed-book': ['recheck-attempt-first', 'recheck-no-help'],
 	};
 	for (const [scenario, checks] of Object.entries(expected)) {
 		for (const check of checks) assert.ok(failedChecks(results, scenario).has(check), `${scenario} must fail ${check}`);

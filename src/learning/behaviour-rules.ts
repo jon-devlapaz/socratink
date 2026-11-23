@@ -14,6 +14,8 @@ export const behaviourRules = {
 	'dont-know-marked': { policy: 'is new material the learner could not derive: give the short explanation or a worked example, mark the reveal', issues: [] },
 	'hint-marked': { policy: 'Hints and partial explanations do not need this choice.', issues: [] },
 	'try-once-more-withholds': { policy: 'Try once more is the learner\'s choice to attempt it again, not a request for a new explanation', issues: [136] },
+	'recheck-attempt-first': { policy: 'Do not render the skill map or repeat the saved levels until each of those subskills has an attempt.', issues: [] },
+	'recheck-no-help': { policy: 'During the re-check, an "I don\'t know", a skip, or a hint request marks that subskill not attempted: give no hint, explanation or worked example, and ask the next re-check question.', issues: [] },
 } as const satisfies Record<string, { policy: string; issues: readonly number[] }>;
 
 export type BehaviourRuleId = keyof typeof behaviourRules;

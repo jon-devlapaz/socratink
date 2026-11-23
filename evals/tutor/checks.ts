@@ -113,3 +113,29 @@ export function expectTryOnceMore(message: WireMessage | undefined): CheckResult
 	];
 	return result('try-once-more-withholds', problems.length === 0, problems.join('; '));
 }
+
+const skillMap = /[\u2588\u2591#]{3,}|\b[0-5]\/5\b/;
+
+function recheckProblems(message: WireMessage | undefined): string[] {
+	const cue = revealCue.exec(textOf(message))?.[0];
+	return [
+		...(isConsent(message) ? ['showed a consent card'] : []),
+		...(revealsOf(message).length ? [`recorded a reveal: ${JSON.stringify(revealsOf(message))}`] : []),
+		...(cue ? [`teaching cue: ${cue}`] : []),
+	];
+}
+
+/** The first re-check reply asks before it shows the skill map or the saved levels. */
+export function expectRecheckAttemptFirst(message: WireMessage | undefined): CheckResult {
+	const map = skillMap.exec(textOf(message))?.[0];
+	const problems = [...recheckProblems(message), ...(map ? [`showed the skill map or a level: ${map}`] : [])];
+	return result('recheck-attempt-first', problems.length === 0, problems.join('; '));
+}
+
+/** "I don't know" during a re-check gets the next question and no help. */
+export function expectRecheckNoHelp(message: WireMessage | undefined): CheckResult {
+	const card = cardOf(message);
+	const asked = questionsIn(textOf(message)).length + (card && card.kind !== 'reveal-consent' ? 1 : 0);
+	const problems = [...recheckProblems(message), ...(asked !== 1 ? ['did not ask exactly one question'] : [])];
+	return result('recheck-no-help', problems.length === 0, problems.join('; '));
+}

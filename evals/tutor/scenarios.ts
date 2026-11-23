@@ -5,7 +5,7 @@
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
-import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+import { cardOf, expectMarkedHelp, expectRecheckAttemptFirst, expectRecheckNoHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
@@ -47,6 +47,13 @@ function scripted(steps: readonly Step[]): Scenario['next'] {
 }
 
 const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn) => turn.step === say)?.reply;
+
+const recheckBlock = `resume from:
+Topic: Photosynthesis
+light reactions   [\u2588\u2588\u2588\u2588\u2591] 4/5
+Calvin cycle      [\u2588\u2588\u2588\u2591\u2591] 3/5
+limiting factors  [\u2588\u2591\u2591\u2591\u2591] 1/5
+Notes: mixed up glucose and oxygen as outputs early on.`;
 
 export const scenarios: readonly Scenario[] = [
 	{
@@ -106,6 +113,19 @@ export const scenarios: readonly Scenario[] = [
 		expect: (turns) => {
 			const turn = turns.find((t) => t.tryOnceMore);
 			return [turn ? expectTryOnceMore(turn.reply) : skipped('try-once-more-withholds', 'the tutor never offered a consent card in this run')];
+		},
+	},
+	{
+		name: 'recheck-closed-book',
+		summary: 'A "resume from:" block starts a re-check: the first reply asks without showing the map, and "I don\'t know" gets the next question, not help.',
+		next: scripted([{ say: recheckBlock, plain: true }, { say: "I don't know.", plain: true }]),
+		expect: (turns) => {
+			const first = stepReply(turns, recheckBlock);
+			const second = stepReply(turns, "I don't know.");
+			return [
+				first ? expectRecheckAttemptFirst(first) : skipped('recheck-attempt-first', 'script ended early'),
+				second ? expectRecheckNoHelp(second) : skipped('recheck-no-help', 'script ended early'),
+			];
 		},
 	},
 ];
