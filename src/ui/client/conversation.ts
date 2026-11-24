@@ -437,6 +437,10 @@ export function chatTurnErrorMessage(error: unknown): string {
 	if (envelopeType(error) === 'inference_unconfigured') {
 		return 'No model provider is set up yet. Please try again later.';
 	}
+	if (error instanceof ChatTurnError) {
+		if (error.failure === 'terminal_event_missing') return 'The reply stopped before it finished.';
+		return error.detail ?? 'The reply could not finish.';
+	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
 }
 
