@@ -353,10 +353,12 @@ export function mountChatSurface(options: Readonly<{
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 
+	const composerShell = requireElement<HTMLElement>('.composer-shell');
 	new ResizeObserver(() => {
-		const grow = input.offsetHeight - parseFloat(getComputedStyle(input).minHeight);
+		const grow = composerShell.offsetHeight - form.offsetHeight
+			+ input.offsetHeight - parseFloat(getComputedStyle(input).minHeight);
 		document.documentElement.style.setProperty('--composer-grow', `${Math.max(0, grow)}px`);
-	}).observe(input);
+	}).observe(composerShell);
 
 	input.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {

@@ -24,6 +24,25 @@ after(async () => {
 	await server?.close();
 });
 
+async function assertNoticeLayout(page, reply) {
+	for (const width of [390, 1280]) {
+		await page.setViewportSize({ width, height: 844 });
+		await page.evaluate(() => document.fonts.ready);
+		await page.waitForFunction((reply) => {
+			const notice = document.querySelector('#storage-notice').getBoundingClientRect();
+			const composer = document.querySelector('#chat').getBoundingClientRect();
+			const stage = document.querySelector('.stage');
+			const stageStyle = getComputedStyle(stage);
+			const contentBottom = reply
+				? [...document.querySelectorAll('#active-turn p')].find((p) => p.textContent === reply)?.getBoundingClientRect().bottom
+				: stage.getBoundingClientRect().bottom - parseFloat(stageStyle.paddingBottom);
+			const headingPresent = reply || getComputedStyle(stage, '::before').content.includes('Make the thinking your own.');
+			return headingPresent && contentBottom <= notice.top - 1 && notice.bottom <= composer.top
+				&& notice.top >= 0 && composer.bottom <= window.innerHeight;
+		}, reply, { timeout: 5_000 });
+	}
+}
+
 for (const [mode, description] of [
 	['blocked', 'page-wide blocked storage uses default preferences and keeps chatting'],
 	['read', 'a failed saved-ID read explains reload uncertainty and keeps chatting'],
@@ -80,6 +99,7 @@ for (const [mode, description] of [
 		await notice.waitFor({ timeout: 5_000 });
 		await page.waitForFunction(() => document.querySelector('#message')?.disabled === false, null, { timeout: 5_000 });
 		assert.equal(await notice.count(), 1);
+		await assertNoticeLayout(page, null);
 		if (mode === 'blocked') {
 			assert.equal(await page.locator('#appearance-toggle').getAttribute('aria-pressed'), 'false');
 			assert.equal(await page.locator('html').getAttribute('data-type-size'), 'medium');
@@ -99,6 +119,7 @@ for (const [mode, description] of [
 			await page.getByText(`Reply to ${text}`, { exact: true }).waitFor({ timeout: 5_000 });
 			assert.equal(await page.locator('#message').isDisabled(), false);
 			assert.equal(await notice.isVisible(), true);
+			await assertNoticeLayout(page, `Reply to ${text}`);
 		}
 		assert.equal(sends.length, 2);
 		assert.equal(sends[0].id, sends[1].id);
