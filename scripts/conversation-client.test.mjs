@@ -729,6 +729,12 @@ test('maps user-facing errors without treating cancellation as a generic failure
 		chatTurnErrorMessage(new ChatApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
 		'No model provider is set up yet. Please try again later.',
 	);
+	// #38: the learner sees the reason, never the internal submission id.
+	const failed = new ChatTurnError({ submissionId: '13', failure: 'failed', error: 'The model request could not complete.' });
+	assert.match(failed.message, /submission 13/);
+	assert.equal(chatTurnErrorMessage(failed), 'The model request could not complete.');
+	assert.equal(chatTurnErrorMessage(executionError('failed')), 'The reply could not finish.');
+	assert.equal(chatTurnErrorMessage(executionError('terminal_event_missing')), 'The reply stopped before it finished.');
 });
 
 test('recovery locks the composer; a confirmed stop leaves it open', () => {

@@ -123,6 +123,21 @@ export function watchChatConversationReset(onReset: () => void): () => void {
 	return () => window.removeEventListener('storage', listener);
 }
 
+/** Tells this learner's other tabs that a turn in this conversation settled. */
+export function announceChatTurnSettled(conversationId: string) {
+	try {
+		localStorage.setItem(appConfig.chatTurnSettledKey, `${conversationId}\u0000${randomId()}`);
+	} catch {}
+}
+
+export function watchChatTurnSettled(conversationId: string, onSettled: () => void): () => void {
+	const listener = (event: StorageEvent) => {
+		if (event.key === appConfig.chatTurnSettledKey && event.newValue?.startsWith(`${conversationId}\u0000`)) onSettled();
+	};
+	window.addEventListener('storage', listener);
+	return () => window.removeEventListener('storage', listener);
+}
+
 export function unsettledSubmissionFromHistory(
 	history: Pick<WireSnapshot, 'messages' | 'settlements'>,
 ): { text: string; submissionId: string } | undefined {
@@ -436,6 +451,10 @@ function awaitWithSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T
 export function chatTurnErrorMessage(error: unknown): string {
 	if (envelopeType(error) === 'inference_unconfigured') {
 		return 'No model provider is set up yet. Please try again later.';
+	}
+	if (error instanceof ChatTurnError) {
+		if (error.failure === 'terminal_event_missing') return 'The reply stopped before it finished.';
+		return error.detail ?? 'The reply could not finish.';
 	}
 	return error instanceof Error ? error.message : 'Unable to get a reply.';
 }
