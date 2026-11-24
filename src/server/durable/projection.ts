@@ -5,7 +5,7 @@ import type { InputData, ProductMessage, ProductTool, Snapshot } from './contrac
 import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
-import { asksForNoText, splitReasoning } from '../../learning/learner-text.ts';
+import { asksForNoText, splitReasoning, withoutQuestionBesideCard } from '../../learning/learner-text.ts';
 import { cardHelpReveal } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { withRevealConsent } from './reveal-consent.ts';
@@ -42,6 +42,9 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 		if (tool && slot.output) tool.output = slot.output;
 	}
 	labelCardHelp(snapshot);
+	for (const message of snapshot.messages) {
+		if (message.role === 'assistant' && message.data?.questionnaire?.length) message.text = withoutQuestionBesideCard(message.text);
+	}
 	const projected = withRevealConsent(snapshot, consentRequired);
 	projected.messages = projected.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
