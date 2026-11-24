@@ -160,6 +160,27 @@ test('a turn that fails at the provider records why', async () => {
 		const failed = result?.checks.find((c) => c.check === 'turn-completed');
 		assert.equal(failed?.status, 'fail');
 		assert.match(failed?.detail ?? '', /^turn ended failed: .*400/);
+		assert.match(failed?.detail ?? '', /request errors: HTTP 400: .*synthetic bad request/);
+		assert.match(failed?.detail ?? '', /after \d+ ms$/);
+	} finally {
+		server.closeAllConnections();
+		await new Promise((done) => server.close(done));
+	}
+});
+
+test('a turn whose connection drops records the error text, with no HTTP status', async () => {
+	const server = createServer((request) => { request.socket.destroy(); });
+	await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+	try {
+		const { port } = server.address() as AddressInfo;
+		const [first] = scenarios;
+		assert.ok(first);
+		const [result] = await runEval({ scenarios: [first], turnTimeoutMs: 60_000, resolveModel: async () => ({ provider: 'jon-local',
+			modelId: 'fake', apiKey: 'fake', baseUrl: `http://127.0.0.1:${port}/v1`, contextWindow: 128000, maxTokens: 4096 }) });
+		const failed = result?.checks.find((c) => c.check === 'turn-completed');
+		assert.equal(failed?.status, 'fail');
+		assert.doesNotMatch(failed?.detail ?? '', /provider status/);
+		assert.match(failed?.detail ?? '', /^turn ended failed: .*request errors: \S.* after \d+ ms$/);
 	} finally {
 		server.closeAllConnections();
 		await new Promise((done) => server.close(done));
