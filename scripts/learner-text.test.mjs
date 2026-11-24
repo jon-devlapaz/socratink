@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { replyFrom } from '../src/config/chat-wire.ts';
-import { splitReasoning } from '../src/learning/learner-text.ts';
+import { splitReasoning, withoutQuestionBesideCard } from '../src/learning/learner-text.ts';
 import { initialProgress, progressEvents } from '../src/server/durable/browser-events.ts';
 import { project } from '../src/server/durable/browser-projection.ts';
 import { displayedAssistantTurn } from '../src/ui/chat-turns.ts';
@@ -43,3 +43,18 @@ for (const [name, raw, hidden, shown] of leaks) {
 		assert.equal(settled?.text ?? '', shown);
 	});
 }
+
+test('text beside a question card drops the questions it ends on and keeps the feedback (#163)', () => {
+	const cases = [
+		['Hint: each check cuts the candidates in half. How many times can you halve 1000…?', 'Hint: each check cuts the candidates in half.'],
+		['Close! You ruled out A. What made you pick B? And why not C?', 'Close! You ruled out A.'],
+		['Good thinking.\n\n**Question 1:** What happens inside the body after a vaccine?', 'Good thinking.'],
+		['Which of these floats?', ''],
+		['Good. Think about freezing: where do the molecules end up? Let me start with the first question:', 'Good.'],
+		['Nice work. Here is the next one:', 'Nice work. Here is the next one:'],
+		['Nice work. Pick the option that fits best.', 'Nice work. Pick the option that fits best.'],
+		['Why does ice float? It is less dense than water.', 'Why does ice float? It is less dense than water.'],
+		['', ''],
+	];
+	for (const [text, expected] of cases) assert.equal(withoutQuestionBesideCard(text), expected, text);
+});

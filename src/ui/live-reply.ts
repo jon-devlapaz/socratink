@@ -1,7 +1,8 @@
 import type { WireEventBody } from '../config/chat-wire.ts';
 import { markRevealRetryReason } from '../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName, type RevealDefinition } from '../reveal.ts';
-import { learnerVisibleText } from '../learning/learner-text.ts';
+import { learnerVisibleText, withoutQuestionBesideCard } from '../learning/learner-text.ts';
+import { presentQuestionToolName } from '../learning/present-question.ts';
 
 /** What the pending turn shows of a reply that is still arriving. Empty
  * markdown shows nothing. */
@@ -13,10 +14,13 @@ export type LiveReplyView = { markdown: string; reveal?: RevealDefinition };
  * Supplied content shows only with its reveal mark: the mark comes from the
  * mark_reveal call as soon as it arrives, and text the server would still
  * check for an unmarked reveal waits for that call or for settlement. A hold
- * never takes away text already shown: it keeps the last shown text, frozen. */
+ * never takes away text already shown: it keeps the last shown text, frozen.
+ * A question card, once it arrives, takes the text's own question away, as
+ * the settled reply does (#163). */
 export function createLiveReply(learnerText: string) {
 	const texts = new Map<string, string>();
 	let reveal: RevealDefinition | undefined;
+	let card = false;
 	let shown = '';
 
 	return {
@@ -31,6 +35,11 @@ export function createLiveReply(learnerText: string) {
 				texts.set(event.messageId, (texts.get(event.messageId) ?? '') + event.delta);
 				return true;
 			}
+			if (event.type === 'tool-input' && event.toolName === presentQuestionToolName) {
+				const changed = !card && Boolean(texts.get(event.messageId));
+				card = true;
+				return changed;
+			}
 			if (event.type === 'tool-input' && event.toolName === revealToolName) {
 				const parsed = parseRevealDefinition(event.input);
 				if (!parsed) return false;
@@ -40,7 +49,8 @@ export function createLiveReply(learnerText: string) {
 			return false;
 		},
 		view(): LiveReplyView {
-			const text = learnerVisibleText([...texts.values()].at(-1) ?? '');
+			const latest = learnerVisibleText([...texts.values()].at(-1) ?? '');
+			const text = card ? withoutQuestionBesideCard(latest) : latest;
 			const unmarked = markRevealRetryReason({
 				revealed: Boolean(reveal), learnerText, assistantText: text, alreadyRetried: false,
 			});

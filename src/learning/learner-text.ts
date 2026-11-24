@@ -3,7 +3,8 @@
  * reasoning in <think> tags (#117), tool names and reveal notes (#116, #136),
  * a literal "(no text)" (#131), prose answering a correction that asked
  * for no text (first live eval), and a present_question call written as JSON
- * text (#164). check:structure keeps these rules here. */
+ * text (#164), and a question asked beside the card that already asks it
+ * (#163). check:structure keeps these rules here. */
 
 import { presentQuestionJson } from '../questionnaire.ts';
 import { markRevealRetryBodies } from './mark-reveal.ts';
@@ -52,6 +53,26 @@ export function learnerVisibleText(text: string): string {
 			(sentence) => internalToolName.test(sentence)
 				|| (revealNote.test(sentence) && !sentence.trimEnd().endsWith('?')) ? '' : sentence)
 		.trim();
+}
+
+/** Text beside a tutor's question card, without the questions it ends on.
+ * The card is that turn's one question, so a question in the text asks it
+ * twice (#163). A lead-in such as "**Question:**" goes with its question.
+ * Feedback and hints before the question stay. */
+export function withoutQuestionBesideCard(text: string): string {
+	const question = /\?["'”’)*_]*$/u;
+	const leadIn = /[^\n.!?]*:[*_]*$/u;
+	const before = text.trimEnd();
+	// "What happens to the molecules? Let me start with the first question:" asks
+	// beside the card too: the lead-in only points at the card.
+	const pointing = before.replace(leadIn, '').trimEnd();
+	let visible = pointing !== before && question.test(pointing) ? pointing : before;
+	while (question.test(visible)) {
+		let start = 0;
+		for (const match of visible.matchAll(/[.!?]["'”’)*_]*[ \t]+|\n/gu)) start = match.index + match[0].length;
+		visible = visible.slice(0, start).trimEnd();
+	}
+	return visible === before ? visible : visible.replace(leadIn, '').trimEnd();
 }
 
 /** Whether a correction told the tutor to write no text. Whatever text it

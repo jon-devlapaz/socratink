@@ -49,7 +49,7 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 });
 
 type Request = { learner: string; afterTool: boolean; corrected: boolean };
-type Step = { text: string } | { tool: string; args: unknown };
+type Step = { text: string } | { text?: string; tool: string; args: unknown };
 const corrections: string[] = Object.values({ ...markRevealRetryBodies, ...presentQuestionRetryBodies });
 
 /** A fake OpenAI-compatible provider that streams one step chosen by `tutor`. */
@@ -67,6 +67,7 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 		const emit = (delta: object, finish: string | null = null) =>
 			response.write(`data: ${JSON.stringify({ id: 'fake', model: 'fake', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 		if ('tool' in step) {
+			if (step.text) emit({ role: 'assistant', content: step.text });
 			emit({ role: 'assistant', tool_calls: [{ index: 0, id: `call_${Math.random().toString(36).slice(2)}`, type: 'function',
 				function: { name: step.tool, arguments: JSON.stringify(step.args) } }] });
 			emit({}, 'tool_calls');
@@ -116,6 +117,13 @@ function badTutor({ learner, afterTool, corrected }: Request): Step {
 	return { text: 'What do you know? And why do you care?' };
 }
 
+/** The live bug from #163: the reply text asks the card's question again. */
+function askTwiceTutor(request: Request): Step {
+	const step = goodTutor(request);
+	return 'tool' in step && step.tool === 'present_question'
+		? { ...step, text: 'Good question to start with. Before we go further, what do you think a vaccine puts in your body?' } : step;
+}
+
 const failedChecks = (results: ScenarioResult[], scenario: string) =>
 	new Set(results.find((r) => r.scenario === scenario)?.checks.filter((c) => c.status === 'fail').map((c) => c.check));
 
@@ -142,6 +150,15 @@ test('a tutor with the known bugs fails every behaviour rule, each where expecte
 	}
 	const covered = new Set(Object.values(expected).flat());
 	assert.deepEqual(Object.keys(behaviourRules).filter((id) => !covered.has(id as BehaviourRuleId)), [], 'every rule needs a bug the eval catches');
+});
+
+test('a question the text asks beside a card is not shown, so the learner sees one question (#163)', async () => {
+	const results = await withProvider(askTwiceTutor, (resolveModel) => runEval({
+		scenarios: scenarios.filter((s) => s.name === 'just-tell-me-later'), resolveModel, turnTimeoutMs: 20_000 }));
+	const [result] = results;
+	const first = result?.turns[0]?.reply?.parts.find((part) => part.type === 'text');
+	assert.equal(first?.type === 'text' && first.text, 'Good question to start with.');
+	assert.deepEqual(result?.checks.filter((c) => c.status === 'fail').map((c) => `${c.check}: ${c.detail}`), []);
 });
 
 test('a turn that fails at the provider records why', async () => {
