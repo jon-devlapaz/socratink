@@ -107,7 +107,9 @@ function goodTutor({ learner, afterTool, corrected }: Request): Step {
 function badTutor({ learner, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
-	if (has(/just tell me|Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
+	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
+	if (has(/just tell me/)) return { text: answer };
+	if (has(/Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
 	if (has(/don't know|hint/i)) return { text: 'The key idea is density. Is ice less dense?' };
 	if (has(/binary search/)) return { text: 'Which would you like to start with?\n\n- Sorted lists\n- Midpoints' };

@@ -7,7 +7,7 @@ import type { JsonValue } from '@earendil-works/chord';
 import type { Message } from '@earendil-works/pi-ai';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../learning/present-question.ts';
-import { cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
+import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
 import { inputKind, type InputData } from './contract.ts';
@@ -43,6 +43,13 @@ export function productRegistry() {
 						isError: true, output: [{ type: 'text', text: tryOnceMoreCorrection }],
 						control: { terminate: triedCorrection(earlier) },
 					};
+					// The learner's own words asked for the answer, so the reveal they got was requested,
+					// whether or not the tutor set the flag (#133).
+					if (call.name === revealToolName && !result.isError && asksForAnswer(learnerText(entries))) {
+						const details = result.details as { reveal?: object[] } | undefined;
+						result = { ...result, details: { ...details,
+							reveal: (details?.reveal ?? []).map((reveal) => ({ ...reveal, requested: true })) } };
+					}
 					const assistant = entries[assistantIndex];
 					const calls = assistant?.model?.flatMap((message) =>
 						message.role === 'assistant' ? message.content.filter((block) => block.type === 'toolCall') : []) ?? [];
