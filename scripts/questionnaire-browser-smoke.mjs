@@ -6,7 +6,8 @@ import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
 // a card offers no way to ask for help instead of guessing; the learner turn
-// shows the protocol header or the question instead of the learner's answer.
+// shows the protocol header or the question instead of the learner's answer;
+// Tab or Shift+Tab reaches the composer that the card hides (#120).
 export async function verifyQuestionnaireBrowser({ browser, origin, session, out }) {
 	await mkdir(out, { recursive: true });
 	const results = [];
@@ -32,6 +33,15 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				assert.equal(await form.getByRole('button', { name: 'Next', exact: true }).isVisible(), false);
 				assert.equal(await form.getByRole('button', { name: 'Hint', exact: true }).isVisible(), true);
 				assert.equal(await form.getByRole('button', { name: "I don't know", exact: true }).isVisible(), true);
+				await page.waitForFunction(() => getComputedStyle(document.querySelector('.dock')).opacity === '0');
+				for (const key of ['Tab', 'Shift+Tab']) {
+					await form.locator('fieldset').focus();
+					for (let press = 0; press < 20; press += 1) {
+						await page.keyboard.press(key);
+						assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest('.dock'))), false,
+							`${key} must not focus the hidden composer`);
+					}
+				}
 				if (kind === 'required') {
 					await form.getByRole('button', { name: 'Continue', exact: true }).click();
 					assert.equal(await form.locator('[aria-invalid="true"]').count(), 1);

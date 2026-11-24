@@ -207,15 +207,16 @@ p {
 	align-items: center;
 	padding: 0 max(1.5rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom));
 	background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--paper) 78%, transparent) 28%);
-	transition-property: transform, opacity;
-	transition-duration: 320ms, 240ms;
-	transition-timing-function: cubic-bezier(0.2, 0, 0, 1), var(--ease-out);
+	transition-property: transform, opacity, visibility;
+	transition-duration: 320ms, 240ms, 240ms;
+	transition-timing-function: cubic-bezier(0.2, 0, 0, 1), var(--ease-out), var(--ease-out);
 }
 
 html:has(.active-node .questionnaire) .dock,
 body.questionnaire-active .dock {
 	transform: translateY(calc(100% + 1rem));
 	opacity: 0;
+	visibility: hidden;
 	pointer-events: none;
 }
 
