@@ -60,14 +60,19 @@ export function learnerVisibleText(text: string): string {
  * twice (#163). A lead-in such as "**Question:**" goes with its question.
  * Feedback and hints before the question stay. */
 export function withoutQuestionBesideCard(text: string): string {
-	let visible = text.trimEnd();
-	const before = visible;
-	while (/\?["'”’)*_]*$/u.test(visible)) {
+	const question = /\?["'”’)*_]*$/u;
+	const leadIn = /[^\n.!?]*:[*_]*$/u;
+	const before = text.trimEnd();
+	// "What happens to the molecules? Let me start with the first question:" asks
+	// beside the card too: the lead-in only points at the card.
+	const pointing = before.replace(leadIn, '').trimEnd();
+	let visible = pointing !== before && question.test(pointing) ? pointing : before;
+	while (question.test(visible)) {
 		let start = 0;
 		for (const match of visible.matchAll(/[.!?]["'”’)*_]*[ \t]+|\n/gu)) start = match.index + match[0].length;
 		visible = visible.slice(0, start).trimEnd();
 	}
-	return visible === before ? visible : visible.replace(/[^\n.!?]*:[*_]*$/u, '').trimEnd();
+	return visible === before ? visible : visible.replace(leadIn, '').trimEnd();
 }
 
 /** Whether a correction told the tutor to write no text. Whatever text it

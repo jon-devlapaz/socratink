@@ -50,6 +50,8 @@ test('text beside a question card drops the questions it ends on and keeps the f
 		['Close! You ruled out A. What made you pick B? And why not C?', 'Close! You ruled out A.'],
 		['Good thinking.\n\n**Question 1:** What happens inside the body after a vaccine?', 'Good thinking.'],
 		['Which of these floats?', ''],
+		['Good. Think about freezing: where do the molecules end up? Let me start with the first question:', 'Good.'],
+		['Nice work. Here is the next one:', 'Nice work. Here is the next one:'],
 		['Nice work. Pick the option that fits best.', 'Nice work. Pick the option that fits best.'],
 		['Why does ice float? It is less dense than water.', 'Why does ice float? It is less dense than water.'],
 		['', ''],
