@@ -6,6 +6,7 @@ export const appConfig = {
 	authProvidersPath: '/api/auth/providers',
 	chatConversationStorageKey: 'socratink-chat-conversation-id',
 	chatConversationResetKey: 'socratink-chat-conversation-reset',
+	chatTurnSettledKey: 'socratink-chat-turn-settled',
 	themeStorageKey: 'socratink-theme',
 	typeSizeStorageKey: 'socratink-type-size',
 	defaultLocalBaseUrl: 'http://127.0.0.1:3001/v1',

@@ -116,7 +116,12 @@ pnpm eval:tutor --list
 ```
 
 Without `VERCEL=1` it uses the `JON_LOCAL_*` model. `--only` picks scenarios by
-name. Transcripts and results go to `.cache/tutor-eval/`. A failed check exits 1.
+name.
+`pnpm eval:tutor:live --only a,b [--runs 3]` is the one-step form for a paid
+run on the touched scenarios. It prints the scope (conversations and the most
+learner turns), warns on battery, and on macOS runs under `caffeinate` so the
+laptop does not sleep. `--dry-run` prints the scope without calling a model.
+It does not replace asking Jon before a paid run. Transcripts and results go to `.cache/tutor-eval/`. A failed check exits 1.
 Rules live in `src/learning/behaviour-rules.ts`, each quoting the system prompt
 sentence it tests; scenarios and checks live in `evals/tutor/`.
 `pnpm test:tutor-eval` (part of `pnpm check`) proves each rule's check fails on a

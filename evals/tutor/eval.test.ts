@@ -23,6 +23,11 @@ test('the reply from #136 fails on its internal notes', () => {
 	assert.deepEqual(failing(reply(text)), ['no-internal-notes', 'ends-on-question']);
 });
 
+test('a present_question call written as JSON text fails on its internal notes (#164)', () => {
+	const text = 'Look at the middle first.\n\n{"prompt":"What happens next?","choices":[{"label":"Left half","value":"left"}],"reasoning":true}';
+	assert.ok(failing(reply(text)).includes('no-internal-notes'));
+});
+
 test('two questions fail; a skill map fence and a quoted question do not count', () => {
 	assert.deepEqual(failing(reply('What is a vector? And what is a scalar?')), ['one-question']);
 	const map = '```text\nWhy? ███░░ 3/5\n```\n\n> Is this a quote?\n\nWhich force pulls the apple down?';
@@ -44,7 +49,7 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 });
 
 type Request = { learner: string; afterTool: boolean; corrected: boolean };
-type Step = { text: string } | { tool: string; args: unknown };
+type Step = { text: string } | { text?: string; tool: string; args: unknown };
 const corrections: string[] = Object.values({ ...markRevealRetryBodies, ...presentQuestionRetryBodies });
 
 /** A fake OpenAI-compatible provider that streams one step chosen by `tutor`. */
@@ -62,6 +67,7 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 		const emit = (delta: object, finish: string | null = null) =>
 			response.write(`data: ${JSON.stringify({ id: 'fake', model: 'fake', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 		if ('tool' in step) {
+			if (step.text) emit({ role: 'assistant', content: step.text });
 			emit({ role: 'assistant', tool_calls: [{ index: 0, id: `call_${Math.random().toString(36).slice(2)}`, type: 'function',
 				function: { name: step.tool, arguments: JSON.stringify(step.args) } }] });
 			emit({}, 'tool_calls');
@@ -102,11 +108,20 @@ function goodTutor({ learner, afterTool, corrected }: Request): Step {
 function badTutor({ learner, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
-	if (has(/just tell me|Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
+	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
+	if (has(/just tell me/)) return { text: answer };
+	if (has(/Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
 	if (has(/don't know|hint/i)) return { text: 'The key idea is density. Is ice less dense?' };
 	if (has(/binary search/)) return { text: 'Which would you like to start with?\n\n- Sorted lists\n- Midpoints' };
 	return { text: 'What do you know? And why do you care?' };
+}
+
+/** The live bug from #163: the reply text asks the card's question again. */
+function askTwiceTutor(request: Request): Step {
+	const step = goodTutor(request);
+	return 'tool' in step && step.tool === 'present_question'
+		? { ...step, text: 'Good question to start with. Before we go further, what do you think a vaccine puts in your body?' } : step;
 }
 
 const failedChecks = (results: ScenarioResult[], scenario: string) =>
@@ -123,6 +138,7 @@ test('a policy-following tutor passes every scenario', async () => {
 test('a tutor with the known bugs fails every behaviour rule, each where expected', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, BehaviourRuleId[]> = {
+		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
 		'try-once-more-no-notes': ['no-internal-notes', 'ends-on-question', 'try-once-more-withholds'],
@@ -134,6 +150,15 @@ test('a tutor with the known bugs fails every behaviour rule, each where expecte
 	}
 	const covered = new Set(Object.values(expected).flat());
 	assert.deepEqual(Object.keys(behaviourRules).filter((id) => !covered.has(id as BehaviourRuleId)), [], 'every rule needs a bug the eval catches');
+});
+
+test('a question the text asks beside a card is not shown, so the learner sees one question (#163)', async () => {
+	const results = await withProvider(askTwiceTutor, (resolveModel) => runEval({
+		scenarios: scenarios.filter((s) => s.name === 'just-tell-me-later'), resolveModel, turnTimeoutMs: 20_000 }));
+	const [result] = results;
+	const first = result?.turns[0]?.reply?.parts.find((part) => part.type === 'text');
+	assert.equal(first?.type === 'text' && first.text, 'Good question to start with.');
+	assert.deepEqual(result?.checks.filter((c) => c.status === 'fail').map((c) => `${c.check}: ${c.detail}`), []);
 });
 
 test('a turn that fails at the provider records why', async () => {
@@ -152,6 +177,27 @@ test('a turn that fails at the provider records why', async () => {
 		const failed = result?.checks.find((c) => c.check === 'turn-completed');
 		assert.equal(failed?.status, 'fail');
 		assert.match(failed?.detail ?? '', /^turn ended failed: .*400/);
+		assert.match(failed?.detail ?? '', /request errors: HTTP 400: .*synthetic bad request/);
+		assert.match(failed?.detail ?? '', /after \d+ ms$/);
+	} finally {
+		server.closeAllConnections();
+		await new Promise((done) => server.close(done));
+	}
+});
+
+test('a turn whose connection drops records the error text, with no HTTP status', async () => {
+	const server = createServer((request) => { request.socket.destroy(); });
+	await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+	try {
+		const { port } = server.address() as AddressInfo;
+		const [first] = scenarios;
+		assert.ok(first);
+		const [result] = await runEval({ scenarios: [first], turnTimeoutMs: 60_000, resolveModel: async () => ({ provider: 'jon-local',
+			modelId: 'fake', apiKey: 'fake', baseUrl: `http://127.0.0.1:${port}/v1`, contextWindow: 128000, maxTokens: 4096 }) });
+		const failed = result?.checks.find((c) => c.check === 'turn-completed');
+		assert.equal(failed?.status, 'fail');
+		assert.doesNotMatch(failed?.detail ?? '', /provider status/);
+		assert.match(failed?.detail ?? '', /^turn ended failed: .*request errors: \S.* after \d+ ms$/);
 	} finally {
 		server.closeAllConnections();
 		await new Promise((done) => server.close(done));

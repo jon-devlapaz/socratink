@@ -64,6 +64,8 @@ export class ChatTurnError extends Error {
 	readonly submissionId: string;
 	readonly failure: TurnFailure;
 	readonly error: unknown;
+	/** The server's reason, without the submission id, for learner copy. */
+	readonly detail: string | undefined;
 	constructor(options: { submissionId: string; failure: TurnFailure; error?: unknown }) {
 		const detail = typeof options.error === 'string' ? options.error
 			: typeof options.error === 'object' && options.error !== null && 'message' in options.error && typeof options.error.message === 'string'
@@ -75,6 +77,7 @@ export class ChatTurnError extends Error {
 		this.submissionId = options.submissionId;
 		this.failure = options.failure;
 		this.error = options.error;
+		this.detail = detail;
 	}
 }
 

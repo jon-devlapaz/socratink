@@ -30,7 +30,7 @@ Preconditions:
 
 ## Gotchas
 
-- An idle tab does not follow the other tab's turns live. It only sees them after a reload. That is current behaviour, not something this journey asserts against.
+- An idle tab shows the other tab's turn once that turn settles (#177), not word by word while it streams. A tab that is busy or shows `Not sent` keeps its own state. `scripts/cross-tab.test.mjs` covers this.
 - Before #159, the replay step fails: tab 1 stays `Thinking` under its own message while tab 2's reply text streams into it.
 - Each learner has a guest allowance of 10 turns (`src/config/guest-turns.ts`). This journey uses 5. Use `newLearner()` for more.
 - The scripted model can be called more than once per turn, so assert on settled text, not on which canned reply came back.

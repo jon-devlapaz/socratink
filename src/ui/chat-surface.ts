@@ -11,6 +11,8 @@ import {
 	startNewChatConversation,
 	unsettledSubmissionFromHistory,
 	watchChatConversationReset,
+	announceChatTurnSettled,
+	watchChatTurnSettled,
 } from './client/conversation.ts';
 import { mountChatDraft } from './client/chat-draft.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
@@ -314,19 +316,34 @@ export function mountChatSurface(options: Readonly<{
 	initAppearance(appearance);
 	initTypeSize(typeSize);
 	const sound = mountSoundCues(requireElement<HTMLButtonElement>('#sound-toggle'));
-	startOver.addEventListener('click', () => {
-		dictation.cancel();
-		draft.clear();
-		startNewChatConversation(options.userId);
-	});
 	watchChatConversationReset(() => {
 		draft.clear();
 		location.reload();
+	});
+	// Another tab's turn settled: an idle tab shows it. A busy tab keeps its own state.
+	let settledElsewhere = false;
+	watchChatTurnSettled(conversation.id, async () => {
+		settledElsewhere = true;
+		const typing = document.activeElement === input;
+		await restoreConversation();
+		if (typing && !input.disabled) input.focus();
 	});
 	appearance.addEventListener('click', () => toggleAppearance(appearance));
 	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
 	const closeMenu = mountMenuSheet(elements, {
 		reduceMotion,
+	});
+	const startOverDialog = requireElement<HTMLDialogElement>('#start-over-dialog');
+	startOver.addEventListener('click', () => {
+		closeMenu();
+		startOverDialog.returnValue = '';
+		startOverDialog.showModal();
+	});
+	startOverDialog.addEventListener('close', () => {
+		if (startOverDialog.returnValue !== 'start') return requireElement<HTMLButtonElement>('#menu-trigger').focus();
+		dictation.cancel();
+		draft.clear();
+		startNewChatConversation(options.userId);
 	});
 	mountHistory({
 		currentId: conversation.id,
@@ -413,6 +430,9 @@ export function mountChatSurface(options: Readonly<{
 	async function applyRequestState(state: ChatRequestState, moveFocus = true) {
 		if (requests.state !== state) return;
 		requestState = state;
+		if (state.kind === 'completed' || (state.kind === 'terminal' && state.outcome !== 'not-admitted')) {
+			announceChatTurnSettled(conversation.id);
+		}
 		if (state.kind === 'completed') {
 			requests.acknowledgeCompleted();
 			requestState = requests.state;
@@ -442,6 +462,7 @@ export function mountChatSurface(options: Readonly<{
 
 	async function restoreConversation() {
 		if (requests.state.kind !== 'idle') return;
+		settledElsewhere = false;
 		let unsettled: ReturnType<typeof unsettledSubmissionFromHistory> | undefined;
 		requests.beginRestore();
 		requestState = requests.state;
@@ -485,6 +506,7 @@ export function mountChatSurface(options: Readonly<{
 			await paint('restore');
 		} finally {
 			applyRequestControls(requestState);
+			if (settledElsewhere) void restoreConversation();
 		}
 		if (unsettled) await applyRequestState(await requests.recheck(), false);
 	}

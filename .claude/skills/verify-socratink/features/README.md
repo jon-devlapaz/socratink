@@ -30,6 +30,7 @@ Each feature file has an H1 title, one paragraph on the learner-visible behaviou
 
 - [Composer rest](./composer-rest.md): a short conversation sits just above the composer, and nothing jumps when a reply finishes (PR #158).
 - [Two tabs](./two-tabs.md): one learner, two tabs on one conversation; each tab keeps its own reply (PRs #149, #159).
+- [Ask once](./ask-once.md): a reply that asks its question in text and again on a card shows it once, on the card (#163).
 - [Stream recovery](./stream-recovery.md): a dropped or repeatedly closed reply stream reconnects with growing pauses and shows the reply once (PR #159).
 
 Not mapped yet: History, question cards and reveal consent, Start over, sign-in and the guest turn limit, feedback. The browser smokes in `scripts/*-browser-smoke.mjs` cover parts of these with injected sessions.

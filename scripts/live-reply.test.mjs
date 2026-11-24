@@ -141,3 +141,13 @@ test('a turn held from its start still shows nothing', () => {
 		}
 	}
 });
+
+test('a question card takes the text\'s own question away once it arrives, as the settled reply does (#163)', () => {
+	const live = createLiveReply(learner);
+	const text = 'Close. You ruled out the slow option. How many times can you halve 1000?';
+	assert.equal(fold(live, [delta(text)]).markdown, text);
+	const card = { type: 'tool-input', messageId: 's1:assistant', toolCallId: 'c1', toolName: 'present_question',
+		input: { prompt: 'Roughly how many checks does it need?', choices: ['About 10', 'About 500'] } };
+	assert.equal(live.apply(card), true);
+	assert.equal(live.view().markdown, 'Close. You ruled out the slow option.');
+});
