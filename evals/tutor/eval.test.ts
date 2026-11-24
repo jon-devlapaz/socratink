@@ -124,6 +124,16 @@ function askTwiceTutor(request: Request): Step {
 		? { ...step, text: 'Good question to start with. Before we go further, what do you think a vaccine puts in your body?' } : step;
 }
 
+const hintQuestion = 'Hint: the list is sorted, so one look at the middle item rules out half. Which half could still hold the item?';
+
+/** The live bug from #163: the tutor writes the whole hint beside its mark_reveal call,
+ * then writes again after the tool result, so the reply asks twice. */
+function hintTwiceTutor(request: Request): Step {
+	if (!/hint/i.test(request.learner)) return goodTutor(request);
+	return request.afterTool ? { text: 'Where does that leave you: how many items are still candidates?' }
+		: { text: hintQuestion, ...mark({ kind: 'hint' }) };
+}
+
 const failedChecks = (results: ScenarioResult[], scenario: string) =>
 	new Set(results.find((r) => r.scenario === scenario)?.checks.filter((c) => c.status === 'fail').map((c) => c.check));
 
@@ -158,6 +168,15 @@ test('a question the text asks beside a card is not shown, so the learner sees o
 	const [result] = results;
 	const first = result?.turns[0]?.reply?.parts.find((part) => part.type === 'text');
 	assert.equal(first?.type === 'text' && first.text, 'Good question to start with.');
+	assert.deepEqual(result?.checks.filter((c) => c.status === 'fail').map((c) => `${c.check}: ${c.detail}`), []);
+});
+
+test('a hint written beside its mark_reveal call ends the turn there, so the learner sees one question (#163)', async () => {
+	const results = await withProvider(hintTwiceTutor, (resolveModel) => runEval({
+		scenarios: scenarios.filter((s) => s.name === 'hint-is-marked'), resolveModel, turnTimeoutMs: 20_000 }));
+	const [result] = results;
+	const hint = result?.turns.at(-1)?.reply?.parts.find((part) => part.type === 'text');
+	assert.equal(hint?.type === 'text' && hint.text, hintQuestion);
 	assert.deepEqual(result?.checks.filter((c) => c.status === 'fail').map((c) => `${c.check}: ${c.detail}`), []);
 });
 
