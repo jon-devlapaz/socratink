@@ -3,6 +3,8 @@
  * quote leaves the prompt, so a removed rule cannot keep a passing check. */
 export const behaviourRules = {
 	'one-question': { policy: 'Ask ONE question at a time.', issues: [163] },
+	'tests-learner-reading': { policy: "Ask one question that tests the learner's reading.", issues: [] },
+	'credits-learner-work': { policy: 'Credit the learner only for what they worked out themselves.', issues: [] },
 	'ends-on-question': { policy: 'End the message immediately after the question', issues: [163] },
 	'choices-boxed': { policy: 'Never write the choices as a numbered, lettered, or bullet list in text', issues: [] },
 	'no-internal-notes': { policy: 'Never mention internal tools or bookkeeping to the learner.', issues: [136] },

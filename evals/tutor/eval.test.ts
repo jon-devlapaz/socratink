@@ -7,7 +7,7 @@ import { behaviourRules, type BehaviourRuleId } from '../../src/learning/behavio
 import { markRevealRetryBodies } from '../../src/learning/mark-reveal.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { questionsIn, replyChecks } from './checks.ts';
+import { expectClubOpening, expectClubRecap, questionsIn, replyChecks } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -46,6 +46,50 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('Good start. What do you think?', [card])), ['one-question']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?')), ['reveal-marked']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
+});
+
+test('the opening tests the reading without giving away the missed condition', () => {
+	for (const [text, expected] of [
+		['What happens under your reading if you request cancellation on day 20?', 'pass'],
+		['Walk me through a cancellation on the 25th day.', 'pass'],
+		['Which words make you think you can give notice whenever you like?', 'pass'],
+		['What do you already know about cancellation policies?', 'fail'],
+		['A member submits a valid cancellation request on day 95. On what day does access end?', 'fail'],
+		['You have to wait until day 91. What if you submit a request on day 20?', 'fail'],
+		['> You have to wait until **day 91**.\n\nWhat if you submit a request on day 20?', 'fail'],
+		['If the club only accepts requests after day 90, what happens on day 20?', 'fail'],
+		['What would the club do if a brand-new member wrote in?', 'skip'],
+	] as const) assert.equal(expectClubOpening(reply(text), 'incomplete').status, expected, text);
+	assert.equal(expectClubOpening(reply('Yes. What would a request on day 91 mean for access?'), 'correct').status, 'pass');
+	assert.equal(expectClubOpening(reply("That's incorrect. What happens to a request on day 20?"), 'correct').status, 'fail');
+	assert.equal(expectClubOpening(reply('Can you repeat your day 100 example?'), 'correct').status, 'skip');
+	const marked = reply('What would happen to your request on day 20?', [{ type: 'data-reveal', data: { kind: 'hint' } }]);
+	for (const reading of ['incomplete', 'correct'] as const) assert.equal(expectClubOpening(marked, reading).status, 'fail');
+});
+
+test('a date listed only among the choices cannot establish that the question tested the reading', () => {
+	const card = (prompt: string, labels: string[]): WirePart => ({ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit',
+		items: [{ name: 'item', prompt, choices: labels.map((label) => ({ value: label, label })) }] } });
+	const prompt = 'A member submits a request on day 100. When does access end?';
+	assert.equal(expectClubOpening(reply('', [card(prompt, ['Day 90', 'Day 91', 'Day 110'])]), 'correct').status, 'fail');
+	assert.equal(expectClubOpening(reply('', [card(prompt, ['Day 90', 'Day 91', 'Day 110'])]), 'incomplete').status, 'fail');
+	assert.equal(expectClubOpening(reply('', [card('What happens to a request on day 20?', ['Access ends on day 30', 'Too early to submit'])]), 'incomplete').status, 'fail');
+});
+
+test('the recap distinguishes what the learner said from a condition the tutor put in a question', () => {
+	const hint = reply('If requests count only after day 90, would a day 20 request count?');
+	for (const [text, expected] of [
+		['You noticed the notice period. I pointed out the earliest request date.', 'pass'],
+		['**You** spotted the ten-day delay, but **I** supplied the day 90 clue.', 'pass'],
+		['You spotted the ten-day notice period without noticing the day 90 rule. I pointed out the day 90 condition.', 'pass'],
+		['You spotted the ten-day delay. You identified the day 90 condition yourself. I asked a question.', 'fail'],
+		['You worked out the waiting period and the ten days. I mentioned day 90 too.', 'fail'],
+		['So far, the raw material is yours: you identified the two obligations in play.', 'fail'],
+		['You spotted the ten-day notice period. I never mentioned the day 90 rule.', 'skip'],
+		['You spotted the ten-day delay. I pointed out the day 90 condition. You did it all yourself.', 'skip'],
+		['Your opening sentence picked up on one of the two conditions.', 'skip'],
+	] as const) assert.equal(expectClubRecap(hint, reply(text)).status, expected, text);
+	assert.equal(expectClubRecap(undefined, undefined).status, 'skip');
 });
 
 type Request = { learner: string; afterTool: boolean; corrected: boolean };
@@ -93,12 +137,15 @@ const mark = (args: object): Step => ({ tool: 'mark_reveal', args });
 function goodTutor({ learner, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (corrected) return { text: '' };
+	if (afterTool && has(/club example/)) return { text: 'Look at the words “after day 90.” What do those words apply to?' };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
 	if (has(/just tell me/i)) return mark({ kind: 'full_answer', requested: true });
 	if (has(/Try once more/)) return { text: 'Which colour of sunlight do you think scatters most in air?' };
 	if (has(/don't know|Asked for a hint|hint\?/i)) return mark({ kind: has(/hint/i) ? 'hint' : 'partial' });
 	if (has(/reflects the ocean/)) return mark({ kind: 'full_answer' });
+	if (has(/The club rule says/)) return { text: 'What would happen if you requested cancellation on day 20?' };
+	if (has(/Which parts did I work out myself/)) return { text: 'You noticed the ten-day notice period. I pointed out the day 90 condition.' };
 	if (has(/vaccines/)) return { tool: 'present_question', args: { prompt: 'What does a vaccine put in your body?', choices: ['A harmless piece of a germ', 'Antibodies'], reasoning: true } };
 	return { text: 'Let\'s find your starting point. What do you already know about this?' };
 }
@@ -110,6 +157,8 @@ function badTutor({ learner, afterTool, corrected }: Request): Step {
 	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
 	if (has(/just tell me/)) return { text: answer };
 	if (has(/Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
+	if (has(/The club rule says/)) return { text: 'What do you already know about membership rules?' };
+	if (has(/Which parts did I work out myself/)) return { text: 'You identified the day 90 restriction and ten-day notice yourself.' };
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
 	if (has(/don't know|hint/i)) return { text: 'The key idea is density. Is ice less dense?' };
 	if (has(/binary search/)) return { text: 'Which would you like to start with?\n\n- Sorted lists\n- Midpoints' };
@@ -131,6 +180,8 @@ test('a tutor with the known bugs fails every behaviour rule, each where expecte
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, BehaviourRuleId[]> = {
 		'first-turn-diagnostic': ['one-question'],
+		'incomplete-club-reading': ['tests-learner-reading', 'credits-learner-work'],
+		'correct-club-reading': ['tests-learner-reading'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
 		'try-once-more-no-notes': ['no-internal-notes', 'ends-on-question', 'try-once-more-withholds'],

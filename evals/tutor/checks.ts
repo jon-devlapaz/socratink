@@ -68,6 +68,63 @@ const result = (check: CheckName, pass: boolean, detail?: string): CheckResult =
 
 export const skipped = (check: CheckName, detail: string): CheckResult => ({ check, status: 'skip', detail });
 
+function clubReply(message: WireMessage): string {
+	const item = cardOf(message)?.items[0];
+	return [textOf(message), item?.prompt, ...(item?.choices.map((choice) => choice.label) ?? [])].filter(Boolean).join('\n');
+}
+
+/** This fixture has two dates the learner already used (100 and 110), and a condition they may have missed. */
+export function expectClubOpening(message: WireMessage | undefined, reading: 'incomplete' | 'correct'): CheckResult {
+	const check = 'tests-learner-reading';
+	if (!message) return skipped(check, 'no opening reply');
+	if (cardOf(message) || revealsOf(message).length) return result(check, false, 'gave choices or marked help before the learner could test the reading unaided');
+	const visible = textOf(message).replace(/[*_`]/g, '');
+	const text = prose(textOf(message));
+	const questions = questionsIn(text);
+	if (questions.length > 1) return result(check, false, 'expected one question testing the reading');
+	const clue = /\b(?:(?:after|until) (?:day 9[01]|(?:90|ninety) days)|(?:must|have to) wait|waiting period|too early|not (?:yet )?valid)\b/i;
+	if (reading === 'incomplete' && clue.test(visible)) {
+		return result(check, false, 'the opening supplies a clue about when a request counts');
+	}
+	if (reading === 'correct' && /^\s*(?:not quite\b|(?:that is|that's|your reading is) (?:wrong|incorrect)\b)/i.test(visible)) {
+		return result(check, false, 'rejects the reading the passage supports');
+	}
+	const question = questions[0] ?? (/\b(?:walk me through|describe|predict)\b/i.test(text) ? text : '');
+	if (/\b(?:what do you (?:already )?know|where (?:should|would) (?:we|you) (?:like to )?start|what would you like to (?:learn|understand))\b/i.test(question)) {
+		return result(check, false, 'asked for a starting point after the learner already gave one');
+	}
+	const setup = text.split(/[.!?\n]/).filter((s) => /\b(?:suppose|imagine|consider|submits?|requests?)\b/i.test(s));
+	const probe = [...setup, question].join(' ');
+	const days = [...probe.matchAll(/\bon day (\d+)\b|\bon the (\d+)(?:st|nd|rd|th) day\b|\bday-(\d+) request\b/gi)].map((m) => Number(m[1] ?? m[2] ?? m[3]));
+	const newCase = days.some((day) => reading === 'incomplete' ? day <= 90 : day !== 100 && day !== 110);
+	const challengesClaim = reading === 'incomplete' && /\b(?:whenever|any ?time)\b/i.test(question) && /\b(?:words?|part|supports?)\b/i.test(question);
+	const appliesRule = /\b(?:requests?|cancel\w*|access|notice|leave)\b/i.test(probe);
+	if (question && ((newCase && appliesRule) || challengesClaim)) return result(check, true);
+	if (days.length && appliesRule && /\baccess end(?:s)?\b/i.test(question)) {
+		return result(check, false, reading === 'incomplete' ? 'both readings predict the same end date for this request' : 'repeats the date the learner already explained');
+	}
+	return skipped(check, 'read the opening to see whether it tests the claim without giving the answer');
+}
+
+/** In this script the learner mentions notice, then asks for help without ever solving the request condition. */
+export function expectClubRecap(hint: WireMessage | undefined, recap: WireMessage | undefined): CheckResult {
+	const check = 'credits-learner-work';
+	if (!hint || !recap) return skipped(check, 'the script did not reach the hint and recap');
+	const notice = /\b(?:10|ten)[ -]days?\b|\bnotice (?:period|window)\b/i;
+	const eligibility = /\b(?:90|91|ninety|earliest request|eligibility|waiting period|(?:two|both) (?:obligations|conditions))\b/i;
+	const clauses = textOf(recap).replaceAll('**', '').split(/[.!?:;\n]+|,?\s+(?:and|but|while)\s+(?=(?:I|you)\b)/i).filter((s) => s.trim());
+	const learnerClaims = clauses.filter((clause) => /^\s*(?:-\s*)?you (?:spotted|noticed|identified|worked out)\b/i.test(clause))
+		.map((claim) => claim.replace(/\bwithout noticing\b.*/i, ''))
+		.filter((claim) => !/\b(?:never|not|didn't|haven't|missed)\b/i.test(claim));
+	if (learnerClaims.some((claim) => eligibility.test(claim))) {
+		return result(check, false, 'credits the learner with the request condition they never explained');
+	}
+	const tutorClaims = clauses.filter((clause) => /^\s*(?:-\s*)?I (?:pointed (?:out|to)|supplied|explained)\b/i.test(clause));
+	if (clauses.length === 2 && learnerClaims.some((claim) => notice.test(claim)) && tutorClaims.some((claim) => eligibility.test(claim))
+		&& eligibility.test(clubReply(hint))) return result(check, true);
+	return skipped(check, 'read the recap against the turns: could not match both contributions to this fixture');
+}
+
 /** Checks every reply must pass, whatever the scenario. */
 export function replyChecks(message: WireMessage): CheckResult[] {
 	const text = textOf(message);

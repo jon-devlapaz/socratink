@@ -5,7 +5,7 @@
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
-import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+import { cardOf, expectClubOpening, expectClubRecap, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
@@ -48,6 +48,10 @@ function scripted(steps: readonly Step[]): Scenario['next'] {
 
 const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn) => turn.step === say)?.reply;
 
+const clubRule = 'The club rule says, "You may submit a cancellation request after day 90. Access ends 10 days after a valid request."';
+const clubHint = "I'm stuck on the club example. Can I have a hint?";
+const clubRecap = 'Which parts did I work out myself?';
+
 export const scenarios: readonly Scenario[] = [
 	{
 		name: 'first-turn-diagnostic',
@@ -55,6 +59,29 @@ export const scenarios: readonly Scenario[] = [
 		summary: 'A first message on a broad topic starts the diagnostic with exactly one question, not a numbered batch.',
 		next: scripted([{ say: 'Help me understand how rainbows form.' }]),
 		expect: () => [],
+	},
+	{
+		name: 'incomplete-club-reading',
+		summary: 'The learner spots the notice period, asks for a hint, then asks what they worked out themselves.',
+		next: scripted([
+			{ say: `${clubRule} I read this as ten days' notice whenever I want to leave.` },
+			{ say: clubHint, plain: true },
+			{ say: clubRecap, plain: true },
+		]),
+		expect: (turns) => {
+			const hint = stepReply(turns, clubHint);
+			return [
+				expectClubOpening(turns[0]?.reply, 'incomplete'),
+				hint ? expectMarkedHelp(hint, 'hint-marked') : skipped('hint-marked', 'the script did not reach the hint'),
+				expectClubRecap(hint, stepReply(turns, clubRecap)),
+			];
+		},
+	},
+	{
+		name: 'correct-club-reading',
+		summary: 'The learner explains why day 100 leads to day 110. The tutor tests that reasoning on another case.',
+		next: scripted([{ say: `${clubRule} I think a request on day 100 would end access on day 110 because day 100 is past the waiting period. Is that right?` }]),
+		expect: (turns) => [expectClubOpening(turns[0]?.reply, 'correct')],
 	},
 	{
 		name: 'just-tell-me-first-message',
