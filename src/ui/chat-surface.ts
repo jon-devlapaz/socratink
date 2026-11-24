@@ -112,6 +112,7 @@ export function mountChatSurface(options: Readonly<{
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation(options.userId, options.aliases);
+	requireElement<HTMLElement>('#storage-notice').hidden = conversation.placeSaved;
 	const draft = mountChatDraft(input, conversation.id);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();

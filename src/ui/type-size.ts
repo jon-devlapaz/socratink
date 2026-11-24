@@ -1,4 +1,5 @@
 import { appConfig } from '../config/app.config.ts';
+import { readBrowserStorage, writeBrowserStorage } from './client/browser-storage.ts';
 
 export type TypeSize = 'big' | 'medium' | 'small';
 
@@ -7,7 +8,7 @@ function isTypeSize(value: string | null): value is TypeSize {
 }
 
 function storedTypeSize(): TypeSize | null {
-	const value = localStorage.getItem(appConfig.typeSizeStorageKey);
+	const value = readBrowserStorage(appConfig.typeSizeStorageKey).value;
 	return isTypeSize(value) ? value : null;
 }
 
@@ -58,7 +59,7 @@ function paintTypeSize(button: HTMLButtonElement, size: TypeSize) {
 
 function applyTypeSize(button: HTMLButtonElement, size: TypeSize) {
 	document.documentElement.dataset.typeSize = size;
-	localStorage.setItem(appConfig.typeSizeStorageKey, size);
+	writeBrowserStorage(appConfig.typeSizeStorageKey, size);
 	paintTypeSize(button, size);
 }
 

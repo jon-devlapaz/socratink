@@ -15,6 +15,7 @@ import {
 	namespacedConversationId,
 } from '../../config/session.ts';
 import { randomId } from './random-id.ts';
+import { readBrowserStorage, writeBrowserStorage } from './browser-storage.ts';
 import { createStreamClient, type StreamClient } from './conversation-stream.ts';
 
 type ChatTurnClient = Pick<StreamClient, 'send' | 'read' | 'abort'>;
@@ -90,16 +91,16 @@ type ChatRequestCoordinatorOptions = {
 };
 
 export function openChatConversation(userId: string, aliases: readonly string[] = []) {
-	const stored = localStorage.getItem(appConfig.chatConversationStorageKey);
+	const stored = readBrowserStorage(appConfig.chatConversationStorageKey);
 	const conversationId =
-		stored && conversationBelongsToUser(stored, userId, aliases)
-			? stored
+		stored.value && conversationBelongsToUser(stored.value, userId, aliases)
+			? stored.value
 			: namespacedConversationId(userId, randomId());
-	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
+	const saved = writeBrowserStorage(appConfig.chatConversationStorageKey, conversationId);
 	const client = createStreamClient({
 		url: `${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`,
 	});
-	return { id: conversationId, ...client };
+	return { id: conversationId, placeSaved: stored.available && saved, ...client };
 }
 
 export function startNewChatConversation(userId: string) {

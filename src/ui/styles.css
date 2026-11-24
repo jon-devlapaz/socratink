@@ -230,6 +230,13 @@ body.questionnaire-active .stage {
 	width: min(580px, 100%);
 }
 
+#storage-notice {
+	margin: 0 1.25rem 0.75rem;
+	color: var(--muted);
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
+
 #chat {
 	--composer-border-width: 1px;
 	--composer-text-inset: calc(var(--conversation-text-inset) - var(--composer-border-width));

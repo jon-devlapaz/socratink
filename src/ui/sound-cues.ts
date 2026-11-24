@@ -1,11 +1,12 @@
 import { appConfig } from '../config/app.config.ts';
+import { readBrowserStorage, writeBrowserStorage } from './client/browser-storage.ts';
 import type { WireReply } from '../config/chat-wire.ts';
 import { revealFromReply } from '../reveal.ts';
 import { requireElement } from './dom.ts';
 
 export function mountSoundCues(button: HTMLButtonElement) {
 	const label = requireElement('#sound-label', button);
-	let enabled = localStorage.getItem(appConfig.soundStorageKey) === 'on';
+	let enabled = readBrowserStorage(appConfig.soundStorageKey).value === 'on';
 	let context: AudioContext | undefined;
 	let pending = false;
 
@@ -29,7 +30,7 @@ export function mountSoundCues(button: HTMLButtonElement) {
 	document.addEventListener('keydown', unlock);
 	button.addEventListener('click', (event) => {
 		enabled = !enabled;
-		localStorage.setItem(appConfig.soundStorageKey, enabled ? 'on' : 'off');
+		writeBrowserStorage(appConfig.soundStorageKey, enabled ? 'on' : 'off');
 		paint();
 		unlock(event);
 	});
