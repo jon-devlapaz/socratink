@@ -1,0 +1,28 @@
+✔ slugs duplicate labels and keeps an explicit value when it is unique (0.985417ms)
+✔ treats lettered or cued lists as unboxed choices, not explanatory traces (0.5805ms)
+✔ ignores skill maps, subskill lists before an open question, and command lists (0.079041ms)
+✔ retries once for an unboxed choice list (0.111958ms)
+✔ retries once when the card is written as JSON text instead of a call (#164) (0.077458ms)
+✔ production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position within 120 of 1000 (190.769083ms)
+ℹ first correct-choice counts: 1024, 956, 1021, 999
+ℹ retry correct-choice counts: 994, 986, 1009, 1011
+✔ fresh retries use new random draws; duplicate labels and explicit values stay paired (0.407375ms)
+✔ isolated shuffle removal makes the production distribution regression fail (212.589959ms)
+✔ reads a validated questionnaire from live reply data and restored history parts (0.891792ms)
+✔ fails closed on malformed or oversized structured questionnaire data (0.216208ms)
+✔ formats selected, freeform, skipped and help answers as explicit learner text (0.161416ms)
+✔ the teaching policy is the vendored socratic-tutor skill followed by Socratink bindings (0.496584ms)
+✔ only an explicit answer request in the learner own last message bypasses consent (0.455167ms)
+✔ the tutor keeps tool names and bookkeeping out of learner text (0.041292ms)
+✔ questions use current validation and presentation; reveals retain provenance without ending the turn (4.253791ms)
+✔ the shared correction policy permits only one extra attempt (0.280417ms)
+✔ every tool parameter is a plain typed JSON schema that strict providers accept (0.123666ms)
+✔ every behaviour rule the tutor eval checks quotes a sentence of the system prompt (0.390958ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 470.51725

@@ -162,14 +162,13 @@ function createQuestionItem(item: QuestionnaireItem, onChoose?: (value: string) 
 	if (item.input) {
 		const inputLabel = document.createElement('label');
 		inputLabel.className = 'questionnaire-freeform-label';
-		const labelText = document.createElement('span');
-		labelText.textContent = item.input.label;
+		inputLabel.textContent = item.input.label;
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.name = `${item.name}__freeform`;
 		input.dataset.freeformFor = item.name;
 		if (item.input.placeholder) input.placeholder = item.input.placeholder;
-		inputLabel.append(labelText, input);
+		inputLabel.append(input);
 		choices.append(inputLabel);
 	}
 	fieldset.append(choices);

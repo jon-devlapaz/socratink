@@ -12,7 +12,7 @@ import { looksLikeUnboxedChoices } from '../../src/learning/present-question.ts'
 import { questionnaireFromParts, type QuestionnaireDefinition } from '../../src/questionnaire.ts';
 import { parseRevealDefinition, revealDataName, revealToolName, type RevealDefinition } from '../../src/reveal.ts';
 
-export type CheckName = BehaviourRuleId | 'turn-completed' | 'scenario-ran';
+export type CheckName = BehaviourRuleId | 'no-choice-position' | 'turn-completed' | 'scenario-ran';
 export type CheckResult = { check: CheckName; status: 'pass' | 'fail' | 'skip'; detail?: string; turn?: number };
 
 const internalNotePatterns = [
@@ -97,6 +97,42 @@ export function expectRequestedReveal(message: WireMessage | undefined): CheckRe
 		...(textOf(message).trim().length < 40 ? ['reply text is empty or too short to hold the answer'] : []),
 	];
 	return result('just-tell-me', problems.length === 0, problems.join('; '));
+}
+
+export function expectNoChoicePosition(
+	message: WireMessage | undefined, card: QuestionnaireDefinition, correctLabel: string,
+): CheckResult {
+	const text = textOf(message).replace(/[*_`]/g, '');
+	const choices = card.items[0]!.choices;
+	const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
+	const reference = /\b(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom)\s+(?:one|option|choice|answer)|(?:option|choice|answer)\s+([A-H]|[1-8])|(?:it (?:is|was)|the answer is|the correct (?:one|answer|choice) (?:is|was))\s+(?:the\s+)?(first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom|[A-H]))\b/gi;
+	const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+	// The tutor writes its own label, so the correct one only has to start with the expected words.
+	const isCorrect = (label: string) => normalize(label).startsWith(normalize(correctLabel));
+	const problems: string[] = [];
+	for (const clause of text.split(/[.!?;\n]|\bbut\b/i)) {
+		for (const match of clause.matchAll(reference)) {
+			if (match[3] && /^[a-h]$/.test(match[3])) continue;
+			const token = (match[1] ?? match[2] ?? match[3]!).toLowerCase();
+			const index = token === 'top' ? 0 : token === 'bottom' || token === 'last' ? choices.length - 1
+				: ordinals.includes(token) ? ordinals.indexOf(token)
+				: /^[1-8]$/.test(token) ? Number(token) - 1 : token.charCodeAt(0) - 97;
+			const choice = choices[index];
+			if (!choice) {
+				problems.push(`${match[0]} is outside the displayed card`);
+				continue;
+			}
+			const named = choices.filter((option) => normalize(clause).includes(normalize(option.label)));
+			const wrong = /\b(?:wrong|incorrect|not (?:right|correct))\b/i.test(clause);
+			const right = !wrong && /\b(?:right|correct)\b|\b(?:it (?:is|was)|the answer is)\b/i.test(clause);
+			if (named.some((option) => option.value !== choice.value)
+				|| (wrong && isCorrect(choice.label)) || (right && !isCorrect(choice.label))) {
+				problems.push(`${match[0]} refers to ${choice.label} on the displayed card`);
+			}
+		}
+	}
+	return result('no-choice-position', text.trim().length > 0 && problems.length === 0,
+		problems.join('; ') || (text.trim() ? 'references match displayed order where checked' : 'reply has no answer text'));
 }
 
 export function expectMarkedHelp(message: WireMessage | undefined, check: 'dont-know-marked' | 'hint-marked'): CheckResult {

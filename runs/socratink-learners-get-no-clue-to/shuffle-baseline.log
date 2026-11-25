@@ -1,0 +1,28 @@
+✖ production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position within 120 of 1000 (104.119791ms)
+ℹ first correct-choice counts: 4000, 0, 0, 0
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 173.005625
+
+✖ failing tests:
+
+test at scripts/question-choice-shuffle.test.mjs:49:1
+✖ production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position within 120 of 1000 (104.119791ms)
+  AssertionError [ERR_ASSERTION]: first correct-choice distribution must be within 120: 4000,0,0,0
+      at TestContext.<anonymous> (file:///Users/jondev/scratch/pilot-TEST/HOME/dev/worktrees/pilot/socratink-learners-get-no-clue-to/scripts/question-choice-shuffle.test.mjs:77:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

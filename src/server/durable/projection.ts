@@ -9,6 +9,7 @@ import { asksForNoText, splitReasoning, withoutQuestionBesideCard } from '../../
 import { cardHelpReveal } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { withRevealConsent } from './reveal-consent.ts';
+import { projectCardHints } from './card-hint.ts';
 import type { CommittedStorage } from './storage.ts';
 
 export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
@@ -41,8 +42,10 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 		const tool = tools.get(slot.callId);
 		if (tool && slot.output) tool.output = slot.output;
 	}
+	const hintCards = projectCardHints(snapshot);
 	labelCardHelp(snapshot);
 	for (const message of snapshot.messages) {
+		if (hintCards.has(message.submissionId)) continue;
 		if (message.role === 'assistant' && message.data?.questionnaire?.length) message.text = withoutQuestionBesideCard(message.text);
 	}
 	const projected = withRevealConsent(snapshot, consentRequired);
@@ -65,12 +68,14 @@ function labelCardHelp(snapshot: Snapshot) {
 }
 
 async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, entry: EntryRecord): Promise<ProductMessage> {
-	const record = await storage.submissionByRequest(ROOT_CONVERSATION_ID, (entry.data as InputData).requestId, context);
+	const data = entry.data as InputData;
+	const record = await storage.submissionByRequest(ROOT_CONVERSATION_ID, data.requestId, context);
 	if (!record) throw new Error('Input has no durable submission.');
 	const submissionId = String(record.id);
 	const text = entry.model?.map(messageText).join('') ?? '';
 	snapshot.submissions.push({ id: submissionId, text, ...settlement(record),
-		...((entry.data as InputData).tryOnceMore ? { tryOnceMore: true } : {}) });
+		...(data.hintCardFrom ? { hintCardFrom: data.hintCardFrom } : {}),
+		...(data.tryOnceMore ? { tryOnceMore: true } : {}) });
 	snapshot.messages.push({ role: 'user', submissionId, text });
 	const assistant: ProductMessage = { role: 'assistant', submissionId, text: '' };
 	snapshot.messages.push(assistant);

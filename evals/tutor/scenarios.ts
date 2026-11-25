@@ -5,7 +5,7 @@
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
-import { cardOf, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+import { cardOf, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
@@ -49,6 +49,23 @@ function scripted(steps: readonly Step[]): Scenario['next'] {
 const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn) => turn.step === say)?.reply;
 
 export const scenarios: readonly Scenario[] = [
+	{
+		name: 'no-choice-position',
+		summary: 'After a card answer, match choice letters and positions to the displayed order.',
+		next: scripted([
+			{ say: 'Give me a question card about why ice floats on water, with choices and reasoning.' },
+			{ say: 'I picked this one but I am not sure.' },
+			{ say: 'Which one was right? Was it the top one?', plain: true },
+		]),
+		expect: (turns) => {
+			const card = cardOf(turns[0]?.reply);
+			const reply = stepReply(turns, 'Which one was right? Was it the top one?');
+			// A consent card in reply is the reveal policy at work, not a position claim.
+			if (cardOf(reply)?.kind === 'reveal-consent') return [skipped('no-choice-position', 'the tutor offered a consent card instead of naming a choice')];
+			return [card?.kind === 'question' && reply ? expectNoChoicePosition(reply, card, 'Ice is less dense than liquid water')
+				: skipped('no-choice-position', 'script did not answer a question card and reach the position request')];
+		},
+	},
 	{
 		name: 'first-turn-diagnostic',
 		issue: 163,
