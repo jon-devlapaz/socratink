@@ -264,6 +264,13 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.equal(await input.inputValue(), '');
 
+		await page.locator('#peek-handle').click();
+		await page.getByRole('button', { name: 'Start over' }).click();
+		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
+			'You can reopen this conversation from History.', 'an empty composer has no draft to warn about');
+		await page.keyboard.press('Escape');
+		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
+
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 		await page.locator('#peek-handle').click();
@@ -271,7 +278,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			'Your draft will be deleted. You can reopen this conversation from History.');
+			'What you haven’t sent will be deleted. You can reopen this conversation from History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);

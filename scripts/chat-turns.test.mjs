@@ -160,7 +160,9 @@ test('history pairs a card answer with the card it answers', () => {
 			{ role: 'user', display: 'visible', parts: [{ type: 'text', text: 'Questionnaire answers:\n- How should we begin?: Asked for a hint.' }] },
 		],
 	});
-	assert.equal(turns.at(-1).shownText, 'Asked for a hint.');
+	assert.equal(turns.at(-1).shownText, 'You asked for a hint');
+	assert.equal(turns.at(-1).learnerKind, 'hint-request');
+	assert.equal(turns.at(-1).text, 'Questionnaire answers:\n- How should we begin?: Asked for a hint.');
 });
 
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {

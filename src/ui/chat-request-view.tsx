@@ -43,7 +43,7 @@ type ActionState = Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>;
 const outcomeLabel = {
 	aborted: 'Canceled',
 	'not-admitted': 'Not sent',
-	failed: 'Reply failed',
+	failed: 'Socratink couldn’t reply',
 } satisfies Record<Extract<ActionState, { kind: 'terminal' }>['outcome'], string>;
 
 export function RequestStateTurn({ state, onAction }: { state: ActionState; onAction: () => void }) {

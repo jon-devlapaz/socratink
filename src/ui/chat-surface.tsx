@@ -421,6 +421,15 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
+		/** Whether Start over would discard words or card choices the learner has not sent. */
+		hasUnsentWork() {
+			if (input.value.trim()) return true;
+			const question = activeTurn.querySelector('.questionnaire');
+			if (!question) return false;
+			if (question.querySelector('[data-state="checked"], [aria-checked="true"]')) return true;
+			return [...question.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')]
+				.some((field) => field.value.trim() !== '');
+		},
 		startOver() {
 			dictation.cancel();
 			draft.clear();

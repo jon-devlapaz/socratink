@@ -7,13 +7,17 @@ import { learnerVisibleText } from '../learning/learner-text.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
+	questionnaireHelpText,
 } from '../questionnaire.ts';
 import { steeringPrefix } from '../config/chat-message.ts';
 import { steeringSaidText } from './steering.ts';
 import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
-type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
+type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'hint-request' | 'steering';
+
+/** A card Hint is an action, so it is shown as one instead of as the learner's words. */
+const hintRequestShownText = 'You asked for a hint';
 
 export type DisplayedTurn = {
 	reveal?: RevealDefinition;
@@ -56,6 +60,9 @@ export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefin
 			const prompt = answered?.items.find((item) => answer.startsWith(`${item.prompt}: `))?.prompt;
 			return prompt === undefined ? answer : answer.slice(prompt.length + 2);
 		});
+		if (lines.every((line) => line === questionnaireHelpText.hint)) {
+			return { role: 'You', text, learnerKind: 'hint-request', shownText: hintRequestShownText };
+		}
 		return {
 			role: 'You',
 			text,

@@ -80,7 +80,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
 				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
-				assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+				assert.equal(await page.locator('#active-turn .you p').innerText(), help[kind]?.shown ?? answer);
 				assert.deepEqual(errors, []);
 				results.push({ kind, width, passed: true, submitted: sent[0] });
 			} catch (error) {
@@ -135,7 +135,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 // A help request replaces any selection or reasoning on the card.
 const hintClue = 'Try one example first.';
 const help = {
-	hint: { button: 'Hint', answer: 'Asked for a hint.' },
+	hint: { button: 'Hint', answer: 'Asked for a hint.', shown: 'You asked for a hint' },
 	unknown: { button: "I don't know", answer: "I don't know." },
 };
 

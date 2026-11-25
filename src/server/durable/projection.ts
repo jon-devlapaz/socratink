@@ -132,5 +132,5 @@ function settlement(record: SubmissionRecord): { outcome?: 'completed' | 'failed
 	if (record.status === 'done') return { outcome: 'completed' };
 	if (record.status !== 'unanswered') return {};
 	return record.reason === 'aborted' ? { outcome: 'aborted' }
-		: { outcome: 'failed', error: 'The model request could not complete.' };
+		: { outcome: 'failed', error: 'Your message is saved. Try again.' };
 }

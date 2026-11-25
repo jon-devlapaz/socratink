@@ -395,31 +395,18 @@ html[data-type-size='small'] .active-node {
 	text-transform: uppercase;
 }
 
-.turn-model {
-	min-width: 0;
-	overflow: hidden;
-	color: var(--quiet);
-	font-size: 0.67rem;
-	font-weight: 500;
-	letter-spacing: 0;
-	line-height: 1.2;
-	text-overflow: ellipsis;
-	text-transform: none;
-	white-space: nowrap;
-}
-
-.turn-model::before {
-	content: '·';
-	margin-right: 0.4rem;
-	opacity: 0.7;
-}
-
 .turn > p {
 	margin: 0;
 	overflow-wrap: anywhere;
 	font-size: calc(0.98rem * var(--type-scale));
 	line-height: 1.55;
 	white-space: pre-wrap;
+}
+
+/* A card Hint tap is an action, not learner words. */
+.turn > p.turn-action,
+.history-turn.turn-action p {
+	color: var(--muted);
 }
 
 .turn.you {
@@ -568,10 +555,6 @@ html[data-type-size='small'] .active-node {
 @media (max-width: 560px) {
 	.turn-head {
 		gap: 0.35rem;
-	}
-
-	.turn-model {
-		font-size: 0.6rem;
 	}
 
 	#messages:not([hidden]) {
