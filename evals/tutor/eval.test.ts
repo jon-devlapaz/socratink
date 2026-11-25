@@ -55,10 +55,13 @@ test('a payment hint fails when a statement hands over the choice or its reason'
 	const check = (text: string) => expectHintLeavesReasoning(reply(text)).status;
 	for (const text of [
 		'Hint: think about what the key is for. It exists to tell the processor "if I\'ve already run the thing under this key, give me the same result back instead of running it again."',
+		'A key identifies that one logical payment operation across attempts.',
+		'An idempotency key exists so that repeating the *same* logical operation is recognized as one operation, not two.',
 		'The key stops the customer being charged twice.', 'A retry of the same payment keeps the key.', 'It prevents a double charge.', '']) {
 		assert.equal(check(text), 'fail', text);
 	}
 	for (const text of [paymentHint, 'Think about what the app knows right after the drop.',
+		'The original attempt may have already succeeded server-side — the drop only means you didn\'t see the outcome.',
 		'What would the processor do if it saw the same key twice?', 'Picture the customer\'s bank statement. How many $40 lines should it show?']) {
 		assert.equal(check(text), 'pass', text);
 	}

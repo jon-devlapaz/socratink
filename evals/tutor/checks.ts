@@ -165,6 +165,9 @@ const paymentGiveaways = [
 	/\bduplicate (?:charge|payment|purchase|request|operation)/i,
 	/\b(?:retry|re-?run|re-?send|resend)\b/i,
 	/\bsame (?:\$?40 )?(?:payment|charge|operation|logical operation|purchase|request)\b/i,
+	// The key's purpose, said without "same": one operation across attempts (live run 2026-11-25).
+	/\b(?:one|single) (?:logical )?(?:payment |business )?operation\b/i,
+	/\b(?:across|between) (?:attempts|retries|requests)\b/i,
 ];
 
 /** After Hint on the payment card, the clue the learner sees must leave the choice and its
