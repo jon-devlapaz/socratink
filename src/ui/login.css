@@ -20,8 +20,9 @@ body.login-page {
 	pointer-events: none;
 	background-image: var(--grain);
 	background-size: 180px 140px;
+	filter: grayscale(1);
 	mix-blend-mode: var(--grain-blend);
-	opacity: var(--grain-opacity);
+	opacity: calc(var(--grain-opacity) / 5);
 }
 
 .login-shell {

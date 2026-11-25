@@ -20,8 +20,8 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 - Signal red `#d14d41` means an error, never decoration.
 - Rules use `color-mix` with ink at 5–20%. Default dividers use 10%.
   Use tonal paper steps and hairlines before adding an enclosing box.
-- Paper grain is an SVG turbulence layer, multiply at 38% in light and
-  overlay at 50% in dark. It does not receive pointer events.
+- The sign-in page uses a faint grayscale paper texture at 7.6% opacity
+  in light mode and 10% in dark mode.
 
 ## Type
 
@@ -99,6 +99,8 @@ within their own regions, never across the whole page.
 
 Use Magic UI’s Animated Shiny Text for the Thinking and Transcribing states.
 Keep animation off when the learner requests reduced motion.
+When a conversation starts or reopens, the wordmark fades in place. The
+dot stays visible and the full name returns on hover or keyboard focus.
 Motion uses opacity, blur, and scale, never width, height, or position, so the
 conversation never moves when a control appears or a reply ends. Springs use
 `--spring-pop` from `styles.css`. The composer hint blurs in on focus, and the

@@ -103,7 +103,6 @@ html:has(.menu-panel[data-state='open']) :is(.skip-link, .peek-handle) {
 }
 
 .brand-name-viewport {
-	overflow: clip;
 	padding-left: 0.54em;
 }
 
@@ -111,21 +110,16 @@ html:has(.menu-panel[data-state='open']) :is(.skip-link, .peek-handle) {
 	display: block;
 	height: 0.78em;
 	width: auto;
-	transform-origin: left center;
 	filter: var(--wordmark-filter);
-	transition-property: transform, opacity, filter;
-	transition-duration: 240ms, 160ms;
-	transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1), ease-out;
+	transition: opacity 160ms ease-out;
 }
 
 .encounter-active .brand-name {
 	opacity: 0;
-	transform: translateX(calc(-100% - 0.54em)) scaleX(0.88);
 }
 
 .encounter-active .brand-lockup:focus-visible .brand-name {
 	opacity: 1;
-	transform: none;
 	transition: none;
 }
 
@@ -136,7 +130,6 @@ html:has(.menu-panel[data-state='open']) :is(.skip-link, .peek-handle) {
 
 	.encounter-active .brand-lockup:hover .brand-name {
 		opacity: 1;
-		transform: none;
 	}
 }
 
