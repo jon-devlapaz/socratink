@@ -51,7 +51,7 @@ const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn)
 export const scenarios: readonly Scenario[] = [
 	{
 		name: 'no-choice-position',
-		summary: 'After a card answer, identify the correct choice by its words, not its displayed position.',
+		summary: 'After a card answer, match choice letters and positions to the displayed order.',
 		next: scripted([
 			{ say: 'Give me a question card about why ice floats on water, with choices and reasoning.' },
 			{ say: 'I picked this one but I am not sure.' },
@@ -60,7 +60,7 @@ export const scenarios: readonly Scenario[] = [
 		expect: (turns) => {
 			const card = cardOf(turns[0]?.reply);
 			const reply = stepReply(turns, 'Which one was right? Was it the top one?');
-			return [card?.kind === 'question' && reply ? expectNoChoicePosition(reply)
+			return [card?.kind === 'question' && reply ? expectNoChoicePosition(reply, card, 'Ice is less dense than liquid water')
 				: skipped('no-choice-position', 'script did not answer a question card and reach the position request')];
 		},
 	},

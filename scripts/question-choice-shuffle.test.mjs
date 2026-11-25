@@ -21,11 +21,17 @@ const sampleSize = 4000;
 const expectedPerPosition = sampleSize / input.choices.length;
 const tolerance = 120;
 
-function present(question = input) {
-	const result = executeLearningTool('present_question', question);
+function present(question = input, callId = 'call-default') {
+	const result = executeLearningTool('present_question', question, callId);
 	assert.equal(result.terminate, true);
 	const definition = questionnaireFromReplyData(result.data);
 	assert.ok(definition);
+	if (result.output !== 'Question presented on the card.') {
+		assert.equal(result.output, `Question presented on the card. Choices in displayed order:\n${definition.items[0].choices
+			.map((choice, index) => `${String.fromCharCode(65 + index)}. ${choice.label}`).join('\n')}`);
+		assert.deepEqual(definition.items[0].choices.map((choice) => choice.shortcut),
+			definition.items[0].choices.map((_, index) => String.fromCharCode(65 + index)));
+	}
 	return definition;
 }
 
@@ -39,13 +45,13 @@ function assertSelections(definition) {
 	}
 }
 
-test('production cards: 4000 distinct first/retry pairs, each position within 120 of 1000', (t) => {
+test('production cards: 4000 call-id first/retry pairs, each position within 120 of 1000', (t) => {
 	const counts = { first: [0, 0, 0, 0], retry: [0, 0, 0, 0] };
 	const unchangedInput = structuredClone(input);
 	for (let index = 0; index < sampleSize; index += 1) {
 		for (const phase of ['first', 'retry']) {
-			const question = { ...input, prompt: `${input.prompt} Card ${index}, ${phase}.` };
-			const definition = present(question);
+			const question = input;
+			const definition = present(question, `call-${index}-${phase}`);
 			const choices = definition.items[0].choices;
 			const position = choices.findIndex((choice) => choice.label === input.choices[0]);
 			assert.notEqual(position, -1);
@@ -71,14 +77,15 @@ test('production cards: 4000 distinct first/retry pairs, each position within 12
 	assert.deepEqual(input, unchangedInput, 'card construction must not mutate model input');
 });
 
-test('replay and identical retries keep order; duplicate labels and explicit values stay paired', (t) => {
+test('replay keeps order but new calls vary identical cards; labels and values stay paired', (t) => {
 	t.mock.method(Math, 'random', () => { throw new Error('Card order must not use random state'); });
 	const question = {
 		prompt: 'Which option holds?',
 		choices: [{ label: 'Retry', value: 'retry' }, 'Retry', { label: 'Stop', value: 'stop-now' }],
 	};
 	const first = present(question);
-	assert.deepEqual([...first.items[0].choices].sort((a, b) => a.value.localeCompare(b.value)), [
+	assert.deepEqual([...first.items[0].choices].map(({ shortcut, ...choice }) => choice)
+		.sort((a, b) => a.value.localeCompare(b.value)), [
 		{ label: 'Retry', value: 'retry' }, { label: 'Retry', value: 'retry-2' }, { label: 'Stop', value: 'stop-now' },
 	]);
 	assertSelections(first);
@@ -87,6 +94,9 @@ test('replay and identical retries keep order; duplicate labels and explicit val
 	for (let replay = 0; replay < 20; replay += 1) {
 		assert.deepEqual(present(JSON.parse(JSON.stringify(question))), first);
 	}
+	assert.ok(new Set(Array.from({ length: 40 }, (_, index) =>
+		JSON.stringify(present(question, `retry-${index}`).items[0].choices))).size > 1,
+		'new calls must not reuse a content-seeded order');
 	assert.deepEqual(questionnaireFromPresentQuestion(question).items[0].choices.map((choice) => choice.value),
 		['retry', 'retry-2', 'stop-now'], 'the shared converter preserves consent card order');
 });
@@ -99,7 +109,7 @@ test('summary choices stay last in their original relative order', () => {
 				'Right', 'None of these'],
 		};
 		const definition = present(question);
-		assert.deepEqual(definition.items[0].choices.slice(-3), [
+		assert.deepEqual(definition.items[0].choices.slice(-3).map(({ shortcut, ...choice }) => choice), [
 			{ label: 'All of the above', value: 'all-of-the-above' },
 			{ label: 'None of the above', value: 'none-above' },
 			{ label: 'None of these', value: 'none-of-these' },

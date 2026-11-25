@@ -12,23 +12,24 @@ export const learningToolDefinitions = [
 		parameters: toJsonSchema(RevealSchema, { errorMode: 'ignore' }) },
 ];
 
-export function executeLearningTool(name: string, args: unknown): {
+export function executeLearningTool(name: string, args: unknown, callId: string): {
 	output: string; data: Record<string, unknown[]>; terminate: boolean;
 } {
 	if (name === presentQuestionToolName) {
 		const input = v.parse(PresentQuestionInputSchema, args);
 		const questionnaire = questionnaireFromPresentQuestion(input);
 		const item = questionnaire.items[0]!;
-		const labels = item.choices.map((choice) => choice.label);
+		if (!callId.trim()) throw new Error('Question presentation requires a tool call ID');
 		const ranked = item.choices.map((choice, index) => ({
 			choice,
 			last: /^(?:all of the above|none of the above|none of these)[.!]?$/iu.test(choice.label),
-			rank: createHash('sha256').update(JSON.stringify([input.prompt, labels, index])).digest('hex'),
+			rank: createHash('sha256').update(JSON.stringify([callId, index])).digest('hex'),
 		}));
 		ranked.sort((a, b) => Number(a.last) - Number(b.last)
 			|| (a.last ? 0 : a.rank.localeCompare(b.rank)));
-		item.choices = ranked.map(({ choice }) => choice);
-		return { output: 'Question presented on the card.',
+		item.choices = ranked.map(({ choice }, index) => ({ ...choice, shortcut: String.fromCharCode(65 + index) }));
+		return { output: `Question presented on the card. Choices in displayed order:\n${item.choices
+			.map((choice) => `${choice.shortcut}. ${choice.label}`).join('\n')}`, 
 			data: { questionnaire: [questionnaire] }, terminate: true };
 	}
 	if (name === revealToolName) {

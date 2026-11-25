@@ -4,7 +4,7 @@
 export const behaviourRules = {
 	'one-question': { policy: 'Ask ONE question at a time.', issues: [163] },
 	'ends-on-question': { policy: 'End the message immediately after the question', issues: [163] },
-	'no-choice-position': { policy: "Never refer to a card's choices by position (first, second, top, bottom, A, B); name the choice by its words.", issues: [] },
+	'no-choice-position': { policy: "You may refer to a card's choices by the displayed letter or position from the tool result; use that displayed order, never the order you authored.", issues: [] },
 	'choices-boxed': { policy: 'Never write the choices as a numbered, lettered, or bullet list in text', issues: [] },
 	'no-internal-notes': { policy: 'Never mention internal tools or bookkeeping to the learner.', issues: [136] },
 	'reveal-marked': { policy: 'whenever a turn supplies target content, call mark_reveal before writing the reveal text', issues: [] },
