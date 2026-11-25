@@ -55,12 +55,8 @@ export function displayedAssistantTurn(input: {
  * short line. `text` stays exactly what was sent. */
 export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition): DisplayedTurn {
 	if (text.startsWith(questionnaireAnswerPrefix)) {
-		const lines = text.slice(questionnaireAnswerPrefix.length).trim().split('\n').map((line) => {
-			const answer = line.replace(/^- /, '');
-			const prompt = answered?.items.find((item) => answer.startsWith(`${item.prompt}: `))?.prompt;
-			return prompt === undefined ? answer : answer.slice(prompt.length + 2);
-		});
-		if (lines.every((line) => line === questionnaireHelpText.hint)) {
+		const lines = answered && answersByPrompt(text, answered) || answerLines(text, answered);
+		if (answered && lines.every((line) => line === questionnaireHelpText.hint)) {
 			return { role: 'You', text, learnerKind: 'hint-request', shownText: hintRequestShownText };
 		}
 		return {
@@ -79,6 +75,31 @@ export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefin
 		};
 	}
 	return { role: 'You', text };
+}
+
+/** Each card answer, read against the card's full prompts so a prompt with line breaks stays whole. */
+function answersByPrompt(text: string, answered: QuestionnaireDefinition): string[] | undefined {
+	let rest = text.slice(questionnaireAnswerPrefix.length);
+	const answers: string[] = [];
+	for (const [index, item] of answered.items.entries()) {
+		const head = `\n- ${item.prompt}: `;
+		if (!rest.startsWith(head)) return undefined;
+		rest = rest.slice(head.length);
+		const next = answered.items[index + 1];
+		const end = next ? rest.indexOf(`\n- ${next.prompt}: `) : rest.length;
+		if (end < 0) return undefined;
+		answers.push(rest.slice(0, end));
+		rest = rest.slice(end);
+	}
+	return rest ? undefined : answers;
+}
+
+function answerLines(text: string, answered?: QuestionnaireDefinition): string[] {
+	return text.slice(questionnaireAnswerPrefix.length).trim().split('\n').map((line) => {
+		const answer = line.replace(/^- /, '');
+		const prompt = answered?.items.find((item) => answer.startsWith(`${item.prompt}: `))?.prompt;
+		return prompt === undefined ? answer : answer.slice(prompt.length + 2);
+	});
 }
 
 export function displayLabel(role: ChatMessageRole): string {

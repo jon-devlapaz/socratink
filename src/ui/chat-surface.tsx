@@ -421,7 +421,7 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
-		/** Whether Start over would discard words or card choices the learner has not sent. */
+		/** Whether this tab holds words or card choices the learner has not sent. Other tabs cannot be read. */
 		hasUnsentWork() {
 			if (input.value.trim()) return true;
 			const question = activeTurn.querySelector('.questionnaire');

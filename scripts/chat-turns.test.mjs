@@ -10,6 +10,7 @@ import {
 } from '../src/ui/chat-turns.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
+import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -423,4 +424,29 @@ test('learnerVisibleText removes stacked internal markers', () => {
 		'Hello',
 	);
 	assert.equal(learnerVisibleText('No marker here.'), 'No marker here.');
+});
+
+test('a Hint tap shows as an action, read against the full prompt', () => {
+	const twoLines = { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Look at this list:\n1, 2, 3, 4\nWhich half do you search next?' }] };
+	const hint = formatQuestionnaireAnswers(twoLines, [{ name: 'path', values: [], help: 'hint' }]);
+	const turn = displayedLearnerTurn(hint, twoLines);
+	assert.equal(turn.learnerKind, 'hint-request');
+	assert.equal(turn.shownText, 'You asked for a hint');
+	assert.equal(turn.text, hint);
+});
+
+test('typed words that match the Hint text stay the learner\'s words', () => {
+	const typed = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], freeform: 'Asked for a hint.' }]);
+	assert.equal(typed, 'Questionnaire answers:\n- How should we begin?: “Asked for a hint.”');
+	const turn = displayedLearnerTurn(typed, questionnaire);
+	assert.equal(turn.learnerKind, 'questionnaire-reply');
+	assert.equal(turn.shownText, '“Asked for a hint.”');
+	const withChoice = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [questionnaire.items[0].choices[0].value], freeform: 'Asked for a hint.' }]);
+	assert.ok(withChoice.endsWith(', Asked for a hint.'), 'a choice already separates typed words from a Hint tap');
+});
+
+test('without its card, a saved Hint answer keeps the sent wording', () => {
+	const turn = displayedLearnerTurn('Questionnaire answers:\n- How should we begin?: Asked for a hint.');
+	assert.equal(turn.learnerKind, 'questionnaire-reply');
+	assert.equal(turn.shownText, 'How should we begin?: Asked for a hint.');
 });

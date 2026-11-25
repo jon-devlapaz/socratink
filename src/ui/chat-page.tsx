@@ -134,8 +134,10 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 					<div className="start-over-content">
 						<DialogTitle>Start a new conversation?</DialogTitle>
 						<DialogDescription>
-							{startOverHasDraft && 'What you haven’t sent will be deleted. '}
-							You can reopen this conversation from History.
+							{startOverHasDraft
+								? 'What you haven’t sent will be deleted, here and in your other open tabs. '
+								: 'Anything unsent in your other open tabs will be deleted. '}
+							Saved conversations are in History.
 						</DialogDescription>
 						<div className="start-over-actions">
 							<Button variant="secondary" onClick={closeDialog}>
