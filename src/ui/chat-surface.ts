@@ -112,7 +112,10 @@ export function mountChatSurface(options: Readonly<{
 		onSendRequested: () => form.requestSubmit(),
 	});
 	const conversation = openChatConversation(options.userId, options.aliases);
-	requireElement<HTMLElement>('#storage-notice').hidden = conversation.placeSaved;
+	const storageNotice = requireElement<HTMLElement>('#storage-notice');
+	if (!conversation.placeSaved) {
+		storageNotice.textContent = 'Reloading this page could lose your place in this chat. You can keep chatting in this tab.';
+	}
 	const draft = mountChatDraft(input, conversation.id);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
@@ -355,9 +358,11 @@ export function mountChatSurface(options: Readonly<{
 
 	const composerShell = requireElement<HTMLElement>('.composer-shell');
 	new ResizeObserver(() => {
-		const grow = composerShell.offsetHeight - form.offsetHeight
+		const noticeHeight = storageNotice.offsetHeight;
+		const grow = noticeHeight
 			+ input.offsetHeight - parseFloat(getComputedStyle(input).minHeight);
 		document.documentElement.style.setProperty('--composer-grow', `${Math.max(0, grow)}px`);
+		document.documentElement.style.setProperty('--storage-notice-height', `${noticeHeight}px`);
 	}).observe(composerShell);
 
 	input.addEventListener('keydown', (event) => {

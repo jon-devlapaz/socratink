@@ -212,17 +212,20 @@ p {
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1), var(--ease-out), var(--ease-out);
 }
 
-html:has(.active-node .questionnaire) .dock,
-body.questionnaire-active .dock {
+:is(html:has(.active-node .questionnaire), body.questionnaire-active) .dock:has(#storage-notice:empty) {
 	transform: translateY(calc(100% + 1rem));
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
 }
 
+:is(html:has(.active-node .questionnaire), body.questionnaire-active) .dock:has(#storage-notice:not(:empty)) #chat {
+	display: none;
+}
+
 html:has(.active-node .questionnaire) .stage,
 body.questionnaire-active .stage {
-	padding-bottom: 1.5rem;
+	padding-bottom: calc(max(1.5rem, env(safe-area-inset-bottom)) + var(--storage-notice-height, 0px));
 }
 
 .composer-shell {
@@ -231,10 +234,14 @@ body.questionnaire-active .stage {
 }
 
 #storage-notice {
-	margin: 0 1.25rem 0.75rem;
+	margin: 0 1.25rem;
 	color: var(--muted);
 	font-size: 0.875rem;
 	line-height: 1.5;
+}
+
+#storage-notice:not(:empty) {
+	padding-bottom: 0.75rem;
 }
 
 #chat {
@@ -366,7 +373,7 @@ body.questionnaire-active .stage {
 	html:has(.active-node .questionnaire) .stage,
 	body.questionnaire-active .stage {
 		padding-top: 2.75rem;
-		padding-bottom: 1rem;
+		padding-bottom: calc(max(1rem, env(safe-area-inset-bottom)) + var(--storage-notice-height, 0px));
 	}
 }
 
@@ -378,7 +385,7 @@ body.questionnaire-active .stage {
 	html:has(.active-node .questionnaire) .stage,
 	body.questionnaire-active .stage {
 		padding-top: 2.75rem;
-		padding-bottom: 1rem;
+		padding-bottom: calc(max(1rem, env(safe-area-inset-bottom)) + var(--storage-notice-height, 0px));
 	}
 }
 

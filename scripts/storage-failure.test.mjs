@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { appConfig } from '../src/config/app.config.ts';
 
-const guidance = 'You can keep chatting, but this browser cannot save your place. Reloading may not bring you back to this chat.';
+const guidance = 'Reloading this page could lose your place in this chat. You can keep chatting in this tab.';
 let server;
 let browser;
 let origin;
@@ -79,10 +79,16 @@ for (const [mode, description] of [
 			if (route.request().method() === 'POST') {
 				const text = route.request().postDataJSON().body;
 				const id = `s${sends.length + 1}`;
+				const parts = text === 'Show me a question' ? [{ type: 'data-questionnaire', data: {
+					kind: 'question', submitLabel: 'Submit', items: [{
+						name: 'season', prompt: 'What causes the seasons?', required: true, multiple: false,
+						choices: [{ value: 'tilt', label: 'Earth’s axial tilt' }, { value: 'distance', label: 'Earth’s distance from the Sun' }],
+					}],
+				} }] : [{ type: 'text', text: `Reply to ${text}`, state: 'done' }];
 				sends.push({ id: decodeURIComponent(url.pathname.split('/').at(-1)), text });
 				snapshot.messages.push(
 					{ id: `${id}:user`, role: 'user', display: 'visible', submissionId: id, parts: [{ type: 'text', text, state: 'done' }] },
-					{ id: `${id}:assistant`, role: 'assistant', display: 'visible', submissionId: id, parts: [{ type: 'text', text: `Reply to ${text}`, state: 'done' }] },
+					{ id: `${id}:assistant`, role: 'assistant', display: 'visible', submissionId: id, parts },
 				);
 				snapshot.settlements.push({ submissionId: id, outcome: 'completed' });
 				return route.fulfill({ json: { submissionId: id } });
@@ -125,6 +131,29 @@ for (const [mode, description] of [
 		assert.equal(sends[0].id, sends[1].id);
 		assert.match(sends[0].id, /^guest-storage-test:/);
 		if (mode === 'retained') assert.equal(sends[0].id, 'guest-storage-test:retained');
+		if (mode === 'quota') {
+			await page.locator('#message').fill('Show me a question');
+			await page.getByRole('button', { name: 'Send message', exact: true }).click();
+			const card = page.locator('#active-turn .questionnaire');
+			await card.waitFor();
+			await page.locator('.dock').evaluate(async (dock) => {
+				await Promise.allSettled(dock.getAnimations().map((animation) => animation.finished));
+			});
+			for (const width of [390, 1280]) {
+				await page.setViewportSize({ width, height: 844 });
+				await page.waitForFunction(() => {
+					const notice = document.querySelector('#storage-notice').getBoundingClientRect();
+					const transcript = document.querySelector('.active-scroll').getBoundingClientRect();
+					return notice.height > 0 && notice.bottom <= innerHeight && transcript.bottom <= notice.top;
+				});
+				assert.equal(await page.locator('#chat').isVisible(), false);
+				assert.equal(await notice.isVisible(), true);
+			}
+			await card.getByRole('radio', { name: /tilt/i }).check();
+			await card.getByRole('button', { name: 'Submit', exact: true }).click();
+			await page.locator('#chat').waitFor();
+			assert.equal(await notice.isVisible(), true);
+		}
 		assert.deepEqual(errors, []);
 	});
 }

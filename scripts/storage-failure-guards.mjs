@@ -34,8 +34,11 @@ const cases = [
 		"writeBrowserStorage(appConfig.soundStorageKey, enabled ? 'on' : 'off')",
 		"localStorage.setItem(appConfig.soundStorageKey, enabled ? 'on' : 'off')", 'page-wide'],
 	['notice', 'src/ui/chat-surface.ts',
-		"requireElement<HTMLElement>('#storage-notice').hidden = conversation.placeSaved;",
-		"requireElement<HTMLElement>('#storage-notice').hidden = true;", 'saved-ID quota failure'],
+		'if (!conversation.placeSaved) {',
+		'if (!conversation.placeSaved && false) {', 'saved-ID quota failure'],
+	['notice during a question', 'src/ui/styles.css',
+		'.dock:has(#storage-notice:empty) {',
+		'.dock {', 'saved-ID quota failure'],
 ];
 mkdirSync('.cache/storage-guards', { recursive: true });
 for (const [name, path, from, to, pattern] of cases) {
