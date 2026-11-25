@@ -25,6 +25,21 @@ test('a card Hint preserves one guiding question and removes the original answer
 	assert.equal(cardHintText(`${clue} ${longPrompt}`, longPrompt), clue);
 });
 
+test('an introduction to the exact card prompt goes with the repeated prompt', () => {
+	const prompt = 'Which line is steeper?';
+	const clue = 'Compare the rise.';
+	const hints = [
+		`${clue} **Question:** ${prompt}`,
+		`${clue} Now try again: ${prompt}`,
+	];
+	assert.deepEqual(hints.map(hint => cardHintText(hint, prompt)), [clue, clue]);
+
+	const guiding = `${clue} Now try again: How far does each line rise?`;
+	const quoted = `Read the note: “${prompt}”`;
+	assert.equal(cardHintText(guiding, prompt), guiding);
+	assert.equal(cardHintText(quoted, prompt), quoted);
+});
+
 test('punctuation inside a clue remains intact', () => {
 	const examples = [
 		'Look at “rise?” and "run?" in the diagram. Use **both axes.**',

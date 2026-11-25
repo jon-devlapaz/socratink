@@ -1,4 +1,5 @@
 import { cardHintText, learnerVisibleText } from '../../learning/learner-text.ts';
+import { displayedChoices } from '../../learning/tools.ts';
 import { cardHelpReveal } from '../../learning/mark-reveal.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
 import type { ProductMessage, Snapshot } from './contract.ts';
@@ -49,6 +50,14 @@ function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, c
 		{ ...item, description: 'You can try Hint again for a clue or answer the question.' },
 	] }];
 	return card;
+}
+
+export function hintCardToolOutput(snapshot: Snapshot, sourceId: string, freshData: ProductMessage['data']): string | undefined {
+	const reply = snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === sourceId);
+	const source = questionnaireFromReplyData(reply?.data);
+	if (!source) return;
+	const item = retryCard(source, questionnaireFromReplyData(freshData)).items[0]!;
+	return `Question shown to the learner: ${item.prompt}\n${displayedChoices(item)}`;
 }
 
 // A fresh call can reorder the same choices. It cannot replace the learner's question or reasoning field.

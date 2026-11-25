@@ -77,8 +77,9 @@ export function cardHintText(text: string, cardPrompt: string): string {
 		const original = text.slice(index, index + segment.length);
 		const sentence = original.trim();
 		if (sentence.replace(/^(\*{1,3}|_{1,3})(.+)\1$/su, '$2') === prompt) continue;
-		const start = index + original.indexOf(sentence);
-		if (sentence && prompt.startsWith(sentence) && text.startsWith(prompt, start) && /^(?:\s|$)/u.test(text.slice(start + prompt.length))) {
+		const candidate = prompt.startsWith(sentence) ? sentence : sentence.replace(/^[^:\n]+:[*_]*\s+/u, '');
+		const start = index + original.lastIndexOf(candidate);
+		if (candidate && prompt.startsWith(candidate) && text.startsWith(prompt, start) && /^(?:\s|$)/u.test(text.slice(start + prompt.length))) {
 			skipUntil = start + prompt.length;
 			continue;
 		}

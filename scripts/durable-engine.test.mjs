@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { json } from 'node:stream/consumers';
 import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -19,8 +20,9 @@ async function fixture(run, failures = 0) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-durable-engine-'));
 	const target = { kind: 'sqlite', filename: join(directory, 'pi.sqlite') };
 	const responses = [];
+	const requests = [];
 	const server = createServer(async (request, response) => {
-		for await (const _chunk of request) {};
+		requests.push(await json(request));
 		responses.push(response);
 		if (Array.isArray(failures) ? failures.includes(responses.length) : responses.length <= failures) {
 			response.writeHead(500, { 'content-type': 'application/json' });
@@ -33,7 +35,7 @@ async function fixture(run, failures = 0) {
 	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 	const config = { provider: 'jon-local', modelId: 'synthetic', apiKey: 'synthetic-key',
 		baseUrl: `http://127.0.0.1:${server.address().port}/v1`, reasoning: true, contextWindow: 128000, maxTokens: 4096 };
-	try { await run({ target, responses, config, options: { target, resolveModel: async () => config } }); }
+	try { await run({ target, responses, requests, config, options: { target, resolveModel: async () => config } }); }
 	finally { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await rm(directory, { recursive: true, force: true }); }
 }
 function chunk(response, delta, finish_reason = null) {
@@ -306,7 +308,7 @@ function finishTool(stream, name, args, id = name) {
 }
 
 function withPaymentCard(run) {
-	return fixture(async ({ target, responses, options }) => {
+	return fixture(async ({ target, responses, requests, options }) => {
 		const work = [];
 		const tracked = { ...options, keepAlive: (promise) => work.push(promise) };
 		const engine = await openEngine(tracked);
@@ -320,7 +322,7 @@ function withPaymentCard(run) {
 			finishTool(await nextResponse(), 'present_question', paymentQuestion);
 			const original = questionnaireFromReplyData((await settled()).messages.at(-1).data);
 			const askForHint = (card) => engine.submit(id, formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: [], help: 'hint' }]));
-			await run({ target, id, engine, reader, original, askForHint, nextResponse, settled });
+			await run({ target, id, engine, reader, requests, original, askForHint, nextResponse, settled });
 		} finally { await engine.close(); await reader.close(); }
 	});
 }
@@ -357,28 +359,42 @@ for (const { name, tutorText, clue } of [
 	}));
 }
 
-test('repeated Hints reject a replacement question and keep a fresh order with matching shortcuts', () => withPaymentCard(async ({
-	original, askForHint, nextResponse, settled,
+test('after repeated Hints the tutor receives the same question and shortcuts as the learner who types B', () => withPaymentCard(async ({
+	id, reader, requests, original, askForHint, nextResponse, settled,
 }) => {
 	await askForHint(original);
-	const wrong = await nextResponse();
-	chunk(wrong, { content: paymentClue });
-	finishTool(wrong, 'present_question', { prompt: 'What is the weather?', choices: ['Rain', 'Sun'] });
-	const first = (await settled()).messages.at(-1);
-	assert.deepEqual(questionnaireFromReplyData(first.data), original);
-	assert.equal(first.text, paymentClue);
-	assert.equal(first.data.reveal[0].kind, 'hint');
-
-	await askForHint(questionnaireFromReplyData(first.data));
 	const fresh = await nextResponse();
 	chunk(fresh, { content: guidingQuestion });
 	finishTool(fresh, 'present_question', { ...paymentQuestion, reasoning: false }, 'fresh-payment');
-	const second = (await settled()).messages.at(-1);
-	const renewed = questionnaireFromReplyData(second.data);
+	const first = (await settled()).messages.at(-1);
+	const renewed = questionnaireFromReplyData(first.data);
 	const expected = original.items[0].choices.toReversed().map((choice, i) => ({ ...choice, shortcut: ['A', 'B'][i] }));
 	assert.deepEqual(renewed, { ...original, items: [{ ...original.items[0], choices: expected }] });
-	assert.equal(second.text, guidingQuestion);
+	assert.equal(first.text, guidingQuestion);
+	assert.equal(first.data.reveal[0].kind, 'hint');
+
+	await askForHint(renewed);
+	const wrong = await nextResponse();
+	chunk(wrong, { content: paymentClue });
+	finishTool(wrong, 'present_question', { prompt: 'What is the weather?', choices: ['Rain', 'Sun'] }, 'wrong-weather');
+	const second = (await settled()).messages.at(-1);
+	const retained = questionnaireFromReplyData(second.data);
+	assert.deepEqual(retained, renewed);
+	assert.equal(second.text, paymentClue);
 	assert.equal(second.data.reveal[0].kind, 'hint');
+
+	await reader.submit(id, 'I think it is B. Is that right?');
+	finish(await nextResponse(), 'What was your reason?');
+	await settled();
+	const history = requests.at(-1).messages;
+	assert.equal(history.at(-1).content, 'I think it is B. Is that right?');
+	for (const [callId, card] of [['wrong-weather', retained], ['fresh-payment', renewed]]) {
+		const output = history.find((message) => message.role === 'tool' && message.tool_call_id === callId).content;
+		const item = card.items[0];
+		assert.ok(output.includes(item.prompt), output);
+		assert.deepEqual(output.split('\n').filter((line) => /^[A-B]\. /u.test(line)),
+			item.choices.map((choice) => `${choice.shortcut}. ${choice.label}`));
+	}
 }));
 
 test('reopening a Hint recorded in the old input format preserves its marked question and the learner answer', () => withPaymentCard(async ({

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as v from 'valibot';
 import { toJsonSchema } from '@valibot/to-json-schema';
-import { PresentQuestionInputSchema, questionnaireFromPresentQuestion } from '../questionnaire.ts';
+import { PresentQuestionInputSchema, questionnaireFromPresentQuestion, type QuestionnaireItem } from '../questionnaire.ts';
 import { RevealSchema, revealToolDescription, revealToolName } from '../reveal.ts';
 import { presentQuestionToolDescription, presentQuestionToolName } from './present-question.ts';
 
@@ -11,6 +11,11 @@ export const learningToolDefinitions = [
 	{ name: revealToolName, description: revealToolDescription,
 		parameters: toJsonSchema(RevealSchema, { errorMode: 'ignore' }) },
 ];
+
+export function displayedChoices(item: QuestionnaireItem): string {
+	return 'Choices in displayed order:\n' + item.choices.map((choice) =>
+		choice.shortcut ? `${choice.shortcut}. ${choice.label}` : choice.label).join('\n');
+}
 
 export function executeLearningTool(name: string, args: unknown, callId: string): {
 	output: string; data: Record<string, unknown[]>; terminate: boolean;
@@ -28,8 +33,7 @@ export function executeLearningTool(name: string, args: unknown, callId: string)
 		ranked.sort((a, b) => Number(a.last) - Number(b.last)
 			|| (a.last ? 0 : a.rank.localeCompare(b.rank)));
 		item.choices = ranked.map(({ choice }, index) => ({ ...choice, shortcut: String.fromCharCode(65 + index) }));
-		return { output: `Question presented on the card. Choices in displayed order:\n${item.choices
-			.map((choice) => `${choice.shortcut}. ${choice.label}`).join('\n')}`, 
+		return { output: `Question presented on the card. ${displayedChoices(item)}`,
 			data: { questionnaire: [questionnaire] }, terminate: true };
 	}
 	if (name === revealToolName) {
