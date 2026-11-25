@@ -13,6 +13,7 @@ export const behaviourRules = {
 	},
 	'dont-know-marked': { policy: 'is new material the learner could not derive: give the short explanation or a worked example, mark the reveal', issues: [] },
 	'hint-marked': { policy: 'Hints and partial explanations do not need this choice.', issues: [] },
+	'hint-leaves-reasoning': { policy: 'A hint points at the situation the learner must reason about; never state what the concept does, why the answer is right, or which choice it favours.', issues: [] },
 	'try-once-more-withholds': { policy: 'Try once more is the learner\'s choice to attempt it again, not a request for a new explanation', issues: [136] },
 } as const satisfies Record<string, { policy: string; issues: readonly number[] }>;
 

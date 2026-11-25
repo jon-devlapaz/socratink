@@ -56,11 +56,11 @@ export function learnerVisibleText(text: string): string {
 }
 
 const hintSentences = new Intl.Segmenter('en', { granularity: 'sentence' });
-const questionLeadIn = /^(?:so,?\s+)?(?:the (?:original )?question is(?: really)?|question)\s*:/iu;
 
-/** A marked hint can itself be a question. Once the card's own words are
- * removed, keep a single guiding question. With several competing questions,
- * their purpose is ambiguous, so show only the clue that precedes them. */
+/** The card stays beside the hint and is that turn's one question, so the
+ * hint shows only the clue before any question, without a leading "Hint:".
+ * A hint that is only one guiding question keeps it, so the learner still
+ * gets a clue. */
 export function cardHintText(text: string, cardPrompt: string): string {
 	// Work on a same-length copy. Punctuation in code and quoted examples
 	// belongs to the clue. All text shown to the learner comes from the original.
@@ -84,14 +84,16 @@ export function cardHintText(text: string, cardPrompt: string): string {
 			continue;
 		}
 		if (/[?？]/u.test(segment)) {
-			// After a clue, an explicit introduction to the card question ends the hint.
-			if (clue.trim() && questionLeadIn.test(sentence)) break;
+			// After a clue, any question ends the hint: the card asks the question.
+			if (firstQuestion < 0 && clue.trim()) break;
 			if (firstQuestion >= 0) { clue = clue.slice(0, firstQuestion); break; }
 			firstQuestion = clue.length;
 		}
 		clue += original;
 	}
-	const trimmed = clue.trim();
+	// The reply already carries the hint label.
+	const trimmed = clue.trim().replace(/^[*_]{0,2}hint[*_]{0,2}\s*:\s*[*_]{0,2}\s*/iu, '')
+		.replace(/^\p{Ll}/u, (letter) => letter.toUpperCase());
 	return /^([-*_])(?:\s*\1){2,}$/u.test(trimmed) ? '' : trimmed;
 }
 

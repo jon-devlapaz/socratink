@@ -5,7 +5,7 @@
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
-import { cardOf, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+import { cardOf, expectHintLeavesReasoning, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
@@ -110,6 +110,20 @@ export const scenarios: readonly Scenario[] = [
 		expect: (turns) => {
 			const reply = stepReply(turns, 'Can I have a hint?');
 			return [reply ? expectMarkedHelp(reply, 'hint-marked') : skipped('hint-marked', 'script ended early')];
+		},
+	},
+	{
+		name: 'hint-leaves-reasoning',
+		summary: 'Hint on a payment idempotency card gives a clue that leaves the choice and its reason for the learner (PR 188 live failure).',
+		next: scripted([
+			{ say: 'Quiz me with one question card. A customer pays $40 and the connection drops before the app gets a response. Ask which request should reuse the first request\'s idempotency key, with choices and a reasoning field.' },
+			{ say: 'Can I have a hint?', help: 'hint' },
+		]),
+		expect: (turns) => {
+			const card = cardOf(turns[0]?.reply);
+			const reply = stepReply(turns, 'Can I have a hint?');
+			return [card?.kind === 'question' && reply ? expectHintLeavesReasoning(reply)
+				: skipped('hint-leaves-reasoning', 'the tutor did not present a question card to ask Hint on')];
 		},
 	},
 	{
