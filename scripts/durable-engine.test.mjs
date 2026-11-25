@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { tmpdir } from 'node:os';
@@ -12,13 +13,17 @@ import { openEngine } from '../src/server/durable/engine.ts';
 import { createDurableStorage } from '../src/server/durable/storage.ts';
 import { readSnapshot } from '../src/server/durable/projection.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
+import { formatQuestionnaireAnswers, questionnaireFromReplyData } from '../src/questionnaire.ts';
 
 async function fixture(run, failures = 0) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-durable-engine-'));
 	const target = { kind: 'sqlite', filename: join(directory, 'pi.sqlite') };
 	const responses = [];
+	const requests = [];
 	const server = createServer(async (request, response) => {
-		for await (const _chunk of request) {};
+		let body = '';
+		for await (const chunk of request) body += chunk;
+		requests.push(JSON.parse(body).messages);
 		responses.push(response);
 		if (Array.isArray(failures) ? failures.includes(responses.length) : responses.length <= failures) {
 			response.writeHead(500, { 'content-type': 'application/json' });
@@ -31,7 +36,7 @@ async function fixture(run, failures = 0) {
 	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 	const config = { provider: 'jon-local', modelId: 'synthetic', apiKey: 'synthetic-key',
 		baseUrl: `http://127.0.0.1:${server.address().port}/v1`, reasoning: true, contextWindow: 128000, maxTokens: 4096 };
-	try { await run({ target, responses, config, options: { target, resolveModel: async () => config } }); }
+	try { await run({ target, requests, responses, config, options: { target, resolveModel: async () => config } }); }
 	finally { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await rm(directory, { recursive: true, force: true }); }
 }
 function chunk(response, delta, finish_reason = null) {
@@ -289,6 +294,139 @@ test('card help the tutor never marks is still labelled from the click (#65)', a
 		const reply = settled.messages.find((message) => message.role === 'assistant');
 		assert.deepEqual(reply.data?.reveal, [{ kind: 'hint', target: 'A list has 16 items.\nWhich half do you search next?' }]);
 	} finally { await engine.close(); }
+}));
+
+const paymentQuestion = { prompt: 'Which request reuses the first payment key?',
+	choices: ['Retry the same payment', 'Make a separate purchase'], reasoning: true };
+const paymentClue = 'Count how many purchases the customer intended.';
+const guidingQuestion = 'How many purchases did the customer actually intend?';
+const repeatedQuestions = 'Is this a new purchase? Which key should you use?';
+
+function finishTool(stream, name, args, id = name) {
+	chunk(stream, { tool_calls: [{ index: 0, id, type: 'function', function: { name, arguments: JSON.stringify(args) } }] });
+	chunk(stream, {}, 'tool_calls');
+	stream.end('data: [DONE]\n\n');
+}
+
+function withPaymentCard(run) {
+	return fixture(async ({ target, responses, requests, options }) => {
+		const work = [];
+		const tracked = { ...options, keepAlive: (promise) => work.push(promise) };
+		const engine = await openEngine(tracked);
+		const reader = await openEngine(tracked);
+		const id = 'learner:payment-hint';
+		let index = 0;
+		const nextResponse = () => { const position = index++; return until(() => responses[position], Boolean); };
+		const settled = async () => { await Promise.all(work); return reader.snapshot(id); };
+		try {
+			await engine.submit(id, 'Quiz me on payment retries.');
+			finishTool(await nextResponse(), 'present_question', paymentQuestion);
+			const original = questionnaireFromReplyData((await settled()).messages.at(-1).data);
+			const askForHint = (card) => engine.submit(id, formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: [], help: 'hint' }]));
+			await run({ target, id, engine, reader, requests, original, askForHint, nextResponse, settled });
+		} finally { await engine.close(); await reader.close(); }
+	});
+}
+
+for (const { name, tutorText, clue } of [
+	{ name: 'a clue followed by two questions', tutorText: `${paymentClue} ${repeatedQuestions}`, clue: paymentClue },
+	{ name: 'a single guiding question', tutorText: guidingQuestion, clue: guidingQuestion },
+	{ name: 'two questions followed by a statement', tutorText: `${paymentClue} ${repeatedQuestions} Take your time.`, clue: paymentClue },
+]) {
+	test(`a marked Hint keeps the payment card answerable after reload with ${name}`, () => withPaymentCard(async ({
+		id, reader, original, askForHint, nextResponse, settled,
+	}) => {
+		const hintTurn = await askForHint(original);
+		finish(await nextResponse(), tutorText);
+		const mark = await nextResponse();
+		const pending = (await reader.snapshot(id)).messages.find((m) => m.role === 'assistant' && m.submissionId === hintTurn);
+		finishTool(mark, 'mark_reveal', { kind: 'hint' });
+		const reply = (await settled()).messages.at(-1);
+		const retry = questionnaireFromReplyData(reply.data);
+		assert.deepEqual(retry, original);
+		const shownClue = tutorText.endsWith('Take your time.') ? reply.text.replace(/\s+Take your time\.$/u, '') : reply.text;
+		assert.equal(shownClue, clue);
+		assert.doesNotMatch(pending?.text ?? '', /new purchase|Which key/);
+		assert.deepEqual(reply.data.reveal, [{ kind: 'hint' }]);
+		assert.deepEqual(reply.tools.map((call) => [call.name, call.state, call.isError]), [['mark_reveal', 'done', false]]);
+		const item = retry.items[0];
+		const answer = formatQuestionnaireAnswers(retry, [{ name: item.name, values: [item.choices[0].value], freeform: 'One purchase.' }]);
+		await reader.submit(id, answer);
+		finish(await nextResponse(), 'What if the customer buys it again tomorrow?');
+		const submitted = (await settled()).submissions.at(-1);
+		assert.equal(submitted.outcome, 'completed');
+		assert.equal(submitted.text, answer);
+		assert.ok(submitted.text.includes(item.choices[0].label + ', One purchase.'));
+	}));
+}
+
+test('after repeated Hints the tutor receives the same question and shortcuts as the learner who types B', () => withPaymentCard(async ({
+	id, reader, requests, original, askForHint, nextResponse, settled,
+}) => {
+	await askForHint(original);
+	const fresh = await nextResponse();
+	chunk(fresh, { content: guidingQuestion });
+	finishTool(fresh, 'present_question', { ...paymentQuestion, reasoning: false }, 'fresh-payment');
+	const first = (await settled()).messages.at(-1);
+	const renewed = questionnaireFromReplyData(first.data);
+	const expected = original.items[0].choices.toReversed().map((choice, i) => ({ ...choice, shortcut: ['A', 'B'][i] }));
+	assert.deepEqual(renewed, { ...original, items: [{ ...original.items[0], choices: expected }] });
+	assert.equal(first.text, guidingQuestion);
+	assert.equal(first.data.reveal[0].kind, 'hint');
+
+	await askForHint(renewed);
+	const wrong = await nextResponse();
+	chunk(wrong, { content: paymentClue });
+	finishTool(wrong, 'present_question', { prompt: 'What is the weather?', choices: ['Rain', 'Sun'] }, 'wrong-weather');
+	const second = (await settled()).messages.at(-1);
+	const retained = questionnaireFromReplyData(second.data);
+	assert.deepEqual(retained, renewed);
+	assert.equal(second.text, paymentClue);
+	assert.equal(second.data.reveal[0].kind, 'hint');
+
+	await reader.submit(id, 'I think it is B. Is that right?');
+	finish(await nextResponse(), 'What was your reason?');
+	await settled();
+	const history = requests.at(-1);
+	assert.equal(history.at(-1).content, 'I think it is B. Is that right?');
+	for (const [callId, card] of [['wrong-weather', retained], ['fresh-payment', renewed]]) {
+		const output = history.find((message) => message.role === 'tool' && message.tool_call_id === callId).content;
+		const item = card.items[0];
+		assert.ok(output.includes(item.prompt), output);
+		assert.deepEqual(output.split('\n').filter((line) => /^[A-B]\. /u.test(line)),
+			item.choices.map((choice) => `${choice.shortcut}. ${choice.label}`));
+	}
+}));
+
+test('reopening a Hint recorded in the old input format preserves its marked question and the learner answer', () => withPaymentCard(async ({
+	target, id, engine, reader, original, askForHint, nextResponse, settled,
+}) => {
+	await askForHint(original);
+	finish(await nextResponse(), guidingQuestion);
+	finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
+	await settled();
+	await engine.submit(id, 'One.');
+	finish(await nextResponse(), 'What tells you that?');
+	await settled();
+
+	// Old inputs recorded the click and tutor response without a source-card reference.
+	const db = new DatabaseSync(target.filename);
+	try {
+		const records = db.prepare('SELECT seq, writes FROM pi_commits WHERE namespace = ? AND instr(writes, ?) > 0').all(id, '"hintCardFrom"');
+		assert.ok(records.length);
+		const replace = db.prepare('UPDATE pi_commits SET writes = ? WHERE namespace = ? AND seq = ?');
+		for (const { seq, writes } of records) {
+			const legacy = JSON.parse(writes, (key, value) => key === 'hintCardFrom' ? undefined : value);
+			replace.run(JSON.stringify(legacy), id, seq);
+		}
+	} finally { db.close(); }
+
+	const history = await reader.snapshot(id);
+	assert.equal(history.messages[3].text, guidingQuestion);
+	assert.equal(questionnaireFromReplyData(history.messages[3].data), undefined);
+	assert.deepEqual(history.messages[3].data.reveal, [{ kind: 'hint' }]);
+	assert.equal(history.messages[4].text, 'One.');
+	assert.equal(history.messages[5].text, 'What tells you that?');
 }));
 
 test('a reveal after the learner asks for the answer is recorded as requested, even when the tutor omits it (#133)', async () => fixture(async ({ responses, options }) => {

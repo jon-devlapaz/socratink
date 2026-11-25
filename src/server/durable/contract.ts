@@ -4,7 +4,7 @@ import type { ModelRouteRecord } from '../../config/model-route.ts';
 export const inputKind = 'socratink.input';
 
 export type ModelSelection = { provider: string; modelId: string };
-export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true; tryOnceMore?: true };
+export type InputData = { requestId: string; selection?: ModelSelection; revealConsent?: true; tryOnceMore?: true; hintCardFrom?: string };
 export type ModelConfig = ModelSelection & {
 	apiKey?: string; baseUrl?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number;
 	/** Models the gateway tries in order when the primary model fails. */
@@ -18,7 +18,7 @@ export type ProductMessage = {
 	role: 'user' | 'assistant'; submissionId: string; text: string; reasoning?: string;
 	data?: Record<string, unknown[]>; tools?: ProductTool[]; metadata?: { socratink: ModelRouteRecord };
 };
-type Submission = { id: string; text: string; outcome?: Outcome; error?: string; tryOnceMore?: true };
+type Submission = { id: string; text: string; outcome?: Outcome; error?: string; tryOnceMore?: true; hintCardFrom?: string };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };
 export type TurnRecord = {
 	conversationId: string; submissionId: string; latencyMs: number; model?: string;

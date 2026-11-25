@@ -10,13 +10,14 @@ import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../le
 import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
-import { inputKind, type InputData } from './contract.ts';
+import { hintCardToolOutput } from './card-hint.ts';
+import { inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
 
-export function productRegistry() {
+export function productRegistry(readState: () => Promise<Snapshot>) {
 	const registry = createRegistry();
 	registry.install({
 		name: 'socratink',
@@ -49,6 +50,11 @@ export function productRegistry() {
 						const details = result.details as { reveal?: object[] } | undefined;
 						result = { ...result, details: { ...details,
 							reveal: (details?.reveal ?? []).map((reveal) => ({ ...reveal, requested: true })) } };
+					}
+					const sourceId = (entries[0]?.data as InputData | undefined)?.hintCardFrom;
+					if (sourceId && call.name === 'present_question' && !result.isError) {
+						const output = hintCardToolOutput(await readState(), sourceId, result.details as ProductMessage['data']);
+						if (output) result = { ...result, output: [{ type: 'text', text: output }] };
 					}
 					const assistant = entries[assistantIndex];
 					const calls = assistant?.model?.flatMap((message) =>
