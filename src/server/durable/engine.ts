@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
 import { inputKind, type Engine, type EngineOptions, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { sourceOfCardHint } from './card-hint.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
 import { readSnapshot } from './projection.ts';
@@ -133,8 +134,10 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				}
 				const requestId = randomUUID();
 				const tryOnceMore = choseTryOnceMore(state, text);
+				const hintCardFrom = sourceOfCardHint(state, text);
 				const input = { type: 'input', content: text, whenBusy: 'reject', requestId,
 					entry: { kind: inputKind, data: { requestId, revealConsent: true,
+						...(hintCardFrom ? { hintCardFrom } : {}),
 						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } } as const;
 				const edits = await rejectedTryOnceMoreEdits(owner.root, state.submissions.at(-1), context);
 				const submissionId = edits.length ? await owner.root.commit(async (tx) => {
@@ -191,7 +194,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		} while (cursor);
 		return undefined;
 	}, (config) => { modelId = config.modelId; });
-	const registry = productRegistry();
+	const registry = productRegistry(() => readSnapshot(storage));
 	const feedback = await feedbackExtension(id);
 	if (feedback) registry.install(feedback);
 	const harness = await Harness.open(storage, { models, registry,

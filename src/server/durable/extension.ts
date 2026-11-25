@@ -7,16 +7,18 @@ import type { JsonValue } from '@earendil-works/chord';
 import type { Message } from '@earendil-works/pi-ai';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../learning/present-question.ts';
+import { isHelpThenQuestion } from '../../learning/learner-text.ts';
 import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
-import { revealToolName } from '../../reveal.ts';
+import { parseRevealDefinition, revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
-import { inputKind, type InputData } from './contract.ts';
+import { hintCardToolOutput } from './card-hint.ts';
+import { inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
 
-export function productRegistry() {
+export function productRegistry(readState: () => Promise<Snapshot>) {
 	const registry = createRegistry();
 	registry.install({
 		name: 'socratink',
@@ -24,8 +26,8 @@ export function productRegistry() {
 		tools: toolDefinitions.map((definition) => defineTool<object>({
 			...definition,
 			replay: 'safe',
-			execute: async (args) => {
-				const result = executeTool(definition.name, args);
+			execute: async (args, api) => {
+				const result = executeTool(definition.name, args, api.callId);
 				return { output: [{ type: 'text', text: result.output }],
 					details: result.data as JsonValue, control: { terminate: result.terminate } };
 			},
@@ -50,6 +52,11 @@ export function productRegistry() {
 						result = { ...result, details: { ...details,
 							reveal: (details?.reveal ?? []).map((reveal) => ({ ...reveal, requested: true })) } };
 					}
+					const sourceId = (entries[0]?.data as InputData | undefined)?.hintCardFrom;
+					if (sourceId && call.name === 'present_question' && !result.isError) {
+						const output = hintCardToolOutput(await readState(), sourceId, result.details as ProductMessage['data']);
+						if (output) result = { ...result, output: [{ type: 'text', text: output }] };
+					}
 					const assistant = entries[assistantIndex];
 					const calls = assistant?.model?.flatMap((message) =>
 						message.role === 'assistant' ? message.content.filter((block) => block.type === 'toolCall') : []) ?? [];
@@ -57,13 +64,19 @@ export function productRegistry() {
 					let invalidQuestion = false;
 					for (const round of calls) {
 						if (round.name !== 'present_question') continue;
-						try { hasQuestion ||= executeTool(round.name, round.arguments).terminate; }
+						try { hasQuestion ||= executeTool(round.name, round.arguments, round.id).terminate; }
 						catch { invalidQuestion = true; }
 					}
 					// Pi requires every call of a mixed tool round to request termination, including a reveal beside it.
 					const correctedReveal = calls.every((round) => round.name === revealToolName)
 						&& corrections(earlier).some((body) => revealBodies.includes(body));
-					const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal;
+					// A hint or partial written beside its mark_reveal call that already ends on its question is
+					// complete. Another round would ask a second question or repeat the reply (#163). A full answer
+					// or worked example still comes after the call, behind the consent card.
+					const answered = calls.every((round) => round.name === revealToolName
+						&& ['hint', 'partial'].includes(parseRevealDefinition(round.arguments)?.kind ?? ''))
+						&& isHelpThenQuestion(assistant?.model?.filter((message) => message.role === 'assistant').map(messageText).join('') ?? '');
+					const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal || answered;
 					const help = hasQuestion && call.name === 'present_question' && !result.isError
 						&& !revealed(earlier) && !calls.some((round) => round.name === revealToolName)
 						? cardHelpReveal(learnerText(entries)) : undefined;

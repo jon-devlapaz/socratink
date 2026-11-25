@@ -7,7 +7,7 @@
  * (#163). check:structure keeps these rules here. */
 
 import { presentQuestionJson } from '../questionnaire.ts';
-import { markRevealRetryBodies } from './mark-reveal.ts';
+import { markRevealRetryBodies, revealCue } from './mark-reveal.ts';
 import { presentQuestionRetryBodies } from './present-question.ts';
 
 const noTextCorrections: readonly string[] = [...Object.values(markRevealRetryBodies), presentQuestionRetryBodies.asText];
@@ -55,12 +55,54 @@ export function learnerVisibleText(text: string): string {
 		.trim();
 }
 
+const hintSentences = new Intl.Segmenter('en', { granularity: 'sentence' });
+
+/** The card stays beside the hint and is that turn's one question, so the
+ * hint shows only the clue before any question, without a leading "Hint:".
+ * A hint that is only one guiding question keeps it, so the learner still
+ * gets a clue. */
+export function cardHintText(text: string, cardPrompt: string): string {
+	// Work on a same-length copy. Punctuation in code and quoted examples
+	// belongs to the clue. All text shown to the learner comes from the original.
+	const punctuation = text
+		.replace(/(`+)[\s\S]*?\1/gu, code => code.replace(/[.!?。！？]/gu, 'x'))
+		.replace(/"[^"\n]*"|“[^”\n]*”|‘[^’\n]*’|(?<!\w)'[^'\n]+'(?!\w)/gu, quote => quote.replace(/[?？]/gu, 'x'))
+		.replace(/([.!?。！？])([*_]+)(?=\s|$)/gu, (_, end: string, emphasis: string) => ' '.repeat(emphasis.length) + end);
+	const prompt = cardPrompt.trim();
+	let skipUntil = 0;
+	let clue = '';
+	let firstQuestion = -1;
+	for (const { index, segment } of hintSentences.segment(punctuation)) {
+		if (index < skipUntil) continue;
+		const original = text.slice(index, index + segment.length);
+		const sentence = original.trim();
+		if (sentence.replace(/^(\*{1,3}|_{1,3})(.+)\1$/su, '$2') === prompt) continue;
+		const candidate = prompt.startsWith(sentence) ? sentence : sentence.replace(/^[^:\n]+:[*_]*\s+/u, '');
+		const start = index + original.lastIndexOf(candidate);
+		if (candidate && prompt.startsWith(candidate) && text.startsWith(prompt, start) && /^(?:\s|$)/u.test(text.slice(start + prompt.length))) {
+			skipUntil = start + prompt.length;
+			continue;
+		}
+		if (/[?？]/u.test(segment)) {
+			// After a clue, any question ends the hint: the card asks the question.
+			if (firstQuestion < 0 && clue.trim()) break;
+			if (firstQuestion >= 0) { clue = clue.slice(0, firstQuestion); break; }
+			firstQuestion = clue.length;
+		}
+		clue += original;
+	}
+	// The reply already carries the hint label.
+	const trimmed = clue.trim().replace(/^[*_]{0,2}hint[*_]{0,2}\s*:\s*[*_]{0,2}\s*/iu, '')
+		.replace(/^\p{Ll}/u, (letter) => letter.toUpperCase());
+	return /^([-*_])(?:\s*\1){2,}$/u.test(trimmed) ? '' : trimmed;
+}
+
 /** Text beside a tutor's question card, without the questions it ends on.
  * The card is that turn's one question, so a question in the text asks it
  * twice (#163). A lead-in such as "**Question:**" goes with its question.
  * Feedback and hints before the question stay. */
 export function withoutQuestionBesideCard(text: string): string {
-	const question = /\?["'”’)*_]*$/u;
+	const question = endingQuestion;
 	const leadIn = /[^\n.!?]*:[*_]*$/u;
 	const before = text.trimEnd();
 	// "What happens to the molecules? Let me start with the first question:" asks
@@ -73,6 +115,16 @@ export function withoutQuestionBesideCard(text: string): string {
 		visible = visible.slice(0, start).trimEnd();
 	}
 	return visible === before ? visible : visible.replace(leadIn, '').trimEnd();
+}
+
+const endingQuestion = /\?["'”’)*_]*$/u;
+
+/** Whether the learner-visible text gives help and then ends on its question.
+ * Such a reply is complete: any text after it asks again or repeats it (#163).
+ * A bare question, such as "What do we know?", may still lead into the help. */
+export function isHelpThenQuestion(text: string): boolean {
+	const visible = learnerVisibleText(text).trimEnd();
+	return endingQuestion.test(visible) && (revealCue.test(visible) || withoutQuestionBesideCard(visible) !== '');
 }
 
 /** Whether a correction told the tutor to write no text. Whatever text it

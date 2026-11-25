@@ -1,0 +1,86 @@
+{
+  "inputs": "f22f3d20f9ff024bff0c4cff60c2e538ad778087b3b4cf8b64ba9fa34da36c07",
+  "decision": "approved",
+  "basis": "confirmed-seed",
+  "reviewer": "confirmed-seed binding (automatic)",
+  "source": "runs/socratink-learners-get-no-clue-to/seed-contract.md",
+  "seed_binding": {
+    "path": "runs/socratink-learners-get-no-clue-to/seed-contract.md",
+    "sha256": "14752b697459573cb2a375add8f9426196fa0bf2c55f54f2a6d6566315d792c2",
+    "source": "/Users/jondev/scratch/pilot-TEST/sessions/session-ysY3mN/seed-contract.md",
+    "definitions_sha256": "a55ca94fb74806b36c51b45f37961796980dbbe21a7e2cc50c5bffbab2fc488e",
+    "confirmation": {
+      "schema_version": 3,
+      "checks_sha256": "f40dd72aead38e253451b9b7acc5505b385d34a9837adea9fa52014a87623e79",
+      "session_id": "session-ysY3mN",
+      "operator": "agent",
+      "revision": "r1",
+      "source": "confirm",
+      "confirmed_at": "2026-11-25T01:52:51.676711+00:00",
+      "seed_sha256": "14752b697459573cb2a375add8f9426196fa0bf2c55f54f2a6d6566315d792c2",
+      "decisions_sha256": "e070dcdfa00e390a015bae1475d093a4195fb7edfab5ed760dd5219b343055e4",
+      "actor": {
+        "action": "typed confirm at this terminal",
+        "by": "terminal",
+        "declaration": "declared: agent",
+        "identity": "declaration is not verified identity"
+      }
+    },
+    "definitions": [
+      {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/question-choice-shuffle.test.mjs",
+        "cwd": ".",
+        "expect": "Proposed, not executed. Starting from installed dependencies and a new behavior-specific test, call executeLearningTool('present_question', input) with prompt 'Where in the chloroplast do the light-dependent reactions take place?' and choices ['Thylakoid membrane', 'Stroma', 'Outer chloroplast membrane', 'Cytosol']. Add deterministic, documented random coverage of many newly constructed cards and assert approximately equal counts for the known correct label in all four positions. Repeat card construction as a retry after a wrong response and assert that the retry also passes through shuffling. For each displayed choice, submit its value and assert that formatQuestionnaireAnswers records that exact label. Assert label/value associations survive duplicate labels and explicit values. Restore a generated definition and assert its order is unchanged. In an isolated targeted-reversion probe, remove only shuffling: the distribution or shuffle-path assertion must fail. Restore the implementation afterward. Select and document sample size, random control and tolerance in the test; do not treat a generic suite pass as this regression.",
+        "failure_case": "Leaving choices in model order, bypassing shuffling on retry, recording a different label from the selected value, or reshuffling the same restored card must fail this regression; removing shuffling must not leave it green.",
+        "kind": "provisional",
+        "missing": "scripts/question-choice-shuffle.test.mjs must be added with production-path distribution, retry, selection-mapping and restoration assertions. The random-control method, numeric tolerance and targeted-reversion procedure remain to be implemented.",
+        "source": "Confirmed goal; src/learning/tools.ts:14-20; scripts/present-question.test.mjs:1-23; package.json:32-35; README.md:11-18; CODING_STANDARDS.md:40-49",
+        "statement": "Across many cards the correct choice lands in every position about equally; a retry card is shuffled too; the learner's chosen answer is still recorded as the choice they tapped; a regression test fails if shuffling is removed.",
+        "id": "seed-1",
+        "description": "Across many cards the correct choice lands in every position about equally; a retry card is shuffled too; the learner's chosen answer is still recorded as the choice they tapped; a regression test fails if shuffling is removed.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm test:present-question && pnpm test:questionnaire",
+        "cwd": ".",
+        "expect": "Proposed, not executed. With the specified Node and pnpm versions, install locked dependencies and run both existing card test suites. Both exit successfully. If the order-sensitive duplicate-label assertion needs adjustment, retain assertions for unique values and their correct labels rather than weakening the contract.",
+        "failure_case": "Duplicate choice values, incorrect label lookup for a selected value, or failure to read a valid restored questionnaire must fail these suites.",
+        "kind": "cmd",
+        "source": "README.md:11-18; package.json:32-35; scripts/present-question.test.mjs:10-23; scripts/questionnaire-ui.test.mjs:29-40,93-119",
+        "statement": "Existing present-question and questionnaire contracts remain valid.",
+        "id": "seed-2",
+        "description": "Existing present-question and questionnaire contracts remain valid.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm check",
+        "cwd": ".",
+        "expect": "Proposed, not executed. Install locked dependencies using the repository's specified tool versions, then run pnpm check. All configured static, type, test and build checks exit successfully. This does not replace the shuffle-specific regression or its targeted-reversion probe.",
+        "failure_case": "A type error or a broken existing reveal-consent, answer-formatting or card contract must make the aggregate check fail.",
+        "kind": "cmd",
+        "source": "AGENTS.md:36-40; README.md:11-18,66-81; package.json:17-24",
+        "statement": "Repository-wide checks pass after the change.",
+        "id": "seed-3",
+        "description": "Repository-wide checks pass after the change.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && pnpm build && pnpm smoke",
+        "cwd": ".",
+        "expect": "Proposed, not executed. Install locked dependencies and build the checkout before starting the smoke script, which launches dist/server.mjs. The deterministic fake-model smoke completes successfully without external model credentials. This does not establish live tutor quality or production readiness.",
+        "failure_case": "A built application that cannot complete the scripted card-and-answer conversation must fail the smoke check.",
+        "kind": "cmd",
+        "source": "AGENTS.md:36-40; README.md:11-18,66-87; package.json:15,23; scripts/smoke.mjs:1-15,309",
+        "statement": "The built application passes the repository's deterministic smoke check.",
+        "id": "seed-4",
+        "description": "The built application passes the repository's deterministic smoke check.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      }
+    ]
+  },
+  "reason": "matches confirmed seed (sha256: 14752b697459573cb2a375add8f9426196fa0bf2c55f54f2a6d6566315d792c2)"
+}
