@@ -55,6 +55,45 @@ export function learnerVisibleText(text: string): string {
 		.trim();
 }
 
+const hintSentences = new Intl.Segmenter('en', { granularity: 'sentence' });
+const questionLeadIn = /^(?:so,?\s+)?(?:the (?:original )?question is(?: really)?|question)\s*:/iu;
+
+/** A marked hint can itself be a question. Once the card's own words are
+ * removed, keep a single guiding question. With several competing questions,
+ * their purpose is ambiguous, so show only the clue that precedes them. */
+export function cardHintText(text: string, cardPrompt: string): string {
+	// Work on a same-length copy. Punctuation in code and quoted examples
+	// belongs to the clue. All text shown to the learner comes from the original.
+	const punctuation = text
+		.replace(/(`+)[\s\S]*?\1/gu, code => code.replace(/[.!?。！？]/gu, 'x'))
+		.replace(/"[^"\n]*"|“[^”\n]*”|‘[^’\n]*’|(?<!\w)'[^'\n]+'(?!\w)/gu, quote => quote.replace(/[?？]/gu, 'x'))
+		.replace(/([.!?。！？])([*_]+)(?=\s|$)/gu, (_, end: string, emphasis: string) => ' '.repeat(emphasis.length) + end);
+	const prompt = cardPrompt.trim();
+	let skipUntil = 0;
+	let clue = '';
+	let firstQuestion = -1;
+	for (const { index, segment } of hintSentences.segment(punctuation)) {
+		if (index < skipUntil) continue;
+		const original = text.slice(index, index + segment.length);
+		const sentence = original.trim();
+		if (sentence.replace(/^(\*{1,3}|_{1,3})(.+)\1$/su, '$2') === prompt) continue;
+		const start = index + original.indexOf(sentence);
+		if (sentence && prompt.startsWith(sentence) && text.startsWith(prompt, start) && /^(?:\s|$)/u.test(text.slice(start + prompt.length))) {
+			skipUntil = start + prompt.length;
+			continue;
+		}
+		if (/[?？]/u.test(segment)) {
+			// After a clue, an explicit introduction to the card question ends the hint.
+			if (clue.trim() && questionLeadIn.test(sentence)) break;
+			if (firstQuestion >= 0) { clue = clue.slice(0, firstQuestion); break; }
+			firstQuestion = clue.length;
+		}
+		clue += original;
+	}
+	const trimmed = clue.trim();
+	return /^([-*_])(?:\s*\1){2,}$/u.test(trimmed) ? '' : trimmed;
+}
+
 /** Text beside a tutor's question card, without the questions it ends on.
  * The card is that turn's one question, so a question in the text asks it
  * twice (#163). A lead-in such as "**Question:**" goes with its question.
