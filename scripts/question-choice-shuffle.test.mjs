@@ -108,24 +108,25 @@ test('summary choices stay last in their original relative order', () => {
 	}
 });
 
-test('origin/main tool makes the production distribution regression fail', async (t) => {
+test('self-contained unshuffled tool makes the production distribution regression fail', async () => {
 	const cache = join(root, '.cache');
 	await mkdir(cache, { recursive: true });
 	const directory = await mkdtemp(join(cache, 'shuffle-reversion-'));
 	try {
-		for (const file of ['src/learning/tools.ts', 'src/learning/present-question.ts', 'src/questionnaire.ts',
+		for (const file of ['src/learning/present-question.ts', 'src/questionnaire.ts',
 			'src/reveal.ts', 'scripts/question-choice-shuffle.test.mjs']) {
 			await mkdir(dirname(join(directory, file)), { recursive: true });
 			await copyFile(join(root, file), join(directory, file));
 		}
-		const path = join(directory, 'src/learning/tools.ts');
-		const baseline = spawnSync('git', ['show', 'origin/main:src/learning/tools.ts'],
-			{ cwd: root, encoding: 'utf8' });
-		assert.equal(baseline.status, 0, baseline.stderr);
-		await writeFile(path, baseline.stdout);
-		const revision = spawnSync('git', ['rev-parse', 'origin/main'], { cwd: root, encoding: 'utf8' });
-		assert.equal(revision.status, 0, revision.stderr);
-		t.diagnostic(`Unshuffled baseline: ${revision.stdout.trim()}`);
+		await writeFile(join(directory, 'src/learning/tools.ts'), `
+import { questionnaireFromPresentQuestion } from '../questionnaire.ts';
+
+export function executeLearningTool(name: string, input: unknown) {
+	if (name !== 'present_question') throw new Error('Unexpected baseline tool');
+	return { output: 'Question presented on the card.',
+		data: { questionnaire: [questionnaireFromPresentQuestion(input)] }, terminate: true };
+}
+`);
 		const env = { ...process.env };
 		delete env.NODE_TEST_CONTEXT;
 		const result = spawnSync(process.execPath,
