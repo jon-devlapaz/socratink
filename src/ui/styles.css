@@ -55,7 +55,7 @@
 	--drawer: cubic-bezier(0.32, 0.72, 0, 1);
 	/* Kinetik's pop spring (stiffness 420, damping 24) sampled over 500ms. */
 	--spring-pop: linear(0, 0.071, 0.237, 0.44, 0.64, 0.811, 0.941, 1.03, 1.081, 1.101, 1.101, 1.087, 1.068, 1.046, 1.027, 1.012, 1.001, 0.994, 0.99, 0.989, 0.99, 0.992, 0.994, 0.996, 0.998, 1);
-	--drawer-ms: 500ms;
+	--drawer-ms: 300ms;
 	--dock-closed: 7.25rem;
 	--grab-bar-width: 36px;
 	--grab-bar-height: 3px;
