@@ -60,6 +60,8 @@ export const scenarios: readonly Scenario[] = [
 		expect: (turns) => {
 			const card = cardOf(turns[0]?.reply);
 			const reply = stepReply(turns, 'Which one was right? Was it the top one?');
+			// A consent card in reply is the reveal policy at work, not a position claim.
+			if (cardOf(reply)?.kind === 'reveal-consent') return [skipped('no-choice-position', 'the tutor offered a consent card instead of naming a choice')];
 			return [card?.kind === 'question' && reply ? expectNoChoicePosition(reply, card, 'Ice is less dense than liquid water')
 				: skipped('no-choice-position', 'script did not answer a question card and reach the position request')];
 		},

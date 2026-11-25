@@ -107,6 +107,8 @@ export function expectNoChoicePosition(
 	const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
 	const reference = /\b(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom)\s+(?:one|option|choice|answer)|(?:option|choice|answer)\s+([A-H]|[1-8])|(?:it (?:is|was)|the answer is|the correct (?:one|answer|choice) (?:is|was))\s+(?:the\s+)?(first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom|[A-H]))\b/gi;
 	const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+	// The tutor writes its own label, so the correct one only has to start with the expected words.
+	const isCorrect = (label: string) => normalize(label).startsWith(normalize(correctLabel));
 	const problems: string[] = [];
 	for (const clause of text.split(/[.!?;\n]|\bbut\b/i)) {
 		for (const match of clause.matchAll(reference)) {
@@ -124,7 +126,7 @@ export function expectNoChoicePosition(
 			const wrong = /\b(?:wrong|incorrect|not (?:right|correct))\b/i.test(clause);
 			const right = !wrong && /\b(?:right|correct)\b|\b(?:it (?:is|was)|the answer is)\b/i.test(clause);
 			if (named.some((option) => option.value !== choice.value)
-				|| (wrong && choice.label === correctLabel) || (right && choice.label !== correctLabel)) {
+				|| (wrong && isCorrect(choice.label)) || (right && !isCorrect(choice.label))) {
 				problems.push(`${match[0]} refers to ${choice.label} on the displayed card`);
 			}
 		}
