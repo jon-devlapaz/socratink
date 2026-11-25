@@ -1,0 +1,27 @@
+✔ production cards: 4000 distinct first/retry pairs, each position within 120 of 1000 (189.93675ms)
+ℹ first correct-choice counts: 1026, 975, 1018, 981
+ℹ retry correct-choice counts: 1028, 985, 1003, 984
+✔ replay and identical retries keep order; duplicate labels and explicit values stay paired (1.016375ms)
+✔ summary choices stay last in their original relative order (0.947792ms)
+✖ origin/main tool makes the production distribution regression fail (6.248666ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 285.806042
+
+✖ failing tests:
+
+test at scripts/question-choice-shuffle.test.mjs:111:1
+✖ origin/main tool makes the production distribution regression fail (6.248666ms)
+  TypeError [ERR_INVALID_ARG_TYPE]: The "message" argument must be one of type string or function. Received undefined
+      at innerFail (node:internal/assert/utils:135:11)
+      at strict.strictEqual (node:assert:360:5)
+      at TestContext.<anonymous> (file:///Users/jondev/scratch/pilot-TEST/HOME/dev/worktrees/pilot/socratink-learners-get-no-clue-to/scripts/question-choice-shuffle.test.mjs:124:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_INVALID_ARG_TYPE'
+  }

@@ -1,0 +1,4757 @@
+{
+  "model": "xiaomi/mimo-v2.6-flash",
+  "fallbackModelIds": [
+    "minimax/minimax-m3.1-flash"
+  ],
+  "startedAt": "2026-11-25T04:54:34.968Z",
+  "runs": 3,
+  "summary": {
+    "turn-completed": {
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    "no-internal-notes": {
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    "one-question": {
+      "pass": 50,
+      "fail": 5,
+      "skip": 0
+    },
+    "ends-on-question": {
+      "pass": 46,
+      "fail": 9,
+      "skip": 0
+    },
+    "choices-boxed": {
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    "reveal-marked": {
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    "no-choice-position": {
+      "pass": 2,
+      "fail": 1,
+      "skip": 0
+    },
+    "just-tell-me": {
+      "pass": 6,
+      "fail": 0,
+      "skip": 0
+    },
+    "dont-know-marked": {
+      "pass": 3,
+      "fail": 0,
+      "skip": 0
+    },
+    "hint-marked": {
+      "pass": 3,
+      "fail": 0,
+      "skip": 0
+    },
+    "try-once-more-withholds": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 2
+    }
+  },
+  "results": [
+    {
+      "scenario": "no-choice-position",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "learner": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call_70fb8ebc54124c8aaccdafd0",
+                "input": {
+                  "prompt": "Ice floats on water because, when water freezes, its molecules arrange into a crystal structure that makes the solid less dense than the liquid. What does this imply about the ice compared with the liquid water below it?",
+                  "choices": [
+                    "It displaces a weight of water equal to its own weight, so it floats",
+                    "It is lighter than an equal volume of liquid water, so it sinks",
+                    "It is heavier than an equal volume of liquid water, so it floats",
+                    "It is the same density as liquid water, so it stays suspended"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Ice floats on water because, when water freezes, its molecules arrange into a crystal structure that makes the solid less dense than the liquid. What does this imply about the ice compared with the liquid water below it?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "it-is-lighter-than-an-equal-volume-of-liquid-water-so-it-sinks",
+                          "label": "It is lighter than an equal volume of liquid water, so it sinks"
+                        },
+                        {
+                          "value": "it-is-the-same-density-as-liquid-water-so-it-stays-suspended",
+                          "label": "It is the same density as liquid water, so it stays suspended"
+                        },
+                        {
+                          "value": "it-is-heavier-than-an-equal-volume-of-liquid-water-so-it-floats",
+                          "label": "It is heavier than an equal volume of liquid water, so it floats"
+                        },
+                        {
+                          "value": "it-displaces-a-weight-of-water-equal-to-its-own-weight-so-it-floats",
+                          "label": "It displaces a weight of water equal to its own weight, so it floats"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "Questionnaire answers:\n- Ice floats on water because, when water freezes, its molecules arrange into a crystal structure that makes the solid less dense than the liquid. What does this imply about the ice compared with the liquid water below it?: It is lighter than an equal volume of liquid water, so it sinks, I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Before I confirm or correct it — you said \"lighter than an equal volume... so it sinks.\" Walk me through that sentence: if something is lighter than an equal volume of the liquid it's in, which way do you expect it to go, and why do those two halves of your choice seem to point opposite directions?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which one was right? Was it the top one?",
+          "learner": "Which one was right? Was it the top one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Here's a hint: Archimedes' principle says the upward buoyant force on a submerged object equals the weight of the fluid it pushes aside.\n\nIf the ice is less dense than the surrounding water, what must be true about the weight of the water the ice displaces compared with the weight of the ice itself — and what does that tell you about the net force on the ice?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "21:call_1de7f28634584e38b5b6271f",
+                "input": {
+                  "kind": "hint",
+                  "target": "Relate lower density of floating ice to Archimedes' principle"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Relate lower density of floating ice to Archimedes' principle"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-choice-position",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "first-turn-diagnostic",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Help me understand how rainbows form.",
+          "learner": "Help me understand how rainbows form.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Rainbows form when sunlight enters a water droplet, refracts (bends), reflects off the inside back surface, and refracts again as it exits. This separates colors because different wavelengths bend by different amounts—violet bends most, red least—so you see a spectrum arranged with red on the outside and violet on the inside of the arc.\n\nTo place your starting point, a few quick questions (guessing is fine):\n\nWhat do you already know about how light bends when it moves from air into water?",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-first-message",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Why do the seasons change on Earth? just tell me the answer",
+          "learner": "Why do the seasons change on Earth? just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Seasons change because **Earth's axis is tilted about 23.5° relative to its orbit around the Sun**.\n\nAs Earth orbits, each hemisphere alternately leans toward and away from the Sun. When your hemisphere leans toward it, sunlight hits more directly (and days last longer), giving summer. When it leans away, sunlight arrives at a shallow angle (and days are shorter), giving winter. That's why the seasons are opposite in the Northern and Southern Hemispheres — and why they're mild rather than extreme, since Earth is actually slightly *farther* from the Sun during Northern Hemisphere summer.\n\nDistance from the Sun does cause the modest variation in total solar energy (perihelion/aphelion), but the tilt is what drives the seasonal cycle.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "11:call_1e7471557d064d3a8828b4f8",
+                "input": {
+                  "kind": "full_answer",
+                  "target": "Why the seasons change on Earth",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why the seasons change on Earth",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-later",
+      "run": 1,
+      "turns": [
+        {
+          "step": "I want to understand how vaccines train the immune system.",
+          "learner": "I want to understand how vaccines train the immune system.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you how vaccines train the immune system through a short Socratic sequence. We'll start with a diagnostic so I can see what you already know.\n\n**Diagnostic question 1 of 5:**\n\nA child gets their first vaccine for measles. Their immune system has never encountered the measles virus before. What is the immune system's *first* job when that vaccine enters the body — what is it trying to figure out?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "I think they put a weak germ in you, but I am not sure why that helps.",
+          "learner": "I think they put a weak germ in you, but I am not sure why that helps.",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "That's a good starting intuition — and the \"not sure why\" part is exactly what we'll work out.\n\nHere's the one piece to anchor on before we go further:\n\nA vaccine doesn't give you a weak germ to *fight off and survive*. It gives your immune system a **safe preview** — pieces of the germ (or instructions to make the pieces) with no ability to cause the disease. Your immune system responds as if there's an invader, but there's nothing to get sick from.\n\nThe reason that helps is the part we'll uncover together.\n\n---\n\n**Diagnostic question 1 (restated):**\n\nThink about that safe preview entering the body. Your immune system has never seen measles before.\n\nWhat is the *first* thing your immune system must produce or decide in response to the vaccine — what's the earliest \"answer\" it generates?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "15:call_110a8406fe2b4d0c997fe81b",
+                "input": {
+                  "kind": "hint",
+                  "target": "Recognize what a vaccine presents to the immune system"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Recognize what a vaccine presents to the immune system"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "just tell me the answer",
+          "learner": "just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "21:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "21",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "**The first answer:** your immune system doesn't start by making a finished antibody — it starts by **recognizing** the preview as foreign and **activating naive immune cells** that were sitting around waiting.\n\nTwo key players:\n\n1. **Antigen-presenting cells** (like dendritic cells) grab pieces of the vaccine, process them, and display the pieces on their surface like a wanted poster.\n2. **Naive lymphocytes** — B cells and T cells that each happen to carry a slightly different receptor — are scanned against those pieces. Almost all of them don't match. One (or a few) *does*.\n\nThat one matching naive cell is now **activated**. It divides and multiplies into an army of clones — this is called **clonal expansion** — and those clones become the effector cells (antibody-secreting B cells, helper T cells, killer T cells) that actually fight.\n\nSo the sequence is:\n\n> detect foreign → present pieces → find the matching naive cell → activate it → expand into an army\n\nThe \"training\" you asked about is really: **finding the rare cell that fits, and expanding it before the real germ ever shows up.**\n\n---\n\nNow that you have that, a quick check:\n\n**Diagnostic question 2:**\n\nTwo people are exposed to measles at the same time. One was vaccinated; one was not. The vaccinated person already has millions of the \"right\" clones ready, while the unvaccinated person's matching naive cell is still sitting in a crowd of millions of mismatches.\n\n**In plain terms, what does that difference in starting numbers buy the vaccinated person — and why does speed matter so much here?**",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "23:call_8443c1026b6f472ebb21f6ab",
+                "input": {
+                  "kind": "full_answer",
+                  "requested": true,
+                  "target": "First response: innate response and activation of naive lymphocytes"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "First response: innate response and activation of naive lymphocytes",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "i-dont-know-is-marked",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Teach me why ice floats on water.",
+          "learner": "Teach me why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Topic: **Why ice floats on water**\n\n```\nTopic: Why ice floats on water                    overall: ######.... 50%\n-----------------------------------------------------------------\nSubskill 1: Density & buoyancy basics              [####........]  2/5\nSubskill 2: Density change on melting/freezing     [########....]  4/5\nSubskill 3: Molecular structure of ice vs water    [######......]  3/5\nSubskill 4: Hydrogen bonding & open lattice        [##..........]  1/5\nSubskill 5: Connecting structure → density → float [###.........]  2/5\n-----------------------------------------------------------------\n```\n\nI'll start by asking a few questions, one at a time, to see what you already know. Guessing is fine — I'd rather see how you reason than get a polished answer.\n\n**Question 1:** Why does an object float in water in general?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "I don't know.",
+          "learner": "I don't know.",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Let's build from the ground up then.\n\n**The key idea:** whether something floats depends on comparing two things — the object's density (mass per unit volume) and water's density. If the object is less dense than water, it floats; if denser, it sinks. Same total mass, different volume, different density.\n\nSo with that framing, here's my question:\n\n**Question 1 (retry):** A 1 kg block of wood and a 1 kg block of steel have the same *mass*. Why does the wood float on water while the steel sinks?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "18:call-89a69ab3-9f33-4a9e-b8e6-63909ab301ef",
+                "input": {
+                  "kind": "hint",
+                  "target": "Why ice floats on water"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Why ice floats on water"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "dont-know-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "hint-is-marked",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Help me understand how binary search finds an item in a sorted list.",
+          "learner": "Help me understand how binary search finds an item in a sorted list.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll help you understand binary search properly. To place your starting point, here's a quick diagnostic:\n\nIf a sorted list has 1,000,000 items, roughly how many comparisons does binary search need in the worst case to find an item (or determine it isn't there)?\n\na) About 1,000,000 / 2 = 500,000  \nb) About 1,000,000 / 4 = 250,000  \nc) About 20  \nd) About 100",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Can I have a hint?",
+          "learner": "Can I have a hint?",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "If binary search repeatedly cuts the remaining range in half, and you start with 1,000,000 items, how many times can you cut the range in half before only one item remains?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "18:call_89c116b884364db3b6b54866",
+                "input": {
+                  "kind": "hint",
+                  "target": "Estimate worst-case comparisons for binary search on 1,000,000 items"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Estimate worst-case comparisons for binary search on 1,000,000 items"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: a) About 1,000,000 / 2 = 500,000  \nb) About 1,000,000 / 4 = 250,000  \nc) About 20  \nd) About 100",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "hint-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "try-once-more-no-notes",
+      "run": 1,
+      "turns": [
+        {
+          "learner": "Help me understand why the sky is blue.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Think of sunlight as a bundle of ropes of different thickness (wavelengths): the red end of the rope is stretched out (long wavelength), and the blue end is tightly coiled (short wavelength).\n\nWhen a light wave bumps into a molecule much smaller than itself, the *tightly coiled blue rope* makes the molecule jitter back and forth **much harder** than the *loose red rope* does — and every time the molecule jitters, it re-radiates light in a new direction. **What does that tell you about which color travels farther before the sun's beam is emptied of it?**\n\nP.S. If you want the name of this law so you can look it up, just say \"**just tell me**\".",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "11:call-79750692-ddd4-4086-8961-681d1954dfdc",
+                "input": {
+                  "kind": "hint",
+                  "target": "Why the sky is blue — first-step equation for scattered power"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Why the sky is blue — first-step equation for scattered power"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Because it reflects the ocean.",
+          "outcome": "completed",
+          "reply": {
+            "id": "17:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "17",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Ah — that's the \"ocean reflection\" idea, which is a common one to test. Let's check it against what you can observe.\n\nIf the blue came from the ocean reflecting light back up, what would you expect to happen in a place with **no ocean anywhere near** — say, a desert or a high mountain plateau?\n\n**What color is the sky there?**",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Because air itself is blue, like paint.",
+          "outcome": "completed",
+          "reply": {
+            "id": "21:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "21",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Let's test that idea — if the air itself were blue \"like paint,\" you'd be able to see it.\n\nHold up something far away: a mountain, a distant hill, or a tall building on the horizon. You'd expect air with color in it to **tint whatever you see through a long stretch of it**, the way blue glass tints what's behind it.\n\n**If you look at a distant mountain through many miles of this \"blue paint\" air, what should happen to the mountain's color as it gets farther away — and is that what you actually see?**",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "learner": "I still think it is the ocean reflecting up.",
+          "outcome": "completed",
+          "reply": {
+            "id": "25:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "25",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Let's test the ocean idea again, but with a place you can actually check.\n\n**Look at the sky's color straight overhead (zenith) versus the color near the horizon:**\n\n- If the blue were borrowed from the ocean reflecting light *up*, would you expect the sky directly above the ocean to look bluer than the sky over dry land?\n- And here's the check: **which direction does the sky look bluest — straight up, or toward the horizon where the ocean sits?**\n\n**What do you actually observe, and does it match what the ocean hypothesis predicts?**",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Maybe the Sun is blue?",
+          "outcome": "completed",
+          "reply": {
+            "id": "29:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "29",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Easy to check that one: **the Sun itself — when you look at it safely (not directly, but the light it casts on a white wall or a piece of paper), what color is it?**\n\nIf the Sun were blue, the light landing on things would be blue-tinted. **Is the sunlight you see white, or blue?**",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "learner": "I give up, I have no idea.",
+          "outcome": "completed",
+          "reply": {
+            "id": "33:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "33",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "reveal-consent",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "I can show a full answer.",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "see-it",
+                          "label": "See it"
+                        },
+                        {
+                          "value": "try-once-more",
+                          "label": "Try once more"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "tryOnceMore": true,
+          "learner": "Questionnaire answers:\n- I can show a full answer.: Try once more",
+          "outcome": "completed",
+          "reply": {
+            "id": "43:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "43",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "**What does your own idea predict for the color of sunlight landing on a white wall — blue or not blue?**",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **\n\nP.S. If you want the name of this law so you can look it up, just say \"**just tell me**\".",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "fail",
+          "detail": "2 questions: If the blue came from the ocean reflecting light back up, what would you expect to happen in a place with **no ocean anywhere near** — say, a desert or a high mountain plateau? | **What color is the sky there?",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "fail",
+          "detail": "3 questions: - If the blue were borrowed from the ocean reflecting light *up*, would you expect the sky directly above the ocean to look bluer than the sky over dry land? | - And here's the check: **which direction does the sky look bluest — straight up, or toward the horizon where the ocean sits? | **What do you actually observe, and does it match what the ocean hypothesis predicts?",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "one-question",
+          "status": "fail",
+          "detail": "2 questions: Easy to check that one: **the Sun itself — when you look at it safely (not directly, but the light it casts on a white wall or a piece of paper), what color is it? | **Is the sunlight you see white, or blue?",
+          "turn": 4
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 4
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 6
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 6
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 6
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: **",
+          "turn": 6
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 6
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 6
+        },
+        {
+          "check": "try-once-more-withholds",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "no-choice-position",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "learner": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call_4bbc9bd8bb1b48f783687f33",
+                "input": {
+                  "prompt": "Why does ice float on liquid water?",
+                  "choices": [
+                    "Ice is made of a lighter substance than liquid water",
+                    "Ice crystals trap air, making the overall density lower than water",
+                    "Water molecules in ice are packed in an open lattice that is less dense than liquid water",
+                    "Liquid water is pushed down by the weight of the ice above it"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Why does ice float on liquid water?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "water-molecules-in-ice-are-packed-in-an-open-lattice-that-is-less-dense-than-liquid-water",
+                          "label": "Water molecules in ice are packed in an open lattice that is less dense than liquid water"
+                        },
+                        {
+                          "value": "ice-is-made-of-a-lighter-substance-than-liquid-water",
+                          "label": "Ice is made of a lighter substance than liquid water"
+                        },
+                        {
+                          "value": "ice-crystals-trap-air-making-the-overall-density-lower-than-water",
+                          "label": "Ice crystals trap air, making the overall density lower than water"
+                        },
+                        {
+                          "value": "liquid-water-is-pushed-down-by-the-weight-of-the-ice-above-it",
+                          "label": "Liquid water is pushed down by the weight of the ice above it"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "Questionnaire answers:\n- Why does ice float on liquid water?: Water molecules in ice are packed in an open lattice that is less dense than liquid water, I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Your reasoning is right: ice floats because the hydrogen-bonded crystal structure holds the molecules in an open lattice, so a given mass of ice takes up more space than the same mass of liquid water — lower density means it floats.\n\nBefore we lock that in, one pressure test on your explanation:",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which one was right? Was it the top one?",
+          "learner": "Which one was right? Was it the top one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "No — the top one was wrong. The choice you picked was the correct one: **\"Water molecules in ice are packed in an open lattice that is less dense than liquid water.\"**\n\nThe top choice claims ice is \"a lighter substance,\" but ice and liquid water are the same substance (H₂O) — only the arrangement differs.",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-choice-position",
+          "status": "fail",
+          "detail": "choice named by position: top one"
+        }
+      ]
+    },
+    {
+      "scenario": "first-turn-diagnostic",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Help me understand how rainbows form.",
+          "learner": "Help me understand how rainbows form.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call_ff347b5186db4d7888fa1378",
+                "input": {
+                  "prompt": "How would you describe the main job light does inside a raindrop for a rainbow to appear?",
+                  "choices": [
+                    "The raindrop acts like a prism that spreads white light into colors",
+                    "The raindrop gives off its own colored glow when wet",
+                    "The raindrop focuses all colors back into white light"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "How would you describe the main job light does inside a raindrop for a rainbow to appear?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "the-raindrop-acts-like-a-prism-that-spreads-white-light-into-colors",
+                          "label": "The raindrop acts like a prism that spreads white light into colors"
+                        },
+                        {
+                          "value": "the-raindrop-focuses-all-colors-back-into-white-light",
+                          "label": "The raindrop focuses all colors back into white light"
+                        },
+                        {
+                          "value": "the-raindrop-gives-off-its-own-colored-glow-when-wet",
+                          "label": "The raindrop gives off its own colored glow when wet"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-first-message",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Why do the seasons change on Earth? just tell me the answer",
+          "learner": "Why do the seasons change on Earth? just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "The seasons change because Earth’s axis is tilted about 23.5 degrees relative to its orbit around the Sun.\n\nAs Earth orbits, that tilt makes each hemisphere alternate between more and less direct sunlight and longer or shorter daylight hours:\n\n- **Summer:** The hemisphere leans toward the Sun; sunlight hits more directly and days are longer.\n- **Winter:** It leans away; sunlight is less direct and days are shorter.\n- **Spring and autumn:** The two hemispheres receive more equal illumination.\n\nEarth’s distance from the Sun does not cause the seasons. Southern-hemisphere seasons are opposite because it is tilted the other way.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "14:call-519d09ec-3a5b-4e7e-ae5e-2072b4aa4f6b",
+                "input": {
+                  "target": "Why the seasons change on Earth",
+                  "requested": true,
+                  "kind": "full_answer"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why the seasons change on Earth",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-later",
+      "run": 2,
+      "turns": [
+        {
+          "step": "I want to understand how vaccines train the immune system.",
+          "learner": "I want to understand how vaccines train the immune system.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you this properly through a sequence of questions — starting with a short diagnostic to see what you already know, then building from there.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call-44a300ba-cc86-4558-9003-0dcb2cf80ccc",
+                "input": {
+                  "reasoning": true,
+                  "choices": [
+                    "They get sick just as badly, because immunity fades after every infection",
+                    "They often fight it off faster or avoid symptoms entirely",
+                    "They get sicker the second time because antibodies are gone",
+                    "Nothing changes — the immune system treats each encounter as new"
+                  ],
+                  "prompt": "When a person gets a mild viral infection and recovers, then encounters the same virus again months later, what usually happens?"
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "When a person gets a mild viral infection and recovers, then encounters the same virus again months later, what usually happens?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "they-get-sick-just-as-badly-because-immunity-fades-after-every-infection",
+                          "label": "They get sick just as badly, because immunity fades after every infection"
+                        },
+                        {
+                          "value": "they-get-sicker-the-second-time-because-antibodies-are-gone",
+                          "label": "They get sicker the second time because antibodies are gone"
+                        },
+                        {
+                          "value": "nothing-changes-the-immune-system-treats-each-encounter-as-new",
+                          "label": "Nothing changes — the immune system treats each encounter as new"
+                        },
+                        {
+                          "value": "they-often-fight-it-off-faster-or-avoid-symptoms-entirely",
+                          "label": "They often fight it off faster or avoid symptoms entirely"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I think they put a weak germ in you, but I am not sure why that helps.",
+          "learner": "Questionnaire answers:\n- When a person gets a mild viral infection and recovers, then encounters the same virus again months later, what usually happens?: They get sick just as badly, because immunity fades after every infection, I think they put a weak germ in you, but I am not sure why that helps.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "That's a good instinct to reach for — let's check it before I say anything more.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "17:call-89fc6534-1ad6-4b8c-96f0-aeab8697fcb1",
+                "input": {
+                  "reasoning": true,
+                  "prompt": "A vaccine introduces a weakened or killed germ (or a piece of one). If that's roughly what happens, why would a person who gets vaccinated get protected, while a person who never encountered the germ at all is not?",
+                  "choices": [
+                    {
+                      "label": "The immune system learns to recognize the germ during the vaccination and remembers it later",
+                      "value": "learns_and_remembers"
+                    },
+                    {
+                      "label": "The weak germ permanently replaces the person's own immune cells with stronger ones",
+                      "value": "replaces_immune_cells"
+                    },
+                    {
+                      "label": "Vaccination adds antibodies directly to the blood, which stay circulating forever",
+                      "value": "adds_antibodies_directly"
+                    },
+                    {
+                      "label": "The weak germ makes the person slightly sick once, which cures all future infections of that type",
+                      "value": "one_time_cure"
+                    }
+                  ]
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "A vaccine introduces a weakened or killed germ (or a piece of one). If that's roughly what happens, why would a person who gets vaccinated get protected, while a person who never encountered the germ at all is not?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "one_time_cure",
+                          "label": "The weak germ makes the person slightly sick once, which cures all future infections of that type"
+                        },
+                        {
+                          "value": "adds_antibodies_directly",
+                          "label": "Vaccination adds antibodies directly to the blood, which stay circulating forever"
+                        },
+                        {
+                          "value": "learns_and_remembers",
+                          "label": "The immune system learns to recognize the germ during the vaccination and remembers it later"
+                        },
+                        {
+                          "value": "replaces_immune_cells",
+                          "label": "The weak germ permanently replaces the person's own immune cells with stronger ones"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "just tell me the answer",
+          "learner": "just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "21:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "21",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "**The short answer:** a vaccine gives your immune system a safe practice round. The weakened or killed germ (or just a fragment of it) can't cause real disease, but it carries the same surface markers the real pathogen does. Your immune system responds the way it would to an infection — producing antibodies, activating T cells, and most importantly building **memory cells** that persist for years or decades. When the real germ later shows up, those memory cells recognize it immediately and mount a response fast enough to stop the infection before you get sick.\n\nSo the person who never encountered the germ has no memory cells to call on; the vaccinated person has a head start.\n\nNow let's test the idea from a different angle:",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "23:call-040dd5df-b10b-491d-98b2-f60d5a647791",
+                "input": {
+                  "kind": "full_answer",
+                  "requested": true,
+                  "target": "Why a weakened germ in a vaccine produces protection"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "27:call_d3d9830e9d81497199e45f8c",
+                "input": {
+                  "reasoning": true,
+                  "prompt": "If a vaccine works by building memory, why does the real virus still have a head start even in a vaccinated person — the vaccine doesn't stop every single viral particle from entering the body. What decides whether the person gets sick?",
+                  "choices": [
+                    {
+                      "label": "How fast the memory cells can multiply and produce antibodies compared to how fast the virus multiplies",
+                      "value": "race_speed"
+                    },
+                    {
+                      "label": "Whether the vaccine contained enough live virus to cause infection on its own",
+                      "value": "live_virus_count"
+                    },
+                    {
+                      "label": "Whether the person has ever had a cold before, regardless of the vaccine",
+                      "value": "prior_colds"
+                    },
+                    {
+                      "label": "How strong the person's willpower is during the exposure",
+                      "value": "willpower"
+                    }
+                  ]
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why a weakened germ in a vaccine produces protection",
+                  "requested": true
+                }
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "If a vaccine works by building memory, why does the real virus still have a head start even in a vaccinated person — the vaccine doesn't stop every single viral particle from entering the body. What decides whether the person gets sick?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "willpower",
+                          "label": "How strong the person's willpower is during the exposure"
+                        },
+                        {
+                          "value": "live_virus_count",
+                          "label": "Whether the vaccine contained enough live virus to cause infection on its own"
+                        },
+                        {
+                          "value": "race_speed",
+                          "label": "How fast the memory cells can multiply and produce antibodies compared to how fast the virus multiplies"
+                        },
+                        {
+                          "value": "prior_colds",
+                          "label": "Whether the person has ever had a cold before, regardless of the vaccine"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "i-dont-know-is-marked",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Teach me why ice floats on water.",
+          "learner": "Teach me why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you by getting you to reason it out yourself. We'll work through a few related subskills — density, water's hydrogen bonding, the crystal structure of ice, and how those connect to floating — starting with a short diagnostic to see where you already stand.\n\nFirst question:",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call-e295c205-c243-46ff-b3c6-f6acf08791cd",
+                "input": {
+                  "prompt": "A sealed rigid container holds exactly 1 liter of liquid water at 20°C. The same mass of water is then frozen into a block of ice at -10°C, still inside the sealed container. Compared to the liquid, the ice occupies:",
+                  "choices": [
+                    "Less volume, so a greater mass per liter",
+                    "The same volume as the liquid",
+                    "More volume, so a smaller mass per liter"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "A sealed rigid container holds exactly 1 liter of liquid water at 20°C. The same mass of water is then frozen into a block of ice at -10°C, still inside the sealed container. Compared to the liquid, the ice occupies:",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "the-same-volume-as-the-liquid",
+                          "label": "The same volume as the liquid"
+                        },
+                        {
+                          "value": "more-volume-so-a-smaller-mass-per-liter",
+                          "label": "More volume, so a smaller mass per liter"
+                        },
+                        {
+                          "value": "less-volume-so-a-greater-mass-per-liter",
+                          "label": "Less volume, so a greater mass per liter"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I don't know.",
+          "learner": "Questionnaire answers:\n- A sealed rigid container holds exactly 1 liter of liquid water at 20°C. The same mass of water is then frozen into a block of ice at -10°C, still inside the sealed container. Compared to the liquid, the ice occupies:: I don't know.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "That's a fair starting point — this is new material, so let me give you the anchor fact.\n\nWater is unusual: when it freezes, it expands. The same mass of water takes up *more* space as ice than as liquid. Since mass stays the same but volume grows, ice has a smaller mass per unit volume — a lower density — than liquid water. That's the whole reason it floats.\n\nMost substances behave the opposite way; their solid sinks in their own liquid. Water's expansion on freezing comes from how its molecules lock into an open crystal structure, which is where we're headed next.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "17:call-80c4dc9a-d7de-4754-b020-6bec0dbef3a7",
+                "input": {
+                  "prompt": "An object placed in a liquid will float if:",
+                  "choices": [
+                    "The object's mass is smaller than the liquid's mass",
+                    "The object's density is smaller than the liquid's density",
+                    "The object's volume is smaller than the liquid's volume",
+                    "The object is colder than the liquid"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "An object placed in a liquid will float if:",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "the-object-s-volume-is-smaller-than-the-liquid-s-volume",
+                          "label": "The object's volume is smaller than the liquid's volume"
+                        },
+                        {
+                          "value": "the-object-is-colder-than-the-liquid",
+                          "label": "The object is colder than the liquid"
+                        },
+                        {
+                          "value": "the-object-s-mass-is-smaller-than-the-liquid-s-mass",
+                          "label": "The object's mass is smaller than the liquid's mass"
+                        },
+                        {
+                          "value": "the-object-s-density-is-smaller-than-the-liquid-s-density",
+                          "label": "The object's density is smaller than the liquid's density"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "partial",
+                  "target": "A sealed rigid container holds exactly 1 liter of liquid water at 20°C. The same mass of water is then frozen into a block of ice at -10°C, still inside the sealed container. Compared to the liquid, the ice occupies:"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "dont-know-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "hint-is-marked",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Help me understand how binary search finds an item in a sorted list.",
+          "learner": "Help me understand how binary search finds an item in a sorted list.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you this properly rather than just explaining it. We'll start with a few questions, one at a time, to see what you already know — then build from there.\n\nLet's begin:\n\nYou have a sorted list of numbers: `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`, and you're looking for **23**.\n\nInstead of checking items one by one from the start, binary search jumps to the middle first. Which element does it check first, and what does finding that value tell it about where 23 must be?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Can I have a hint?",
+          "learner": "Can I have a hint?",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "The list has 10 elements, so think about what index is roughly halfway between the first position (0) and the last (9).\n\nOnce you identify that middle element, ask yourself: since the list is sorted, what can you rule out about where 23 could be, depending on whether 23 is bigger or smaller than that middle value?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "15:call_d0e4eb4ffab143fe92b0bcf1",
+                "input": {
+                  "kind": "hint"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "hint-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "try-once-more-no-notes",
+      "run": 2,
+      "turns": [
+        {
+          "learner": "Help me understand why the sky is blue.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Before we start: do you want a quick answer, or should I actually teach you this properly (I'll ask a few questions to see what you already know, then build up from there)?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Because it reflects the ocean.",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll start by probing what you already know, one question at a time.\n\nSunlight looks white to our eyes, but it contains many colors.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "15:call_80a56a272950407bb6eb97bd",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Red light"
+                    },
+                    {
+                      "label": "Green light"
+                    },
+                    {
+                      "label": "Violet light"
+                    },
+                    {
+                      "label": "Yellow light"
+                    }
+                  ],
+                  "prompt": "When sunlight travels through the atmosphere to your eye, which color is largely missing from the light that makes the sky appear blue?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "When sunlight travels through the atmosphere to your eye, which color is largely missing from the light that makes the sky appear blue?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "yellow-light",
+                          "label": "Yellow light"
+                        },
+                        {
+                          "value": "green-light",
+                          "label": "Green light"
+                        },
+                        {
+                          "value": "red-light",
+                          "label": "Red light"
+                        },
+                        {
+                          "value": "violet-light",
+                          "label": "Violet light"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- When sunlight travels through the atmosphere to your eye, which color is largely missing from the light that makes the sky appear blue?: Yellow light, Because air itself is blue, like paint.",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Not quite — air is colorless (that's why you can see clearly through it), so the blue can't come from the air itself. Let's find where it goes.\n\nRed light makes it through the atmosphere almost untouched, while blue light gets scattered far more strongly.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "21:call_150570567ac5494cb025d561",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Black, because all the light would be gone"
+                    },
+                    {
+                      "label": "Reddish, because the remaining light is what's left over"
+                    },
+                    {
+                      "label": "Still blue, because blue scattering doesn't depend on what's filtered out"
+                    },
+                    {
+                      "label": "Green, because green is between blue and yellow"
+                    }
+                  ],
+                  "prompt": "Red light passes through the atmosphere with almost no scattering, while blue is scattered strongly in all directions. If you looked at the sky through a filter that removed all the blue light, what would you see?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Red light passes through the atmosphere with almost no scattering, while blue is scattered strongly in all directions. If you looked at the sky through a filter that removed all the blue light, what would you see?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "green-because-green-is-between-blue-and-yellow",
+                          "label": "Green, because green is between blue and yellow"
+                        },
+                        {
+                          "value": "reddish-because-the-remaining-light-is-what-s-left-over",
+                          "label": "Reddish, because the remaining light is what's left over"
+                        },
+                        {
+                          "value": "black-because-all-the-light-would-be-gone",
+                          "label": "Black, because all the light would be gone"
+                        },
+                        {
+                          "value": "still-blue-because-blue-scattering-doesn-t-depend-on-what-s-filtered-out",
+                          "label": "Still blue, because blue scattering doesn't depend on what's filtered out"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- Red light passes through the atmosphere with almost no scattering, while blue is scattered strongly in all directions. If you looked at the sky through a filter that removed all the blue light, what would you see?: Green, because green is between blue and yellow, I still think it is the ocean reflecting up.",
+          "outcome": "completed",
+          "reply": {
+            "id": "25:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "25",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "The filter question cuts against the ocean idea: if the blue were reflecting off the sea, removing blue from the incoming light wouldn't turn the sky green — the sky would have nothing blue to mirror. The green you'd see is the rest of the white light that wasn't scattered away.\n\nSo blue isn't *reflected* toward your eye; it's *redirected* — thrown sideways out of the direct beam of sunlight by the air itself.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "27:call_6cf723eb20824fe684ad3278",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Molecules of air, which are much smaller than the wavelength of light"
+                    },
+                    {
+                      "label": "Water droplets, which are larger than the wavelength of light"
+                    },
+                    {
+                      "label": "Dust grains, which are larger than the wavelength of light"
+                    },
+                    {
+                      "label": "Ozone molecules, which absorb blue light directly"
+                    }
+                  ],
+                  "prompt": "Something in the atmosphere scatters blue light strongly and red light weakly. Which object is the right size to do that?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Something in the atmosphere scatters blue light strongly and red light weakly. Which object is the right size to do that?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "dust-grains-which-are-larger-than-the-wavelength-of-light",
+                          "label": "Dust grains, which are larger than the wavelength of light"
+                        },
+                        {
+                          "value": "water-droplets-which-are-larger-than-the-wavelength-of-light",
+                          "label": "Water droplets, which are larger than the wavelength of light"
+                        },
+                        {
+                          "value": "molecules-of-air-which-are-much-smaller-than-the-wavelength-of-light",
+                          "label": "Molecules of air, which are much smaller than the wavelength of light"
+                        },
+                        {
+                          "value": "ozone-molecules-which-absorb-blue-light-directly",
+                          "label": "Ozone molecules, which absorb blue light directly"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- Something in the atmosphere scatters blue light strongly and red light weakly. Which object is the right size to do that?: Dust grains, which are larger than the wavelength of light, Maybe the Sun is blue?",
+          "outcome": "completed",
+          "reply": {
+            "id": "31:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "31",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Hold on to the \"the Sun is blue?\" thought — that's actually worth chasing in a moment. But dust and water droplets are the wrong size: when a particle is *larger* than the wavelength of light, it scatters all colors about equally, which is why clouds and fog look white, not blue. Dust makes the sky *less* blue.\n\nThe blue has to come from something *smaller* than the wavelength of visible light.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "33:call_e19f4f1698704dcdae5197db",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Oxygen and nitrogen molecules"
+                    },
+                    {
+                      "label": "Argon only"
+                    },
+                    {
+                      "label": "Water vapor only"
+                    },
+                    {
+                      "label": "Ozone only"
+                    }
+                  ],
+                  "prompt": "The atmosphere is mostly made of one pair of gases. Which pair makes up almost all of it?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "The atmosphere is mostly made of one pair of gases. Which pair makes up almost all of it?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "oxygen-and-nitrogen-molecules",
+                          "label": "Oxygen and nitrogen molecules"
+                        },
+                        {
+                          "value": "ozone-only",
+                          "label": "Ozone only"
+                        },
+                        {
+                          "value": "argon-only",
+                          "label": "Argon only"
+                        },
+                        {
+                          "value": "water-vapor-only",
+                          "label": "Water vapor only"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- The atmosphere is mostly made of one pair of gases. Which pair makes up almost all of it?: Oxygen and nitrogen molecules, I give up, I have no idea.",
+          "outcome": "completed",
+          "reply": {
+            "id": "37:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "37",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Air molecules are so much smaller than light's wavelength that they scatter short (blue/violet) wavelengths far more strongly than long (red) ones — that's Rayleigh scattering. So the sky's blue is sunlight redirected sideways by the air itself, nothing to do with the ocean.\n\nOne test of that: sunlight that has *passed through* more air — at sunrise and sunset — arrives with its blue already scattered away.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "39:call_7f6fd22ab4264fde98df7a39",
+                "input": {
+                  "kind": "hint",
+                  "target": "Rayleigh scattering by air molecules"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "43:call_6d4673ee247c46da8ec94b08",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Blue, since blue is what air scatters"
+                    },
+                    {
+                      "label": "Red or orange, since the blue has been scattered out"
+                    },
+                    {
+                      "label": "White, since scattering doesn't remove color"
+                    },
+                    {
+                      "label": "Green, as a mix of what's left"
+                    }
+                  ],
+                  "prompt": "At sunrise or sunset, sunlight travels through much more air than at noon. What color is the direct sun then, and why?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Rayleigh scattering by air molecules"
+                }
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "At sunrise or sunset, sunlight travels through much more air than at noon. What color is the direct sun then, and why?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "blue-since-blue-is-what-air-scatters",
+                          "label": "Blue, since blue is what air scatters"
+                        },
+                        {
+                          "value": "white-since-scattering-doesn-t-remove-color",
+                          "label": "White, since scattering doesn't remove color"
+                        },
+                        {
+                          "value": "red-or-orange-since-the-blue-has-been-scattered-out",
+                          "label": "Red or orange, since the blue has been scattered out"
+                        },
+                        {
+                          "value": "green-as-a-mix-of-what-s-left",
+                          "label": "Green, as a mix of what's left"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "one-question",
+          "status": "fail",
+          "detail": "2 questions: Hold on to the \"the Sun is blue? | card: The atmosphere is mostly made of one pair of gases. Which pair makes up almost all of it?",
+          "turn": 4
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "try-once-more-withholds",
+          "status": "skip",
+          "detail": "the tutor never offered a consent card in this run"
+        }
+      ]
+    },
+    {
+      "scenario": "no-choice-position",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "learner": "Give me a question card about why ice floats on water, with choices and reasoning.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call_461d94ccaaf944f0b440aa25",
+                "input": {
+                  "prompt": "A container holds liquid water at 0°C just before freezing. A chunk of the same substance, also at 0°C, is placed on top and released. Which statement best explains why the solid chunk remains on the surface rather than sinking?",
+                  "choices": [
+                    "The solid has a lower density than the liquid because its molecules are locked into an open lattice with more empty space per molecule",
+                    "The solid has a lower density than the liquid because the molecules in ice vibrate faster than those in liquid water",
+                    "The solid has a lower density than the liquid because the air trapped in the ice makes the overall piece lighter",
+                    "The solid has the same density as the liquid, but it floats because the surface tension of water holds it up"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "A container holds liquid water at 0°C just before freezing. A chunk of the same substance, also at 0°C, is placed on top and released. Which statement best explains why the solid chunk remains on the surface rather than sinking?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "the-solid-has-a-lower-density-than-the-liquid-because-its-molecules-are-locked-into-an-open-lattice-with-more-empty-spac",
+                          "label": "The solid has a lower density than the liquid because its molecules are locked into an open lattice with more empty space per molecule"
+                        },
+                        {
+                          "value": "the-solid-has-a-lower-density-than-the-liquid-because-the-air-trapped-in-the-ice-makes-the-overall-piece-lighter",
+                          "label": "The solid has a lower density than the liquid because the air trapped in the ice makes the overall piece lighter"
+                        },
+                        {
+                          "value": "the-solid-has-the-same-density-as-the-liquid-but-it-floats-because-the-surface-tension-of-water-holds-it-up",
+                          "label": "The solid has the same density as the liquid, but it floats because the surface tension of water holds it up"
+                        },
+                        {
+                          "value": "the-solid-has-a-lower-density-than-the-liquid-because-the-molecules-in-ice-vibrate-faster-than-those-in-liquid-water",
+                          "label": "The solid has a lower density than the liquid because the molecules in ice vibrate faster than those in liquid water"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "Questionnaire answers:\n- A container holds liquid water at 0°C just before freezing. A chunk of the same substance, also at 0°C, is placed on top and released. Which statement best explains why the solid chunk remains on the surface rather than sinking?: The solid has a lower density than the liquid because its molecules are locked into an open lattice with more empty space per molecule, I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Your pick is defensible: ice's open hydrogen-bonded lattice really does give it more empty space per molecule, so it's less dense than liquid water at the same temperature.\n\nBut before I accept it — consider the distractor about air trapped in ice. Ice can contain air bubbles, and bubbles definitely make a chunk more buoyant.\n\n**Why can't trapped air be the real reason ice floats?** (You may reason out loud; guessing is fine.)",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which one was right? Was it the top one?",
+          "learner": "Which one was right? Was it the top one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Your pick was correct: **the solid has a lower density than the liquid because its molecules are locked into an open lattice with more empty space per molecule.** Trapped air isn't the reason — pure ice (no bubbles) still floats, which rules that out.\n\nTo lock this in, can you think of one everyday situation where a liquid *doesn't* float on its own solid — something that shows water's behavior is unusual, not a universal rule?",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "fail",
+          "detail": "text after the question: ** (You may reason out loud; guessing is fine.)",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-choice-position",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "first-turn-diagnostic",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Help me understand how rainbows form.",
+          "learner": "Help me understand how rainbows form.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll help you learn this properly. I'll ask a few questions first to see where you're starting from, then build from there.\n\n**Question 1:** What do you think has to be true about the light *before* it reaches the raindrops — white sunlight or a single color of light — for a rainbow to appear?",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-first-message",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Why do the seasons change on Earth? just tell me the answer",
+          "learner": "Why do the seasons change on Earth? just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "The seasons change because Earth's axis is tilted about 23.5° relative to its orbit around the Sun. As Earth travels around the Sun, that fixed tilt causes each hemisphere to alternately lean toward and away from the Sun, changing the angle of sunlight and the length of daylight — not, as commonly thought, changes in Earth–Sun distance.\n\nTwo linked effects drive it:\n\n- **Angle of incoming sunlight:** When your hemisphere leans toward the Sun, rays hit more directly, concentrating energy over a smaller area and warming the surface more. When it leans away, sunlight arrives at a shallower spread-out angle and warmth is diluted.\n- **Day length:** The leaning hemisphere gets longer days (more hours of incoming energy) and shorter nights, so it accumulates more heat than it radiates away.\n\nSo summer = your side tilted sunward (direct sun + long days), winter = tilted away (indirect sun + short days), with spring and fall as the in-between points. This is also why the two hemispheres have opposite seasons at the same time: when the North leans toward the Sun, the South leans away.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "14:call-db9e9ac4-ef4a-4182-a856-3c8592277bf9",
+                "input": {
+                  "target": "Why the seasons change on Earth (axial tilt, sunlight angle, day length)",
+                  "kind": "full_answer",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why the seasons change on Earth (axial tilt, sunlight angle, day length)",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "just-tell-me-later",
+      "run": 3,
+      "turns": [
+        {
+          "step": "I want to understand how vaccines train the immune system.",
+          "learner": "I want to understand how vaccines train the immune system.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you how vaccines train the immune system through a structured session. We'll start with a short diagnostic to find your current level — a few questions, one at a time, nothing taught until we're done.\n\nQuestion 1 of 5: You get a cut and bacteria enter the wound. Your immune system fights them off and you recover. If the same bacteria enter again a week later, what happens — and why?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "I think they put a weak germ in you, but I am not sure why that helps.",
+          "learner": "I think they put a weak germ in you, but I am not sure why that helps.",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Question 1 of 5 (revised): A friend had a mild chickenpox infection, recovered, and years later was exposed to chickenpox again but didn't get sick. What does that tell us about what their immune system kept from the first encounter?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "just tell me the answer",
+          "learner": "just tell me the answer",
+          "outcome": "completed",
+          "reply": {
+            "id": "17:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "17",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "After the first chickenpox infection, the immune system didn't just fight the virus — it built a **memory** of it. Specialized memory B cells and memory T cells remain in the body long after recovery, still knowing how to recognize that specific virus. On re-exposure, these memory cells activate much faster than they did the first time: antibodies appear within days instead of weeks, and the virus is cleared before symptoms can develop. That's why the second exposure causes no illness. The core idea: **infection teaches the immune system, and that lesson is remembered**. Vaccines will turn out to be a way of giving the same lesson without the actual disease.\n\nLet's continue with the diagnostic — a new topic area.\n\nQuestion 2 of 5: A vaccine contains a harmless piece or weakened form of a germ. When it's injected, which immune cells first recognize it as something foreign and sound the alarm?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "19:call_08a4ca3e2fe04b559503bbc9",
+                "input": {
+                  "kind": "full_answer",
+                  "target": "Why recovering from an infection protects against reinfection",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why recovering from an infection protects against reinfection",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "just-tell-me",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "i-dont-know-is-marked",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Teach me why ice floats on water.",
+          "learner": "Teach me why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll start by checking what you already know, then build from there. A few questions first, one at a time.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call-ec5c4461-318b-46fe-87ee-d4bc382955ba",
+                "input": {
+                  "reasoning": true,
+                  "choices": [
+                    "The object's mass compared to the water's mass",
+                    "The object's density compared to the water's density",
+                    "Whether the object is solid or hollow",
+                    "The object's weight compared to water's weight"
+                  ],
+                  "prompt": "A rubber duck floats on water and a steel nail sinks. What determines whether any object floats or sinks when placed in water?"
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "A rubber duck floats on water and a steel nail sinks. What determines whether any object floats or sinks when placed in water?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "the-object-s-density-compared-to-the-water-s-density",
+                          "label": "The object's density compared to the water's density"
+                        },
+                        {
+                          "value": "the-object-s-weight-compared-to-water-s-weight",
+                          "label": "The object's weight compared to water's weight"
+                        },
+                        {
+                          "value": "whether-the-object-is-solid-or-hollow",
+                          "label": "Whether the object is solid or hollow"
+                        },
+                        {
+                          "value": "the-object-s-mass-compared-to-the-water-s-mass",
+                          "label": "The object's mass compared to the water's mass"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I don't know.",
+          "learner": "Questionnaire answers:\n- A rubber duck floats on water and a steel nail sinks. What determines whether any object floats or sinks when placed in water?: I don't know.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "The answer is density — specifically, whether the object's density is less than water's density. An object less dense than water floats; denser than water sinks. Hollow objects like ducks trap air, lowering their *average* density.\n\nThat's the key idea. Here's the next one:",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "17:call-0c50e5a9-05bc-4e42-ac69-6ae8c640d4ab",
+                "input": {
+                  "reasoning": true,
+                  "prompt": "Water expands when it freezes into ice, but most other liquids do the opposite — they shrink when they solidify. If a substance contracts when it freezes, would that make the solid sink or float in its own liquid?",
+                  "choices": [
+                    {
+                      "label": "It would sink, because a smaller volume for the same mass means higher density",
+                      "value": "sink_contracts"
+                    },
+                    {
+                      "label": "It would float, because a smaller volume means lower density",
+                      "value": "float_contracts"
+                    },
+                    {
+                      "label": "It makes no difference — solids always float on their liquids",
+                      "value": "no_effect"
+                    }
+                  ]
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Water expands when it freezes into ice, but most other liquids do the opposite — they shrink when they solidify. If a substance contracts when it freezes, would that make the solid sink or float in its own liquid?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "float_contracts",
+                          "label": "It would float, because a smaller volume means lower density"
+                        },
+                        {
+                          "value": "no_effect",
+                          "label": "It makes no difference — solids always float on their liquids"
+                        },
+                        {
+                          "value": "sink_contracts",
+                          "label": "It would sink, because a smaller volume for the same mass means higher density"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "partial",
+                  "target": "A rubber duck floats on water and a steel nail sinks. What determines whether any object floats or sinks when placed in water?"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "dont-know-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "hint-is-marked",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Help me understand how binary search finds an item in a sorted list.",
+          "learner": "Help me understand how binary search finds an item in a sorted list.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll help you build a solid understanding of binary search — we'll figure it out together, one question at a time. First, a couple of questions to see where you're starting from.\n\nIf you're searching for the number 7 in this sorted list:\n\n    [1, 3, 5, 7, 9, 11, 13]\n\nwhere would you look first, and why?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Can I have a hint?",
+          "learner": "Can I have a hint?",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Let's make it concrete: **where in that list is the middle value?**\n\nThe list has 7 elements, so it has a middle position. Which value sits there?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "15:call_0a69c71d32eb402fa454aa9d",
+                "input": {
+                  "kind": "hint",
+                  "target": "Where to start: the middle of a sorted list"
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "hint",
+                  "target": "Where to start: the middle of a sorted list"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "fail",
+          "detail": "2 questions: Let's make it concrete: **where in that list is the middle value? | Which value sits there?",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "hint-marked",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "scenario": "try-once-more-no-notes",
+      "run": 3,
+      "turns": [
+        {
+          "learner": "Help me understand why the sky is blue.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'd love to help you build a real understanding of this. Before we start, I'll ask a few questions one at a time to see what you already know and find the right starting point.\n\nLet's begin.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:call_047cacd324e94e149a92f0ba",
+                "input": {
+                  "choices": "{\"label\": \"Nothing — it keeps going as before\", \"value\": \"passes_through\"}, {\"label\": \"It slows down and can change direction\", \"value\": \"slows_and_bends\"}, {\"label\": \"It stops and gets absorbed\", \"value\": \"absorbed\"}]",
+                  "prompt": "When a beam of sunlight enters Earth's atmosphere from space, what happens to it?",
+                  "reasoning": true
+                },
+                "state": "output-error",
+                "errorText": "<harness>\n[error] Validation failed for tool \"present_question\":\n  - choices.0: expected at most 160 characters\n  - choices: expected at least 2 items\n\nReceived arguments:\n{\n  \"choices\": \"{\\\"label\\\": \\\"Nothing — it keeps going as before\\\", \\\"value\\\": \\\"passes_through\\\"}, {\\\"label\\\": \\\"It slows down and can change direction\\\", \\\"value\\\": \\\"slows_and_bends\\\"}, {\\\"label\\\": \\\"It stops and gets absorbed\\\", \\\"value\\\": \\\"absorbed\\\"}]\",\n  \"prompt\": \"When a beam of sunlight enters Earth's atmosphere from space, what happens to it?\",\n  \"reasoning\": true\n}\n</harness>"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "15:call_2ebec3a61f61442382e92f62",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Nothing — it keeps going as before",
+                      "value": "passes_through"
+                    },
+                    {
+                      "label": "It slows down and can change direction",
+                      "value": "slows_and_bends"
+                    },
+                    {
+                      "label": "It stops and gets absorbed",
+                      "value": "absorbed"
+                    }
+                  ],
+                  "prompt": "When a beam of sunlight enters Earth's atmosphere from space, what happens to it?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "When a beam of sunlight enters Earth's atmosphere from space, what happens to it?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "slows_and_bends",
+                          "label": "It slows down and can change direction"
+                        },
+                        {
+                          "value": "absorbed",
+                          "label": "It stops and gets absorbed"
+                        },
+                        {
+                          "value": "passes_through",
+                          "label": "Nothing — it keeps going as before"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- When a beam of sunlight enters Earth's atmosphere from space, what happens to it?: It slows down and can change direction, Because it reflects the ocean.",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Thanks — you're right that the beam can slow down and change direction. But let's pressure-test your reasoning: you said \"because it reflects the ocean.\"",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "21:call_0072fb3bf32e4501901893a2",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "It would still slow down and change direction",
+                      "value": "same"
+                    },
+                    {
+                      "label": "It would pass through unchanged",
+                      "value": "unchanged"
+                    },
+                    {
+                      "label": "It would be absorbed completely",
+                      "value": "absorbed"
+                    }
+                  ],
+                  "prompt": "Sunlight enters Earth's atmosphere over the middle of the Sahara Desert, far from any ocean. Compared to sunlight entering over the Pacific, what happens to it?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Sunlight enters Earth's atmosphere over the middle of the Sahara Desert, far from any ocean. Compared to sunlight entering over the Pacific, what happens to it?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "absorbed",
+                          "label": "It would be absorbed completely"
+                        },
+                        {
+                          "value": "same",
+                          "label": "It would still slow down and change direction"
+                        },
+                        {
+                          "value": "unchanged",
+                          "label": "It would pass through unchanged"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- Sunlight enters Earth's atmosphere over the middle of the Sahara Desert, far from any ocean. Compared to sunlight entering over the Pacific, what happens to it?: It would be absorbed completely, Because air itself is blue, like paint.",
+          "outcome": "completed",
+          "reply": {
+            "id": "25:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "25",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Good instinct that the outcome should be the same whether you're over the Sahara or the Pacific — the \"reflects the ocean\" idea was indeed failing. But I want to challenge your new explanation.\n\nIf air itself were blue \"like paint,\" then looking down into a deep clear lake, or through a very long glass of water, would show the same blue.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "27:call_2fea0f2054ae42aba1ab43fb",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "A long column of air and a deep pool of clear water would both look blue",
+                      "value": "both_blue"
+                    },
+                    {
+                      "label": "Only the air column would look blue; water would be colorless",
+                      "value": "only_air"
+                    },
+                    {
+                      "label": "Both would be colorless — blue comes only from reflecting the sky",
+                      "value": "both_clear"
+                    }
+                  ],
+                  "prompt": "If air were blue like paint, what would you expect when looking through a long column of air and through a deep pool of clear water?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "If air were blue like paint, what would you expect when looking through a long column of air and through a deep pool of clear water?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "both_blue",
+                          "label": "A long column of air and a deep pool of clear water would both look blue"
+                        },
+                        {
+                          "value": "only_air",
+                          "label": "Only the air column would look blue; water would be colorless"
+                        },
+                        {
+                          "value": "both_clear",
+                          "label": "Both would be colorless — blue comes only from reflecting the sky"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- If air were blue like paint, what would you expect when looking through a long column of air and through a deep pool of clear water?: A long column of air and a deep pool of clear water would both look blue, I still think it is the ocean reflecting up.",
+          "outcome": "completed",
+          "reply": {
+            "id": "31:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "31",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "That prediction is a good one to test — if both a long column of air and a deep pool of clear water turn blue, that points away from \"air is blue like paint.\" (And a side note for later: clear water actually does go blue in deep volumes, which will matter.)\n\nBut you still have the ocean reflection in mind, so let's make that hypothesis work as hard as it can. Suppose the ocean were somehow reflecting sunlight upward, coloring the sky. Then the sky directly overhead — where you'd be looking through the least atmosphere and away from the horizon — should be the palest, and the sky nearest the horizon should be the bluest.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "33:call_b2be4404c2e64e378334c0e3",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Deepest blue directly overhead, paling toward the horizon",
+                      "value": "zenith_deep"
+                    },
+                    {
+                      "label": "Pale overhead, deepest blue near the horizon",
+                      "value": "horizon_deep"
+                    },
+                    {
+                      "label": "Roughly the same blue everywhere",
+                      "value": "uniform"
+                    }
+                  ],
+                  "prompt": "On a clear day at noon, how is the blue distributed across the sky — where is it deepest and where is it palest?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "On a clear day at noon, how is the blue distributed across the sky — where is it deepest and where is it palest?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "zenith_deep",
+                          "label": "Deepest blue directly overhead, paling toward the horizon"
+                        },
+                        {
+                          "value": "horizon_deep",
+                          "label": "Pale overhead, deepest blue near the horizon"
+                        },
+                        {
+                          "value": "uniform",
+                          "label": "Roughly the same blue everywhere"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- On a clear day at noon, how is the blue distributed across the sky — where is it deepest and where is it palest?: Deepest blue directly overhead, paling toward the horizon, Maybe the Sun is blue?",
+          "outcome": "completed",
+          "reply": {
+            "id": "37:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "37",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Good observation — deepest blue overhead, palest near the horizon. Let's keep pressure-testing ideas.\n\nYou floated \"maybe the Sun is blue.\"",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "39:call_f722337142474ae2a46024c3",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Sun looks white/yellow; sunsets go red because light travels through more air",
+                      "value": "white_sun"
+                    },
+                    {
+                      "label": "Sun looks blue; sunsets go red for an unrelated reason",
+                      "value": "blue_sun"
+                    },
+                    {
+                      "label": "Sun looks blue; sunsets are reflected ocean light",
+                      "value": "blue_sun_ocean"
+                    }
+                  ],
+                  "prompt": "What color does the Sun's disk appear, and how does that fit with red sunsets?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "What color does the Sun's disk appear, and how does that fit with red sunsets?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "white_sun",
+                          "label": "Sun looks white/yellow; sunsets go red because light travels through more air"
+                        },
+                        {
+                          "value": "blue_sun",
+                          "label": "Sun looks blue; sunsets go red for an unrelated reason"
+                        },
+                        {
+                          "value": "blue_sun_ocean",
+                          "label": "Sun looks blue; sunsets are reflected ocean light"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "learner": "Questionnaire answers:\n- What color does the Sun's disk appear, and how does that fit with red sunsets?: Sun looks white/yellow; sunsets go red because light travels through more air, I give up, I have no idea.",
+          "outcome": "completed",
+          "reply": {
+            "id": "43:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "43",
+            "metadata": {
+              "socratink": {
+                "routedModel": "xiaomi/mimo-v2.6-flash"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "Sun looks white/yellow, and sunsets go red because light travels through more air — that's exactly right, and it's the key clue. Let's use it.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "45:call_4c552b8457354a2fa5baf689",
+                "input": {
+                  "choices": [
+                    {
+                      "label": "Air removes red from the beam, so short-path sky looks blue",
+                      "value": "removes_red"
+                    },
+                    {
+                      "label": "Air adds blue to the beam at sunset, making it red overall",
+                      "value": "adds_blue"
+                    },
+                    {
+                      "label": "Air is transparent; sunset color comes from ocean glare",
+                      "value": "transparent"
+                    }
+                  ],
+                  "prompt": "Sunsets look red because sunlight passes through more air. What does that imply the air does to different colors of light?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Sunsets look red because sunlight passes through more air. What does that imply the air does to different colors of light?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "removes_red",
+                          "label": "Air removes red from the beam, so short-path sky looks blue"
+                        },
+                        {
+                          "value": "adds_blue",
+                          "label": "Air adds blue to the beam at sunset, making it red overall"
+                        },
+                        {
+                          "value": "transparent",
+                          "label": "Air is transparent; sunset color comes from ocean glare"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 4
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 5
+        },
+        {
+          "check": "try-once-more-withholds",
+          "status": "skip",
+          "detail": "the tutor never offered a consent card in this run"
+        }
+      ]
+    }
+  ]
+}

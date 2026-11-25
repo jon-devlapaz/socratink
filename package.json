@@ -31,7 +31,7 @@
 		"test:guest-turns": "node --test scripts/guest-turns.test.mjs",
 		"test:oauth": "node --test scripts/oauth.test.mjs",
 		"test:questionnaire": "node --test scripts/questionnaire-ui.test.mjs",
-		"test:present-question": "node --test scripts/present-question.test.mjs",
+		"test:present-question": "node --test scripts/present-question.test.mjs scripts/question-choice-shuffle.test.mjs",
 		"test:reveal": "node --test scripts/reveal.test.mjs",
 		"test:reveal-ui": "node --test scripts/reveal-ui.test.mjs",
 		"test:ask-before-reveal": "node --test scripts/ask-before-reveal.test.mjs",

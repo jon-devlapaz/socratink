@@ -24,8 +24,8 @@ export function productRegistry() {
 		tools: toolDefinitions.map((definition) => defineTool<object>({
 			...definition,
 			replay: 'safe',
-			execute: async (args) => {
-				const result = executeTool(definition.name, args);
+			execute: async (args, api) => {
+				const result = executeTool(definition.name, args, api.callId);
 				return { output: [{ type: 'text', text: result.output }],
 					details: result.data as JsonValue, control: { terminate: result.terminate } };
 			},
@@ -57,7 +57,7 @@ export function productRegistry() {
 					let invalidQuestion = false;
 					for (const round of calls) {
 						if (round.name !== 'present_question') continue;
-						try { hasQuestion ||= executeTool(round.name, round.arguments).terminate; }
+						try { hasQuestion ||= executeTool(round.name, round.arguments, round.id).terminate; }
 						catch { invalidQuestion = true; }
 					}
 					// Pi requires every call of a mixed tool round to request termination, including a reveal beside it.

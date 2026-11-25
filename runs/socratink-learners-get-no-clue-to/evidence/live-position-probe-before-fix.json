@@ -1,0 +1,996 @@
+{
+  "model": "auto",
+  "fallbackModelIds": [],
+  "startedAt": "2026-11-25T03:20:42.487Z",
+  "runs": 3,
+  "summary": {
+    "turn-completed": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    },
+    "no-internal-notes": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    },
+    "one-question": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    },
+    "ends-on-question": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    },
+    "choices-boxed": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    },
+    "reveal-marked": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "results": [
+    {
+      "scenario": "TEST-position-probe",
+      "run": 1,
+      "turns": [
+        {
+          "step": "Help me understand why ice floats on water.",
+          "learner": "Help me understand why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nGood topic — it sits at the intersection of everyday observation and one of water's strangest quirks. I'll ask a few questions, one at a time, to see where you already stand, then build from there.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:chatcmpl-tool-90d802cefd41e431",
+                "input": {
+                  "prompt": "An ice cube floats in a glass of water, with part of it sticking out above the surface. What does that tell you about the density of ice compared to liquid water?",
+                  "choices": [
+                    "Ice is less dense than liquid water",
+                    "Ice is more dense than liquid water",
+                    "They have exactly the same density"
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "An ice cube floats in a glass of water, with part of it sticking out above the surface. What does that tell you about the density of ice compared to liquid water?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "they-have-exactly-the-same-density",
+                          "label": "They have exactly the same density"
+                        },
+                        {
+                          "value": "ice-is-less-dense-than-liquid-water",
+                          "label": "Ice is less dense than liquid water"
+                        },
+                        {
+                          "value": "ice-is-more-dense-than-liquid-water",
+                          "label": "Ice is more dense than liquid water"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "Questionnaire answers:\n- An ice cube floats in a glass of water, with part of it sticking out above the surface. What does that tell you about the density of ice compared to liquid water?: They have exactly the same density, I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nLet's test that idea before rejecting it. Predict what would happen if the two densities were exactly equal.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "17:chatcmpl-tool-835667c841c54d2f",
+                "input": {
+                  "choices": [
+                    "Sticking out above the surface, just like it does now",
+                    "Fully underwater, suspended somewhere in the middle of the glass",
+                    "Resting on the bottom of the glass"
+                  ],
+                  "prompt": "Suppose ice and liquid water had exactly the same density. Where would the ice cube sit in the glass?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Suppose ice and liquid water had exactly the same density. Where would the ice cube sit in the glass?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "fully-underwater-suspended-somewhere-in-the-middle-of-the-glass",
+                          "label": "Fully underwater, suspended somewhere in the middle of the glass"
+                        },
+                        {
+                          "value": "sticking-out-above-the-surface-just-like-it-does-now",
+                          "label": "Sticking out above the surface, just like it does now"
+                        },
+                        {
+                          "value": "resting-on-the-bottom-of-the-glass",
+                          "label": "Resting on the bottom of the glass"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which option was right? I forgot which one I tapped.",
+          "learner": "Which option was right? I forgot which one I tapped.",
+          "outcome": "completed",
+          "reply": {
+            "id": "21:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "21",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "23:chatcmpl-tool-9f8294984d72eab6",
+                "input": {
+                  "kind": "full_answer",
+                  "target": "Where an object sits in a liquid when densities are equal (neutral buoyancy)",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "23:chatcmpl-tool-8148df921fa331f7",
+                "input": {
+                  "choices": [
+                    "Ice is less dense than liquid water",
+                    "Ice is more dense than liquid water",
+                    "Ice and water have the same density"
+                  ],
+                  "prompt": "A real ice cube rises until part of it pokes above the surface, rather than hovering in the middle. What must be true about the densities?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Where an object sits in a liquid when densities are equal (neutral buoyancy)",
+                  "requested": true
+                }
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "A real ice cube rises until part of it pokes above the surface, rather than hovering in the middle. What must be true about the densities?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "ice-is-less-dense-than-liquid-water",
+                          "label": "Ice is less dense than liquid water"
+                        },
+                        {
+                          "value": "ice-and-water-have-the-same-density",
+                          "label": "Ice and water have the same density"
+                        },
+                        {
+                          "value": "ice-is-more-dense-than-liquid-water",
+                          "label": "Ice is more dense than liquid water"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "ok so was it the top one or the bottom one?",
+          "learner": "ok so was it the top one or the bottom one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "29:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "29",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "31:chatcmpl-tool-b98aca86067b218e",
+                "input": {
+                  "kind": "full_answer",
+                  "target": "Ice is less dense than liquid water, which is why it floats",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "31:chatcmpl-tool-84d161d9644fc2de",
+                "input": {
+                  "choices": [
+                    "It floats at the surface",
+                    "It sinks to the bottom",
+                    "It hovers somewhere in the middle"
+                  ],
+                  "prompt": "Apply the same rule to a different object: you drop a small solid iron ball into the same glass of water. Where does it end up?",
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Ice is less dense than liquid water, which is why it floats",
+                  "requested": true
+                }
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Apply the same rule to a different object: you drop a small solid iron ball into the same glass of water. Where does it end up?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "it-hovers-somewhere-in-the-middle",
+                          "label": "It hovers somewhere in the middle"
+                        },
+                        {
+                          "value": "it-sinks-to-the-bottom",
+                          "label": "It sinks to the bottom"
+                        },
+                        {
+                          "value": "it-floats-at-the-surface",
+                          "label": "It floats at the surface"
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "scenario": "TEST-position-probe",
+      "run": 2,
+      "turns": [
+        {
+          "step": "Help me understand why ice floats on water.",
+          "learner": "Help me understand why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nGood topic — the punchline is \"ice is less dense than liquid water,\" but I want you to end up being able to explain the *whole chain* behind that, not just repeat the sentence. So I'll ask a few questions first, one at a time, to see where your footing is.",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "present_question",
+                "toolCallId": "11:chatcmpl-tool-8c2f06bac1b4e4ed",
+                "input": {
+                  "prompt": "Why do some objects float in water while others sink?",
+                  "choices": [
+                    "An object floats when its average density is lower than the water's; it sinks when its density is higher.",
+                    "Water pushes up on anything placed in it with a force that is always stronger than the object's weight.",
+                    "Cold and light objects float; heavy and warm objects sink.",
+                    "Smooth, sealed objects float because the water's surface acts like a skin holding them up."
+                  ],
+                  "reasoning": true
+                },
+                "state": "output-available",
+                "output": "Question presented on the card."
+              },
+              {
+                "type": "data-questionnaire",
+                "data": {
+                  "kind": "question",
+                  "submitLabel": "Submit",
+                  "items": [
+                    {
+                      "name": "item",
+                      "prompt": "Why do some objects float in water while others sink?",
+                      "required": true,
+                      "multiple": false,
+                      "choices": [
+                        {
+                          "value": "cold-and-light-objects-float-heavy-and-warm-objects-sink",
+                          "label": "Cold and light objects float; heavy and warm objects sink."
+                        },
+                        {
+                          "value": "an-object-floats-when-its-average-density-is-lower-than-the-water-s-it-sinks-when-its-density-is-higher",
+                          "label": "An object floats when its average density is lower than the water's; it sinks when its density is higher."
+                        },
+                        {
+                          "value": "smooth-sealed-objects-float-because-the-water-s-surface-acts-like-a-skin-holding-them-up",
+                          "label": "Smooth, sealed objects float because the water's surface acts like a skin holding them up."
+                        },
+                        {
+                          "value": "water-pushes-up-on-anything-placed-in-it-with-a-force-that-is-always-stronger-than-the-object-s-weight",
+                          "label": "Water pushes up on anything placed in it with a force that is always stronger than the object's weight."
+                        }
+                      ],
+                      "input": {
+                        "label": "Your reasoning"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "Questionnaire answers:\n- Why do some objects float in water while others sink?: Cold and light objects float; heavy and warm objects sink., I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "15:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "15",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nFair to flag the uncertainty. Let's test that rule against something.\n\nSame temperature, same material: a small steel ball and a huge steel cargo ship. The ball sinks; the ship floats.\n\nWhat's different about them in a way your \"light vs. heavy\" rule can't account for?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which option was right? I forgot which one I tapped.",
+          "learner": "Which option was right? I forgot which one I tapped.",
+          "outcome": "completed",
+          "reply": {
+            "id": "19:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "19",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nThe right one was: **an object floats when its average density is lower than water's; it sinks when its density is higher.** The \"cold and light\" rule fails because a steel ship is far heavier than a steel ball, yet it floats — the ship's *average* density (steel + air, spread over its whole volume) ends up below water's.\n\nNow apply that idea somewhere fresh, and walk me through your reasoning.\n\nAn empty sealed steel can floats on a sink of water. Now you fill that can completely with water and seal it again. Does the can still float — and how do you know?",
+                "state": "done"
+              },
+              {
+                "type": "dynamic-tool",
+                "toolName": "mark_reveal",
+                "toolCallId": "21:chatcmpl-tool-9c66145abbec2104",
+                "input": {
+                  "kind": "full_answer",
+                  "target": "Why some objects float and others sink",
+                  "requested": true
+                },
+                "state": "output-available",
+                "output": "Reveal recorded."
+              },
+              {
+                "type": "data-reveal",
+                "data": {
+                  "kind": "full_answer",
+                  "target": "Why some objects float and others sink",
+                  "requested": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          "step": "ok so was it the top one or the bottom one?",
+          "learner": "ok so was it the top one or the bottom one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "27:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "27",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nThe top one — \"an object floats when its average density is lower than water's, and sinks when it's higher.\"\n\nBack to the can, then: an empty sealed steel can floats. You fill it completely with water and seal it again. Still floating, or sinking — and how do you work it out?",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "scenario": "TEST-position-probe",
+      "run": 3,
+      "turns": [
+        {
+          "step": "Help me understand why ice floats on water.",
+          "learner": "Help me understand why ice floats on water.",
+          "outcome": "completed",
+          "reply": {
+            "id": "8:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "8",
+            "metadata": {
+              "socratink": {
+                "routedModel": "groq/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "I'll teach you this properly instead of just giving the answer. Let's start with a few quick questions to see where you're at.\n\nFirst, and it's perfectly fine to guess on this one: if you put a cube of ice into a glass of water, what do you expect to happen to where it sits, and why?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "I picked this one but I am not sure.",
+          "learner": "I picked this one but I am not sure.",
+          "outcome": "completed",
+          "reply": {
+            "id": "13:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "13",
+            "metadata": {
+              "socratink": {
+                "routedModel": "groq/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "That's a fair call — ice sinks is the honest default prediction, since it's the same stuff that's wet and dripping below it.\n\nNow let's test what's actually happening. If the ice were *less dense* than the water around it, what would that tell you about how the water molecules are arranged inside the ice compared to them in the liquid?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "Which option was right? I forgot which one I tapped.",
+          "learner": "Which option was right? I forgot which one I tapped.",
+          "outcome": "completed",
+          "reply": {
+            "id": "17:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "17",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b",
+                "fallbackAttempts": 1
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nIt was the first one: *an object floats when its average density is lower than the water's, and sinks when higher.* That's also why a steel ship can float — its average density, including all the air inside, works out below that of water.\n\nBack to where we were: the glass is full to the brim, and the floating ice cube sticks up above the rim. When all the ice melts, will the water level end up higher than before, lower, or exactly the same?",
+                "state": "done"
+              }
+            ]
+          }
+        },
+        {
+          "step": "ok so was it the top one or the bottom one?",
+          "learner": "ok so was it the top one or the bottom one?",
+          "outcome": "completed",
+          "reply": {
+            "id": "21:assistant",
+            "role": "assistant",
+            "display": "visible",
+            "submissionId": "21",
+            "metadata": {
+              "socratink": {
+                "routedModel": "cloudflare/@cf/qwen/qwen3.8-27b"
+              }
+            },
+            "parts": [
+              {
+                "type": "text",
+                "text": "\n\nThe top one — the first option, about density. (And you got it right when you chose it, so that's a point on the board.)\n\nNow for the open question: the glass is full to the brim with water, and the floating ice cube sticks up above the rim. When all the ice melts, will the water level end up higher, lower, or exactly the same?",
+                "state": "done"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 0
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 1
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 2
+        },
+        {
+          "check": "turn-completed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "no-internal-notes",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "one-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "ends-on-question",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "choices-boxed",
+          "status": "pass",
+          "turn": 3
+        },
+        {
+          "check": "reveal-marked",
+          "status": "pass",
+          "turn": 3
+        }
+      ]
+    }
+  ]
+}

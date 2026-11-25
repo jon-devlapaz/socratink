@@ -4,10 +4,13 @@ import type { AddressInfo } from 'node:net';
 import test from 'node:test';
 import type { WireMessage, WirePart } from '../../src/config/chat-wire.ts';
 import { behaviourRules, type BehaviourRuleId } from '../../src/learning/behaviour-rules.ts';
+import { systemPrompt } from '../../src/learning/chat-policy.ts';
 import { markRevealRetryBodies } from '../../src/learning/mark-reveal.ts';
+import { executeLearningTool } from '../../src/learning/tools.ts';
+import { questionnaireFromReplyData } from '../../src/questionnaire.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { questionsIn, replyChecks } from './checks.ts';
+import { cardOf, expectNoChoicePosition, questionsIn, replyChecks, type CheckName } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -48,7 +51,44 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
 });
 
-type Request = { learner: string; afterTool: boolean; corrected: boolean };
+test('displayed choice matching is an eval check without a prompt rule', () => {
+	assert.equal(Object.hasOwn(behaviourRules, 'no-choice-position'), false);
+	assert.ok(!systemPrompt.includes("You may refer to a card's choices by the displayed letter or position from the tool result; use that displayed order, never the order you authored."));
+});
+
+test('choice references use displayed order for letters, positions and correctness', () => {
+	const correct = 'Ice is less dense than liquid water';
+	const wrong = 'Ice is denser than liquid water';
+	for (let call = 0; call < 20; call += 1) {
+		const result = executeLearningTool('present_question', {
+			prompt: 'Why does ice float?', choices: [correct, wrong],
+		}, `position-${call}`);
+		const card = questionnaireFromReplyData(result.data)!;
+		const index = card.items[0]!.choices.findIndex((choice) => choice.label === correct);
+		const letter = String.fromCharCode(65 + index);
+		const other = String.fromCharCode(65 + 1 - index);
+		const position = index === 0 ? 'top' : 'bottom';
+		const otherPosition = index === 0 ? 'bottom' : 'top';
+		const check = (text: string) => expectNoChoicePosition(reply(text), card, correct).status;
+		for (const text of [`Option ${letter} was right.`, `It was ${letter}.`, `The answer is ${letter}.`,
+			`It was the ${position} one.`, `The ${otherPosition} one was wrong.`,
+			`The **${index === 0 ? 'first' : 'second'}** choice was correct.`, `Answer ${index + 1} was right.`,
+			`The ${position} choice claims ${correct}.`, `The ${otherPosition} choice claims ${wrong}.`,
+			correct, 'First, compare their densities.', 'Ice floats at the top of the water.',
+			'A lower density makes ice float.', 'It was a lower density that made it float.']) {
+			assert.equal(check(text), 'pass', text);
+		}
+		for (const text of [`Option ${other} was right.`, `It was ${other}.`, `The answer is ${other}.`,
+			`It was the ${otherPosition} one.`, `The ${position} one was wrong.`,
+			`The **${index === 0 ? 'second' : 'first'}** choice was correct.`, `Answer ${2 - index} was right.`,
+			`The ${position} choice claims ${wrong}.`, 'Option H was right.', 'It was the third.']) {
+			assert.equal(check(text), 'fail', text);
+		}
+		assert.equal(expectNoChoicePosition(undefined, card, correct).status, 'fail');
+	}
+});
+
+type Request = { learner: string; afterTool: boolean; corrected: boolean; displayed?: string };
 type Step = { text: string } | { text?: string; tool: string; args: unknown };
 const corrections: string[] = Object.values({ ...markRevealRetryBodies, ...presentQuestionRetryBodies });
 
@@ -62,7 +102,9 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 			: Array.isArray(content) ? content.map((part: { text?: string }) => part.text ?? '').join('') : '';
 		const users = messages.filter((m) => m.role === 'user').map((m) => text(m.content));
 		const step = tutor({ learner: users.findLast((u) => !corrections.includes(u)) ?? '',
-			afterTool: messages.at(-1)?.role === 'tool', corrected: corrections.includes(users.at(-1) ?? '') });
+			afterTool: messages.at(-1)?.role === 'tool', corrected: corrections.includes(users.at(-1) ?? ''),
+			displayed: messages.filter((message) => message.role === 'tool').map((message) => text(message.content))
+				.findLast((content) => content.includes('Choices in displayed order:')) });
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
 		const emit = (delta: object, finish: string | null = null) =>
 			response.write(`data: ${JSON.stringify({ id: 'fake', model: 'fake', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
@@ -91,11 +133,18 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 const answer = 'Seasons come from the tilt of Earth\'s axis, about 23.5 degrees, which changes how directly sunlight hits each hemisphere.';
 const mark = (args: object): Step => ({ tool: 'mark_reveal', args });
 
-function goodTutor({ learner, afterTool, corrected }: Request): Step {
+function goodTutor({ learner, afterTool, corrected, displayed }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (corrected) return { text: '' };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
+	if (has(/Which one was right/i)) {
+		const letter = displayed?.match(/([A-H])\. Ice is less dense than liquid water/)?.[1];
+		assert.ok(letter, 'the model must receive the displayed order in the tool result');
+		return { text: `Option ${letter} was right. How does density affect floating?` };
+	}
+	if (has(/question card about why ice floats/i)) return { tool: 'present_question', args: {
+		prompt: 'Why does ice float on water?', choices: ['Ice is less dense than liquid water', 'Ice is denser than liquid water'], reasoning: true } };
 	if (has(/just tell me/i)) return mark({ kind: 'full_answer', requested: true });
 	if (has(/Try once more/)) return { text: 'Which colour of sunlight do you think scatters most in air?' };
 	if (has(/don't know|Asked for a hint|hint\?/i)) return mark({ kind: has(/hint/i) ? 'hint' : 'partial' });
@@ -105,10 +154,16 @@ function goodTutor({ learner, afterTool, corrected }: Request): Step {
 }
 
 /** One known bug per rule. */
-function badTutor({ learner, afterTool, corrected }: Request): Step {
+function badTutor({ learner, afterTool, corrected, displayed }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
 	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
+	if (has(/Which one was right/i)) {
+		const letter = displayed?.match(/([A-H])\. Ice is denser than liquid water/)?.[1];
+		assert.ok(letter);
+		return { text: `Option ${letter} was right. How does density affect floating?` };
+	}
+	if (has(/question card about why ice floats/i)) return goodTutor({ learner, afterTool, corrected });
 	if (has(/just tell me/)) return { text: answer };
 	if (has(/Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
@@ -130,14 +185,18 @@ const failedChecks = (results: ScenarioResult[], scenario: string) =>
 test('a policy-following tutor passes every scenario', async () => {
 	const results = await withProvider(goodTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	assert.deepEqual(results.flatMap((r) => r.checks.filter((c) => c.status !== 'pass').map((c) => `${r.scenario}: ${c.check} ${c.status} ${c.detail ?? ''}`)), []);
-	assert.match(results.find((r) => r.scenario === 'just-tell-me-later')?.turns[1]?.learner ?? '',
-		/^Questionnaire answers:\n- What does a vaccine put in your body\?: A harmless piece of a germ, I think/);
+	const later = results.find((r) => r.scenario === 'just-tell-me-later');
+	const diagnostic = cardOf(later?.turns[0]?.reply);
+	assert.ok(diagnostic);
+	assert.equal(later?.turns[1]?.learner,
+		`Questionnaire answers:\n- What does a vaccine put in your body?: ${diagnostic.items[0]!.choices[0]!.label}, I think they put a weak germ in you, but I am not sure why that helps.`);
 	assert.match(results.find((r) => r.scenario === 'try-once-more-no-notes')?.turns.at(-1)?.learner ?? '', /: Try once more$/);
 });
 
-test('a tutor with the known bugs fails every behaviour rule, each where expected', async () => {
+test('a tutor with the known bugs fails every behaviour rule and the displayed choice check', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
-	const expected: Record<string, BehaviourRuleId[]> = {
+	const expected: Record<string, CheckName[]> = {
+		'no-choice-position': ['no-choice-position'],
 		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
