@@ -1,4 +1,5 @@
 import { appConfig } from '../config/app.config.ts';
+import { readBrowserStorage, writeBrowserStorage } from './client/browser-storage.ts';
 
 export type Appearance = 'light' | 'dark';
 
@@ -7,7 +8,7 @@ const paperDark = '#100f0f';
 const revealMs = 400;
 
 function storedAppearance(): Appearance | null {
-	const value = localStorage.getItem(appConfig.themeStorageKey);
+	const value = readBrowserStorage(appConfig.themeStorageKey).value;
 	if (value === 'light' || value === 'dark') return value;
 	return null;
 }
@@ -50,7 +51,7 @@ function paintAppearance(button: HTMLButtonElement, appearance: Appearance) {
 
 function applyAppearance(button: HTMLButtonElement, appearance: Appearance) {
 	document.documentElement.dataset.theme = appearance;
-	localStorage.setItem(appConfig.themeStorageKey, appearance);
+	writeBrowserStorage(appConfig.themeStorageKey, appearance);
 	paintAppearance(button, appearance);
 }
 

@@ -1,0 +1,82 @@
+{
+  "profile": "light",
+  "kind": "feature",
+  "schema": 1,
+  "run_id": "a2661851-eb7e-48ae-bf27-7f251f54968f",
+  "seed_contract": {
+    "path": "runs/the-learner-sees-what-they-can-do-and/seed-contract.md",
+    "sha256": "ee148dc3547ca92f1be4b2836c7617a91c5cdb64445cc8f48436ea0cff4c545c",
+    "source": "/Users/jondev/scratch/socratink121-TEST/sessions/session-ksy60s/seed-contract.md",
+    "definitions_sha256": "83304483124c02c3d1c91c32911105e5c0c09bf1220b4ffbcc5e4b105596b765",
+    "confirmation": {
+      "schema_version": 3,
+      "checks_sha256": "1a50a9f0154c014a7e4f825326b0f53c5986d166e4443eb5310168fc1cd8b423",
+      "session_id": "session-ksy60s",
+      "operator": "agent",
+      "revision": "r1",
+      "source": "confirm",
+      "confirmed_at": "2026-11-24T19:16:12.046692+00:00",
+      "seed_sha256": "ee148dc3547ca92f1be4b2836c7617a91c5cdb64445cc8f48436ea0cff4c545c",
+      "decisions_sha256": "a1e1d67a55ce498231a21b92908d123b9ea8f098672dfa20fd9ff16e5e440ef8",
+      "actor": {
+        "action": "typed confirm at this terminal",
+        "by": "terminal",
+        "declaration": "declared: agent",
+        "identity": "declaration is not verified identity"
+      }
+    },
+    "definitions": [
+      {
+        "cmd": "pnpm install --frozen-lockfile && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" pnpm exec playwright install chromium && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" node --test scripts/storage-failure.test.mjs",
+        "cwd": ".",
+        "expect": "Proposed, not run. Use supported Node and pnpm versions and available browser system libraries. Start Vite and synthetic session/conversation routes using the existing browser harness pattern. In separate fresh browser contexts, inject before navigation: a throwing localStorage getter for whole-page blocking; a failed getItem for only the saved conversation ID; and a failed setItem for that ID throwing QuotaExceededError, including a readable older-ID fixture. Navigate to the app. Assert that the visible line is 'You can keep chatting, but this browser cannot save your place. Reloading may not bring you back to this chat.' Assert that the composer is enabled and there are no uncaught page errors. Enter 'Why do tides happen?' and submit; observe the synthetic reply. Enter 'What changes at night?' and submit; assert that both sends use the same conversation ID within the tab. Assert default preference initialization under whole-page blocking. Revert each relevant guard in turn and establish that the corresponding startup, notice, or continued-send assertion fails; restore the guard afterward. Do not infer actual recovery of production work from synthetic responses.",
+        "failure_case": "A blocked-storage page that leaves the composer disabled, omits the recovery line, throws an uncaught startup error, or changes the conversation ID between sends must fail.",
+        "kind": "provisional",
+        "missing": "scripts/storage-failure.test.mjs does not exist yet. Add behavior-named Node/Playwright cases for page-wide blocking, saved-ID read failure, saved-ID quota write failure, and retained-ID guidance, with the specified visible-message and continued-chat assertions. Browser system-library availability and targeted reversion results remain unverified.",
+        "source": "goal; storage-failure-chat-behavior; reload-guidance-retained-id; probe-pre-mortem; package.json:6-9,37-42; scripts/cross-tab.test.mjs:1-77; .github/workflows/ci.yml:22-35",
+        "statement": "With local storage blocked, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; When a read of the saved conversation ID fails, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; When a write of the saved conversation ID fails, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; a regression test covers a failed read and a failed write.",
+        "id": "seed-1",
+        "description": "With local storage blocked, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; When a read of the saved conversation ID fails, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; When a write of the saved conversation ID fails, the learner sees a plain message saying what they can do and whether their work can come back, and chat does not sit silently disabled; a regression test covers a failed read and a failed write.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" pnpm exec playwright install chromium && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" node --test scripts/conversation-client.test.mjs scripts/cross-tab.test.mjs",
+        "cwd": ".",
+        "expect": "Proposed, not run. With supported Node and pnpm versions and browser system libraries available, both existing test files exit successfully. Their assertions retain namespaced ownership, alias reuse, reset-token ordering, enabled idle-tab sending, draft preservation, and Retry notice preservation.",
+        "failure_case": "Reusing another learner's saved ID, reloading before storing the reset token, or losing the other tab's Retry notice must fail.",
+        "kind": "cmd",
+        "source": "package.json:37-42; scripts/conversation-client.test.mjs:482-541,877-1000; scripts/cross-tab.test.mjs:80-108; .github/workflows/ci.yml:22-35",
+        "statement": "Existing conversation ownership, alias reuse, reset ordering, and cross-tab behavior remain covered.",
+        "id": "seed-2",
+        "description": "Existing conversation ownership, alias reuse, reset ordering, and cross-tab behavior remain covered.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "cmd": "pnpm install --frozen-lockfile && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" pnpm exec playwright install chromium && PLAYWRIGHT_BROWSERS_PATH=\"$PWD/.cache/ms-playwright\" pnpm check && pnpm smoke",
+        "cwd": ".",
+        "expect": "Proposed, not run. With the repository's supported tool versions and browser system libraries available, pnpm check and pnpm smoke both exit successfully. Report environment blocks and failures rather than treating them as passing verification.",
+        "failure_case": "A type error introduced by the storage-failure change must make the quality gate fail.",
+        "kind": "cmd",
+        "source": "AGENTS.md:36-39; README.md:64-85; package.json:15,20; .github/workflows/ci.yml:22-44",
+        "statement": "Run the repository quality gate and deterministic smoke check before delivery handoff.",
+        "id": "seed-3",
+        "description": "Run the repository quality gate and deterministic smoke check before delivery handoff.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      },
+      {
+        "failure_case": "A clipped, hidden, or visually disconnected recovery line must not pass the presentation judgment.",
+        "how_to_judge": "Taste inspects the built blocked-storage and separate read/write failure states at desktop and narrow widths. Can a learner find the message and understand that chatting can continue but reloading may not return to this chat? The judgment can change placement and presentation while preserving the settled wording and behavior.",
+        "kind": "judge",
+        "source": "confirmed goal; DESIGN.md:45-49,80-86; reload-guidance-retained-id",
+        "statement": "The recovery line is plain, visible, and understandable in the built chat.",
+        "id": "seed-4",
+        "description": "The recovery line is plain, visible, and understandable in the built chat.",
+        "origin": "agent-confirmed-seed",
+        "locked": true
+      }
+    ]
+  }
+}

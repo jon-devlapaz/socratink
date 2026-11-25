@@ -36,7 +36,7 @@
 		"test:reveal-ui": "node --test scripts/reveal-ui.test.mjs",
 		"test:ask-before-reveal": "node --test scripts/ask-before-reveal.test.mjs",
 		"test:steering": "node --test scripts/steering.test.mjs",
-		"test:conversation": "node --test scripts/conversation-client.test.mjs",
+		"test:conversation": "node --test scripts/conversation-client.test.mjs scripts/storage-failure.test.mjs",
 		"test:chat-turns": "node --test scripts/chat-turns.test.mjs",
 		"test:live-reply": "node --test scripts/live-reply.test.mjs",
 		"test:learner-text": "node --test scripts/learner-text.test.mjs",

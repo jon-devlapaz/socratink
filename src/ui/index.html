@@ -13,7 +13,8 @@
 		<script>
 			(function () {
 				var key = '%SOCRATINK_THEME_STORAGE_KEY%';
-				var stored = localStorage.getItem(key);
+				var stored = null;
+				try { stored = localStorage.getItem(key); } catch {}
 				var dark =
 					stored === 'dark' ||
 					(stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -22,7 +23,8 @@
 				}
 				var meta = document.getElementById('theme-color');
 				if (meta) meta.setAttribute('content', dark ? '#100f0f' : '#fffcf0');
-				var typeSize = localStorage.getItem('%SOCRATINK_TYPE_SIZE_STORAGE_KEY%');
+				var typeSize = null;
+				try { typeSize = localStorage.getItem('%SOCRATINK_TYPE_SIZE_STORAGE_KEY%'); } catch {}
 				if (typeSize === 'big' || typeSize === 'medium' || typeSize === 'small') {
 					document.documentElement.dataset.typeSize = typeSize;
 				}
@@ -96,6 +98,7 @@
 
 			<footer class="dock">
 				<div class="composer-shell">
+					<p id="storage-notice" role="status"></p>
 					<form id="chat">
 					<label class="sr-only" for="message">Message Socratink</label>
 					<textarea
