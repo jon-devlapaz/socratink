@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -5,11 +6,23 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 import type { TranscriptContent } from './chat-surface.tsx';
+import { Intro, IntroStarters } from './intro.tsx';
 
 export function ConversationLayout({ history, active, questionActive }: TranscriptContent) {
+	const message = useRef<HTMLTextAreaElement>(null);
+
+	function startDraft(starter: string) {
+		const input = message.current;
+		if (!input || input.disabled || input.value !== '') return;
+		input.setRangeText(starter + ' ', 0, 0, 'end');
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.focus();
+	}
+
 	return (
-		<>
+		<div className="conversation-layout">
 			<main id="main-content" className="stage" tabIndex={-1}>
+				<Intro />
 				<Card
 					role="region"
 					className="active-node gap-0 rounded-none border-0 bg-transparent py-0 shadow-none"
@@ -74,7 +87,16 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 						<Label className="sr-only" htmlFor="message">
 							Message Socratink
 						</Label>
-						<Textarea id="message" autoComplete="off" name="message" disabled rows={2} required></Textarea>
+						<Textarea
+							ref={message}
+							id="message"
+							autoComplete="off"
+							name="message"
+							placeholder="What are you working on?"
+							disabled
+							rows={2}
+							required
+						/>
 						<div className="composer-footer">
 							<div
 								id="dictation-status"
@@ -146,8 +168,9 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 							the recognized text. Say “Send message” at the end to send it.
 						</p>
 					</form>
+					<IntroStarters onSelect={startDraft} />
 				</div>
 			</footer>
-		</>
+		</div>
 	);
 }

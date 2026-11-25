@@ -62,7 +62,7 @@
 	--drawer-ms: 300ms;
 	--dock-closed: 7.25rem;
 	--brand-top: max(clamp(0.5rem, 1.8vw, 1.5rem), env(safe-area-inset-top));
-	--stage-top: calc(var(--brand-top) + 44px + 0.6rem);
+	--stage-top: calc(var(--brand-top) + max(44px, 2.25rem) + 0.6rem);
 	--grab-bar-width: 36px;
 	--grab-bar-height: 3px;
 	--peek-bar-top: 0.55rem;

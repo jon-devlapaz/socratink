@@ -43,6 +43,13 @@ code. Do not use it for conversation prose or tool-output prose.
 
 ## Surfaces and actions
 
+Before the first message, show the heading and a short explanation above the
+composer. Place the three starter buttons below it in reading and keyboard
+order. A starter fills the empty composer and focuses it. The learner edits
+the text and sends it. Hide starters whenever the composer contains a draft,
+including a draft restored on reload. Let the empty screen scroll and the
+button labels wrap when text is large or the keyboard leaves little space.
+
 The active conversation rests directly on paper. Earlier steps meet it at a
 hairline, with the existing bookmark control. Do not add rounded message
 bubbles, decorative badges, or floating panels.

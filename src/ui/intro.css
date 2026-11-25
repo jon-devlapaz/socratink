@@ -1,0 +1,80 @@
+.conversation-layout {
+	display: contents;
+}
+
+.intro,
+.intro-starters,
+.conversation-empty .active-node {
+	display: none;
+}
+
+.conversation-empty .conversation-layout {
+	position: absolute;
+	inset: max(var(--stage-top), 6vh) 0 0;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+}
+
+.conversation-empty .stage {
+	flex: none;
+	height: auto;
+	margin-top: auto;
+	padding-block: 0 1.25rem;
+}
+
+.conversation-empty .dock {
+	position: static;
+	flex: none;
+	background: transparent;
+}
+
+.conversation-empty .intro {
+	display: grid;
+	gap: 0.75rem;
+	width: min(580px, 100%);
+}
+
+.intro h1 {
+	margin: 0;
+	font: 400 calc(clamp(2.2rem, 1.6rem + 3vw, 3.4rem) * var(--type-scale)) / 1.02 var(--font-serif);
+	letter-spacing: -0.02em;
+	text-wrap: balance;
+}
+
+.intro p {
+	max-width: 46ch;
+	margin: 0;
+	color: var(--muted);
+	font-size: calc(0.95rem * var(--type-scale));
+	line-height: 1.55;
+}
+
+.conversation-empty .composer-shell:has(#message:placeholder-shown) .intro-starters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0.85rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.composer-shell:has(#message:disabled) .intro-starters {
+	visibility: hidden;
+}
+
+.intro-starters li {
+	max-width: 100%;
+}
+
+.intro-starters .intro-starter {
+	max-width: 100%;
+	height: auto;
+	min-height: max(44px, var(--btn-height));
+	padding-block: 0.55em;
+	font-size: calc(var(--btn-font) * var(--type-scale));
+	line-height: 1.35;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	text-align: start;
+}

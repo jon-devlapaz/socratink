@@ -79,6 +79,116 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		});
 	}
 
+	await check('intro-starters-375', async (page, fixture) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const input = page.locator('#message:enabled');
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		const choices = starters.getByRole('button');
+		await input.waitFor();
+		await skipToMain(page);
+		await page.keyboard.press('Tab');
+		assert.equal(await input.evaluate((node) => node === document.activeElement), true);
+		await starters.waitFor();
+		assert.equal(await choices.count(), 3);
+		const requests = [];
+		page.on('request', (request) => {
+			if (new URL(request.url()).pathname.startsWith('/api/')) requests.push(request.method() + ' ' + request.url());
+		});
+		for (let index = 0; index < 3; index++) {
+			const button = choices.nth(index);
+			const label = await button.innerText();
+			if (index === 0) await button.press('Enter');
+			else await button.click();
+			const value = await input.inputValue();
+			assert.equal(value, label.replace(/…$/, '').trimEnd() + ' ');
+			assert.deepEqual(await input.evaluate((node) =>
+				[node === document.activeElement, node.selectionStart, node.selectionEnd]), [true, value.length, value.length]);
+			await starters.waitFor({ state: 'hidden' });
+			if (index < 2) {
+				await input.fill('');
+				await starters.waitFor();
+			}
+		}
+		await page.keyboard.type('why ice floats.');
+		assert.deepEqual(requests, []);
+		const question = await input.inputValue();
+		await page.getByRole('button', { name: 'Send message', exact: true }).click();
+		await page.getByText('Fresh reply', { exact: true }).waitFor();
+		assert.deepEqual(fixture.sent, [question]);
+		assert.equal(await page.locator('#intro-title').isVisible(), false);
+		assert.equal(await starters.isVisible(), false);
+	});
+
+	await check('intro-drafts-375', async (page, fixture) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const input = page.locator('#message:enabled');
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		await starters.waitFor();
+		await input.pressSequentially('My own question');
+		await starters.waitFor({ state: 'hidden' });
+		await page.reload();
+		await input.waitFor();
+		assert.equal(await input.inputValue(), 'My own question');
+		assert.equal(await starters.isVisible(), false);
+		await input.fill('');
+		await starters.waitFor();
+
+		// Dictation writes the transcript and emits input without a keyboard event.
+		await input.evaluate((node) => {
+			node.value = 'Spoken question';
+			node.dispatchEvent(new Event('input', { bubbles: true }));
+		});
+		await starters.waitFor({ state: 'hidden' });
+		assert.equal(await input.inputValue(), 'Spoken question');
+		await input.fill('');
+		await starters.waitFor();
+		assert.deepEqual(fixture.sent, []);
+	});
+
+	await check('intro-layout-375', async (page) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		await starters.waitFor();
+		await page.evaluate(() => document.fonts.ready);
+		const text = page.locator('h1#intro-title, .intro p, ul[aria-label="Ways to start"] button');
+		const fontSizes = () => text.evaluateAll((nodes) => nodes.map((node) => parseFloat(getComputedStyle(node).fontSize)));
+		const medium = await fontSizes();
+		await assertIntroLayout(page);
+		await page.locator('#menu-trigger').click();
+		const size = page.locator('#type-size-toggle');
+		await size.click();
+		await size.click();
+		await page.keyboard.press('Escape');
+		await page.locator('html[data-type-size=big]').waitFor();
+		const big = await fontSizes();
+		assert.equal(big.length, 5);
+		assert.ok(big.every((value, index) => value > medium[index]), 'Big enlarges the heading, explanation, and starters');
+		await assertIntroLayout(page);
+		const enlargedText = await page.addStyleTag({ content: 'html { font-size: 200% }' });
+		await assertIntroLayout(page);
+		assert.ok(await starters.getByRole('button').last().evaluate((button) => {
+			const text = document.createRange();
+			text.selectNodeContents(button);
+			return new Set([...text.getClientRects()].map((line) => Math.round(line.top))).size > 1;
+		}), 'The long starter wraps when the browser text size is doubled');
+		await enlargedText.evaluate((style) => style.remove());
+		await page.setViewportSize({ width: 375, height: 320 });
+		for (const button of await starters.getByRole('button').all()) {
+			await button.click({ trial: true });
+		}
+		await page.locator('#message').fill('I have a follow-up.');
+		const send = page.getByRole('button', { name: 'Send message', exact: true });
+		await send.click({ trial: true });
+		for (const control of [page.locator('#message'), send]) {
+			const box = await control.boundingBox();
+			assert.ok(box && box.y >= 0 && box.y + box.height <= 320, 'Composer controls fit the shorter viewport');
+		}
+	});
+
 	for (const forcedColors of ['none', 'active']) {
 		await check(`keyboard-focus-decoration-${forcedColors}`, async (page, fixture) => {
 			await page.emulateMedia({ forcedColors });
@@ -529,6 +639,24 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 
 	assert.equal(results.filter((result) => !result.passed).length, 0, JSON.stringify(results.filter((result) => !result.passed)));
 	console.log(`UI browser passed: ${results.length} keyboard, retry, cancel, and operator scenarios.`);
+}
+
+async function assertIntroLayout(page) {
+	const selectors = ['h1#intro-title', '.intro p', '#chat', 'ul[aria-label="Ways to start"]'];
+	const ordered = await Promise.all(selectors.map((selector) =>
+		page.locator(selector).evaluate((node) => node.getBoundingClientRect().toJSON())));
+	for (const [index, box] of ordered.entries()) {
+		assert.ok(box && box.height > 0 && box.left >= 0 && box.right <= 375);
+		if (index > 0) assert.ok(ordered[index - 1].bottom <= box.top + 1, 'Heading, explanation, composer, and starters appear in order without overlap');
+	}
+	const choices = page.getByRole('list', { name: 'Ways to start' }).getByRole('button');
+	assert.equal(await choices.count(), 3);
+	for (const button of await choices.all()) {
+		await button.click({ trial: true });
+		assert.ok(await button.evaluate((node) =>
+			node.scrollWidth <= node.clientWidth + 1 && node.scrollHeight <= node.clientHeight + 1), 'Starter text fits its button');
+	}
+	assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Page fits the phone width');
 }
 
 async function readFocusPaint(locator) {
