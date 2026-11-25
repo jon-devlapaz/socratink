@@ -1,0 +1,14 @@
+✔ production cards: 4000 distinct first/retry pairs, each position within 120 of 1000 (188.7845ms)
+ℹ first correct-choice counts: 1026, 975, 1018, 981
+ℹ retry correct-choice counts: 1028, 985, 1003, 984
+✔ replay and identical retries keep order; duplicate labels and explicit values stay paired (0.972208ms)
+✔ summary choices stay last in their original relative order (1.223958ms)
+✔ self-contained unshuffled tool makes the production distribution regression fail (234.332458ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 498.955334
