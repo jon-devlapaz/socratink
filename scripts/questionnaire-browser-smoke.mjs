@@ -11,7 +11,7 @@ import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 export async function verifyQuestionnaireBrowser({ browser, origin, session, out }) {
 	await mkdir(out, { recursive: true });
 	const results = [];
-	for (const width of [390, 1280]) {
+	for (const width of [375, 390, 1280]) {
 		for (const kind of ['required', 'skip', 'multiple', 'hint', 'unknown']) {
 			const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width, height: 900 } });
 			await context.tracing.start({ screenshots: true, snapshots: true });
@@ -49,12 +49,13 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				}
 				await form.locator('fieldset').focus();
 				await page.keyboard.press('Control+a');
-				assert.equal(await form.locator('input:checked').count(), 0, 'browser commands keep their normal meaning');
+				assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 0, 'browser commands keep their normal meaning');
 				await page.keyboard.press('a');
-				assert.equal(await form.locator('input[value="first"]').isChecked(), true);
+				assert.equal(await form.getByRole(kind === 'multiple' ? 'checkbox' : 'radio', { name: /First/ }).isChecked(), true);
+				assert.equal(await form.locator('[aria-invalid="true"]').count(), 0);
 				if (kind === 'multiple') {
 					await page.keyboard.press('b');
-					assert.equal(await form.locator('input:checked').count(), 2);
+					assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 2);
 				}
 				assert.deepEqual(sent, [], 'ordinary choices still require submission');
 				await form.getByLabel('Your reason', { exact: true }).fill('My own reasoning');
@@ -64,7 +65,18 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				if (kind === 'required') await form.getByLabel('Your reason', { exact: true }).press('Enter');
 				else if (kind in help) await form.getByRole('button', { name: help[kind].button, exact: true }).click();
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
-				await page.getByText('Recorded reply', { exact: true }).waitFor();
+				if (kind === 'hint') {
+					const clue = page.getByText(hintClue, { exact: true });
+					await clue.waitFor();
+					await page.reload();
+					await clue.waitFor();
+					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');
+					assert.equal(await form.locator('legend').innerText(), definition.items[0].prompt);
+					assert.equal(await form.getByRole('radio', { name: /First/ }).isEnabled(), true);
+					assert.equal(await form.getByLabel('Your reason', { exact: true }).inputValue(), '');
+				} else {
+					await page.getByText('Recorded reply', { exact: true }).waitFor();
+				}
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
 				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
@@ -85,7 +97,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 			}
 		}
 	}
-	for (const width of [390, 1280]) {
+	for (const width of [375, 390, 1280]) {
 		for (const choice of ['See it', 'Try once more']) {
 			for (const activation of ['click', 'Enter', 'Space']) {
 				const context = await browser.newContext({ viewport: { width, height: 900 } });
@@ -121,6 +133,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 }
 
 // A help request replaces any selection or reasoning on the card.
+const hintClue = 'Try one example first.';
 const help = {
 	hint: { button: 'Hint', answer: 'Asked for a hint.' },
 	unknown: { button: "I don't know", answer: "I don't know." },
@@ -153,10 +166,15 @@ async function respond(route, { origin, session, definition, sent }) {
 		sent.push(route.request().postDataJSON().body);
 		return json({ submissionId }, 202);
 	}
-	const messages = [{
-		role: 'assistant', display: 'visible', submissionId,
-		parts: sent.length ? [{ type: 'text', text: 'Recorded reply' }] : [{ type: 'data-questionnaire', data: definition }],
-	}];
+	const card = { type: 'data-questionnaire', data: definition };
+	const messages = [{ role: 'assistant', display: 'visible', submissionId: 'original-card', parts: [card] }];
+	if (sent.length) {
+		messages.push({ role: 'user', display: 'visible', submissionId, parts: [{ type: 'text', text: sent[0] }] });
+		const reply = sent[0].endsWith(help.hint.answer)
+			? [{ type: 'text', text: hintClue }, { type: 'data-reveal', data: { kind: 'hint', target: definition.items[0].prompt } }, card]
+			: [{ type: 'text', text: 'Recorded reply' }];
+		messages.push({ role: 'assistant', display: 'visible', submissionId, parts: reply });
+	}
 	if (url.pathname.endsWith('/events')) {
 		const snapshot = { v: 1, conversationId: 'saved-card', messages, settlements: [{ submissionId, outcome: 'completed' }] };
 		const frame = { type: 'conversation-reset', conversationId: 'saved-card', snapshot, position: { batch: 0, index: 0 } };

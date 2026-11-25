@@ -11,8 +11,7 @@ let origin;
 
 before(async () => {
 	server = await createServer({
-		configFile: false,
-		root: new URL('../src/ui', import.meta.url).pathname,
+		configFile: new URL('../vite.config.ui.ts', import.meta.url).pathname,
 		server: { host: '127.0.0.1', port: 0 },
 	});
 	await server.listen();
@@ -25,7 +24,7 @@ after(async () => {
 });
 
 async function assertNoticeLayout(page, reply) {
-	for (const width of [390, 1280]) {
+	for (const width of [375, 390, 1280]) {
 		await page.setViewportSize({ width, height: 844 });
 		await page.evaluate(() => document.fonts.ready);
 		await page.waitForFunction((reply) => {
@@ -107,10 +106,10 @@ for (const [mode, description] of [
 		assert.equal(await notice.count(), 1);
 		await assertNoticeLayout(page, null);
 		if (mode === 'blocked') {
+			await page.locator('#menu-trigger').click();
 			assert.equal(await page.locator('#appearance-toggle').getAttribute('aria-pressed'), 'false');
 			assert.equal(await page.locator('html').getAttribute('data-type-size'), 'medium');
 			assert.equal(await page.locator('#sound-toggle').getAttribute('aria-pressed'), 'false');
-			await page.locator('#menu-trigger').click();
 			await page.locator('#type-size-toggle').click();
 			await page.locator('#sound-toggle').click();
 			await page.locator('#appearance-toggle').click();
@@ -139,7 +138,7 @@ for (const [mode, description] of [
 			await page.locator('.dock').evaluate(async (dock) => {
 				await Promise.allSettled(dock.getAnimations().map((animation) => animation.finished));
 			});
-			for (const width of [390, 1280]) {
+			for (const width of [375, 390, 1280]) {
 				await page.setViewportSize({ width, height: 844 });
 				await page.waitForFunction(() => {
 					const notice = document.querySelector('#storage-notice').getBoundingClientRect();

@@ -1,0 +1,61 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source("./");
+@import "tw-animate-css";
+
+@custom-variant dark {
+	&:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+	@media (prefers-color-scheme: dark) {
+		&:where(:root:not([data-theme]), :root:not([data-theme]) *) { @slot; }
+	}
+}
+
+@layer base {
+	:where([data-slot]) {
+		border: 0 solid color-mix(in srgb, var(--ink) 20%, transparent);
+	}
+	:where(button[data-slot], input[data-slot], textarea[data-slot]) {
+		font: inherit;
+		color: inherit;
+		background-color: transparent;
+	}
+	:where(button[data-slot], a[data-slot]) {
+		cursor: pointer;
+	}
+}
+
+@theme inline {
+	--color-background: var(--paper);
+	--color-foreground: var(--ink);
+	--color-card: var(--card);
+	--color-card-foreground: var(--ink);
+	--color-primary: var(--ink);
+	--color-primary-foreground: var(--paper);
+	--color-secondary: var(--chip);
+	--color-secondary-foreground: var(--ink);
+	--color-muted: var(--chip);
+	--color-muted-foreground: var(--muted);
+	--color-accent: var(--chip-strong);
+	--color-accent-foreground: var(--ink);
+	--color-destructive: var(--error);
+	--color-border: color-mix(in srgb, var(--ink) 20%, transparent);
+	--color-input: color-mix(in srgb, var(--ink) 30%, transparent);
+	--color-ring: var(--accent);
+	--animate-shiny-text: shiny-text 8s infinite;
+}
+@keyframes shiny-text {
+	0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; }
+	30%, 60% { background-position: calc(100% + var(--shiny-width)) 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-slot], .animate-shiny-text {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+[hidden] {
+	display: none !important;
+}

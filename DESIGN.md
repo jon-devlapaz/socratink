@@ -55,8 +55,7 @@ The consent card keeps its two direct actions, "See it" and "Try once more".
 "Try once more" is the primary button. "See it" is secondary. Do not change the
 submission contract or add an extra confirmation step for a visual change.
 
-Buttons are Kinetik UI buttons drawn in paper and ink, and `buttons.css` owns
-them. Every button is a pill with a hairline edge. A primary button is ink
+Buttons use shadcn/ui. `buttons.css` keeps their paper and ink finish. Every button is a pill with a hairline edge. A primary button is ink
 with a soft top sheen and an inset highlight; use one per place, for the
 forward action (send, submit, "Try once more", send feedback). A secondary
 button is a paper pill. A ghost button has no fill until hover, for quiet
@@ -84,16 +83,15 @@ trail, and reveal provenance. Supplied help remains visibly attributed and
 must not look like learner work. The tutor alone rates subskills through the
 teaching policy. A visual state does not establish mastery.
 
-Interactive controls hold at least 44px touch targets. Native choice inputs
-use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
+Interactive controls hold at least 44px touch targets. Choice controls use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
 Preserve reduced-motion alternatives, safe-area spacing, adjustable text size,
 and explicit as well as system light/dark preferences. Code and tables scroll
 within their own regions, never across the whole page.
 
 ## Motion
 
-Kinetik UI (kinetikui.singhgourav.site, MIT) is the motion reference. Port
-its ideas into plain CSS and TypeScript; do not add its React components.
+Use Magic UI’s Animated Shiny Text for the Thinking and Transcribing states.
+Keep animation off when the learner requests reduced motion.
 Motion uses opacity, blur, and scale, never width, height, or position, so the
 conversation never moves when a control appears or a reply ends. Springs use
 `--spring-pop` from `styles.css`. The composer hint blurs in on focus, and the
@@ -112,7 +110,9 @@ and consent styling. `reveal-mark.css` owns supplied-help attribution.
 `login.css` owns sign-in appearance. `history.css` owns the History page:
 rows and hairlines on paper, with the open conversation marked by a verdigris
 rule and the words "Open now" in full ink. It leaves by "Back to conversation". Other UI styles use the shared tokens.
-Behavior stays in the existing TypeScript modules.
+The three pages render to HTML at build time. React hydrates chat and sign-in.
+The 404 links work with JavaScript disabled. Shared shadcn/ui controls live in
+`src/ui/components/ui/`, with Magic UI in `src/ui/components/magicui/`.
 
 Run `pnpm check` and `REVEAL_BROWSER=1 pnpm smoke`. Compare conversation,
 question, and consent screenshots at 390px and 1280px in both themes. Screenshots

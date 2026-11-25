@@ -82,6 +82,9 @@
 
 .dictation-status[data-state='starting'] .dictation-settling {
 	display: inline;
+	margin: 0;
+	color: var(--muted);
+	background-image: none;
 	font-size: 0;
 }
 
@@ -93,11 +96,7 @@
 
 .dictation-status[data-state='stopping'] .dictation-settling {
 	display: inline;
-	background: linear-gradient(90deg, var(--quiet), var(--ink), var(--quiet));
-	background-size: 200% 100%;
-	background-clip: text;
-	color: transparent;
-	animation: dictation-shimmer 1.2s linear infinite;
+	margin: 0;
 }
 
 .dictation-error {
@@ -156,11 +155,13 @@
 	50% { opacity: 0.45; scale: 0.8; }
 }
 
-@keyframes dictation-shimmer {
-	to { background-position: -200% 0; }
-}
 
 @media (prefers-reduced-motion: reduce) {
+	.dictation-settling {
+		background-image: none;
+		color: var(--muted);
+	}
+
 	.dictation-toggle,
 	.dictation-icon {
 		transition: none;

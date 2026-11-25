@@ -4,7 +4,8 @@
 
 #feedback-dialog {
 	width: min(30rem, calc(100% - 2rem));
-	max-height: calc(100% - 2rem);
+	max-height: calc(100dvh - 2rem);
+	overflow: auto;
 	padding: clamp(1rem, 4vw, 1.75rem);
 	border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
 	border-radius: 1rem;
@@ -13,9 +14,6 @@
 	box-shadow: var(--panel-shadow);
 }
 
-#feedback-dialog::backdrop {
-	background: rgb(0 0 0 / 38%);
-}
 
 #feedback-form {
 	display: grid;
@@ -39,6 +37,8 @@
 
 #feedback-form input,
 #feedback-form textarea {
+	width: 100%;
+	min-width: 0;
 	font: inherit;
 	color: var(--ink);
 	border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);

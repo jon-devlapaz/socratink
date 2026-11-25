@@ -5,6 +5,7 @@
 	padding: 1.25rem 0;
 	border-block: 1px solid var(--rule);
 	background: transparent;
+	overflow-wrap: anywhere;
 }
 
 .questionnaire-item {
@@ -73,7 +74,7 @@
 
 .questionnaire-choice {
 	display: grid;
-	grid-template-columns: auto 1fr auto;
+	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 0.65rem;
 	padding: 0.72rem 0.8rem;
@@ -85,12 +86,14 @@
 	transition: background-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), scale 150ms var(--ease-out);
 }
 
-.questionnaire-choice:hover {
-	background: var(--path-hover);
-	box-shadow: none;
+@media (hover: hover) {
+	.questionnaire-choice:hover {
+		background: var(--path-hover);
+		box-shadow: none;
+	}
 }
 
-.questionnaire-choice:has(input:checked) {
+.questionnaire-choice:has([aria-checked="true"]) {
 	background: color-mix(in srgb, var(--accent) 7%, var(--paper));
 	box-shadow: inset 2px 0 0 var(--accent);
 }
@@ -99,11 +102,12 @@
 	scale: 0.96;
 }
 
-.questionnaire-choice input {
+.questionnaire-choice [data-choice-for] {
+	min-height: 0;
 	width: 1rem;
 	height: 1rem;
 	margin: 0;
-	accent-color: var(--accent);
+
 }
 
 .questionnaire-choice-copy {
@@ -180,8 +184,22 @@
 	}
 
 	.questionnaire-actions {
-		justify-content: stretch;
+		justify-content: flex-start;
 	}
+	.questionnaire-actions .questionnaire-button {
+		max-width: 100%;
+		min-height: 44px;
+		height: auto;
+		white-space: normal;
+		padding-block: 0.55rem;
+	}
+	.questionnaire-actions .questionnaire-button-ghost {
+		padding-inline: 0.6rem;
+	}
+	.questionnaire-actions .questionnaire-button-ghost:first-child {
+		margin-left: -0.6rem;
+	}
+	.questionnaire-freeform-label input { font-size: 1rem; }
 
 	.questionnaire-button-primary {
 		flex: 1;

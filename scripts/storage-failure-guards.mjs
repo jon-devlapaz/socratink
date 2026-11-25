@@ -33,7 +33,7 @@ const cases = [
 	['sound write', 'src/ui/sound-cues.ts',
 		"writeBrowserStorage(appConfig.soundStorageKey, enabled ? 'on' : 'off')",
 		"localStorage.setItem(appConfig.soundStorageKey, enabled ? 'on' : 'off')", 'page-wide'],
-	['notice', 'src/ui/chat-surface.ts',
+	['notice', 'src/ui/chat-surface.tsx',
 		'if (!conversation.placeSaved) {',
 		'if (!conversation.placeSaved && false) {', 'saved-ID quota failure'],
 	['notice during a question', 'src/ui/styles.css',

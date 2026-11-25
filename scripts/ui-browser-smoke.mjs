@@ -133,9 +133,13 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		for (const source of ['composer', 'steering', 'question']) {
 			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
 				fixture.mode = 'guest-limit';
+				fixture.showGuestQuestion = source !== 'composer';
 				await page.setViewportSize({ width, height: 900 });
 				await page.goto(origin);
-				await page.locator('#active-turn .questionnaire').waitFor();
+				const previousTurn = source === 'composer'
+					? page.getByText('What would you check?', { exact: true })
+					: page.locator('#active-turn .questionnaire');
+				await previousTurn.waitFor();
 				await page.evaluate(() => {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
@@ -162,7 +166,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				assert.equal(await page.locator('.chat-gate-card').count(), 1);
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 				await page.reload();
-				await page.locator('#active-turn .questionnaire').waitFor();
+				await previousTurn.waitFor();
 				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
 				assert.equal(await page.locator('#message').inputValue(), source === 'composer' ? expected : '');
 			});
@@ -175,8 +179,35 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.deepEqual({
 			composerDisabled: await page.locator('#message').isDisabled(),
 			sendDisabled: await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(),
-			menuInert: await page.locator('#menu-layer').evaluate((node) => node.inert),
-		}, { composerDisabled: true, sendDisabled: true, menuInert: true });
+			menuClosed: await page.getByRole('dialog').count() === 0 && await page.locator('#menu-trigger').isDisabled(),
+		}, { composerDisabled: true, sendDisabled: true, menuClosed: true });
+	});
+
+	await check('menu-pull-preview-375', async (page) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.emulateMedia({ reducedMotion: 'no-preference' });
+		await page.goto(origin);
+		await page.locator('#message:enabled').focus();
+		const touch = await page.context().newCDPSession(page);
+		const drag = (type, y) => touch.send('Input.dispatchTouchEvent', {
+			type, touchPoints: y === undefined ? [] : [{ x: 187, y }],
+		});
+		await drag('touchStart', 10);
+		await drag('touchMove', 39);
+		const panel = page.locator('#menu-dialog');
+		await panel.waitFor({ state: 'attached' });
+		const box = await panel.boundingBox();
+		assert.ok(box.y < 0 && box.y + box.height > 0, 'a partial pull shows part of the actual menu');
+		assert.equal(await panel.evaluate(node => node.inert), true);
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'message');
+		await drag('touchCancel');
+		await panel.waitFor({ state: 'detached' });
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'message');
+		await drag('touchStart', 10);
+		await drag('touchMove', 90);
+		await drag('touchEnd');
+		await page.waitForFunction(() => document.activeElement.id === 'type-size-toggle');
+		assert.equal(await page.locator('#peek-handle').getAttribute('aria-expanded'), 'true');
 	});
 
 	await check('menu-returns-focus-to-its-opener', async (page) => {
@@ -186,9 +217,9 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const trigger = page.locator(selector);
 			await trigger.focus();
 			await page.keyboard.press('Enter');
-			await page.locator('#menu-layer.is-open').waitFor();
+			await page.getByRole('dialog', { name: 'Menu' }).waitFor();
 			await page.keyboard.press('Escape');
-			assert.equal(await trigger.evaluate((node) => document.activeElement === node), true, selector);
+			await page.waitForFunction(selector => document.activeElement?.matches(selector), selector);
 		}
 	});
 
@@ -237,7 +268,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
-		const confirm = page.locator('#start-over-dialog[open]');
+		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
 			'Your draft will be deleted. You can reopen this conversation from History.');
@@ -277,7 +308,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const openHistory = async () => {
 				await page.locator('#peek-handle').click();
 				await page.getByRole('button', { name: 'History' }).click();
-				await page.locator('#history-dialog[open]').waitFor();
+				await page.locator('#history-dialog[data-state=open]').waitFor();
 				// History loads from the server each time it opens.
 				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
@@ -289,7 +320,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			await openHistory();
 			await page.getByText('Your conversations appear here after you send a message.').waitFor();
 			await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
-			assert.match(await page.evaluate(() => document.activeElement.id), /^(peek-handle|menu-trigger)$/);
+			await page.waitForFunction(() => /^(peek-handle|menu-trigger)$/.test(document.activeElement.id));
 
 			await send(page, 'Why is the sky blue?');
 			// The fixture's history read repeats the last reply in every conversation.
@@ -333,7 +364,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	async function openHistory(page) {
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'History' }).click();
-		await page.locator('#history-dialog[open]').waitFor();
+		await page.locator('#history-dialog[data-state=open]').waitFor();
 	}
 
 	await check('history-says-when-it-cannot-load', async (page, fixture) => {
@@ -368,11 +399,48 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.goto(origin);
 		await send(page, 'Hold this reply');
 		await page.locator('.turn.pending').waitFor();
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#history-trigger').isDisabled(), true);
 		assert.equal(await page.locator('#start-over').isDisabled(), true);
+		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#history-trigger').isEnabled(), true);
+	});
+
+	await check('copy-and-steer', async (page, fixture) => {
+		fixture.mode = 'guest-limit';
+		await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+		await page.goto(origin);
+		const group = page.getByRole('group', { name: 'Steer this turn' });
+		const smaller = group.getByRole('button', { name: 'Smaller step', exact: true });
+		const unaided = group.getByRole('button', { name: 'Try on my own', exact: true });
+		const copy = group.getByRole('button', { name: 'Copy this turn', exact: true });
+		await copy.waitFor();
+		assert.equal(await copy.locator('svg').count(), 1);
+		await copy.click();
+		await group.getByRole('button', { name: 'Copied this turn', exact: true }).waitFor();
+		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'What would you check?');
+		assert.deepEqual(fixture.sent, []);
+		await page.getByText('What would you check?', { exact: true }).evaluate(node => {
+			const range = document.createRange();
+			range.setStart(node.firstChild, 5);
+			range.setEnd(node.firstChild, 10);
+			getSelection().removeAllRanges();
+			getSelection().addRange(range);
+		});
+		await group.getByRole('button', { name: /Cop(y|ied) this turn/ }).click();
+		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'would');
+		assert.equal(await unaided.isEnabled(), true);
+		const previousButtons = await group.getByRole('button').elementHandles();
+		await smaller.click();
+		await page.locator('.chat-gate-card').waitFor();
+		for (const button of previousButtons) {
+			assert.equal(await button.evaluate(node => !node.isConnected || node.disabled), true);
+			await button.evaluate(node => node.click());
+		}
+		assert.deepEqual(fixture.sent, [formatSteeringMessage('smaller-step')]);
 	});
 
 	await check('retry-clears-streamed-attempt', async (page, fixture) => {
@@ -421,7 +489,9 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await recheck.waitFor();
 		assert.equal(await recheck.evaluate((node) => document.activeElement === node), true);
 		assert.equal(await page.locator('#message').isDisabled(), true);
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#start-over').isEnabled(), true);
+		await page.keyboard.press('Escape');
 		await recheck.click();
 		await page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
 		assert.equal(await page.locator('#message').isEnabled(), true);
@@ -510,6 +580,7 @@ function createServices(origin, session) {
 	const abortRequested = new Promise((resolve) => { releaseAbort = resolve; });
 	const fixture = {
 		mode: 'success',
+		showGuestQuestion: true,
 		sent: [],
 		// Stands in for the server's conversation index; the rules themselves
 		// are proven by conversation-index.test.mjs and the real-server smoke.
@@ -565,10 +636,10 @@ function createServices(origin, session) {
 				if (fixture.mode === 'guest-limit') return json({ messages: [{
 					role: 'assistant', display: 'visible', parts: [
 						{ type: 'text', text: 'What would you check?' },
-						{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
+						...(fixture.showGuestQuestion ? [{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
 							name: 'item', prompt: 'Which step?', required: true, multiple: false,
 							choices: [{ value: 'check', label: 'Check' }, { value: 'retry', label: 'Retry' }],
-						}] } },
+						}] } }] : []),
 					],
 				}], settlements: [] });
 				return json({ messages: completed ? [{ role: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply' }] }] : [], settlements: [] });

@@ -15,7 +15,7 @@ function storedAppearance(): Appearance | null {
 
 function resolvedAppearance(): Appearance {
 	return (
-		storedAppearance() ??
+		storedAppearance() ?? (document.documentElement.dataset.theme === 'light' || document.documentElement.dataset.theme === 'dark' ? document.documentElement.dataset.theme : null) ??
 		(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 	);
 }
@@ -77,10 +77,21 @@ function revealFrom(button: HTMLButtonElement) {
 
 export function initAppearance(button: HTMLButtonElement) {
 	paintAppearance(button, resolvedAppearance());
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-		if (storedAppearance()) return;
-		withoutColorTransitions(() => paintAppearance(button, resolvedAppearance()));
-	});
+}
+
+export function watchSystemAppearance() {
+	const preference = window.matchMedia('(prefers-color-scheme: dark)');
+	const sync = () => {
+		if (storedAppearance() || document.documentElement.dataset.theme) return;
+		const appearance = resolvedAppearance();
+		withoutColorTransitions(() => {
+			setThemeColor(appearance);
+			const button = document.querySelector<HTMLButtonElement>('#appearance-toggle');
+			if (button) paintAppearance(button, appearance);
+		});
+	};
+	preference.addEventListener('change', sync);
+	return () => preference.removeEventListener('change', sync);
 }
 
 export async function toggleAppearance(button: HTMLButtonElement) {

@@ -33,7 +33,7 @@ body.not-found-page {
 
 .not-found h1 {
 	margin: 0;
-	font-family: Georgia, 'Times New Roman', ui-serif, serif;
+	font-family: var(--font-serif);
 	font-size: clamp(2rem, 7vw, 3rem);
 	font-weight: 400;
 	letter-spacing: -0.03em;
@@ -47,6 +47,10 @@ body.not-found-page {
 }
 
 .not-found a {
+	padding-inline: 0;
+	min-width: 44px;
+	justify-content: flex-start;
+	text-decoration-line: underline;
 	display: inline-flex;
 	min-height: 2.75rem;
 	align-items: center;

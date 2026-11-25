@@ -54,11 +54,11 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 				const peek = page.locator('#peek-handle');
 				await peek.click();
 				assert.equal(await peek.getAttribute('aria-expanded'), 'true');
-				assert.equal(await page.locator('#menu-layer').evaluate((node) =>
+				assert.equal(await page.locator('#menu-dialog').evaluate((node) =>
 					!node.inert && node.contains(document.activeElement)), true);
 				await page.keyboard.press('Escape');
 				assert.equal(await peek.getAttribute('aria-expanded'), 'false');
-				assert.equal(await peek.evaluate((node) => document.activeElement === node), true);
+				await page.waitForFunction(() => document.activeElement?.id === 'peek-handle');
 				assert.equal(await input.evaluate((node) => !!node.closest('[inert]')), false);
 				const shell = await input.evaluate((node) => ({
 					bodyCursor: getComputedStyle(document.body).cursor,

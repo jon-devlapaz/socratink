@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-	createSteeringBar,
 	formatSteeringMessage,
 	turnSnippetToCopy,
 } from '../src/ui/steering.ts';
@@ -22,96 +21,4 @@ test('copy uses a selected snippet when present, otherwise the whole turn', () =
 	assert.equal(turnSnippetToCopy('full turn text', '  the snippet  '), 'the snippet');
 	assert.equal(turnSnippetToCopy('full turn text', '   '), 'full turn text');
 	assert.equal(turnSnippetToCopy('full turn text'), 'full turn text');
-});
-
-class FakeElement {
-	constructor(tagName) {
-		this.tagName = tagName.toUpperCase();
-		this.childNodes = [];
-		this.className = '';
-		this.textContent = '';
-		this.disabled = false;
-		this.type = '';
-		this.isConnected = true;
-		this.listeners = {};
-		this.attributes = {};
-	}
-	setAttribute(name, value) {
-		this.attributes[name] = value;
-	}
-	append(...nodes) {
-		this.childNodes.push(...nodes);
-	}
-	addEventListener(type, listener) {
-		this.listeners[type] = listener;
-	}
-	querySelector(selector) {
-		if (selector === '.steering-tip') {
-			const walk = (node) => {
-				if (node.className === 'steering-tip') return node;
-				for (const child of node.childNodes ?? []) {
-					const hit = walk(child);
-					if (hit) return hit;
-				}
-				return undefined;
-			};
-			return walk(this);
-		}
-		return null;
-	}
-	querySelectorAll(selector) {
-		const matches = [];
-		const walk = (node) => {
-			if (selector === 'button' && node.tagName === 'BUTTON') matches.push(node);
-			for (const child of node.childNodes ?? []) walk(child);
-		};
-		for (const child of this.childNodes) walk(child);
-		return matches;
-	}
-	click() {
-		if (this.disabled) return;
-		this.listeners.click?.();
-	}
-}
-
-test('steering chips send once; copy writes the turn without sending', async () => {
-	const previousDocument = globalThis.document;
-	const previousSetTimeout = globalThis.setTimeout;
-	globalThis.document = {
-		createElement: (tag) => new FakeElement(tag),
-		createElementNS: (_ns, tag) => new FakeElement(tag),
-	};
-	globalThis.setTimeout = () => 0;
-	try {
-		const steered = [];
-		const written = [];
-		const bar = createSteeringBar({
-			sourceText: 'full turn',
-			onSteer: (kind) => steered.push(kind),
-			writeClipboard: async (text) => {
-				written.push(text);
-				return true;
-			},
-		});
-		const [smaller, unaided, copy] = bar.querySelectorAll('button');
-		assert.equal(smaller?.textContent, 'Smaller step');
-		assert.equal(unaided?.textContent, 'Try on my own');
-		assert.equal(copy?.attributes['aria-label'], 'Copy this turn');
-		assert.equal(copy?.childNodes[0]?.tagName, 'SVG');
-		copy.click();
-		await Promise.resolve();
-		await Promise.resolve();
-		assert.deepEqual(written, ['full turn']);
-		assert.equal(copy.querySelector('.steering-tip')?.textContent, 'Copied');
-		assert.deepEqual(steered, []);
-		smaller.click();
-		assert.deepEqual(steered, ['smaller-step']);
-		assert.equal(unaided.disabled, true);
-		assert.equal(copy.disabled, true);
-		unaided.click();
-		assert.deepEqual(steered, ['smaller-step']);
-	} finally {
-		globalThis.document = previousDocument;
-		globalThis.setTimeout = previousSetTimeout;
-	}
 });
