@@ -4,12 +4,13 @@ import type { AddressInfo } from 'node:net';
 import test from 'node:test';
 import type { WireMessage, WirePart } from '../../src/config/chat-wire.ts';
 import { behaviourRules, type BehaviourRuleId } from '../../src/learning/behaviour-rules.ts';
+import { systemPrompt } from '../../src/learning/chat-policy.ts';
 import { markRevealRetryBodies } from '../../src/learning/mark-reveal.ts';
 import { executeLearningTool } from '../../src/learning/tools.ts';
 import { questionnaireFromReplyData } from '../../src/questionnaire.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { cardOf, expectNoChoicePosition, questionsIn, replyChecks } from './checks.ts';
+import { cardOf, expectNoChoicePosition, questionsIn, replyChecks, type CheckName } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -48,6 +49,11 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('Good start. What do you think?', [card])), ['one-question']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?')), ['reveal-marked']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
+});
+
+test('displayed choice matching is an eval check without a prompt rule', () => {
+	assert.equal(Object.hasOwn(behaviourRules, 'no-choice-position'), false);
+	assert.ok(!systemPrompt.includes("You may refer to a card's choices by the displayed letter or position from the tool result; use that displayed order, never the order you authored."));
 });
 
 test('choice references use displayed order for letters, positions and correctness', () => {
@@ -187,9 +193,9 @@ test('a policy-following tutor passes every scenario', async () => {
 	assert.match(results.find((r) => r.scenario === 'try-once-more-no-notes')?.turns.at(-1)?.learner ?? '', /: Try once more$/);
 });
 
-test('a tutor with the known bugs fails every behaviour rule, each where expected', async () => {
+test('a tutor with the known bugs fails every behaviour rule and the displayed choice check', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
-	const expected: Record<string, BehaviourRuleId[]> = {
+	const expected: Record<string, CheckName[]> = {
 		'no-choice-position': ['no-choice-position'],
 		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],

@@ -12,7 +12,7 @@ import { looksLikeUnboxedChoices } from '../../src/learning/present-question.ts'
 import { questionnaireFromParts, type QuestionnaireDefinition } from '../../src/questionnaire.ts';
 import { parseRevealDefinition, revealDataName, revealToolName, type RevealDefinition } from '../../src/reveal.ts';
 
-export type CheckName = BehaviourRuleId | 'turn-completed' | 'scenario-ran';
+export type CheckName = BehaviourRuleId | 'no-choice-position' | 'turn-completed' | 'scenario-ran';
 export type CheckResult = { check: CheckName; status: 'pass' | 'fail' | 'skip'; detail?: string; turn?: number };
 
 const internalNotePatterns = [
