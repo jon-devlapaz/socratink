@@ -169,7 +169,12 @@ function writeCompletion(response, id, deltas) {
 }
 
 function questionnaireFromReply(reply, expected, label) {
-	assert.deepEqual(reply.data?.questionnaire?.at(-1), expected, `${label} questionnaire should be validated`);
+	const actual = reply.data?.questionnaire?.at(-1);
+	const byValue = (definition) => ({ ...definition, items: definition.items.map((item) => ({
+		...item, choices: [...item.choices].sort((left, right) => left.value.localeCompare(right.value)),
+	})) });
+	assert.deepEqual(byValue(actual), byValue(expected), `${label} questionnaire should be validated`);
+	return actual;
 }
 
 function questionnaireParts(message) {
@@ -409,12 +414,12 @@ try {
 	const baseline = await client.read(
 		await client.send({ message: { kind: 'user', body: initialMessage } }),
 	);
-	questionnaireFromReply(baseline, baselineQuestionnaire, 'baseline');
+	const baselineCard = questionnaireFromReply(baseline, baselineQuestionnaire, 'baseline');
 
 	const comparison = await client.read(
 		await client.send({ message: { kind: 'user', body: baselineAnswer } }),
 	);
-	questionnaireFromReply(comparison, comparisonQuestionnaire, 'comparison');
+	const comparisonCard = questionnaireFromReply(comparison, comparisonQuestionnaire, 'comparison');
 
 	const pendingReveal = await client.read(
 		await client.send({ message: { kind: 'user', body: comparisonAnswer } }),
@@ -428,7 +433,7 @@ try {
 		await client.send({ message: { kind: 'user', body: seeAnswer } }),
 	);
 	assert.equal(revision.text, assistanceText);
-	questionnaireFromReply(revision, revisedQuestionnaire, 'revision');
+	const revisedCard = questionnaireFromReply(revision, revisedQuestionnaire, 'revision');
 	assert.deepEqual(revision.data?.reveal?.at(-1), revealExample, 'revision should record reveal provenance');
 
 	const complete = await client.read(
@@ -468,17 +473,17 @@ try {
 		{ headers: { cookie: (await mintSessionFixture(origin)).cookie } })).json()).conversations, [],
 		'another learner sees none of it');
 	assert.equal(visibleTurns[1]?.text, unboxedBaseline, 'history cannot unsay the unboxed list');
-	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineQuestionnaire);
-	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonQuestionnaire);
+	assert.deepEqual(visibleTurns[1]?.questionnaire, baselineCard);
+	assert.deepEqual(visibleTurns[3]?.questionnaire, comparisonCard);
 	assert.deepEqual(visibleTurns[5]?.questionnaire, consent);
-	assert.deepEqual(visibleTurns[7]?.questionnaire, revisedQuestionnaire);
+	assert.deepEqual(visibleTurns[7]?.questionnaire, revisedCard);
 	assert.equal(visibleTurns[7]?.tools, undefined, 'mark_reveal is not card chrome');
 	assert.deepEqual(visibleTurns[7]?.reveal, revealExample, 'supplied text keeps its display mark after restart');
 	assert.equal(visibleTurns[9]?.questionnaire, undefined, 'final summary should not present a questionnaire');
 	assert.equal(visibleTurns[9]?.tools, undefined, 'final summary should not show tool chrome');
 	assert.deepEqual(
 		visibleMessages.flatMap(questionnaireParts),
-		[baselineQuestionnaire, comparisonQuestionnaire, consent, revisedQuestionnaire],
+		[baselineCard, comparisonCard, consent, revisedCard],
 		'completed loop should restore all questionnaire data parts',
 	);
 	assert.deepEqual(

@@ -7,7 +7,7 @@ import { behaviourRules, type BehaviourRuleId } from '../../src/learning/behavio
 import { markRevealRetryBodies } from '../../src/learning/mark-reveal.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { questionsIn, replyChecks } from './checks.ts';
+import { cardOf, questionsIn, replyChecks } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -130,8 +130,11 @@ const failedChecks = (results: ScenarioResult[], scenario: string) =>
 test('a policy-following tutor passes every scenario', async () => {
 	const results = await withProvider(goodTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	assert.deepEqual(results.flatMap((r) => r.checks.filter((c) => c.status !== 'pass').map((c) => `${r.scenario}: ${c.check} ${c.status} ${c.detail ?? ''}`)), []);
-	assert.match(results.find((r) => r.scenario === 'just-tell-me-later')?.turns[1]?.learner ?? '',
-		/^Questionnaire answers:\n- What does a vaccine put in your body\?: A harmless piece of a germ, I think/);
+	const later = results.find((r) => r.scenario === 'just-tell-me-later');
+	const diagnostic = cardOf(later?.turns[0]?.reply);
+	assert.ok(diagnostic);
+	assert.equal(later?.turns[1]?.learner,
+		`Questionnaire answers:\n- What does a vaccine put in your body?: ${diagnostic.items[0]!.choices[0]!.label}, I think they put a weak germ in you, but I am not sure why that helps.`);
 	assert.match(results.find((r) => r.scenario === 'try-once-more-no-notes')?.turns.at(-1)?.learner ?? '', /: Try once more$/);
 });
 

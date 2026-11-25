@@ -16,8 +16,14 @@ export function executeLearningTool(name: string, args: unknown): {
 } {
 	if (name === presentQuestionToolName) {
 		const input = v.parse(PresentQuestionInputSchema, args);
+		const questionnaire = questionnaireFromPresentQuestion(input);
+		const choices = questionnaire.items[0]!.choices;
+		for (let index = choices.length - 1; index > 0; index -= 1) {
+			const other = Math.floor(Math.random() * (index + 1));
+			[choices[index], choices[other]] = [choices[other]!, choices[index]!];
+		}
 		return { output: 'Question presented on the card.',
-			data: { questionnaire: [questionnaireFromPresentQuestion(input)] }, terminate: true };
+			data: { questionnaire: [questionnaire] }, terminate: true };
 	}
 	if (name === revealToolName) {
 		return { output: 'Reveal recorded.', data: { reveal: [v.parse(RevealSchema, args)] }, terminate: false };

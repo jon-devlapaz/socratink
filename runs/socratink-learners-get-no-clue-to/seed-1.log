@@ -1,0 +1,15 @@
+Already up to date
+Done in 135ms using pnpm v11.1.1
+✔ production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position within 120 of 1000 (199.314417ms)
+ℹ first correct-choice counts: 1024, 956, 1021, 999
+ℹ retry correct-choice counts: 994, 986, 1009, 1011
+✔ fresh retries use new random draws; duplicate labels and explicit values stay paired (0.438708ms)
+✔ isolated shuffle removal makes the production distribution regression fail (218.481083ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 482.118166

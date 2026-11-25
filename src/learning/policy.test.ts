@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { steeringPrefix } from '../config/chat-message.ts';
-import { questionnaireAnswerPrefix } from '../questionnaire.ts';
+import { parseQuestionnaireDefinition, questionnaireAnswerPrefix } from '../questionnaire.ts';
 import { systemPrompt } from './chat-policy.ts';
 import { socraticTutorSkill } from './socratic-tutor.ts';
 import { presentQuestionRetryReason } from './present-question.ts';
@@ -35,7 +35,10 @@ test('the tutor keeps tool names and bookkeeping out of learner text', () => {
 test('questions use current validation and presentation; reveals retain provenance without ending the turn', () => {
 	const question = executeLearningTool('present_question', { prompt: ' Which step? ', choices: [' Recheck ', 'Retry'], reasoning: true });
 	assert.equal(question.terminate, true);
-	assert.deepEqual(question.data.questionnaire, [{ kind: 'question', submitLabel: 'Submit', items: [{
+	const card = parseQuestionnaireDefinition(question.data.questionnaire?.[0]);
+	assert.ok(card);
+	card.items[0]!.choices.sort((left, right) => left.value.localeCompare(right.value));
+	assert.deepEqual([card], [{ kind: 'question', submitLabel: 'Submit', items: [{
 		name: 'item', prompt: 'Which step?', required: true, multiple: false,
 		choices: [{ value: 'recheck', label: 'Recheck' }, { value: 'retry', label: 'Retry' }], input: { label: 'Your reasoning' },
 	}] }]);

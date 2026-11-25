@@ -11,6 +11,11 @@
       "source": "Confirmed goal; src/learning/tools.ts:14-20; scripts/present-question.test.mjs:1-23; package.json:32-35; README.md:11-18; CODING_STANDARDS.md:40-49",
       "statement": "Across many cards the correct choice lands in every position about equally; a retry card is shuffled too; the learner's chosen answer is still recorded as the choice they tapped; a regression test fails if shuffling is removed.",
       "id": "seed-1",
+      "activation": {
+        "cmd": "pnpm install --frozen-lockfile && node --test scripts/question-choice-shuffle.test.mjs",
+        "cwd": ".",
+        "evidence": "Prerequisite exists at scripts/question-choice-shuffle.test.mjs. Production-path first/retry distribution, selection mapping, duplicate/explicit values, restoration and isolated shuffle-removal checks pass in runs/socratink-learners-get-no-clue-to/shuffle-tests.log. The unfixed distribution fails in runs/socratink-learners-get-no-clue-to/shuffle-baseline.log."
+      },
       "description": "Across many cards the correct choice lands in every position about equally; a retry card is shuffled too; the learner's chosen answer is still recorded as the choice they tapped; a regression test fails if shuffling is removed.",
       "origin": "agent-confirmed-seed",
       "locked": true
