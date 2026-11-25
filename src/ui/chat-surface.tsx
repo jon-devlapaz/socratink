@@ -296,7 +296,8 @@ export function mountChatSurface(options: Readonly<{
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
 		// A Hint tap is known only from the card that sent it; a retry keeps what the attempt showed.
-		const tapped = hintTap || Boolean(replacesAttempt && previous.learnerKind === 'hint-request');
+		const tapped = hintTap
+			|| Boolean(replacesAttempt && previous.text === text && previous.learnerKind === 'hint-request');
 		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire, tapped);
 		const result = requests.start(text, () => {
 			if (submittedDraft === undefined || input.value !== submittedDraft) return;
