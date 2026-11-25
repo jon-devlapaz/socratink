@@ -68,6 +68,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				if (kind === 'hint') {
 					const clue = page.getByText(hintClue, { exact: true });
 					await clue.waitFor();
+					assert.equal(await page.locator('#active-turn .you p.turn-action').innerText(), 'You asked for a hint',
+						'a Hint tap shows as an action; after reload the saved words show');
 					await page.reload();
 					await clue.waitFor();
 					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');
@@ -80,7 +82,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
 				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
-				assert.equal(await page.locator('#active-turn .you p').innerText(), help[kind]?.shown ?? answer);
+				assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
 				assert.deepEqual(errors, []);
 				results.push({ kind, width, passed: true, submitted: sent[0] });
 			} catch (error) {
@@ -135,7 +137,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 // A help request replaces any selection or reasoning on the card.
 const hintClue = 'Try one example first.';
 const help = {
-	hint: { button: 'Hint', answer: 'Asked for a hint.', shown: 'You asked for a hint' },
+	hint: { button: 'Hint', answer: 'Asked for a hint.' },
 	unknown: { button: "I don't know", answer: "I don't know." },
 };
 

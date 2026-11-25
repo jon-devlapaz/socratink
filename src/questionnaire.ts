@@ -176,11 +176,7 @@ export function formatQuestionnaireAnswers(
 		const labels = answer.values.map(
 			(value) => item.choices.find((choice) => choice.value === value)?.label ?? value,
 		);
-		if (answer.freeform) {
-			// Typed words that match the Hint text would read back as a Hint tap.
-			const typedHint = !labels.length && answer.freeform.trim() === questionnaireHelpText.hint;
-			labels.push(typedHint ? `“${answer.freeform.trim()}”` : answer.freeform);
-		}
+		if (answer.freeform) labels.push(answer.freeform);
 		return `- ${item.prompt}: ${labels.join(', ')}`;
 	});
 	return `${questionnaireAnswerPrefix}\n${lines.join('\n')}`;

@@ -53,10 +53,11 @@ export function displayedAssistantTurn(input: {
 /** Shows a learner turn in the learner's own words. A card answer drops the
  * protocol header and the question it answers; a steering control shows its
  * short line. `text` stays exactly what was sent. */
-export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition): DisplayedTurn {
+/** `hintTap` comes from the card's Hint button. The sent text alone cannot tell a tap from typed words. */
+export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition, hintTap = false): DisplayedTurn {
 	if (text.startsWith(questionnaireAnswerPrefix)) {
 		const lines = answered && answersByPrompt(text, answered) || answerLines(text, answered);
-		if (answered && lines.every((line) => line === questionnaireHelpText.hint)) {
+		if (hintTap && lines.every((line) => line === questionnaireHelpText.hint)) {
 			return { role: 'You', text, learnerKind: 'hint-request', shownText: hintRequestShownText };
 		}
 		return {

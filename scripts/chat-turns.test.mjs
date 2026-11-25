@@ -161,9 +161,7 @@ test('history pairs a card answer with the card it answers', () => {
 			{ role: 'user', display: 'visible', parts: [{ type: 'text', text: 'Questionnaire answers:\n- How should we begin?: Asked for a hint.' }] },
 		],
 	});
-	assert.equal(turns.at(-1).shownText, 'You asked for a hint');
-	assert.equal(turns.at(-1).learnerKind, 'hint-request');
-	assert.equal(turns.at(-1).text, 'Questionnaire answers:\n- How should we begin?: Asked for a hint.');
+	assert.equal(turns.at(-1).shownText, 'Asked for a hint.');
 });
 
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {
@@ -426,27 +424,22 @@ test('learnerVisibleText removes stacked internal markers', () => {
 	assert.equal(learnerVisibleText('No marker here.'), 'No marker here.');
 });
 
-test('a Hint tap shows as an action, read against the full prompt', () => {
+test('only a Hint tap from the card shows as an action', () => {
 	const twoLines = { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Look at this list:\n1, 2, 3, 4\nWhich half do you search next?' }] };
 	const hint = formatQuestionnaireAnswers(twoLines, [{ name: 'path', values: [], help: 'hint' }]);
-	const turn = displayedLearnerTurn(hint, twoLines);
-	assert.equal(turn.learnerKind, 'hint-request');
-	assert.equal(turn.shownText, 'You asked for a hint');
-	assert.equal(turn.text, hint);
+	const tapped = displayedLearnerTurn(hint, twoLines, true);
+	assert.equal(tapped.learnerKind, 'hint-request');
+	assert.equal(tapped.shownText, 'You asked for a hint');
+	assert.equal(tapped.text, hint);
+	const saved = displayedLearnerTurn(hint, twoLines);
+	assert.equal(saved.learnerKind, 'questionnaire-reply', 'saved text cannot tell a tap from typed words');
+	assert.equal(saved.shownText, 'Asked for a hint.', 'a multi-line prompt stays out of the learner words');
 });
 
-test('typed words that match the Hint text stay the learner\'s words', () => {
+test('typed words that match the Hint text are sent and shown exactly', () => {
 	const typed = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], freeform: 'Asked for a hint.' }]);
-	assert.equal(typed, 'Questionnaire answers:\n- How should we begin?: “Asked for a hint.”');
+	assert.equal(typed, 'Questionnaire answers:\n- How should we begin?: Asked for a hint.');
 	const turn = displayedLearnerTurn(typed, questionnaire);
 	assert.equal(turn.learnerKind, 'questionnaire-reply');
-	assert.equal(turn.shownText, '“Asked for a hint.”');
-	const withChoice = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [questionnaire.items[0].choices[0].value], freeform: 'Asked for a hint.' }]);
-	assert.ok(withChoice.endsWith(', Asked for a hint.'), 'a choice already separates typed words from a Hint tap');
-});
-
-test('without its card, a saved Hint answer keeps the sent wording', () => {
-	const turn = displayedLearnerTurn('Questionnaire answers:\n- How should we begin?: Asked for a hint.');
-	assert.equal(turn.learnerKind, 'questionnaire-reply');
-	assert.equal(turn.shownText, 'How should we begin?: Asked for a hint.');
+	assert.equal(turn.shownText, 'Asked for a hint.');
 });
