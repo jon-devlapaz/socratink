@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import * as v from 'valibot';
 import { toJsonSchema } from '@valibot/to-json-schema';
 import { PresentQuestionInputSchema, questionnaireFromPresentQuestion } from '../questionnaire.ts';
@@ -17,11 +18,16 @@ export function executeLearningTool(name: string, args: unknown): {
 	if (name === presentQuestionToolName) {
 		const input = v.parse(PresentQuestionInputSchema, args);
 		const questionnaire = questionnaireFromPresentQuestion(input);
-		const choices = questionnaire.items[0]!.choices;
-		for (let index = choices.length - 1; index > 0; index -= 1) {
-			const other = Math.floor(Math.random() * (index + 1));
-			[choices[index], choices[other]] = [choices[other]!, choices[index]!];
-		}
+		const item = questionnaire.items[0]!;
+		const labels = item.choices.map((choice) => choice.label);
+		const ranked = item.choices.map((choice, index) => ({
+			choice,
+			last: /^(?:all of the above|none of the above|none of these)[.!]?$/iu.test(choice.label),
+			rank: createHash('sha256').update(JSON.stringify([input.prompt, labels, index])).digest('hex'),
+		}));
+		ranked.sort((a, b) => Number(a.last) - Number(b.last)
+			|| (a.last ? 0 : a.rank.localeCompare(b.rank)));
+		item.choices = ranked.map(({ choice }) => choice);
 		return { output: 'Question presented on the card.',
 			data: { questionnaire: [questionnaire] }, terminate: true };
 	}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -21,13 +21,6 @@ const sampleSize = 4000;
 const expectedPerPosition = sampleSize / input.choices.length;
 const tolerance = 120;
 
-function seededRandom(seed) {
-	return () => {
-		seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
-		return seed / 2 ** 32;
-	};
-}
-
 function present(question = input) {
 	const result = executeLearningTool('present_question', question);
 	assert.equal(result.terminate, true);
@@ -46,13 +39,13 @@ function assertSelections(definition) {
 	}
 }
 
-test('production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position within 120 of 1000', (t) => {
-	t.mock.method(Math, 'random', seededRandom(0x51a7));
+test('production cards: 4000 distinct first/retry pairs, each position within 120 of 1000', (t) => {
 	const counts = { first: [0, 0, 0, 0], retry: [0, 0, 0, 0] };
 	const unchangedInput = structuredClone(input);
 	for (let index = 0; index < sampleSize; index += 1) {
 		for (const phase of ['first', 'retry']) {
-			const definition = present();
+			const question = { ...input, prompt: `${input.prompt} Card ${index}, ${phase}.` };
+			const definition = present(question);
 			const choices = definition.items[0].choices;
 			const position = choices.findIndex((choice) => choice.label === input.choices[0]);
 			assert.notEqual(position, -1);
@@ -61,14 +54,12 @@ test('production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position w
 			if (phase === 'first') {
 				const wrong = choices.find((choice) => choice.label === 'Stroma');
 				assert.equal(formatQuestionnaireAnswers(definition, [{ name: 'item', values: [wrong.value] }]),
-					`Questionnaire answers:\n- ${input.prompt}: Stroma`);
+					`Questionnaire answers:\n- ${question.prompt}: Stroma`);
 			}
 			const saved = JSON.parse(JSON.stringify(definition));
-			const callsBeforeRestore = Math.random.mock.callCount();
 			const restored = questionnaireFromParts([{ type: 'data-questionnaire', data: saved }]);
 			assert.deepEqual(restored, definition, 'restoration preserves the displayed order and values');
 			assert.deepEqual(questionnaireFromReplyData({ questionnaire: [saved] }), definition);
-			assert.equal(Math.random.mock.callCount(), callsBeforeRestore, 'restoration must not shuffle');
 			assertSelections(restored);
 		}
 	}
@@ -80,31 +71,44 @@ test('production cards: LCG seed 0x51a7, 4000 first/retry pairs, each position w
 	assert.deepEqual(input, unchangedInput, 'card construction must not mutate model input');
 });
 
-test('fresh retries use new random draws; duplicate labels and explicit values stay paired', (t) => {
-	const random = t.mock.method(Math, 'random', () => 0);
+test('replay and identical retries keep order; duplicate labels and explicit values stay paired', (t) => {
+	t.mock.method(Math, 'random', () => { throw new Error('Card order must not use random state'); });
 	const question = {
 		prompt: 'Which option holds?',
 		choices: [{ label: 'Retry', value: 'retry' }, 'Retry', { label: 'Stop', value: 'stop-now' }],
 	};
 	const first = present(question);
-	assert.deepEqual(first.items[0].choices, [
-		{ label: 'Retry', value: 'retry-2' }, { label: 'Stop', value: 'stop-now' }, { label: 'Retry', value: 'retry' },
+	assert.deepEqual([...first.items[0].choices].sort((a, b) => a.value.localeCompare(b.value)), [
+		{ label: 'Retry', value: 'retry' }, { label: 'Retry', value: 'retry-2' }, { label: 'Stop', value: 'stop-now' },
 	]);
 	assertSelections(first);
 	assert.equal(formatQuestionnaireAnswers(first, [{ name: 'item', values: ['stop-now'] }]),
 		'Questionnaire answers:\n- Which option holds?: Stop');
-	random.mock.mockImplementation(() => 1 - Number.EPSILON);
-	const retry = present(question);
-	assert.deepEqual(retry.items[0].choices, [
-		{ label: 'Retry', value: 'retry' }, { label: 'Retry', value: 'retry-2' }, { label: 'Stop', value: 'stop-now' },
-	]);
-	assertSelections(retry);
-	assert.notDeepEqual(retry, first);
-	assert.deepEqual(questionnaireFromPresentQuestion(question), retry,
-		'the shared converter stays deterministic for reconstructed consent cards');
+	for (let replay = 0; replay < 20; replay += 1) {
+		assert.deepEqual(present(JSON.parse(JSON.stringify(question))), first);
+	}
+	assert.deepEqual(questionnaireFromPresentQuestion(question).items[0].choices.map((choice) => choice.value),
+		['retry', 'retry-2', 'stop-now'], 'the shared converter preserves consent card order');
 });
 
-test('isolated shuffle removal makes the production distribution regression fail', async () => {
+test('summary choices stay last in their original relative order', () => {
+	for (let index = 0; index < 40; index += 1) {
+		const question = {
+			prompt: `Which statement holds for card ${index}?`,
+			choices: ['All of the above', 'Left', { label: 'None of the above', value: 'none-above' },
+				'Right', 'None of these'],
+		};
+		const definition = present(question);
+		assert.deepEqual(definition.items[0].choices.slice(-3), [
+			{ label: 'All of the above', value: 'all-of-the-above' },
+			{ label: 'None of the above', value: 'none-above' },
+			{ label: 'None of these', value: 'none-of-these' },
+		]);
+		assertSelections(definition);
+	}
+});
+
+test('origin/main tool makes the production distribution regression fail', async (t) => {
 	const cache = join(root, '.cache');
 	await mkdir(cache, { recursive: true });
 	const directory = await mkdtemp(join(cache, 'shuffle-reversion-'));
@@ -115,10 +119,13 @@ test('isolated shuffle removal makes the production distribution regression fail
 			await copyFile(join(root, file), join(directory, file));
 		}
 		const path = join(directory, 'src/learning/tools.ts');
-		const source = await readFile(path, 'utf8');
-		const withoutShuffle = source.replace(/\n\t\tfor \(let index = choices\.length - 1; index > 0; index -= 1\) \{[^}]+\n\t\t\}/u, '');
-		assert.notEqual(withoutShuffle, source, 'the probe must remove only the production shuffle loop');
-		await writeFile(path, withoutShuffle);
+		const baseline = spawnSync('git', ['show', 'origin/main:src/learning/tools.ts'],
+			{ cwd: root, encoding: 'utf8' });
+		assert.equal(baseline.status, 0, baseline.stderr);
+		await writeFile(path, baseline.stdout);
+		const revision = spawnSync('git', ['rev-parse', 'origin/main'], { cwd: root, encoding: 'utf8' });
+		assert.equal(revision.status, 0, revision.stderr);
+		t.diagnostic(`Unshuffled baseline: ${revision.stdout.trim()}`);
 		const env = { ...process.env };
 		delete env.NODE_TEST_CONTEXT;
 		const result = spawnSync(process.execPath,
