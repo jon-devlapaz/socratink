@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { replyFrom } from '../src/config/chat-wire.ts';
-import { splitReasoning, withoutQuestionBesideCard } from '../src/learning/learner-text.ts';
+import { isHelpThenQuestion, splitReasoning, withoutQuestionBesideCard } from '../src/learning/learner-text.ts';
 import { initialProgress, progressEvents } from '../src/server/durable/browser-events.ts';
 import { project } from '../src/server/durable/browser-projection.ts';
 import { displayedAssistantTurn } from '../src/ui/chat-turns.ts';
@@ -57,4 +57,15 @@ test('text beside a question card drops the questions it ends on and keeps the f
 		['', ''],
 	];
 	for (const [text, expected] of cases) assert.equal(withoutQuestionBesideCard(text), expected, text);
+});
+
+test('a reply gives help and then ends on its question only when the question comes last (#163)', () => {
+	assert.equal(isHelpThenQuestion('Hint: look at the middle. Which half could hold it?'), true);
+	assert.equal(isHelpThenQuestion('A hint: if the middle item is too small, what does that tell you about the left half?'), true);
+	assert.equal(isHelpThenQuestion('Density decides it.\n\n**What happens to the ice?**\n'), true);
+	assert.equal(isHelpThenQuestion('Look at the middle. Which half could hold it?\n\n(no reveal)'), true);
+	assert.equal(isHelpThenQuestion('What do we know?'), false);
+	assert.equal(isHelpThenQuestion('Here is a hint:'), false);
+	assert.equal(isHelpThenQuestion('Why does ice float? It is less dense than water.'), false);
+	assert.equal(isHelpThenQuestion(''), false);
 });

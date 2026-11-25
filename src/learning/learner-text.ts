@@ -7,7 +7,7 @@
  * (#163). check:structure keeps these rules here. */
 
 import { presentQuestionJson } from '../questionnaire.ts';
-import { markRevealRetryBodies } from './mark-reveal.ts';
+import { markRevealRetryBodies, revealCue } from './mark-reveal.ts';
 import { presentQuestionRetryBodies } from './present-question.ts';
 
 const noTextCorrections: readonly string[] = [...Object.values(markRevealRetryBodies), presentQuestionRetryBodies.asText];
@@ -102,7 +102,7 @@ export function cardHintText(text: string, cardPrompt: string): string {
  * twice (#163). A lead-in such as "**Question:**" goes with its question.
  * Feedback and hints before the question stay. */
 export function withoutQuestionBesideCard(text: string): string {
-	const question = /\?["'”’)*_]*$/u;
+	const question = endingQuestion;
 	const leadIn = /[^\n.!?]*:[*_]*$/u;
 	const before = text.trimEnd();
 	// "What happens to the molecules? Let me start with the first question:" asks
@@ -115,6 +115,16 @@ export function withoutQuestionBesideCard(text: string): string {
 		visible = visible.slice(0, start).trimEnd();
 	}
 	return visible === before ? visible : visible.replace(leadIn, '').trimEnd();
+}
+
+const endingQuestion = /\?["'”’)*_]*$/u;
+
+/** Whether the learner-visible text gives help and then ends on its question.
+ * Such a reply is complete: any text after it asks again or repeats it (#163).
+ * A bare question, such as "What do we know?", may still lead into the help. */
+export function isHelpThenQuestion(text: string): boolean {
+	const visible = learnerVisibleText(text).trimEnd();
+	return endingQuestion.test(visible) && (revealCue.test(visible) || withoutQuestionBesideCard(visible) !== '');
 }
 
 /** Whether a correction told the tutor to write no text. Whatever text it
