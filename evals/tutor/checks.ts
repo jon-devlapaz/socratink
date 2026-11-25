@@ -99,6 +99,14 @@ export function expectRequestedReveal(message: WireMessage | undefined): CheckRe
 	return result('just-tell-me', problems.length === 0, problems.join('; '));
 }
 
+export function expectNoChoicePosition(message: WireMessage | undefined): CheckResult {
+	const text = textOf(message).replace(/[*_`]/g, '');
+	const position = text.match(/\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom)\s+(?:one|option|choice|answer)\b|\b(?:option|choice|answer)\s+(?:[A-H]|[1-8])\b|\b(?:it (?:is|was)|correct (?:one|answer|choice) (?:is|was))\s+(?:the\s+)?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|last|top|bottom)\b/i)
+		?? text.match(/\b(?:[Ii]t (?:is|was)|[Tt]he answer is)\s+[A-H]\b/);
+	return result('no-choice-position', text.trim().length > 0 && !position,
+		position ? `choice named by position: ${position[0]}` : 'reply has no answer text');
+}
+
 export function expectMarkedHelp(message: WireMessage | undefined, check: 'dont-know-marked' | 'hint-marked'): CheckResult {
 	const problems = [
 		...(revealsOf(message).length === 0 && !isConsent(message) ? ['help turn recorded no reveal'] : []),

@@ -7,7 +7,7 @@ import { behaviourRules, type BehaviourRuleId } from '../../src/learning/behavio
 import { markRevealRetryBodies } from '../../src/learning/mark-reveal.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { cardOf, questionsIn, replyChecks } from './checks.ts';
+import { cardOf, expectNoChoicePosition, questionsIn, replyChecks } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -46,6 +46,19 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('Good start. What do you think?', [card])), ['one-question']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?')), ['reveal-marked']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
+});
+
+test('choice positions fail while choice words and unrelated positions pass', () => {
+	for (const text of ['It was the first one.', 'The top one — the first option, about density.',
+		'The **second** choice.', 'The bottom answer.', 'Option A was right.', 'Choice B.', 'It was A.',
+		'The answer is B.', 'It was the third.', 'The correct answer was the last.']) {
+		assert.equal(expectNoChoicePosition(reply(text)).status, 'fail', text);
+	}
+	for (const text of ['Ice is less dense than liquid water.', 'First, compare their densities.',
+		'Ice floats at the top of the water.', 'A lower density makes ice float.', 'It was a lower density that made it float.']) {
+		assert.equal(expectNoChoicePosition(reply(text)).status, 'pass', text);
+	}
+	assert.equal(expectNoChoicePosition(undefined).status, 'fail');
 });
 
 type Request = { learner: string; afterTool: boolean; corrected: boolean };
@@ -96,6 +109,9 @@ function goodTutor({ learner, afterTool, corrected }: Request): Step {
 	if (corrected) return { text: '' };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
+	if (has(/Which one was right/i)) return { text: 'Ice is less dense than liquid water. How does density affect floating?' };
+	if (has(/question card about why ice floats/i)) return { tool: 'present_question', args: {
+		prompt: 'Why does ice float on water?', choices: ['Ice is less dense than liquid water', 'Ice is denser than liquid water'], reasoning: true } };
 	if (has(/just tell me/i)) return mark({ kind: 'full_answer', requested: true });
 	if (has(/Try once more/)) return { text: 'Which colour of sunlight do you think scatters most in air?' };
 	if (has(/don't know|Asked for a hint|hint\?/i)) return mark({ kind: has(/hint/i) ? 'hint' : 'partial' });
@@ -109,6 +125,8 @@ function badTutor({ learner, afterTool, corrected }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
 	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
+	if (has(/Which one was right/i)) return { text: 'It was the first one. How does density affect floating?' };
+	if (has(/question card about why ice floats/i)) return goodTutor({ learner, afterTool, corrected });
 	if (has(/just tell me/)) return { text: answer };
 	if (has(/Try once more|reflects the ocean/)) return mark({ kind: 'full_answer' });
 	if (has(/sky is blue/)) return { text: 'Alright, no answer shown. What scatters?\n\n(no reveal — this was a question only)' };
@@ -141,6 +159,7 @@ test('a policy-following tutor passes every scenario', async () => {
 test('a tutor with the known bugs fails every behaviour rule, each where expected', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, BehaviourRuleId[]> = {
+		'no-choice-position': ['no-choice-position'],
 		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
