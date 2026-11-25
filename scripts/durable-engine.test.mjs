@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { json } from 'node:stream/consumers';
 import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -22,7 +21,9 @@ async function fixture(run, failures = 0) {
 	const responses = [];
 	const requests = [];
 	const server = createServer(async (request, response) => {
-		requests.push(await json(request));
+		let body = '';
+		for await (const chunk of request) body += chunk;
+		requests.push(JSON.parse(body).messages);
 		responses.push(response);
 		if (Array.isArray(failures) ? failures.includes(responses.length) : responses.length <= failures) {
 			response.writeHead(500, { 'content-type': 'application/json' });
@@ -35,7 +36,7 @@ async function fixture(run, failures = 0) {
 	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 	const config = { provider: 'jon-local', modelId: 'synthetic', apiKey: 'synthetic-key',
 		baseUrl: `http://127.0.0.1:${server.address().port}/v1`, reasoning: true, contextWindow: 128000, maxTokens: 4096 };
-	try { await run({ target, responses, requests, config, options: { target, resolveModel: async () => config } }); }
+	try { await run({ target, requests, responses, config, options: { target, resolveModel: async () => config } }); }
 	finally { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await rm(directory, { recursive: true, force: true }); }
 }
 function chunk(response, delta, finish_reason = null) {
@@ -386,7 +387,7 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 	await reader.submit(id, 'I think it is B. Is that right?');
 	finish(await nextResponse(), 'What was your reason?');
 	await settled();
-	const history = requests.at(-1).messages;
+	const history = requests.at(-1);
 	assert.equal(history.at(-1).content, 'I think it is B. Is that right?');
 	for (const [callId, card] of [['wrong-weather', retained], ['fresh-payment', renewed]]) {
 		const output = history.find((message) => message.role === 'tool' && message.tool_call_id === callId).content;
