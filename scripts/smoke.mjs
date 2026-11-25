@@ -171,9 +171,14 @@ function writeCompletion(response, id, deltas) {
 function questionnaireFromReply(reply, expected, label) {
 	const actual = reply.data?.questionnaire?.at(-1);
 	const byValue = (definition) => ({ ...definition, items: definition.items.map((item) => ({
-		...item, choices: [...item.choices].sort((left, right) => left.value.localeCompare(right.value)),
+		...item, choices: item.choices.map(({ shortcut: _shortcut, ...choice }) => choice)
+			.sort((left, right) => left.value.localeCompare(right.value)),
 	})) });
 	assert.deepEqual(byValue(actual), byValue(expected), `${label} questionnaire should be validated`);
+	for (const item of actual.items) {
+		assert.deepEqual(item.choices.map((choice) => choice.shortcut),
+			item.choices.map((_, index) => String.fromCharCode(65 + index)), `${label} choices are lettered in displayed order`);
+	}
 	return actual;
 }
 
