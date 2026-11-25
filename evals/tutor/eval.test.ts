@@ -10,7 +10,7 @@ import { executeLearningTool } from '../../src/learning/tools.ts';
 import { questionnaireFromReplyData } from '../../src/questionnaire.ts';
 import { presentQuestionRetryBodies } from '../../src/learning/present-question.ts';
 import type { EngineOptions } from '../../src/server/durable/contract.ts';
-import { cardOf, expectNoChoicePosition, questionsIn, replyChecks, type CheckName } from './checks.ts';
+import { cardOf, expectHintLeavesReasoning, expectNoChoicePosition, questionsIn, replyChecks, type CheckName } from './checks.ts';
 import { scenarios } from './scenarios.ts';
 import { runEval, type ScenarioResult } from './run.ts';
 
@@ -49,6 +49,19 @@ test('a tutor card counts as the question, and a teaching cue needs a recorded r
 	assert.deepEqual(failing(reply('Good start. What do you think?', [card])), ['one-question']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?')), ['reveal-marked']);
 	assert.deepEqual(failing(reply('The key idea is density. What floats?', [{ type: 'data-reveal', data: { kind: 'partial' } }])), []);
+});
+
+test('a payment hint fails when a statement hands over the choice or its reason', () => {
+	const check = (text: string) => expectHintLeavesReasoning(reply(text)).status;
+	for (const text of [
+		'Hint: think about what the key is for. It exists to tell the processor "if I\'ve already run the thing under this key, give me the same result back instead of running it again."',
+		'The key stops the customer being charged twice.', 'A retry of the same payment keeps the key.', 'It prevents a double charge.', '']) {
+		assert.equal(check(text), 'fail', text);
+	}
+	for (const text of [paymentHint, 'Think about what the app knows right after the drop.',
+		'What would the processor do if it saw the same key twice?', 'Picture the customer\'s bank statement. How many $40 lines should it show?']) {
+		assert.equal(check(text), 'pass', text);
+	}
 });
 
 test('displayed choice matching is an eval check without a prompt rule', () => {
@@ -132,10 +145,18 @@ async function withProvider<T>(tutor: (request: Request) => Step, run: (resolveM
 
 const answer = 'Seasons come from the tilt of Earth\'s axis, about 23.5 degrees, which changes how directly sunlight hits each hemisphere.';
 const mark = (args: object): Step => ({ tool: 'mark_reveal', args });
+const paymentCard = { prompt: "Which request should reuse the first request's idempotency key?",
+	choices: ['A retry of the same $40 payment after the connection dropped', 'A second, separate $40 purchase'], reasoning: true };
+// A statement: text beside the card that stays after Hint asks no question of its own.
+const paymentHint = 'Picture the moment the connection drops. From the app\'s side, the first $40 may or may not have gone through.';
+// The live reply from the PR 188 failure, as saved in src/learning/card-hint-text.test.ts.
+const livePaymentHint = 'Hint: think about what the key is *for*. It exists to tell the processor "if I\'ve already run the thing under this key, give me the same result back instead of running it again." So the question is really: which follow-up is a re-run of the *same* logical operation, and which one should count as brand new?\n\nGive it another go — which request reuses the first key?';
 
 function goodTutor({ learner, afterTool, corrected, displayed }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (corrected) return { text: '' };
+	if (afterTool && has(/idempotency key/) && has(/hint/i)) return { text: paymentHint };
+	if (has(/Quiz me with one question card/)) return { tool: 'present_question', args: paymentCard };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
 	if (has(/Which one was right/i)) {
@@ -157,6 +178,8 @@ function goodTutor({ learner, afterTool, corrected, displayed }: Request): Step 
 function badTutor({ learner, afterTool, corrected, displayed }: Request): Step {
 	const has = (pattern: RegExp) => pattern.test(learner);
 	if (afterTool || corrected) return { text: afterTool ? answer : '' };
+	if (has(/Quiz me with one question card/)) return goodTutor({ learner, afterTool, corrected });
+	if (has(/idempotency key/) && has(/Asked for a hint/)) return { text: livePaymentHint };
 	// The app now records requested: true itself, so the remaining just-tell-me bug is an unmarked answer.
 	if (has(/Which one was right/i)) {
 		const letter = displayed?.match(/([A-H])\. Ice is denser than liquid water/)?.[1];
@@ -203,6 +226,7 @@ test('a tutor with the known bugs fails every behaviour rule and the displayed c
 		'try-once-more-no-notes': ['no-internal-notes', 'ends-on-question', 'try-once-more-withholds'],
 		'i-dont-know-is-marked': ['dont-know-marked', 'reveal-marked'],
 		'hint-is-marked': ['hint-marked', 'choices-boxed'],
+		'hint-leaves-reasoning': ['hint-leaves-reasoning'],
 	};
 	for (const [scenario, checks] of Object.entries(expected)) {
 		for (const check of checks) assert.ok(failedChecks(results, scenario).has(check), `${scenario} must fail ${check}`);

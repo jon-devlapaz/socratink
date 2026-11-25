@@ -153,3 +153,26 @@ export function expectTryOnceMore(message: WireMessage | undefined): CheckResult
 	];
 	return result('try-once-more-withholds', problems.length === 0, problems.join('; '));
 }
+
+// Statements that hand over the idempotency card's answer or its reason: the choice
+// itself (a retry of the same payment) or the mechanism (same result, not charged twice).
+// A question may point at these; a statement that says them leaves nothing to work out.
+const paymentGiveaways = [
+	/\bsame (?:result|response|outcome|answer)\b/i,
+	/\b(?:instead of|rather than|without) (?:running|charging|processing|doing|executing|billing)\b/i,
+	/\b(?:charg|bill|process|run|execut)\w* (?:\w+ ){0,3}(?:twice|again|two times|a second time)\b/i,
+	/\bdouble[- ]?(?:charg|bill|pay)/i,
+	/\bduplicate (?:charge|payment|purchase|request|operation)/i,
+	/\b(?:retry|re-?run|re-?send|resend)\b/i,
+	/\bsame (?:\$?40 )?(?:payment|charge|operation|logical operation|purchase|request)\b/i,
+];
+
+/** After Hint on the payment card, the clue the learner sees must leave the choice and its
+ * reason for them to work out. The text is what the learner reads, after the app's display. */
+export function expectHintLeavesReasoning(message: WireMessage | undefined): CheckResult {
+	const text = prose(textOf(message)).replace(/[*_`]/g, '');
+	if (!text.trim()) return result('hint-leaves-reasoning', false, 'the hint showed no clue');
+	const statements = text.split(/(?<=[.!?])\s+|\n+/).filter((sentence) => sentence.trim() && !/\?\s*["”']?$/.test(sentence.trim()));
+	const giveaways = statements.filter((sentence) => paymentGiveaways.some((pattern) => pattern.test(sentence)));
+	return result('hint-leaves-reasoning', giveaways.length === 0, `states the answer or its reason: ${giveaways.join(' | ')}`);
+}
