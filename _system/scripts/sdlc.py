@@ -49,6 +49,8 @@ CHECK_KEYS = {'argv', 'timeout_seconds'}
 RUNNER_ENV = frozenset({'NODE_OPTIONS', 'NODE_PATH', 'PYTHONPATH', 'PYTHONSTARTUP', 'PYTEST_ADDOPTS', 'RUSTFLAGS',
                         'RUSTDOCFLAGS', 'CARGO_BUILD_RUSTFLAGS', 'JAVA_TOOL_OPTIONS', '_JAVA_OPTIONS', 'GOFLAGS',
                         'RUBYOPT', 'PERL5OPT', 'BASH_ENV', 'ENV', 'LD_PRELOAD', 'DYLD_INSERT_LIBRARIES'})
+CHECK_POLICY = '_system/verification.json'
+REVIEW_POLICY = '_shared/REVIEW.md'
 ARTIFACTS = ['01-plan/output/intent.md', '02-design/output/spec.md', '03-build/output/plan.md']
 # The commit a worktree launch makes; for stage 3 it is the base an activated seed test must fail at (#199).
 OPENED = 'stage {n} open: {run} (approved artifacts and receipts)'
@@ -97,6 +99,14 @@ def run_path(slug):
     if path.resolve() != path.absolute():
         raise ValueError('Run paths must not contain symlinks.')
     return path
+
+
+def run_lock(run):
+    """The lock that serializes creating and labelling `run`, shared by every checkout of the repository and kept
+    outside each working tree, so it never shows as an untracked file or blocks `git worktree remove`."""
+    common = run_git(ROOT, 'rev-parse', '--path-format=absolute', '--git-common-dir')
+    key = common.stdout.strip() if common.returncode == 0 else str(ROOT.resolve())
+    return Path(tempfile.gettempdir()) / f'sdlc-run-{os.getuid()}-{digest(key.encode())[:12]}-{run}.lock'
 
 
 def tink_lock_path(root=ROOT):
@@ -411,13 +421,21 @@ def seed_check_items(path):
             raise ValueError('Invalid seed record fields; preserve the cmd, provisional or judge schema.')
         activation = item.get('activation')
         if 'activation' in item:
+            text = {k: v for k, v in activation.items() if k != 'tests'} if isinstance(activation, dict) else {}
             if (item['kind'] != 'provisional' or not isinstance(activation, dict)
-                    or set(activation) != {'cmd', 'cwd', 'evidence'}
-                    or not all(isinstance(v, str) and v.strip() for v in activation.values())):
+                    or set(text) != {'cmd', 'cwd', 'evidence'}
+                    or not all(isinstance(v, str) and v.strip() for v in text.values())):
                 raise ValueError('Provisional activation needs a real cmd, cwd and prerequisite evidence.')
             relative_check_cwd(activation['cwd'])
-            if any('\x00' in value for value in activation.values()):
+            if any('\x00' in value for value in text.values()):
                 raise ValueError('Provisional activation must not contain NUL.')
+            if 'tests' in activation:  # Changed test files that red at base copies from the candidate.
+                tests = activation['tests']
+                if (not isinstance(tests, list) or not tests
+                        or any(not isinstance(t, str) or '\x00' in t or os.path.isabs(t)
+                               or os.path.normpath(t) in {'.', ''} or os.path.normpath(t).startswith('..')
+                               for t in tests)):
+                    raise ValueError('Activation tests must list relative test file paths inside the checkout.')
         pending = item['kind'] == 'provisional' and activation is None
         base = {'id': item['id'], 'description': item['description'],
                 'verify': item.get('how_to_judge', item['statement']) if item['kind'] == 'judge' else item['expect'], 'origin': item['origin'],
@@ -664,17 +682,83 @@ def changed_report(before_files, after_files):
     return text
 
 
-def checkout_setup():
-    """The committed `setup` check a new stage checkout runs before any session starts (#161), or None.
+def default_policy_ref():
+    """Resolve the default from Git state outside the candidate checkout files."""
+    setting = run_git(ROOT, 'config', '--local', '--get', 'sdlc.policyBaseRef')
+    if setting.returncode == 0:
+        ref = setting.stdout.rstrip('\n')
+        if not ref.startswith(('refs/heads/', 'refs/remotes/')) or run_git(
+                ROOT, 'show-ref', '--verify', '--quiet', ref).returncode:
+            raise ValueError('Git sdlc.policyBaseRef must name an existing full branch ref.')
+        return ref
+    remote_head = run_git(ROOT, 'symbolic-ref', '-q', 'refs/remotes/origin/HEAD')
+    if remote_head.returncode == 0:
+        return remote_head.stdout.strip()
+    for ref in ('refs/remotes/origin/main', 'refs/remotes/origin/master', 'refs/heads/main', 'refs/heads/master'):
+        if run_git(ROOT, 'show-ref', '--verify', '--quiet', ref).returncode == 0:
+            return ref
+    return None
 
-    Read from HEAD, the commit the worktree is created at, so an uncommitted edit cannot supply a command."""
-    shown = run_git(ROOT, 'show', 'HEAD:_system/verification.json')
-    if shown.returncode:
-        return None
+
+def policy_base():
+    """Resolve one common ancestor with the trusted default branch."""
+    ref = default_policy_ref()
+    if ref is None:
+        git('rev-parse', '--verify', 'HEAD')  # Keep the Git error for an unborn branch or a missing repository.
+        raise ValueError('Cannot find the default branch for verification policy. Fetch it or set '
+                         'sdlc.policyBaseRef in local Git config to the full ref of the default branch.')
+    bases = run_git(ROOT, 'merge-base', '--all', ref, 'HEAD')
+    if bases.returncode or len(bases.stdout.splitlines()) != 1:
+        raise ValueError(f'Cannot find one policy base with {ref}; fetch the default branch and its history.')
+    return bases.stdout.strip()
+
+
+def checked_policy():
+    """Read the base policy and refuse candidate policy edits before verification or review."""
+    base = policy_base()
+    for candidate in (('HEAD',), ()):
+        compared = run_git(ROOT, 'diff', '--name-only', '-z', base, *candidate, '--', CHECK_POLICY, REVIEW_POLICY)
+        if compared.returncode:
+            raise ValueError(f'Cannot compare candidate policy against {base[:12]}: {git_line(compared)}')
+        if compared.stdout:
+            changed = ', '.join(compared.stdout.rstrip('\0').split('\0'))
+            raise ValueError(f'Candidate changes policy from {base[:12]}: {changed}. '
+                             'Land policy changes through separately reviewed project checks first.')
+    config = git('show', f'{base}:{CHECK_POLICY}')
+    found = run_git(ROOT, 'ls-tree', '--name-only', base, '--', REVIEW_POLICY)
+    if found.returncode:
+        raise ValueError(f'Cannot find review policy at {base[:12]}: {git_line(found)}')
+    review = git('show', f'{base}:{REVIEW_POLICY}') if found.stdout else None
+    policy = (config, review)
+    check_policy_files(ROOT, policy)
+    return policy
+
+
+def check_policy_files(checkout, policy):
+    """Confirm the files seen by the runner or reviewer match their base blobs."""
+    root = checkout.resolve()
+    for name, content in zip((CHECK_POLICY, REVIEW_POLICY), policy):
+        file = root / name
+        if file.resolve() != file or (file.exists() and not file.is_file()):
+            raise ValueError(f'Policy must be a regular file: {name}.')
+        actual = file.read_bytes().replace(b'\r\n', b'\n') if file.exists() else None
+        expected = content.replace(b'\r\n', b'\n') if content is not None else None
+        if actual != expected:
+            raise ValueError(f'Checkout changes base policy: {name}. '
+                             'Land policy changes through separately reviewed project checks first.')
+
+
+def checkout_setup(config=None):
+    """Read build setup from the committed checkout and review setup from the base policy."""
+    if config is None:
+        shown = run_git(ROOT, 'show', f'HEAD:{CHECK_POLICY}')
+        if shown.returncode:
+            return None
+        config = shown.stdout
     try:
-        setup = json.loads(shown.stdout).get('setup')
+        setup = json.loads(config).get('setup')
     except (json.JSONDecodeError, AttributeError):
-        raise ValueError('_system/verification.json at HEAD is not a valid JSON object.') from None
+        raise ValueError(f'{CHECK_POLICY} is not a valid JSON object.') from None
     if setup is not None:
         validate_check(setup, exact=True)
     return setup
@@ -695,8 +779,11 @@ def run_setup(setup, target):
     return None
 
 
-def checks_config():
-    config = read_json(ROOT / '_system/verification.json')
+def checks_config(raw=None):
+    try:
+        config = read_json(ROOT / CHECK_POLICY) if raw is None else json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ValueError(f'{CHECK_POLICY} is not valid JSON: {error}') from None
     checks = config.get('checks')
     if not isinstance(config.get('require_tink'), bool) or not isinstance(checks, list) or not checks:
         raise ValueError('Verification requires an explicit Tink policy and a nonempty check list.')
@@ -775,22 +862,24 @@ def manual_marks(path):
             if 'check' not in item and not item.get('pending') and item['id'] in latest}
 
 
-def evidence_inputs(path):
+def evidence_inputs(path, policy=None):
     attested = manual_marks(path)
-    return {'candidate': snapshot(), 'inputs': inputs(path, 3),
-            'policy': digest((ROOT / '_system/verification.json').read_bytes()),
+    candidate = snapshot()
+    config, review = checked_policy() if policy is None else policy
+    return {'candidate': candidate, 'inputs': inputs(path, 3),
+            'policy': digest(config), 'review_policy': digest(review) if review is not None else None,
             'test_lock': test_lock(path),
             **({'checklist': checklist_digest(path), 'manual_marks': attested}
                if checklist_digest(path) is not None or seed_check_items(path) else {})}
 
 
-def approved_issue(url):
-    """The approved issue as a run definition: its words unchanged, read once from the forge.
-    Refuses anything that is not an open GitHub issue labeled `approved` with Done-when lines."""
+def issue_definition(url):
+    """The issue as a run definition: its words unchanged, read once from the forge.
+    Refuses anything that is not an open GitHub issue with Done-when lines. It approves nothing."""
     if not ISSUE_URL.fullmatch(url):
         raise ValueError('--issue must be a full GitHub URL: https://github.com/OWNER/REPO/issues/NUMBER')
     try:
-        read = subprocess.run(['gh', 'issue', 'view', url, '--json', 'title,body,state,labels'], stdin=subprocess.DEVNULL,
+        read = subprocess.run(['gh', 'issue', 'view', url, '--json', 'title,body,state'], stdin=subprocess.DEVNULL,
                               capture_output=True, text=True, timeout=DELIVERY_TIMEOUT)
     except (OSError, subprocess.TimeoutExpired) as error:
         raise ValueError(f'Could not read the issue with `gh` ({type(error).__name__}); no run was created.') from error
@@ -801,15 +890,11 @@ def approved_issue(url):
     except ValueError:
         issue = None
     # One shape check where the answer comes in; everything below just uses it.
-    if (not isinstance(issue, dict) or not all(isinstance(issue.get(key), str) for key in ('title', 'body', 'state'))
-            or not isinstance(issue.get('labels'), list)
-            or not all(isinstance(label, dict) and isinstance(label.get('name'), str) for label in issue['labels'])):
+    if not isinstance(issue, dict) or not all(isinstance(issue.get(key), str) for key in ('title', 'body', 'state')):
         raise ValueError('`gh` returned an unexpected answer; no run was created.')
     if issue['state'] != 'OPEN':
         raise ValueError('The issue is not open; no run was created.')
-    if not any(label['name'] == 'approved' for label in issue['labels']):
-        raise ValueError('The issue has no `approved` label; no run was created.')
-    # The section is read strictly, so no approved word is dropped or cut: only top-level bullets, one line each.
+    # The section is read strictly, so no word is dropped or cut: only top-level bullets, one line each.
     body = issue['body'].replace('\r\n', '\n').split('\n')
     heading = re.compile(r'#{1,6}[ \t]')
     first = next((index for index, line in enumerate(body) if re.fullmatch(r'#{1,6}[ \t]*Done when[ \t]*', line, re.I)), None)
@@ -826,11 +911,17 @@ def approved_issue(url):
         raise ValueError('The issue has no Done-when lines (a `Done when` heading with one `- ` line each); no run was created.')
     binding = {'url': url, 'title': issue['title'], 'sha256': digest(issue['body'].encode())}
     brief = (f"# Change brief\n\nSource: {url}\nIssue body sha256: {binding['sha256']}\nTitle: {issue['title']}\n\n"
-             'The approved issue below is this run\'s brief, unchanged. '
+             'The issue below is this run\'s brief, unchanged. '
              'Each Done-when line is one item in `checklist.json`.\n\n---\n\n' + issue['body'] + '\n')
-    items = [{'id': f'done-{number}', 'description': line,
-              'verify': 'Show evidence on the pull request that this Done-when line holds.'}
-             for number, line in enumerate(lines, 1)]
+    items = []
+    for number, line in enumerate(lines, 1):
+        item = {'id': f'done-{number}', 'description': line,
+                'verify': 'Show evidence on the pull request that this Done-when line holds.'}
+        command = re.fullmatch(r'`([^`\x00\r\n]+)` (?:passes|exits 0)\.', line)
+        if command and command[1].strip():
+            item['verify'] = 'Run the command and require exit 0.'
+            item['check'] = {'argv': ['bash', '-c', command[1]], 'timeout_seconds': 600}
+        items.append(item)
     return binding, brief, items
 
 
@@ -838,9 +929,9 @@ def create(args):
     path = run_path(args.run)
     if args.issue is not None and args.profile != 'light':
         raise ValueError('--issue creates a light run; a full run defines intent, spec and plan itself.')
-    issue = approved_issue(args.issue) if args.issue is not None else None
+    issue = issue_definition(args.issue) if args.issue is not None else None
     path.parent.mkdir(exist_ok=True)
-    with locked(path.parent / f'.{args.run}.lock'):
+    with locked(run_lock(args.run)):
         if path.exists():
             raise ValueError('Run already exists; nothing overwritten.')
         temporary = Path(tempfile.mkdtemp(prefix=f'.{args.run}-', dir=path.parent))
@@ -861,7 +952,7 @@ def create(args):
         finally:
             if temporary.exists():
                 shutil.rmtree(temporary)
-    print(f'Created {path} from the approved issue; brief.md and checklist.json hold its words. Next: record the human decision.'
+    print(f'Created {path} from the issue; brief.md and checklist.json hold its words. Next: record the human decision.'
           if issue else f'Created {path}. Next: define the change and obtain a human review.')
 
 
@@ -954,7 +1045,7 @@ def dry_run(args):
 def probe(args):
     """Run one runnable seed check on a throwaway export of HEAD, first clean, then with the reviewer's fault
     patch. The clean run must pass and the patched run must fail: only then is the fault `caught`. The patch may not touch
-    the files the check names, and a build step session cannot probe its own work. Never touches the checkout."""
+    the files the check names or its activation tests, and a build step session cannot probe its own work. Never touches the checkout."""
     if os.environ.get('TINK_SDLC_STEP_SESSION') == '1':
         raise ValueError('A build step session cannot probe its own checks; the reviewer writes the fault.')
     path = run_path(args.run)
@@ -974,8 +1065,9 @@ def probe(args):
                      if not os.path.isabs(name := os.path.normpath(os.path.join(check['cwd'], word)))
                      and name != '.' and not name.startswith('..')}
         commit = git('rev-parse', 'HEAD').decode().strip()
-        case = next(entry for entry in read_json(path / 'seed-checks.json')['items']
-                    if entry['id'] == args.check).get('failure_case')
+        record = next(entry for entry in read_json(path / 'seed-checks.json')['items'] if entry['id'] == args.check)
+        case = record.get('failure_case')
+        named |= {os.path.normpath(test) for test in record.get('activation', {}).get('tests', [])}
         log_path = path / '04-test/output/probe-log.md'
         log_path.parent.mkdir(parents=True, exist_ok=True)
         def run_in(export, log, label):
@@ -1060,24 +1152,26 @@ def verify(args):
             missing = missing_cited_evidence(path)
             if missing:
                 raise ValueError('Cited evidence is missing from this checkout: ' + ', '.join(missing))
-            config = checks_config()
+            before_files = snapshot_files()
+            policy = checked_policy()
+            before = evidence_inputs(path, policy)
+            config = checks_config(policy[0])
             check_env = runner_env(config)
             unlisted = unlisted_authors(config)
             if unlisted:
                 raise ValueError('Commits by authors verification.json does not allow: ' + '; '.join(unlisted)
                                  + ' (allowed: ' + ', '.join(config['authors']['allow']) + ')')
-            before_files = snapshot_files()
-            before = evidence_inputs(path)
             items = load_checklist(path)
             seed_results = {item['id']: 'pending' if 'check' not in item else 'not-run'
                             for item in items or [] if is_seed_check(item)}
-            activated = ({entry['id'] for entry in read_json(path / 'seed-checks.json')['items'] if 'activation' in entry}
-                         if require_run(path).get('seed_contract') else set())
+            activated = ({entry['id']: entry['activation'].get('tests', [])
+                          for entry in read_json(path / 'seed-checks.json')['items'] if 'activation' in entry}
+                         if require_run(path).get('seed_contract') else {})
             base = None
             if activated:  # The stage 3 open commit, or HEAD when the build opened in place.
                 base = (git('log', '-n1', '--format=%H', '--fixed-strings', '--grep', OPENED.format(n=3, run=args.run),
                             'HEAD').decode().strip() or git('rev-parse', 'HEAD').decode().strip())
-            red = []
+            red, copied_from = [], {}
             checks = list(config['checks'])
             if config['require_tink']:
                 checks.insert(0, {'argv': ['tink', 'skill', 'check'], 'timeout_seconds': 120})
@@ -1115,7 +1209,8 @@ def verify(args):
                         raise ValueError(f"{failure}: {item['id']}{log_hint}")
                     if seed and item['id'] in activated:
                         # The same command in an export of the base, plus only the files it names that the
-                        # candidate added, must fail; the export never touches this checkout.
+                        # candidate added and the test files its activation lists, must fail; the export never
+                        # touches this checkout.
                         unrelated = f"{failure}: {item['id']}: the test does not depend on the change because it "
                         with tempfile.TemporaryDirectory(prefix='sdlc-base-') as export:
                             subprocess.run(['tar', '-x', '-C', export], input=git('archive', base), check=True)
@@ -1128,8 +1223,28 @@ def verify(args):
                                         (Path(export) / name).parent.mkdir(parents=True, exist_ok=True)
                                         shutil.copy2(ROOT / name, Path(export) / name)
                                         copied.append(name)
+                            for test in activated[item['id']]:
+                                name = os.path.normpath(test)
+                                linked = [p for p in (Path(export) / name, *(Path(export) / name).parents,
+                                                      ROOT / name, *(ROOT / name).parents)
+                                          if p.is_symlink()]
+                                if linked:  # A copy must never write through a link out of the export.
+                                    raise ValueError(f"{failure}: {item['id']}: activation test {test} passes "
+                                                     f"through a symlink{log_hint}")
+                                if not (ROOT / name).is_file():
+                                    raise ValueError(f"{failure}: {item['id']}: activation test {test} is not a file "
+                                                     f"in this checkout{log_hint}")
+                                at_base = Path(export) / name
+                                if at_base.is_file() and at_base.read_bytes() == (ROOT / name).read_bytes():
+                                    raise ValueError(f'{unrelated}lists test {test}, which is unchanged since base '
+                                                     f'{base[:12]}{log_hint}')
+                                if name not in copied:
+                                    at_base.parent.mkdir(parents=True, exist_ok=True)
+                                    shutil.copy2(ROOT / name, at_base)
+                                    copied.append(name)
                             if not copied:
-                                raise ValueError(f'{unrelated}names no file that is new since base {base[:12]}{log_hint}')
+                                raise ValueError(f'{unrelated}names no file that is new since base {base[:12]} and its '
+                                                 f'activation lists no changed test{log_hint}')
                             (Path(export) / check['cwd']).mkdir(parents=True, exist_ok=True)
                             log.write(f"\n# {item['id']} at base {base}, with {', '.join(copied)} from the candidate\n")
                             log.flush()
@@ -1143,6 +1258,7 @@ def verify(args):
                             if not result.returncode:
                                 raise ValueError(f'{unrelated}passes at base {base[:12]}{log_hint}')
                         red.append(f"{item['id']} red at base, green at candidate")
+                        copied_from[item['id']] = copied
                     if seed:
                         seed_results[item['id']] = 'proven'
             if before != evidence_inputs(path):
@@ -1172,7 +1288,7 @@ def verify(args):
                 if seed_results:
                     proof['seed_checks'] = seed_results
             if red:
-                proof['red_at_base'] = {'base': base, 'seeds': red}
+                proof['red_at_base'] = {'base': base, 'seeds': red, 'copied': copied_from}
             write_json(receipt, {'result': 'awaiting-attestation' if incomplete else 'passed',
                                  **before, **proof, 'log': digest(log_path.read_bytes())})
         except Exception as error:
@@ -1438,9 +1554,29 @@ def delivery(path):
                                                                                and re.fullmatch(r'[0-9a-f]{40}', closure['merge'])))):
         raise ValueError(f'runs/{path.name}/closure.json must record merged with its merge commit, or abandoned.')
     records = labels(path)
+    if closure is None and pr is not None and records:
+        closure = merged_here(path)
     if closure is not None and not records:
         raise ValueError(f'runs/{path.name} is closed but has no labels; restore labels.jsonl from Git.')
     return pr, closure, records
+
+
+def merged_here(path):
+    """A labelled run whose recorded PR reached this checkout's default branch is closed as merged: the first-parent
+    commit that brought its pr.json is the merge. Derived from Git each time, so a merge needs no closing commit."""
+    def git(*args):
+        result = run_git(path, *args)
+        return result.stdout.strip() if result.returncode == 0 else ''
+    branch = git('symbolic-ref', '--short', 'HEAD')
+    # The forge's default branch, else the branch of the repository's main working tree.
+    first = git('worktree', 'list', '--porcelain').split('\n\n', 1)[0]
+    default = (git('symbolic-ref', '--short', 'refs/remotes/origin/HEAD').removeprefix('origin/')
+               or next((line.removeprefix('branch refs/heads/') for line in first.splitlines() if line.startswith('branch ')), ''))
+    found = git('log', '--first-parent', '--diff-filter=A', '--format=%H %ct', '-1', 'HEAD', '--', 'pr.json')
+    if not branch or branch != default or branch == path.name or not found:
+        return None
+    merge, when = found.split()
+    return {'outcome': 'merged', 'merge': merge, 'time_ns': int(when) * 10**9}
 
 
 def labels(path):
@@ -1480,6 +1616,7 @@ def writing_here(run):
 
 def label(args):
     path = run_path(args.run)
+    writing_here(args.run)
     require_run(path)
     if os.environ.get('TINK_SDLC_STEP_SESSION') == '1':
         raise ValueError('Labels are the operator\'s; a build step session cannot record them.')
@@ -1494,11 +1631,10 @@ def label(args):
         if not target.is_relative_to(ROOT) or not target.is_file():
             raise ValueError('--about must name a file in this checkout (checkout-relative), or outside.')
         about = {'about': str(target.relative_to(ROOT)), 'about_sha256': digest(target.read_bytes())}
-    with locked(path.parent / f'.{args.run}.lock'), locked(path / '.writer-lock'):
+    with locked(run_lock(args.run)), locked(path / '.writer-lock'):
         meta = require_run(path)
         if args.expected_run_id is not None and args.expected_run_id != meta['run_id']:
             raise ValueError('Run identity changed; reread the run before saving a label.')
-        writing_here(args.run)
         human_review(args, path)
         if args.relay:
             first = re.match(r'\s*(accept|reject)(?:ed)?\b', args.words, re.I)
@@ -1521,10 +1657,10 @@ def label(args):
 
 def record_pr(args):
     path = run_path(args.run)
+    writing_here(args.run)
     require_run(path)
     if not PR_URL.fullmatch(args.url):
         raise ValueError('PR must be a full GitHub URL: https://github.com/OWNER/REPO/pull/NUMBER')
-    writing_here(args.run)
     with locked(path / '.writer-lock'):
         pr, closure, _ = delivery(path)
         if pr is not None:
@@ -1547,12 +1683,12 @@ def record_pr(args):
 
 def close(args):
     path = run_path(args.run)
+    writing_here(args.run)
     require_run(path)
     if args.outcome == 'merged' and not (args.merge and re.fullmatch(r'[0-9a-f]{40}', args.merge)):
         raise ValueError('A merged run needs --merge with the full 40-character merge commit.')
     if args.outcome == 'abandoned' and args.merge:
         raise ValueError('An abandoned run has no merge commit; leave out --merge.')
-    writing_here(args.run)
     with locked(path / '.writer-lock'):
         pr, closure, records = delivery(path)
         if closure is not None:
@@ -1563,55 +1699,8 @@ def close(args):
         if args.outcome == 'merged' and pr is None:
             raise ValueError(f'Record the PR first: python3 _system/scripts/sdlc.py pr {args.run} <PR URL>')
         closure = {'outcome': args.outcome, **({'merge': args.merge} if args.merge else {}), 'time_ns': time.time_ns()}
-        main = keep_records(path, closure)
         write_json(path / 'closure.json', closure)
     print(f'Closed {args.run}: {args.outcome}.')
-    if main:
-        print(f'Copied its records to {main}; commit them there before removing this worktree.')
-
-
-def main_checkout():
-    """This scaffold's root in the repository's main working tree; None when this checkout is that tree or the
-    repository is bare, so there is no other working tree to keep records in."""
-    listed = run_git(ROOT, 'worktree', 'list', '--porcelain')
-    top = run_git(ROOT, 'rev-parse', '--show-toplevel')
-    if listed.returncode or top.returncode or not listed.stdout.startswith('worktree '):
-        return None
-    first = listed.stdout.split('\n\n', 1)[0].splitlines()
-    if 'bare' in first:
-        return None
-    main = Path(first[0].removeprefix('worktree '))
-    if main.resolve() == Path(top.stdout.strip()).resolve():
-        return None
-    return main / ROOT.resolve().relative_to(Path(top.stdout.strip()).resolve())
-
-
-def keep_records(path, closure):
-    """Closing in a linked worktree copies the run's records, closure included, into the main checkout, so they
-    outlive the worktree. Refuses rather than overwrite uncommitted changes there or another run of the same name.
-    Copies before the local closure is written, so a failed copy leaves the run open; files it already copied show
-    as uncommitted there, so restore them before closing again."""
-    main = main_checkout()
-    if main is None:
-        return None
-    target = main / 'runs' / path.name
-    if target.is_symlink() or (target.exists() and not target.is_dir()):
-        raise ValueError(f'{target} must be a directory, not a symlink; the run stays open.')
-    held = read_json(target / 'run.json') if (target / 'run.json').is_file() else None
-    if held is not None and not (isinstance(held, dict) and held.get('run_id') == require_run(path)['run_id']):
-        raise ValueError(f'{target} holds a different run of the same name; the run stays open.')
-    dirty = run_git(main, 'status', '--porcelain', '--', f'runs/{path.name}')
-    if dirty.returncode:
-        raise ValueError(f'Could not read Git status in {main}: {git_line(dirty)}; the run stays open.')
-    if dirty.stdout.strip():
-        raise ValueError(f'{target} has uncommitted changes; commit or restore them, then close again. The run stays open.')
-    for file in sorted(path.rglob('*')):
-        relative = file.relative_to(path)
-        if any(part.startswith('.') for part in relative.parts) or file.is_symlink() or not file.is_file():
-            continue
-        write_bytes(target / relative, file.read_bytes())
-    write_json(target / 'closure.json', closure)
-    return target
 
 
 def status_state(path):
@@ -1677,7 +1766,7 @@ def status_state(path):
     checklist = checklist_view(path, verified)
     errors = []
     try:
-        config = checks_config()
+        config = checks_config(checked_policy()[0])
     except (ValueError, OSError, TypeError, AttributeError) as error:
         config = None
         errors.append(str(error))
@@ -1722,7 +1811,7 @@ def status_state(path):
     mark_reason = unavailable or ('' if manual else 'This run has no manual checklist items to attest.')
     checks = (config['checks'] if config else []) + [configured(i, config['seed_timeout_seconds'] if config else 120) for i in checklist['items'] if i['automatic']]
     timeout = sum(c['timeout_seconds'] for c in checks) + 30 + (120 if config and config['require_tink'] else 0)
-    next_action = unavailable or worker_action(path.name, steps, newest) or (errors[0] if errors else '') or {
+    next_action = unavailable or worker_action(path.name, steps, newest, state if not errors else None) or (errors[0] if errors else '') or {
         'current': (f'{unproven} Then independent PR review and release checks.'
                     if (unproven := unproven_goal(checklist['items'])) else 'independent PR review and release checks.'),
         'awaiting-attestation': (record.get('error') or 'Record the pending attestations, then rerun verification.') if record else '',
@@ -1809,6 +1898,15 @@ def status_text(view):
         lines.append('Verification: not run (implementation may be pending; a text log is not passing evidence)')
     if all(g['status'] == 'approved' for g in view['gates']):
         lines.append(f"Next: {view['next_action']}")
+    for fact in view['steps']:
+        if stop := fact.get('cap_stop'):
+            lines.append(f"Worker step {fact['name']} stopped at its response cap ({stop['cap']}).")
+            files = stop['changed_files']
+            lines.append('Changed files at stop: ' + ('unavailable' if files is None else ', '.join(files) or 'none')
+                         + (f" (+{stop['omitted_files']} more)" if stop['omitted_files'] else ''))
+            if result := stop['shell']:
+                outcome = 'error' if result['error'] else 'no error reported'
+                lines.append(f"Last shell result ({outcome}, not Verify): {result['command']}: {result['output']}")
     if view['pr']:
         lines.append(f"PR: {view['pr']['url']}")
     if view['labels']['count']:
@@ -1907,9 +2005,17 @@ def status(args):
                 print(status_text(status_state(run_path(args.run))))
         return
     directory = ROOT / 'runs'
-    names = [p.name for p in sorted(directory.iterdir()) if p.is_dir() and not p.name.startswith('.')] if directory.exists() else []
+    names = {p.name for p in directory.iterdir() if p.is_dir() and not p.name.startswith('.')} if directory.exists() else set()
+    # A building run's records live only on its branch, in its own checkout.
+    listed = run_git(ROOT, 'worktree', 'list', '--porcelain')
+    for block in listed.stdout.split('\n\n') if listed.returncode == 0 else []:
+        fields = dict(line.split(' ', 1) for line in block.splitlines() if ' ' in line)
+        name = fields.get('branch', '').removeprefix('refs/heads/')
+        if name and (Path(fields['worktree']) / 'runs' / name / 'run.json').is_file():
+            names.add(name)
+    names = sorted(names)
     if not getattr(args, 'json', False):
-        print('\n'.join(names) if directory.exists() else 'No runs.')
+        print('\n'.join(names) if names else 'No runs.')
         return
     runs = []
     for name in names:
@@ -2243,6 +2349,39 @@ def run_git(cwd, *args):
     return subprocess.run(['git', '-C', str(cwd), *args], capture_output=True, text=True)
 
 
+def open_commit(run, message):
+    """A commit of HEAD plus runs/<run>, made in a private index; this checkout's branch and index do not move."""
+    with tempfile.TemporaryDirectory(prefix='sdlc-open-') as scratch:
+        env = {**os.environ, 'GIT_INDEX_FILE': str(Path(scratch) / 'index')}
+        def git(*args):
+            result = subprocess.run(['git', '-C', str(ROOT), *args], capture_output=True, text=True, env=env)
+            if result.returncode:
+                raise ValueError(f'git {args[0]} failed: {git_line(result)}')
+            return result.stdout.strip()
+        git('read-tree', 'HEAD')
+        git('add', '-A', '--', f'runs/{run}')
+        return git('commit-tree', git('write-tree'), '-p', 'HEAD', '-m', message)
+
+
+def moved(here, there):
+    """Deletes this checkout's untracked copy of a run's records once the run's checkout holds the same bytes, so this
+    checkout's status is as it was before the stage opened. Never deletes a tracked file; keeps any file that differs,
+    and names the folder."""
+    listed = run_git(ROOT, 'ls-files', '--others', '-z', '--', str(here.relative_to(ROOT)))
+    for name in sorted(listed.stdout.split('\0') if listed.returncode == 0 else []):
+        file = ROOT / name
+        if name and not file.is_symlink() and (there / file.relative_to(here)).is_file() \
+                and (there / file.relative_to(here)).read_bytes() == file.read_bytes():
+            file.unlink()
+    for folder in sorted((p for p in here.rglob('*') if p.is_dir() and not p.is_symlink()), reverse=True):
+        with contextlib.suppress(OSError):
+            folder.rmdir()
+    with contextlib.suppress(OSError):
+        here.rmdir()
+    if here.exists() and run_git(ROOT, 'ls-files', '--others', '--', str(here.relative_to(ROOT))).stdout.strip():
+        print(f'warning: kept {here}: it differs from the run\'s checkout', file=sys.stderr)
+
+
 def git_line(result):
     lines = [line for line in (result.stderr + result.stdout).splitlines() if line.strip()]
     return lines[0] if lines else f'git exited {result.returncode}'
@@ -2415,7 +2554,7 @@ def stage_seed_contract(value, tinkery):
 def stage_dirty(run):
     result = run_git(ROOT, 'status', '--porcelain', '--untracked-files=all')
     paths = [line[3:].split(' -> ')[-1].strip('"') for line in result.stdout.splitlines() if line[3:]]
-    return [p for p in paths if not p.startswith(f'runs/{run}/') and p not in (f'runs/{run}', f'runs/.{run}.lock')]
+    return [p for p in paths if not p.startswith(f'runs/{run}/') and p != f'runs/{run}']
 
 
 def tracked_mode_mismatches():
@@ -2645,7 +2784,8 @@ def stage(args):
     if seed_contract:
         confirmer = 'agent' if confirmation['schema_version'] == 3 else 'operator'
         prompt += f' The {confirmer}-confirmed seed contract is at {seed_contract}; it is input, not authorization.'
-    setup = checkout_setup() if make_worktree else None
+    review_policy = checked_policy() if n == 5 else None
+    setup = checkout_setup(review_policy[0] if review_policy else None) if make_worktree else None
     warn = stage_dirty(run) if make_worktree else []
     warning = ('warning: not carried into the new checkout: ' + ', '.join(warn[:5]) + (f' (+{len(warn) - 5} more)' if len(warn) > 5 else '')
                if warn else None)
@@ -2659,7 +2799,11 @@ def stage(args):
         print(f'Would create worktree: {target} ({how})' if make_worktree else 'Would create worktree: none')
     else:
         committed = None
-        if pending:
+        start = 'HEAD'
+        if pending and not detached:
+            # The open commit goes only on the new run branch: this checkout's branch, index and files stay as they were (#201).
+            start = open_commit(run, OPENED.format(n=n, run=run))
+        elif pending:
             message = OPENED.format(n=n, run=run)
             added = run_git(ROOT, 'add', '-A', '--', f'runs/{run}')
             if added.returncode:
@@ -2669,7 +2813,7 @@ def stage(args):
                 raise ValueError(f'git commit failed: {git_line(done)}')
             committed = (run_git(ROOT, 'rev-parse', '--short', 'HEAD').stdout.strip(), message)
         if make_worktree:
-            command = ['worktree', 'add', '--detach', str(target), 'HEAD'] if detached else ['worktree', 'add', '-b', run, str(target), 'HEAD']
+            command = ['worktree', 'add', '--detach', str(target), 'HEAD'] if detached else ['worktree', 'add', '-b', run, str(target), start]
             created = run_git(ROOT, *command)
             if created.returncode:
                 if not detached:
@@ -2712,6 +2856,11 @@ def stage(args):
         if failure:
             abandon(failure, 'setup')
         print(f"setup: passed in {target}: {shlex.join(setup['argv'])}")
+    if review_policy and not args.check:
+        try:
+            check_policy_files(target, review_policy)
+        except (ValueError, OSError) as error:
+            abandon(str(error), 'review policy')
     if warning:
         print(warning)
     if n in (3, 5) and (undeliverable := delivery_warning(run)):
@@ -2722,6 +2871,8 @@ def stage(args):
         print('Checkout: none yet (--check creates nothing; the real run creates the worktree above)')
         print('Launch prompt (start a NEW session in that checkout):')
     else:
+        if pending and not detached:
+            moved(ROOT / 'runs' / run, target / 'runs' / run)
         print(f'Checkout: {target}')
         print('Launch prompt (start a NEW session there):')
     print(prompt)
@@ -2779,12 +2930,20 @@ def step_adapter(record, operation, contract, resolve=False):
         raise ValueError('Step adapter cannot resume the pinned session.')
     if operation == 'finished' and (reply.get('session') != record['session'] or type(reply.get('finished')) is not bool):
         raise ValueError('Step adapter gave no finished answer for the pinned session.')
+    if operation == 'finished' and 'response_cap_reached' in reply:
+        if not record.get('max_responses') or type(reply['response_cap_reached']) is not bool:
+            raise ValueError('Step adapter gave an invalid response cap answer for the pinned session.')
     if not resolve and (not isinstance(reply.get('session'), str) or not reply['session'].strip()):
         raise ValueError('Step adapter returned no session identity.')
     return reply
 
 
 NOT_FINISHED = 'The agent has not finished its latest turn on the pin (paused, stopped, failed or still running)'
+CAP_REACHED = 'not ended: reached its response cap'
+CAP_STOPPED = 'not ended: stopped at its response cap'
+RECORD_CAP_STOP = 'The worker reached its response cap. Record it with complete --stopped-by cap.'
+WORKER_GONE = 'not ended: no worker process is running'
+CAPPED_GROUP_PRESENT = 'The capped worker process is still present. Wait for it to exit, then read status again.'
 STEP_STATES = [word for word in WORDS['steps[].state'] if word != 'unreadable']
 FINISHED_STEPS = ('completed', 'stopped')
 STOPPED_WORDS = {'operator': 'by the operator', 'cap': 'at its response cap'}
@@ -2799,6 +2958,12 @@ def group_alive(group):
     except PermissionError:
         return True
     return True
+
+
+def capped_group_present(record):
+    """A final response does not prove that a capped process group has exited."""
+    group = record.get('process_group')
+    return 'max_responses' in record and type(group) is int and group > 1 and group_alive(group)
 
 
 def end_process_group(record, contract):
@@ -2832,21 +2997,67 @@ def end_process_group(record, contract):
     raise ValueError(f'Process group {group} survived SIGKILL; nothing was recorded.')
 
 
-def probe_turn(record, contract):
-    """What the adapter's offline finished probe sees now, as (turn, words); never stored.
-    `active` alone cannot tell a running agent from an ended turn (tinkery#615)."""
+def probe_turn(record, contract, checkpoint):
+    """What the adapter's offline finished probe sees now, as (turn, words, why) with why 'cap', 'gone' or
+    None; never stored. `active` alone cannot tell a running agent from an ended turn (tinkery#615), and an
+    unended turn whose recorded process group has exited is not running (tinkery#1013). A group id that
+    is still taken, or none recorded, never claims the worker is gone."""
+    if checkpoint:
+        return 'not-ended', CAP_STOPPED, 'cap'
+    if cap_record(record, contract, '.cap-stopping'):
+        return 'not-ended', CAP_REACHED, 'cap'
     try:
         step_paths(record)
-        ended = step_adapter(record, 'finished', contract)['finished']
+        reply = step_adapter(record, 'finished', contract)
     except (ValueError, KeyError, TypeError, OSError, subprocess.TimeoutExpired) as error:
-        return 'unknown', f'unknown: {error}'
-    if ended:
-        return 'ended', 'ended: read the report, then complete the step'
-    return 'not-ended', f'not ended: {NOT_FINISHED}'
+        return 'unknown', f'unknown: {error}', None
+    if reply.get('response_cap_reached'):
+        return 'not-ended', CAP_REACHED, 'cap'
+    if reply['finished']:
+        if capped_group_present(record):
+            return 'unknown', f'unknown: {CAPPED_GROUP_PRESENT}', None
+        return 'ended', 'ended: read the report, then complete the step', None
+    group = record.get('process_group')
+    if type(group) is int and group > 1 and not group_alive(group):
+        return 'not-ended', WORKER_GONE, 'gone'
+    return 'not-ended', f'not ended: {NOT_FINISHED}', None
 
 
-def observed_turn(record, contract):
-    return probe_turn(record, contract)[1]
+def cap_record(record, contract, suffix):
+    """Read a bounded observation bound to this capped admission."""
+    path = contract.with_suffix(suffix)
+    try:
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 16384:
+            return None
+        value = read_json(path)
+    except (ValueError, OSError):
+        return None
+    if (not isinstance(value, dict) or not record.get('session') or not record.get('process_group')
+            or not record.get('max_responses') or value.get('session') != record['session']
+            or value.get('process_group') != record['process_group'] or value.get('cap') != record['max_responses']):
+        return None
+    return value
+
+
+def cap_stop(record, contract):
+    """Return saved work, never a verification result."""
+    value = cap_record(record, contract, '.cap-stop')
+    if not value or not {'changed_files', 'omitted_files', 'shell'} <= value.keys():
+        return None
+    files, omitted, shell = value['changed_files'], value['omitted_files'], value['shell']
+    def display(text, limit):
+        return isinstance(text, str) and len(text) <= limit and (not text or text.isprintable())
+    if files is not None and (not isinstance(files, list) or len(files) > 12
+                              or not all(display(pathname, 180) for pathname in files)):
+        return None
+    if type(omitted) is not int or not 0 <= omitted <= 2**32 - 1:
+        return None
+    if shell is not None:
+        if (not isinstance(shell, dict) or not display(shell.get('command'), 240)
+                or not display(shell.get('output'), 600) or type(shell.get('error')) is not bool):
+            return None
+        shell = {name: shell[name] for name in ('command', 'output', 'error')}
+    return {'cap': record['max_responses'], 'changed_files': files, 'omitted_files': omitted, 'shell': shell}
 
 
 def step_facts(path):
@@ -2863,8 +3074,18 @@ def step_facts(path):
         fact = {'name': contract.stem, 'state': state}
         if state == 'stopped':
             fact['stopped_by'] = record.get('stopped_by')
+        if state in ('active', 'stopped'):
+            with contextlib.suppress(ValueError, OSError, KeyError, TypeError):
+                if stop := cap_stop(record, contract):
+                    fact['cap_stop'] = stop
+                    if state == 'stopped':
+                        fact['stopped_by'] = 'cap'
         if state == 'active':
-            fact['turn'], fact['observed_turn'] = probe_turn(record, contract)
+            fact['turn'], fact['observed_turn'], why = probe_turn(record, contract, fact.get('cap_stop'))
+            if why == 'cap':
+                fact['response_cap_reached'] = True
+            if why == 'gone':
+                fact['worker_gone'] = True
         facts.append(fact)
     return facts
 
@@ -2883,19 +3104,30 @@ def newest_step(path):
     return newest[1] if newest else None
 
 
-def worker_action(slug, steps, newest=None):
+def worker_action(slug, steps, newest=None, verification=None):
     """The next action an active step owes, so a run never reads as being worked on by nobody.
     An uncertain step owes reconciliation while it is the newest step; preparing another ends that."""
     step = next((s for s in steps if s['state'] == 'active'), None)
     if step is None:
         step = next((s for s in steps if s['state'] == 'uncertain' and s['name'] == newest), None)
     if step is None:
+        if verification == 'not-run' and any(s['name'] == newest and s.get('cap_stop') for s in steps):
+            return 'Review the saved cap-stop evidence. Run Verify when the candidate is ready; any human checks still need judgment.'
         return ''
     command = f"python3 _system/scripts/sdlc.py step {slug} {step['name']}"
+    if 'cap_stop' in step:
+        return (f"The {step['name']} worker stopped at its response cap. Review the saved evidence, then record the stop: "
+                f'{command} complete --stopped-by cap.')
     if step['state'] == 'uncertain':
         return (f"The {step['name']} step's launch or resume did not confirm; a worker may still be running. "
                 f'Inspect it with {command} show and the actual harness or session, then reconcile that session '
                 'before explicitly preparing another uniquely named step.')
+    if step.get('response_cap_reached'):
+        return (f"The {step['name']} worker reached its response cap. Record the stop with "
+                f'{command} complete --stopped-by cap.')
+    if step.get('worker_gone'):
+        return (f"The {step['name']} worker is no longer running and did not end its turn. Read its report, if any, "
+                f'then record the stop with {command} complete --stopped-by operator.')
     if step['turn'] == 'ended':
         return f"The {step['name']} worker's turn ended: read its report, then run {command} complete."
     if step['turn'] == 'not-ended':
@@ -2945,7 +3177,7 @@ def step(args):
     if args.action == 'show':
         record = read_json(contract)
         if isinstance(record, dict) and record.get('state') == 'active':
-            record['observed_turn'] = observed_turn(record, contract)
+            record['observed_turn'] = probe_turn(record, contract, cap_stop(record, contract))[1]
         print(json.dumps(record, indent=2))
         return
     with locked(path / '.writer-lock'):
@@ -2966,7 +3198,8 @@ def step(args):
                       'report': str(report), 'model': model, 'launcher': str(launcher),
                       'launcher_sha256': digest(launcher.read_bytes()), 'state': 'prepared', 'session': None,
                       'prepared_ns': time.time_ns(),
-                      **({'max_responses': args.max_responses} if args.max_responses is not None else {})}
+                      **({'max_responses': args.max_responses, 'start_head': git('rev-parse', 'HEAD').decode().strip()}
+                         if args.max_responses is not None else {})}
             step_paths(record)
             write_json(contract, record)
         else:
@@ -2990,20 +3223,32 @@ def step(args):
                     raise ValueError('Only an active step with a known session can be completed.')
                 if args.stopped_by:
                     print(end_process_group(record, contract))
+                    reason = args.stopped_by
+                    if (reason == 'operator' and record.get('max_responses')
+                            and probe_turn(record, contract, cap_stop(record, contract))[2] == 'cap'):
+                        reason = 'cap'
                     contents = report.read_bytes() if report.is_file() else b''
-                    record.update(state='stopped', stopped_by=args.stopped_by,
+                    record.update(state='stopped', stopped_by=reason,
                                   report_sha256=digest(contents) if contents.strip() else None)
                     write_json(contract, record)
-                    print(f'Recorded step {args.name} as stopped ({STOPPED_WORDS[args.stopped_by]}), not as an ended turn; '
+                    print(f'Recorded step {args.name} as stopped ({STOPPED_WORDS[reason]}), not as an ended turn; '
                           + ('its report digest is stored.' if contents.strip() else 'it left no report.'))
                     return
+                if cap_record(record, contract, '.cap-stopping') or cap_stop(record, contract):
+                    raise ValueError(RECORD_CAP_STOP)
                 if not report.is_file():
                     raise ValueError(f'Step report is missing at {report}; completion refused, with no project-root fallback.')
                 contents = report.read_bytes()
                 if not contents.strip():
                     raise ValueError('Step report is empty; completion refused.')
-                # A report alone can be left by an interrupted run; the adapter must confirm the agent finished.
-                if not step_adapter(record, 'finished', contract)['finished']:
+                if capped_group_present(record):
+                    raise ValueError(CAPPED_GROUP_PRESENT)
+                # Read the capped session only after the group can no longer append responses.
+                reply = step_adapter(record, 'finished', contract)
+                if (reply.get('response_cap_reached') or cap_record(record, contract, '.cap-stopping')
+                        or cap_stop(record, contract)):
+                    raise ValueError(RECORD_CAP_STOP)
+                if not reply['finished']:
                     raise ValueError(NOT_FINISHED + '; resume the step and complete it after the agent ends its turn.')
                 record.update(state='completed', report_sha256=digest(contents))
                 write_json(contract, record)
@@ -3044,7 +3289,7 @@ def main():
     new.add_argument('run')
     new.add_argument('--profile', choices=['light', 'full'], default='light')
     new.add_argument('--kind', choices=['feature', 'bug'], default='feature')
-    new.add_argument('--issue', metavar='URL', help='an open GitHub issue labeled approved; its words become the brief and checklist')
+    new.add_argument('--issue', metavar='URL', help='an open GitHub issue; its words become the brief and checklist')
     state = commands.add_parser('status')
     state.add_argument('run', nargs='?')
     state.add_argument('--json', action='store_true', help='read-only versioned machine interface')

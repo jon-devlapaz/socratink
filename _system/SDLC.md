@@ -15,13 +15,13 @@ python3 _system/scripts/sdlc.py status fix-example
 
 The default `light` profile creates `brief.md` (problem, acceptance criteria, approach, risks, verification) and `checklist.json`. A human picks `--profile full` for consequential architecture or policy changes; it creates intent, spec and plan. Only runs created by `new` are supported, and text approval tags are not evidence.
 
-To build an approved GitHub issue, let the issue be the definition:
+To build a GitHub issue, let the issue be the definition:
 
 ```sh
 python3 _system/scripts/sdlc.py new fix-example --issue https://github.com/OWNER/REPO/issues/NUMBER
 ```
 
-It reads the issue once with `gh` and calls no model. `brief.md` holds the issue's title, address, body hash and body unchanged; `checklist.json` holds one attested item for each line under the issue's `Done when` heading, unchanged. The `Done when` section must hold only top-level `-` or `*` lines, one line each, so no approved word is cut or dropped. It refuses a closed issue, an issue without the `approved` label, a Done-when section with no lines or any other content, an unreadable issue and `--profile full`, and then creates no run. `run.json` keeps the issue's address and body hash as a record. It records no decision: stage 3 still needs the human decision.
+It reads the issue once with `gh` and calls no model. `brief.md` holds the issue's title, address, body hash and body unchanged; `checklist.json` holds one item for each line under the issue's `Done when` heading, with the line unchanged. The `Done when` section must hold only top-level `-` or `*` lines, one line each, so no word is cut or dropped. It refuses a closed issue, a Done-when section with no lines or any other content, an unreadable issue and `--profile full`, and then creates no run. A line that consists of one backticked command followed by ` passes.` or ` exits 0.` becomes a check. Verify runs the command through `bash -c` with a 600-second timeout. All other lines stay attested. `run.json` keeps the issue's address and body hash as a record. It records no decision: stage 3 still needs the human decision.
 
 Without a confirmed seed, review the checklist commands and offer a dry run before definition approval (seed-bound runs use the [seed definition comparison](#seed-definition-comparison)):
 
@@ -90,7 +90,7 @@ Seed record kinds:
   {"activation": {"cmd": "./real-command", "cwd": ".", "evidence": "Prerequisite exists at <path>; observed <evidence>"}}
   ```
 
-  Activating the proposed `cmd` in its `cwd` matches the confirmed seed (evidence adds ``seed-N activated as confirmed: runs `<cmd>` ``) and still must run green; any other command is a departure for the operator. An activated test must also be red at base. `verify` runs the same command in a temporary export of the run's base commit (its `stage 3 open` commit, or `HEAD` when none exists), with only the files the command names that are new since base copied from the candidate. The command must exit nonzero there; the receipt then records `seed-N red at base, green at candidate` under `red_at_base`. If it passes at base, times out there, or names no new file, `seed-N` fails because the test does not depend on the change; fix the test. The export is outside the checkout and is always removed. Red at base proves dependence, not coverage. Verify refuses evidence citing a relative file or `dir/` that exists in neither the run nor the checkout, so save cited logs first. A prose prerequisite is not machine-detected: surface it when it becomes true.
+  Activating the proposed `cmd` in its `cwd` matches the confirmed seed (evidence adds ``seed-N activated as confirmed: runs `<cmd>` ``) and still must run green; any other command is a departure for the operator. An activated test must also be red at base. `verify` runs the same command in a temporary export of the run's base commit (its `stage 3 open` commit, or `HEAD` when none exists), with only the files the command names that are new since base copied from the candidate. When the regression lives in a test file that already existed at base, list it in the activation's optional `tests`, as paths from the repository root, not from `cwd` (for example `"tests": ["scripts/ui-smoke.mjs"]`); verify copies each listed file from the candidate and refuses one that is missing, unchanged since base or reached through a symlink. The receipt names every copied file under `red_at_base.copied`. `tests` is not a departure, and a probe patch may not touch those files. The command must exit nonzero there; the receipt then records `seed-N red at base, green at candidate` under `red_at_base`. If it passes at base, times out there, or copies no file, `seed-N` fails because the test does not depend on the change; fix the test. The export is outside the checkout and is always removed. Red at base proves dependence, not coverage. Verify refuses evidence citing a relative file or `dir/` that exists in neither the run nor the checkout, so save cited logs first. A prose prerequisite is not machine-detected: surface it when it becomes true.
 
 A seed check can carry a `failure_case`: the fault that must not pass it. The builder reads it as part of the requirement. The reviewer, never the builder, writes a patch that commits that fault in the code under test and runs `sdlc.py probe <slug> seed-N <patch>`. Probe first runs the check on a clean temporary export of `HEAD`; it must pass there, or the probe is `inconclusive` and fails. Then it applies the patch to a second export and runs the check again; the check must fail. It appends `caught`, `missed` or `inconclusive` to `04-test/output/probes.jsonl`, refuses a patch that changes a file at or under a path the check names, and refuses a build step session. A check that names no path (such as `cargo test`) gets no such guard, so the reviewer must patch code only. Probe tests committed `HEAD`, not uncommitted changes.
 
@@ -100,7 +100,7 @@ Receipts report `seed_checks` (`proven`, `attested`, `pending`, or `not-run` on 
 
 Give each code-writing run its own Git worktree or clone, never just a second branch in one checkout. Ports, databases and credentials need their own isolation when used.
 
-Configure `_system/verification.json` with nonempty argv arrays and timeouts. A fresh install has no checks and fails until real tests, build and lint are selected; the runner should reject zero tests, since an exit code alone proves no coverage. Optional keys:
+Configure `_system/verification.json` with nonempty argv arrays and timeouts. A fresh install has no checks and fails until real tests, build and lint are selected and committed; the runner should reject zero tests, since an exit code alone proves no coverage. Optional keys:
 
 - `"setup": {"argv": [...], "timeout_seconds": N}` prepares ignored dependencies, such as `["pnpm", "install", "--frozen-lockfile"]`. `stage <run> 3` and `5` run it from the committed file in each new worktree; a failure removes the worktree and opens no stage. Keep its output Git-ignored.
 - `"seed_timeout_seconds": N` gives each seed `cmd` check, and each activated proposal, N seconds instead of 120. It must be a positive integer.
@@ -110,6 +110,8 @@ Configure `_system/verification.json` with nonempty argv arrays and timeouts. A 
 ```sh
 python3 _system/scripts/sdlc.py verify fix-example
 ```
+
+Verify uses the check policy from the common ancestor of the candidate and the default branch. It uses the fetched default when available, then looks for main or master. For a standalone repo with another default, set its full ref in local Git config, for example `git config --local sdlc.policyBaseRef refs/heads/trunk`. Verify refuses if the candidate commit or working files change the check policy or `_shared/REVIEW.md`. Stage 5 requires current evidence under both policies, uses the same base for setup, and checks both files in the review checkout before opening the session. Use separately reviewed project checks to land policy changes, then update the candidate from that base.
 
 Verification writes the log (`runs/<slug>/04-test/output/test-log.md`, named in any failure) and a receipt binding the commit, tracked and nonignored untracked files, artifact inputs, policy, test lock and log digest.
 
@@ -160,9 +162,10 @@ For a Tinkery-originated run:
   candidate commit and PR/result revision. Link each claimed completion condition to
   evidence for that result; name unresolved conditions and findings. Keep automated
   proof, manual attestation, independent review and operator acceptance separate. The
-  handoff is human-readable only, not a normalized machine interface. API 1 exposes
-  run_id, the seed_contract binding and verification candidate provenance, but not an
-  explicit PR reference. Use structured status for the seed binding, not this prose.
+  handoff is human-readable only, not a normalized machine interface. Read the run's
+  identity, seed binding, candidate and recorded PR from structured status
+  ([API 1](https://github.com/jon-devlapaz/tink-sdlc/blob/main/references/api-1.md)), never from this prose; a run with no
+  recorded PR has none, and none is inferred from a branch or slug. A recorded PR is not a passing check or acceptance.
   A binding is evidence of intake, not approval, goal identity or release authority.
   Copying a handoff records no verdict and starts nothing; recheck current state
   before recording any external decision.
@@ -184,6 +187,8 @@ proposals grant no implementation authority.
   `python3 _system/scripts/sdlc.py stage <run> <n>` (`--check` previews; `--worktree PATH` or `--here`
   picks the checkout; stage 1 takes `--seed-contract PATH --tinkery PATH`). Only a worktree
   launch (stages 3 and 5 unless `--here`) commits `runs/<run>`; other launches commit nothing.
+  Stage 3 makes that commit only on the new branch `<run>`, then deletes the launching checkout's copy: from then on the
+  run's records live only on its branch, and the launching checkout's branch and status are as before.
   It creates the worktree under `~/dev/worktrees/<repo>/` (stage 3: branch `<run>`; stage 5: detached
   `review-<run>`), runs `tink use <skillset> --snapshot runs/<run>/<stage-dir>` there, and prints the
   prompt for a NEW session. It refuses unless entry gates are approved and current (stage 5 also needs
@@ -217,7 +222,8 @@ python3 _system/scripts/sdlc.py step <run> build complete --stopped-by operator 
   elsewhere. Contracts are not portable: prepare a new step in a new checkout.
 - `--max-responses N` caps responses; an adapter that cannot enforce it refuses, so a cap is never ignored.
 - `launch` and `resume` recheck every definition gate and resolve the exact model offline first. The
-  prompt names the approved inputs, `stages/03-build/CONTEXT.md` and the report path; limits writes to
+  prompt names the approved inputs, `stages/03-build/CONTEXT.md`, the guide sections a build step needs, the
+  previous step's state and report, and the report path; quotes the repository's own `AGENTS.md` rules (outside generated blocks, up to 32000 bytes) and asks the report to answer each one the change triggers; limits writes to
   the checkout and report; tells the worker to commit before ending each turn; and forbids `sdlc.py step`, `stage` and `decide`. Inside the session
   `TINK_SDLC_STEP_SESSION=1` makes `step` refuse everything but `show`. Resume keeps the same session.
 - `complete` needs a nonempty report at the exact path and the adapter's offline confirmation that the
@@ -234,6 +240,7 @@ Bundled adapters (their module comments state what each promises and refuses):
 | Adapter | Pin | Notes |
 |---|---|---|
 | `_system/scripts/pi-launcher` | `provider/model-id:thinking`, e.g. `openai-codex/gpt-5.6-luna:low` | The model must be in Pi's local catalog (run `pi update --models` yourself) with a stored credential. Enforces `--max-responses`. |
+| `_system/scripts/pi-durable-launcher` | the same | Pi Durable: a crash keeps the pending run, `resume` continues it and an interrupted command is not rerun by the harness. Same checks and cap as `pi-launcher`. Needs Node 22.19+; run `_system/scripts/pi-durable-launcher install` once per machine (it downloads the pinned packages). |
 
 Resume pinned steps only through `step … resume`: pi-herdr's resume drops the pin. Another launcher
 must implement the [launcher protocol](https://github.com/jon-devlapaz/tink-sdlc/blob/main/references/launcher-protocol.md)
@@ -271,10 +278,10 @@ Record the run's ending:
 python3 _system/scripts/sdlc.py pr <run> <PR URL>   # needs current verification; one PR per run
 python3 _system/scripts/sdlc.py label <run> --kind correction|none|accepted|rejected --words TEXT \
   --reviewer NAME --source REF [--about FILE|outside] [--consent local|shareable]
-python3 _system/scripts/sdlc.py close <run> --outcome merged --merge <full commit>   # or --outcome abandoned
+python3 _system/scripts/sdlc.py close <run> --outcome abandoned   # a merged run needs no close
 ```
 
-Put `Tink-Run: <run_id>` in the PR description. Labels are the operator's (typed, or relayed with `--relayed`; refused inside a build step session), keep the words verbatim, and chain to each other by digest; `none` records no corrections and `outside` a correction outside the run's records. `close` needs a label (and, when merged, the recorded PR); a run closes once. While the run builds in another checkout, these refuse and name it. Closing in a linked worktree copies the run's records into the main checkout's `runs/<run>/` (refusing if that folder has uncommitted changes or another run); commit them there.
+Put `Tink-Run: <run_id>` in the PR description. Labels are the operator's (typed, or relayed with `--relayed`; refused inside a build step session), keep the words verbatim, and chain to each other by digest; `none` records no corrections and `outside` a correction outside the run's records. Commit `pr.json` and the labels on the run branch before the merge. A labelled run whose `pr.json` reaches the default branch is closed as merged there; the first-parent commit that brought it is the merge, so nothing is recorded after it. `close` records any other ending in the run's own checkout and needs a label; a run closes once. While the run builds in another checkout, these refuse and name it. No command writes in another checkout, and the run lock lives outside every working tree.
 
 Maintenance is optional intake. Enable it only with metric thresholds, deduplication, cooldowns and run limits; alerts create drafts for triage, never approvals.
 
