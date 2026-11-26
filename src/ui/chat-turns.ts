@@ -6,12 +6,13 @@ import { learnerVisibleText } from '../learning/learner-text.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
+	sameQuestion,
 	type CardHelpAction,
 	type QuestionnaireDefinition,
 	type QuestionnaireHelp,
 } from '../questionnaire.ts';
 import { steeringPrefix } from '../config/chat-message.ts';
-import { steeringSaidText } from './steering.ts';
+import { formatSteeringMessage, steeringSaidText } from './steering.ts';
 import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
@@ -190,17 +191,29 @@ function visibleText(message: WireSnapshot['messages'][number]): string {
 		.join('\n\n');
 }
 
-/** A Hint presents another copy of the same question. Follow only recorded Hint presses. */
-export function currentQuestionDraftId(turns: readonly DisplayedTurn[]): string | undefined {
-	const current = turns.at(-1);
-	if (!current?.questionnaire) return;
-	let id = current.submissionId;
-	for (let i = turns.length - 2; i > 0; i -= 2) {
-		const help = turns[i]?.cardHelp;
-		if (help?.kind !== 'hint' || turns[i - 1]?.submissionId !== help.sourceId) break;
-		id = help.sourceId;
+export function keepsQuestionDraft(turn: DisplayedTurn) {
+	return turn.cardHelp?.kind === 'hint' || turn.learnerKind === 'steering' && turn.text === formatSteeringMessage('try-unaided');
+}
+
+/** Only an explicit pacing change can leave an unsent draft beside an earlier question. */
+export function questionsWithDrafts(turns: readonly DisplayedTurn[]) {
+	let original: DisplayedTurn | undefined;
+	const earlier = new Set<string>();
+	for (const [index, reply] of turns.entries()) {
+		if (reply.role !== 'Assistant') continue;
+		const action = turns[index - 1];
+		const previous = turns[index - 2];
+		if (original?.questionnaire && original.submissionId && previous?.submissionId && action && keepsQuestionDraft(action)) {
+			if (action.cardHelp) {
+				if (reply.questionnaire && reply.submissionId && action.cardHelp.sourceId === previous.submissionId) continue;
+			} else {
+				if (reply.submissionId && sameQuestion(original.questionnaire, reply.questionnaire)) continue;
+				earlier.add(original.submissionId);
+			}
+		}
+		original = reply.questionnaire ? reply : undefined;
 	}
-	return id;
+	return { current: original?.submissionId, earlier };
 }
 
 export function splitCurrentTurns(items: readonly DisplayedTurn[]): {

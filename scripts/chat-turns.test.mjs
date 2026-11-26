@@ -5,6 +5,7 @@ import {
 	displayedAssistantTurn,
 	displayedLearnerTurn,
 	groupEarlierSteps,
+	questionsWithDrafts,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
@@ -151,6 +152,26 @@ test('shows card answers and steering in the learner\'s own words', () => {
 	assert.equal(displayedLearnerTurn(formatSteeringMessage('smaller-step')).text, formatSteeringMessage('smaller-step'));
 	assert.equal(displayedLearnerTurn('Steering: an older wording').shownText, 'an older wording');
 	assert.deepEqual(displayedLearnerTurn('My own words'), { role: 'You', text: 'My own words' });
+});
+
+test('only explicit Hint and Try on my own keep a draft attached to the same question', () => {
+	const reply = (submissionId, question = questionnaire) => displayedAssistantTurn({ text: '', submissionId, questionnaire: question });
+	const previous = reply('original');
+	const same = reply('returned');
+	const unaided = displayedLearnerTurn(formatSteeringMessage('try-unaided'));
+	const hint = sourceId => displayedLearnerTurn('Help', questionnaire, { kind: 'hint', sourceId });
+	const smaller = displayedLearnerTurn(formatSteeringMessage('smaller-step'));
+	const textReply = displayedAssistantTurn({ text: 'What would you check first?' });
+	assert.deepEqual(questionsWithDrafts([previous, hint('original'), same, unaided, reply('again')]),
+		{ current: 'original', earlier: new Set() });
+	const missingClue = reply('no-clue', { ...questionnaire, items: [{ ...questionnaire.items[0], description: 'Try Hint again.' }] });
+	assert.deepEqual(questionsWithDrafts([previous, hint('original'), missingClue, unaided, same]),
+		{ current: 'original', earlier: new Set() });
+	for (const action of [smaller, displayedLearnerTurn('My answer'), hint('unrelated')]) {
+		assert.deepEqual(questionsWithDrafts([previous, action, same]), { current: 'returned', earlier: new Set() });
+	}
+	assert.deepEqual(questionsWithDrafts([previous, unaided, textReply]), { current: undefined, earlier: new Set(['original']) });
+	assert.deepEqual(questionsWithDrafts([previous, smaller, textReply]), { current: undefined, earlier: new Set() });
 });
 
 test('history pairs a card answer with the card it answers', () => {

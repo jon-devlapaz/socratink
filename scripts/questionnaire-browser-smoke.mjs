@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { assertHelpLayout } from './reveal-browser-layout.mjs';
+import { formatSteeringMessage } from '../src/ui/steering.ts';
+import { namespacedConversationId } from '../src/config/session.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 
@@ -165,6 +167,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 	}
 	await verifyHelpOrigin(browser, origin, session);
 	await verifyPendingHintDraft(browser, origin, session);
+	await verifySteeringDraft(browser, origin, session);
 	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; hint and I don\'t know; shortcuts, reasoning, Enter, validation and narrow/wide screens; consent choices by click, Enter and Space.');
 }
 
@@ -240,6 +243,134 @@ async function verifyPendingHintDraft(browser, origin, session) {
 	}
 }
 
+async function verifySteeringDraft(browser, origin, session) {
+	const reason = 'I still think the second choice fits.';
+	const steering = { kind: 'user', body: formatSteeringMessage('try-unaided') };
+	for (const scenario of ['same question', 'different question', 'failed', 'not-admitted']) {
+		const context = await browser.newContext({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+		const { promise, resolve } = Promise.withResolvers();
+		try {
+			const page = await context.newPage();
+			page.setDefaultTimeout(5_000);
+			const definition = legacyQuestion('required');
+			const nextQuestion = structuredClone(definition);
+			const different = scenario === 'different question';
+			if (different) nextQuestion.items[0].prompt = 'Another question?';
+			const failed = scenario === 'failed' || scenario === 'not-admitted';
+			let pending = scenario === 'same question';
+			let learner = session;
+			const original = namespacedConversationId(session.userId, 'original-lesson');
+			const otherLesson = namespacedConversationId(session.userId, 'another-lesson');
+			await context.addInitScript(({ key, id }) => {
+				if (!localStorage.getItem(key)) localStorage.setItem(key, id);
+			}, { key: appConfig.chatConversationStorageKey, id: original });
+			const sent = [];
+			await context.route('**/*', async route => {
+				const { pathname } = new URL(route.request().url());
+				if (pathname === appConfig.conversationsPath) return route.fulfill({ json: { conversations: [
+					{ id: original, title: 'First lesson', updatedAt: '2026-11-25' },
+					{ id: otherLesson, title: 'Second lesson', updatedAt: '2026-11-24' },
+				] } });
+				if (pending && sent.length === 2 && pathname.endsWith('/events')) await promise;
+				return respond(route, { origin, session: learner, definition, sent, nextQuestion,
+					pending: pending && sent.length === 2, failure: failed ? scenario : undefined, failAt: 2 });
+			});
+			await page.goto(origin);
+			const form = page.locator('#active-turn .questionnaire');
+			await form.getByRole('radio', { name: /Second/ }).click();
+			await form.getByLabel('Your reason').fill(reason);
+			await form.getByRole('button', { name: 'Hint', exact: true }).click();
+			await page.getByText(hintClue, { exact: true }).waitFor();
+			const events = () => page.waitForRequest(req => new URL(req.url()).pathname.endsWith('/events'));
+			const event = pending && events();
+			await form.getByRole('button', { name: 'More options' }).click();
+			await page.getByRole('menuitem', { name: 'Try on my own' }).click();
+			if (pending) {
+				await event;
+				const resumed = events();
+				await page.reload({ waitUntil: 'domcontentloaded' });
+				await resumed;
+				pending = false;
+				resolve();
+			}
+			if (failed) await page.getByRole('button', { name: 'Retry', exact: true }).click();
+			const reply = page.getByText('Recorded reply', { exact: true });
+			await reply.waitFor();
+			assert.deepEqual(sent[0], { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: Asked for a hint.',
+				cardHelp: { kind: 'hint', sourceId: 'original-card' } });
+			assert.deepEqual(sent.slice(1), failed ? [steering, steering] : [steering]);
+			for (const reload of [false, true]) {
+				if (reload) await page.reload();
+				await form.waitFor();
+				assert.equal(await form.locator('legend').innerText(), nextQuestion.items[0].prompt);
+				await assertCardDraft(form, different ? [] : ['second'], different ? '' : reason);
+				await page.locator('#trail-toggle').click();
+				await page.locator('.history-turn .reveal-mark').filter({ hasText: 'Hint from Socratink' }).waitFor();
+				const saved = page.getByRole('complementary', { name: 'Unsent draft in this tab' });
+				if (different) {
+					await saved.getByText(reason, { exact: true }).waitFor();
+					assert.equal(await saved.getByText('Second', { exact: true }).count(), 1);
+					assert.equal(await saved.locator('..').locator('.history-question').innerText(), definition.items[0].prompt);
+				} else assert.equal(await saved.count(), 0);
+				await page.locator('#trail-toggle').click();
+			}
+			if (different) {
+				await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+				await page.locator('#trail-toggle').click();
+				const selected = await page.evaluate(reason => {
+					const words = [...document.querySelectorAll('.history-draft p')].find(node => node.textContent === reason).firstChild;
+					const tutor = document.querySelector('#active-turn .turn.assistant .turn-markdown p').firstChild;
+					const selection = getSelection();
+					selection.setBaseAndExtent(tutor, tutor.length, words, 0);
+					return selection.toString();
+				}, reason);
+				assert.ok(selected.includes(reason));
+				await form.getByRole('button', { name: 'More options' }).click();
+				await page.getByRole('menuitem', { name: 'Copy this turn' }).click();
+				assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'Recorded reply');
+				await form.getByLabel('Your reason').fill('New answer');
+				await page.reload();
+				await assertCardDraft(form, [], 'New answer');
+				const switchLesson = async (tab, name) => {
+					await tab.locator('#menu-trigger').click();
+					await tab.getByRole('button', { name: 'History', exact: true }).click();
+					await tab.getByRole('button', { name: new RegExp(name) }).click();
+					await tab.locator('#active-turn .questionnaire').waitFor();
+				};
+				await switchLesson(page, 'Second lesson');
+				await assertCardDraft(form, [], '');
+				const [otherTab] = await Promise.all([
+					page.waitForEvent('popup'), page.evaluate(() => { window.open(location.href); }),
+				]);
+				await switchLesson(otherTab, 'First lesson');
+				await otherTab.locator('#trail-toggle').click();
+				assert.equal(await otherTab.getByText(reason, { exact: true }).count(), 0);
+				await assertCardDraft(otherTab.locator('#active-turn .questionnaire'), [], '');
+				await otherTab.close();
+				await form.waitFor();
+				await assertCardDraft(form, [], 'New answer');
+				await page.locator('#trail-toggle').click();
+				await page.getByText(reason, { exact: true }).waitFor();
+				learner = { userId: 'a-different-learner' };
+				await page.reload();
+				await form.waitFor();
+				await assertCardDraft(form, [], '');
+				await page.locator('#trail-toggle').click();
+				assert.equal(await page.getByText(reason, { exact: true }).count(), 0);
+			} else {
+				await form.getByRole('radio', { name: /First/ }).click();
+				await form.getByLabel('Your reason').fill('My revision.');
+				await form.getByRole('button', { name: 'Continue', exact: true }).click();
+				await page.getByText('First, My revision.', { exact: true }).waitFor();
+				assert.deepEqual(sent.at(-1), { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: First, My revision.' });
+			}
+		} finally {
+			resolve();
+			await context.close();
+		}
+	}
+}
+
 async function verifyHelpOrigin(browser, origin, session) {
 	for (const { kind, failure, edit } of [
 		{ kind: 'hint' },
@@ -306,7 +437,7 @@ function legacyQuestion(kind) {
 	};
 }
 
-async function respond(route, { origin, session, definition, sent, failure, nextCard, pending }) {
+async function respond(route, { origin, session, definition, sent, failure, failAt = 1, nextCard, nextQuestion, pending }) {
 	const url = new URL(route.request().url());
 	if (url.origin !== origin) return route.abort();
 	if (!url.pathname.startsWith('/api/')) return route.continue();
@@ -318,26 +449,28 @@ async function respond(route, { origin, session, definition, sent, failure, next
 	if (posting) sent.push(route.request().postDataJSON());
 	const submissionId = `saved-card-answer-${sent.length}`;
 	if (posting) {
-		if (failure === 'not-admitted' && sent.length === 1) return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
+		if (failure === 'not-admitted' && sent.length === failAt) return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 		return json({ submissionId }, 202);
 	}
 	const card = { type: 'data-questionnaire', data: definition };
 	const messages = [{ role: 'assistant', display: 'visible', submissionId: 'original-card', parts: [card] }];
 	const settlements = [];
 	for (const [index, input] of sent.entries()) {
-		if (failure === 'not-admitted' && index === 0) continue;
+		if (failure === 'not-admitted' && index + 1 === failAt) continue;
 		const id = `saved-card-answer-${index + 1}`;
 		messages.push({ role: 'user', display: 'visible', submissionId: id, parts: [{ type: 'text', text: input.body }],
 			...(input.cardHelp && { metadata: { cardHelp: input.cardHelp } }) });
 		if (pending && index === sent.length - 1) continue;
-		const failed = failure === 'failed' && index === 0;
+		const failed = failure === 'failed' && index + 1 === failAt;
 		settlements.push({ submissionId: id, outcome: failed ? 'failed' : 'completed' });
 		if (failed) continue;
 		const item = definition.items[0];
 		const reorderedCard = { ...card, data: { ...definition, items: [{ ...item, choices: [...item.choices].reverse() }] } };
+		const followingCard = nextQuestion && input.body === formatSteeringMessage('try-unaided')
+			? { ...card, data: nextQuestion } : nextCard && card;
 		const reply = input.cardHelp?.kind === 'hint'
 			? [{ type: 'text', text: hintClue }, { type: 'data-reveal', data: { kind: 'hint', target: item.prompt } }, reorderedCard]
-			: [{ type: 'text', text: 'Recorded reply' }, ...(nextCard ? [card] : [])];
+			: [{ type: 'text', text: 'Recorded reply' }, ...(followingCard ? [followingCard] : [])];
 		messages.push({ role: 'assistant', display: 'visible', submissionId: id, parts: reply });
 	}
 	if (url.pathname.endsWith('/events')) {

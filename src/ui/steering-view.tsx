@@ -21,7 +21,8 @@ export function SteeringBar({ sourceText, onSteer, selectionRoot, inMenu = false
 
 	function selectedText() {
 		const selection = window.getSelection();
-		if (!selection || selection.isCollapsed || !selectionRoot.current?.contains(selection.anchorNode)) return '';
+		if (!selection || selection.rangeCount !== 1 || selection.isCollapsed
+			|| !selectionRoot.current?.contains(selection.getRangeAt(0).commonAncestorContainer)) return '';
 		return selection.toString();
 	}
 

@@ -111,6 +111,19 @@ export function questionnaireFromPresentQuestion(
 	};
 }
 
+export function sameQuestion(previous: QuestionnaireDefinition, next: QuestionnaireDefinition | undefined): boolean {
+	const a = previous.items[0];
+	const b = next?.items[0];
+	if (!a || !b || previous.kind !== next?.kind) return false;
+	return a.name === b.name
+		&& a.prompt === b.prompt && a.description === b.description
+		&& a.multiple === b.multiple && a.required === b.required
+		&& a.input?.label === b.input?.label && a.input?.placeholder === b.input?.placeholder
+		&& a.choices.length === b.choices.length && a.choices.every(choice =>
+			b.choices.some(other => other.value === choice.value && other.label === choice.label
+				&& other.description === choice.description));
+}
+
 function uniqueChoiceValue(label: string, used: ReadonlySet<string>): string {
 	const base =
 		label

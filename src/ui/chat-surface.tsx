@@ -21,7 +21,8 @@ import { mountChatDraft, openQuestionDraft } from './client/chat-draft.ts';
 import { mountSoundCues } from './sound-cues.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
-	currentQuestionDraftId,
+	keepsQuestionDraft,
+	questionsWithDrafts,
 	displayedAssistantTurn,
 	displayedLearnerTurn,
 	groupEarlierSteps,
@@ -198,9 +199,13 @@ export function mountChatSurface(options: Readonly<{
 			if (version !== paintVersion) return;
 			status = nextStatus;
 			questionActive = Boolean(current.at(-1)?.questionnaire) && !chatRequestControls(requestState).composerLocked;
-			const questionDraft = questionActive ? cardDraft.forQuestion(currentQuestionDraftId(turns)) : undefined;
+			const draftIds = questionsWithDrafts(turns);
+			const questionDraft = questionActive ? cardDraft.forQuestion(draftIds.current) : undefined;
+			if (turns.at(-1)?.role === 'Assistant') cardDraft.retain(draftIds);
+			const earlierDrafts = cardDraft.earlierDrafts(draftIds.earlier);
 			history = groupEarlierSteps(earlier).map((step, index, steps) =>
-				<HistoryStep key={index} step={step} index={index} previousReply={steps[index - 1]?.at(-1)} />);
+				<HistoryStep key={index} step={step} index={index} previousReply={steps[index - 1]?.at(-1)}
+					drafts={earlierDrafts} />);
 			visibleTurns = current.map((item, index) => {
 				const last = index === current.length - 1;
 				return <ActiveTurn key={`${earlier.length + index}-${item.role}`}
@@ -305,7 +310,7 @@ export function mountChatSurface(options: Readonly<{
 		const result = requests.start(text, {
 			cardHelp,
 			onAdmitted() {
-				if (cardHelp?.kind !== 'hint') cardDraft.clear();
+				if (!keepsQuestionDraft(learnerTurn)) cardDraft.discard(questionsWithDrafts(before).current);
 				if (submittedDraft === undefined || input.value !== submittedDraft) return;
 				input.value = '';
 				draft.clear();
@@ -424,8 +429,6 @@ export function mountChatSurface(options: Readonly<{
 					return;
 				}
 			}
-			const last = visible.at(-1);
-			if (!unsettled && last?.role === 'Assistant' && !last.questionnaire) cardDraft.clear();
 			turns = visible;
 			await paint('restore');
 		} finally {

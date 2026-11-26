@@ -6,7 +6,7 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { Markdown } from './chat-markdown.tsx';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import type { LiveReplyView } from './live-reply.ts';
-import type { QuestionDraft } from './client/chat-draft.ts';
+import type { AnswerFields, QuestionDraft } from './client/chat-draft.ts';
 import { Questionnaire } from './questionnaire.tsx';
 import { RevealMark } from './reveal-mark.tsx';
 import type { SteeringKind } from './steering.ts';
@@ -18,9 +18,10 @@ type HistoryStepProps = {
 	step: readonly DisplayedTurn[];
 	index: number;
 	previousReply?: DisplayedTurn;
+	drafts?: ReadonlyMap<string, AnswerFields>;
 };
 
-export function HistoryStep({ step, index, previousReply }: HistoryStepProps) {
+export function HistoryStep({ step, index, previousReply, drafts }: HistoryStepProps) {
 	const help = step[0]?.cardHelp;
 	const hintedQuestion = help?.kind === 'hint' && help.sourceId === previousReply?.submissionId
 		? previousReply.questionnaire?.items[0]?.prompt : undefined;
@@ -33,13 +34,20 @@ export function HistoryStep({ step, index, previousReply }: HistoryStepProps) {
 				const question = item.questionnaire?.items[0]?.prompt;
 				const showQuestion = question && !(turnIndex === 1 && question === hintedQuestion);
 				const showBody = body && (reveal || body !== question);
-				if (!showBody && !showQuestion) return null;
+				const draft = item.submissionId ? drafts?.get(item.submissionId) : undefined;
+				if (!showBody && !showQuestion && !draft) return null;
 				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}${item.cardHelp ? ' turn-action' : ''}`}>
 					{!reveal && <span className="sr-only">{displayLabel(item.role)}</span>}
 					{showBody && <p className={reveal ? 'reveal-copy' : undefined}>
 						{reveal && <RevealMark reveal={reveal} />}{body}
 					</p>}
 					{showQuestion && <p className="history-question">{question}</p>}
+					{draft && <aside className="history-draft" aria-label="Unsent draft in this tab">
+						<p><strong>Unsent draft in this tab</strong></p>
+						{item.questionnaire?.items[0]?.choices.filter(choice => draft.values.includes(choice.value)).map(choice =>
+							<p key={choice.value}>{choice.label}</p>)}
+						{draft.freeform && <p>{draft.freeform}</p>}
+					</aside>}
 				</div>;
 			})}
 		</div>

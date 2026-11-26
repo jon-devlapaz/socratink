@@ -258,6 +258,10 @@ body:not(.questionnaire-active) .active-scroll.is-fading-top.is-fading-bottom {
 	white-space: pre-wrap;
 }
 
+.history-draft {
+	margin-block-start: 0.5rem;
+}
+
 .history-turn.error p {
 	color: var(--error);
 }
