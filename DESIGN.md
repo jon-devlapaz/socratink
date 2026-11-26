@@ -47,7 +47,11 @@ code. Do not use it for conversation prose or tool-output prose.
 ## Surfaces and actions
 
 Before the first message, show the heading and a short explanation above the
-composer. Place the three starter buttons below it in reading and keyboard
+composer. Size the heading to the writing column. At the default text size,
+it fits on one line at 375px and on desktop. Let it wrap when the learner
+enlarges the text or the column gets narrower.
+
+Place the three starter buttons below the composer in reading and keyboard
 order. A starter fills the empty composer and focuses it. The learner edits
 the text and sends it. Hide starters whenever the composer contains a draft,
 including a draft restored on reload. Let the empty screen scroll and the

@@ -157,6 +157,17 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const text = page.locator('h1#intro-title, .intro p, ul[aria-label="Ways to start"] button');
 		const fontSizes = () => text.evaluateAll((nodes) => nodes.map((node) => parseFloat(getComputedStyle(node).fontSize)));
 		const medium = await fontSizes();
+		const heading = page.getByRole('heading', { level: 1 });
+		const headingLines = () => heading.evaluate((node) => {
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+		});
+		for (const width of [375, 1280]) {
+			await page.setViewportSize({ width, height: 667 });
+			assert.equal(await headingLines(), 1, `The opening title fits the writing column at ${width}px`);
+		}
+		await page.setViewportSize({ width: 375, height: 667 });
 		await assertIntroLayout(page);
 		await page.locator('#menu-trigger').click();
 		const size = page.locator('#type-size-toggle');
@@ -167,6 +178,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const big = await fontSizes();
 		assert.equal(big.length, 5);
 		assert.ok(big.every((value, index) => value > medium[index]), 'Big enlarges the heading, explanation, and starters');
+		assert.ok(await headingLines() > 1, 'The enlarged heading wraps inside the phone width');
 		await assertIntroLayout(page);
 		const enlargedText = await page.addStyleTag({ content: 'html { font-size: 200% }' });
 		await assertIntroLayout(page);
