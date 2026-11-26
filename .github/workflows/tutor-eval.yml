@@ -1,0 +1,166 @@
+name: Tutor eval
+
+# A paid run of the tutor behaviour eval (evals/tutor/) on the production model route.
+# Start it with `pnpm eval:tutor:ci` or the Run workflow button. It waits for approval
+# in the `tutor-eval` environment, which holds AI_GATEWAY_API_KEY, before any paid call.
+#
+# Trust: the eval runner of the ref under test runs with the key, so approve only refs
+# you would run on your own machine. The doctor, planner and summary always come from
+# this workflow's own checkout, inputs reach scripts only as environment variables, and
+# the key is given only to the steps that call the model, never to dependency installs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to evaluate
+        type: string
+        required: true
+        default: main
+      compare:
+        description: Optional second branch or commit, run on the same scenarios for a paired comparison (for example main)
+        type: string
+        required: false
+        default: ''
+      only:
+        description: Scenario names, comma separated, or all
+        type: string
+        required: true
+        default: all
+      runs:
+        description: Runs per scenario, 1 to 5
+        type: string
+        required: true
+        default: '3'
+
+permissions:
+  contents: read
+
+concurrency:
+  # One paid run at a time, so two runs never share the provider's rate limits.
+  group: tutor-eval
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    name: Tutor eval on ${{ inputs.ref }}${{ inputs.compare && format(' vs {0}', inputs.compare) || '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    environment: tutor-eval
+    steps:
+      - name: Check out the eval harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: harness
+          persist-credentials: false
+
+      - name: Check out the ref under test
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          path: candidate
+          persist-credentials: false
+
+      - name: Check out the comparison ref
+        if: inputs.compare != ''
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.compare }}
+          path: base
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          package_json_file: harness/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: '*/pnpm-lock.yaml'
+
+      - name: Install dependencies (no credentials)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in harness candidate base; do
+            if [ -d "$dir" ]; then (cd "$dir" && pnpm install --frozen-lockfile); fi
+          done
+
+      - name: Plan scenarios and runs
+        id: plan
+        shell: bash
+        env:
+          EVAL_ONLY: ${{ inputs.only }}
+          EVAL_RUNS: ${{ inputs.runs }}
+        run: |
+          set -euo pipefail
+          dirs=("$GITHUB_WORKSPACE/candidate")
+          if [ -d base ]; then dirs+=("$GITHUB_WORKSPACE/base"); fi
+          node harness/evals/tutor/ci.ts plan "${dirs[@]}"
+
+      - name: Check the model route (doctor)
+        working-directory: harness
+        run: node evals/tutor/doctor.ts --gateway --minutes 240
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+
+      - name: Run the eval on the ref under test
+        id: candidate
+        shell: bash
+        working-directory: candidate
+        env:
+          VERCEL: '1'
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          EVAL_ONLY: ${{ steps.plan.outputs.only }}
+          EVAL_RUNS: ${{ steps.plan.outputs.runs }}
+        run: |
+          set +e
+          node evals/tutor/cli.ts --live --only "$EVAL_ONLY" --runs "$EVAL_RUNS"
+          code=$?
+          # 1 means a check failed, which is a result. 2 or more means the eval could not run.
+          if [ "$code" -ge 2 ]; then exit "$code"; fi
+          exit 0
+
+      - name: Run the eval on the comparison ref
+        if: inputs.compare != ''
+        shell: bash
+        working-directory: base
+        env:
+          VERCEL: '1'
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          EVAL_ONLY: ${{ steps.plan.outputs.only }}
+          EVAL_RUNS: ${{ steps.plan.outputs.runs }}
+        run: |
+          set +e
+          node evals/tutor/cli.ts --live --only "$EVAL_ONLY" --runs "$EVAL_RUNS"
+          code=$?
+          if [ "$code" -ge 2 ]; then exit "$code"; fi
+          exit 0
+
+      - name: Summarize
+        if: always() && steps.plan.outcome == 'success'
+        shell: bash
+        env:
+          CANDIDATE_LABEL: ${{ inputs.ref }}
+          BASE_LABEL: ${{ inputs.compare }}
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          latest() { ls -t "$1"/.cache/tutor-eval/*.json 2>/dev/null | head -1; }
+          args=()
+          if file=$(latest candidate) && [ -n "$file" ]; then cp "$file" results/candidate.json; args+=("$CANDIDATE_LABEL=results/candidate.json"); fi
+          if [ -d base ] && file=$(latest base) && [ -n "$file" ]; then cp "$file" results/base.json; args+=("$BASE_LABEL=results/base.json"); fi
+          if [ "${#args[@]}" -eq 0 ]; then echo "No eval results were written." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          node harness/evals/tutor/ci.ts summary "${args[@]}" | tee results/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload transcripts and summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tutor-eval-results
+          path: results
+          if-no-files-found: warn
+          retention-days: 30

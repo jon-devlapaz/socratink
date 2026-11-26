@@ -104,30 +104,64 @@ The previous build runs against a disposable copy of that test data.
 
 ### Tutor behaviour eval
 
-`pnpm eval:tutor --live` runs scripted learner conversations against the real
-tutor model through the durable engine, tools, and consent card. It checks what
-the learner sees: one question per turn, reveals marked with `mark_reveal`, no
+The tutor eval runs scripted learner conversations against the real tutor
+model through the durable engine, tools, and consent card. It checks what the
+learner sees: one question per turn, reveals marked with `mark_reveal`, no
 internal notes (#136), and "just tell me" shown without a consent card (#133).
-It calls a paid model, so it refuses to run without `--live`.
-
-```sh
-VERCEL=1 AI_GATEWAY_API_KEY=... pnpm eval:tutor --live --runs 3
-pnpm eval:tutor --list
-```
-
-Without `VERCEL=1` it uses the `JON_LOCAL_*` model. `--only` picks scenarios by
-name.
-`pnpm eval:tutor:live --only a,b [--runs 3]` is the one-step form for a paid
-run on the touched scenarios. It prints the scope (conversations and the most
-learner turns), warns on battery, and on macOS runs under `caffeinate` so the
-laptop does not sleep. `--dry-run` prints the scope without calling a model.
-It does not replace asking Jon before a paid run. Transcripts and results go to `.cache/tutor-eval/`. A failed check exits 1.
 Rules live in `src/learning/behaviour-rules.ts`, each quoting the system prompt
 sentence it tests; scenarios and checks live in `evals/tutor/`.
 `pnpm test:tutor-eval` (part of `pnpm check`) proves each rule's check fails on a
 scripted buggy tutor and passes a policy-following one, with a fake model.
 The checks are text heuristics over synthetic runs: a pass does not establish
 teaching quality or learning effectiveness.
+
+**Run a paid eval in GitHub (the usual way).** Push the branch, then:
+
+```sh
+pnpm eval:tutor:ci --compare main
+```
+
+It starts the `Tutor eval` workflow on the production model route (AI Gateway)
+for the current branch and, with `--compare`, the same scenarios on a second
+ref one after the other, so the two sides share the model and the hour. It
+prints a link: Jon approves the run there ("Review deployments"), and nothing
+is paid before that. It then waits, downloads the transcripts to
+`.cache/tutor-eval/ci-<run>/`, and prints the comparison table, which also
+appears on the run page. `--only a,b` picks scenarios (default `all`, the ones
+every ref shares), `--runs` takes 1 to 5 (default 3), `--ref` names another
+pushed ref, and `--no-wait` returns after printing the link. It refuses a ref
+that is not on GitHub or differs from your local copy.
+
+One-time setup, done once by Jon: create an AI Gateway API key in Vercel (team
+settings, AI Gateway, API keys; a 1-year expiry and a monthly budget), then
+store it as the `AI_GATEWAY_API_KEY` secret of the `tutor-eval` environment:
+
+```sh
+gh secret set AI_GATEWAY_API_KEY --env tutor-eval
+```
+
+`gh` asks for the value, so it never lands in shell history. The environment
+requires Jon's approval and accepts only `main`, where the workflow runs; the
+workflow's safety rules (no input in shell text, the key only in the model
+steps, pinned actions) are checked by `evals/tutor/workflow.test.ts`.
+
+**Run one on this machine.** `pnpm eval:tutor:doctor` says whether a paid run
+can work here: the route, the credential and a 12-hour token's expiry, and one
+tiny request with a tool. `pnpm eval:tutor:live --only a,b [--runs 3]` then
+runs it: it loads `.env` and `.env.local` (the main checkout's too, from a git
+worktree), prints the scope, warns on battery, and runs under `caffeinate` on
+macOS. `--dry-run` prints the scope without calling a model; `--local` uses
+the `JON_LOCAL_*` model instead of AI Gateway. Keep a long-lived
+`AI_GATEWAY_API_KEY` in `.env`: a `VERCEL_OIDC_TOKEN` from `vercel env pull`
+lasts about 12 hours. Ask Jon before a local paid run.
+`pnpm eval:tutor --list` lists the scenarios.
+
+**What stops a run that cannot work.** Before any conversation, the eval checks
+the token's expiry and sends one tiny request with a tool; a refusal stops it
+with the provider's reason. A run also stops at the first provider 401 or 403,
+or after three conversations in a row fail on their first turn. Transcripts and
+results go to `.cache/tutor-eval/`; a failed check exits 1, and a run that
+could not start exits 2.
 
 For an interaction check, start a conversation, complete an open-ended turn
 and a question card, inspect the earlier-step trail, and reload to check
