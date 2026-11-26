@@ -53,11 +53,11 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 			'reloaded browser reattaches to existing admission');
 		assert.equal((await page.locator('#active-turn .assistant').innerText()).includes(reasoning), false);
 		assert.equal((await page.locator('#active-turn .you').innerText()).includes(reasoning), false);
-		assert.equal(await page.locator('#active-turn .assistant .turn-model').innerText(), 'synthetic/routed-model · ↻1');
+		await assertHiddenRoute(page);
 		await page.screenshot({ path: join(out, 'reasoning-completed.png') });
 		await page.reload();
 		await page.locator('#active-turn .assistant').filter({ hasText: text }).waitFor();
-		assert.equal(await page.locator('#active-turn .assistant .turn-model').innerText(), 'synthetic/routed-model · ↻1');
+		await assertHiddenRoute(page);
 		assert.equal(fixture.count(marker), 1);
 		assert.equal((await clientFor(app, session, id).history()).settlements.at(-1).outcome, 'completed');
 		await page.screenshot({ path: join(out, 'reasoning-reloaded.png') });
@@ -125,7 +125,7 @@ export async function verifyDurableHistoryBrowser({ app, session, conversationId
 			if (action === 'loaded') await page.goto(app.origin); else await page.reload();
 			await page.locator('#active-turn .assistant').waitFor();
 			assert.ok((await page.locator('#active-turn .assistant').innerText()).includes(expectedText));
-			assert.equal(await page.locator('#active-turn .assistant .turn-model').innerText(), 'synthetic/routed-model · ↻1');
+			await assertHiddenRoute(page);
 			if (question) await page.locator('#active-turn .questionnaire').filter({ hasText: question }).waitFor();
 			if (reveal) {
 				assert.equal(await page.locator('#active-turn .assistant .reveal-mark').count(), 1);
@@ -138,4 +138,10 @@ export async function verifyDurableHistoryBrowser({ app, session, conversationId
 	} finally {
 		await browser.close();
 	}
+}
+
+async function assertHiddenRoute(page) {
+	const assistant = page.locator('#active-turn .assistant');
+	assert.equal(await assistant.getAttribute('data-model-route'), 'synthetic/routed-model · ↻1');
+	assert.equal((await assistant.innerText()).includes('synthetic/routed-model'), false, 'the model route stays out of learner-visible text');
 }

@@ -10,6 +10,7 @@ import {
 } from '../src/ui/chat-turns.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
+import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -421,4 +422,24 @@ test('learnerVisibleText removes stacked internal markers', () => {
 		'Hello',
 	);
 	assert.equal(learnerVisibleText('No marker here.'), 'No marker here.');
+});
+
+test('only a Hint tap from the card shows as an action', () => {
+	const twoLines = { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Look at this list:\n1, 2, 3, 4\nWhich half do you search next?' }] };
+	const hint = formatQuestionnaireAnswers(twoLines, [{ name: 'path', values: [], help: 'hint' }]);
+	const tapped = displayedLearnerTurn(hint, twoLines, true);
+	assert.equal(tapped.learnerKind, 'hint-request');
+	assert.equal(tapped.shownText, 'You asked for a hint');
+	assert.equal(tapped.text, hint);
+	const saved = displayedLearnerTurn(hint, twoLines);
+	assert.equal(saved.learnerKind, 'questionnaire-reply', 'saved text cannot tell a tap from typed words');
+	assert.equal(saved.shownText, 'Asked for a hint.', 'a multi-line prompt stays out of the learner words');
+});
+
+test('typed words that match the Hint text are sent and shown exactly', () => {
+	const typed = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], freeform: 'Asked for a hint.' }]);
+	assert.equal(typed, 'Questionnaire answers:\n- How should we begin?: Asked for a hint.');
+	const turn = displayedLearnerTurn(typed, questionnaire);
+	assert.equal(turn.learnerKind, 'questionnaire-reply');
+	assert.equal(turn.shownText, 'Asked for a hint.');
 });

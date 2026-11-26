@@ -68,6 +68,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				if (kind === 'hint') {
 					const clue = page.getByText(hintClue, { exact: true });
 					await clue.waitFor();
+					assert.equal(await page.locator('#active-turn .you p.turn-action').innerText(), 'You asked for a hint',
+						'a Hint tap shows as an action; after reload the saved words show');
 					await page.reload();
 					await clue.waitFor();
 					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');

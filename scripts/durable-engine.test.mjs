@@ -197,7 +197,7 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		assert.equal(responses.length, failures === 1 ? 2 : 3);
 		assert.deepEqual(reports, failures === 1 ? ['submission_recovery']
 			: ['submission_recovery', 'submission_recovery', 'submission_failed']);
-		if (failures === 3) assert.equal(completed.submissions[0].error, 'The model request could not complete.');
+		if (failures === 3) assert.equal(completed.submissions[0].error, 'Your message is saved. Try again.');
 		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
 		assert.equal(turns[0].model, failures === 1 ? 'synthetic-route' : 'synthetic', 'a turn without a routed reply logs the configured model');
 		assert.equal(turns[0].providerStatus, failures === 1 ? undefined : 500, 'a failed turn records the provider HTTP status');

@@ -19,7 +19,7 @@ export function HistoryStep({ step, index }: { step: readonly DisplayedTurn[]; i
 		<div className="history-step-body">
 			{step.map((item, turnIndex) => {
 				const reveal = item.role === 'Assistant' && item.text.trim() ? item.reveal : undefined;
-				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}`}>
+				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}${item.learnerKind === 'hint-request' ? ' turn-action' : ''}`}>
 					<span className="sr-only">{displayLabel(item.role)}</span>
 					<p className={reveal ? 'reveal-copy' : undefined}>
 						{reveal && <RevealMark reveal={reveal} />}{historyBodyText(item)}
@@ -54,14 +54,14 @@ export function ActiveTurn({ item, announce, stagger, interactive, steering, onQ
 	const asked = !interactive && questionnaire ? questionnaire.items.map(question => question.prompt).join('\n\n') : '';
 	const shown = item.shownText ?? text;
 	return <div className={`turn ${role.toLowerCase()}${stagger ? ' stagger-item' : ''}`}
-		ref={selectionRoot} aria-live={announce ? 'polite' : undefined}>
+		ref={selectionRoot} aria-live={announce ? 'polite' : undefined}
+		data-model-route={role === 'Assistant' ? modelRoute : undefined}>
 		<div className="turn-head">
 			<span className="turn-label">{displayLabel(role)}</span>
-			{role === 'Assistant' && modelRoute && <span className="turn-model" title={modelRoute}>{modelRoute}</span>}
 		</div>
 		{role === 'Assistant'
 			? <Markdown text={text.trim() || !asked ? text : asked} reveal={text.trim() ? item.reveal : undefined} />
-			: <p hidden={!shown}>{shown}</p>}
+			: <p hidden={!shown} className={item.learnerKind === 'hint-request' ? 'turn-action' : undefined}>{shown}</p>}
 		{item.tools && <ToolList calls={item.tools} />}
 		{interactive && questionnaire && <Questionnaire definition={questionnaire} onSubmit={onQuestionnaireSubmit} />}
 		{steering && role === 'Assistant' && text.trim() && <SteeringBar sourceText={text} selectionRoot={selectionRoot} onSteer={onSteer} />}

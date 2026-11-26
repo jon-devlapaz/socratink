@@ -201,7 +201,9 @@ export function mountChatSurface(options: Readonly<{
 					interactive={last && Boolean(item.questionnaire) && !chatRequestControls(requestState).composerLocked}
 					steering={last && item.role === 'Assistant' && requestState.kind === 'idle'}
 					onQuestionnaireSubmit={(answers) => {
-						if (item.questionnaire) void sendMessage(formatQuestionnaireAnswers(item.questionnaire, answers));
+						if (!item.questionnaire) return;
+						const hintTap = answers.length > 0 && answers.every((answer) => answer.help === 'hint');
+						void sendMessage(formatQuestionnaireAnswers(item.questionnaire, answers), false, hintTap);
 					}}
 					onSteer={(kind) => void sendMessage(formatSteeringMessage(kind))}
 				/>;
@@ -272,15 +274,16 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function sendMessage(text: string, fromComposer = false) {
+	async function sendMessage(text: string, fromComposer = false, hintTap = false) {
 		if (chatRequestControls(requests.state).composerLocked) return;
-		await startRequest(text, undefined, fromComposer);
+		await startRequest(text, undefined, fromComposer, hintTap);
 	}
 
 	async function startRequest(
 		text: string,
 		retryOf?: Extract<ChatRequestState, { kind: 'terminal' }>,
 		fromComposer = false,
+		hintTap = false,
 	) {
 		liveTools.length = 0;
 		quietToolIds.clear();
@@ -292,7 +295,10 @@ export function mountChatSurface(options: Readonly<{
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
-		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire);
+		// A Hint tap is known only from the card that sent it; a retry keeps what the attempt showed.
+		const tapped = hintTap
+			|| Boolean(replacesAttempt && previous.text === text && previous.learnerKind === 'hint-request');
+		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire, tapped);
 		const result = requests.start(text, () => {
 			if (submittedDraft === undefined || input.value !== submittedDraft) return;
 			input.value = '';
@@ -421,6 +427,15 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
+		/** Whether this tab holds words or card choices the learner has not sent. Other tabs cannot be read. */
+		hasUnsentWork() {
+			if (input.value.trim()) return true;
+			const question = activeTurn.querySelector('.questionnaire');
+			if (!question) return false;
+			if (question.querySelector('[data-state="checked"], [aria-checked="true"]')) return true;
+			return [...question.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')]
+				.some((field) => field.value.trim() !== '');
+		},
 		startOver() {
 			dictation.cancel();
 			draft.clear();

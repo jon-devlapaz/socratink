@@ -374,6 +374,22 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.equal(await input.inputValue(), '');
 
+		// Start over resets every open tab, so an empty tab still warns about the others.
+		const [draftTab] = await Promise.all([
+			page.waitForEvent('popup'),
+			page.evaluate(() => { window.open(location.href); }),
+		]);
+		await ready(draftTab);
+		await draftTab.locator('#message').fill('A sentence in another tab');
+		await page.locator('#peek-handle').click();
+		await page.getByRole('button', { name: 'Start over' }).click();
+		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
+			'Anything unsent in your other open tabs will be deleted. Saved conversations are in History.');
+		await page.keyboard.press('Escape');
+		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
+		assert.equal(await draftTab.locator('#message').inputValue(), 'A sentence in another tab');
+		await draftTab.close();
+
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 		await page.locator('#peek-handle').click();
@@ -381,7 +397,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			'Your draft will be deleted. You can reopen this conversation from History.');
+			'What you haven’t sent will be deleted, here and in your other open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
