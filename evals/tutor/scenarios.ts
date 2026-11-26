@@ -4,11 +4,11 @@
 // To add one: a live tutor-behaviour bug gets a scenario here that fails on the live
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
-import { formatQuestionnaireAnswers, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
+import { formatQuestionnaireAnswers, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
 import { cardOf, expectHintLeavesReasoning, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
-type NextMessage = { text: string; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
+type NextMessage = { text: string; cardHelp?: CardHelpAction; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 export type Scenario = {
 	name: string;
 	issue?: number;
@@ -25,14 +25,16 @@ function consentAnswer(card: QuestionnaireDefinition, value: 'see-it' | 'try-onc
 
 /** Answers a pending tutor card the way the UI would: the first choice, with the step as
  * reasoning, or the card's help. With no card, or a plain step, sends the text. */
-function learnerMessage(step: Step, previous: WireMessage | undefined): string {
-	const card = cardOf(previous);
+function learnerMessage(step: Step, card: QuestionnaireDefinition | undefined, sourceId?: string): NextMessage {
 	const item = card?.items[0];
-	if (!card || !item || step.plain) return step.say;
-	if (card.kind === 'reveal-consent') return consentAnswer(card, 'see-it');
-	if (step.help) return formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: step.help }]);
+	if (!card || !item || step.plain) return { text: step.say };
+	if (card.kind === 'reveal-consent') return { text: consentAnswer(card, 'see-it') };
+	if (step.help) {
+		if (!sourceId) throw new Error('The question card has no submission ID.');
+		return { cardHelp: { kind: step.help, sourceId }, text: formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: step.help }]) };
+	}
 	const choice = item.choices[0]?.value;
-	return formatQuestionnaireAnswers(card, [{ name: item.name, values: choice ? [choice] : [], ...(item.input ? { freeform: step.say } : {}) }]);
+	return { text: formatQuestionnaireAnswers(card, [{ name: item.name, values: choice ? [choice] : [], ...(item.input ? { freeform: step.say } : {}) }]) };
 }
 
 /** A fixed list of steps. An unplanned consent card gets "See it" without using a step. */
@@ -42,7 +44,7 @@ function scripted(steps: readonly Step[]): Scenario['next'] {
 		const card = cardOf(previous);
 		if (card?.kind === 'reveal-consent') return { text: consentAnswer(card, 'see-it'), autoConsent: true };
 		const step = steps[turns.filter((turn) => !turn.autoConsent).length];
-		return step ? { text: learnerMessage(step, previous), step: step.say } : null;
+		return step ? { ...learnerMessage(step, card, previous?.submissionId), step: step.say } : null;
 	};
 }
 
@@ -139,7 +141,7 @@ export const scenarios: readonly Scenario[] = [
 			const say = ['Help me understand why the sky is blue.', 'Because it reflects the ocean.',
 				'Because air itself is blue, like paint.', 'I still think it is the ocean reflecting up.',
 				'Maybe the Sun is blue?', 'I give up, I have no idea.'][turns.length];
-			return say ? { text: learnerMessage({ say }, previous) } : null;
+			return say ? learnerMessage({ say }, card) : null;
 		},
 		expect: (turns) => {
 			const turn = turns.find((t) => t.tryOnceMore);

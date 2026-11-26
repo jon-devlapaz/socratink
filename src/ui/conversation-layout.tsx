@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Bookmark } from 'lucide-react';
 
 import type { TranscriptContent } from './chat-surface.tsx';
 import { Intro, IntroStarters } from './intro.tsx';
@@ -29,7 +30,7 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 					aria-label="Current step"
 				>
 					<Button
-						size="icon"
+						size="sm"
 						variant="ghost"
 						className="trail-toggle"
 						id="trail-toggle"
@@ -38,16 +39,8 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 						aria-expanded="false"
 						aria-controls="messages"
 					>
-						<svg
-							className="trail-mark"
-							viewBox="0 0 16 28"
-							preserveAspectRatio="xMinYMin meet"
-							aria-hidden="true"
-						>
-							<path className="trail-mark-body" d="M0 0h16v19H0z" />
-							<path d="M0 19h16L8 28z" />
-						</svg>
-						<span id="trail-toggle-label" className="sr-only">
+						<Bookmark className="trail-mark" aria-hidden="true" />
+						<span id="trail-toggle-label">
 							Earlier steps
 						</span>
 					</Button>

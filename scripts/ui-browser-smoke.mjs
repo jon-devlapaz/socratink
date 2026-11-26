@@ -254,8 +254,10 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
 				if (source === 'composer') await send(page, 'Keep my unsent question');
-				else if (source === 'steering') await page.getByRole('button', { name: 'Smaller step', exact: true }).click();
-				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
+				else if (source === 'steering') {
+					await page.getByRole('button', { name: 'More options', exact: true }).click();
+					await page.getByRole('menuitem', { name: 'Smaller step', exact: true }).click();
+				} else await page.getByRole('button', { name: 'Hint', exact: true }).click();
 				await page.locator('.chat-gate-card').waitFor();
 				const expected = source === 'composer' ? 'Keep my unsent question'
 					: source === 'steering' ? formatSteeringMessage('smaller-step')
@@ -535,8 +537,49 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await page.locator('#history-trigger').isEnabled(), true);
 	});
 
+	await check('card-more-options-375', async (page, fixture) => {
+		fixture.mode = 'guest-limit';
+		await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const more = page.getByRole('button', { name: 'More options', exact: true });
+		const menu = page.getByRole('menu');
+		const choice = page.getByRole('radio', { name: 'Retry', exact: true });
+		await choice.click();
+		const actionBoxes = await page.locator('.questionnaire-actions button').evaluateAll(buttons =>
+			buttons.map(button => ({ top: button.offsetTop, height: button.offsetHeight })));
+		assert.equal(new Set(actionBoxes.map(box => box.top)).size, 1, 'the standard actions fit on one row at 375px');
+		assert.ok(actionBoxes.every(box => box.height >= 44), 'the actions keep their touch height');
+		assert.equal(await page.getByRole('button', { name: 'Smaller step', exact: true }).count(), 0);
+		await more.press('Enter');
+		const unaided = menu.getByRole('menuitem', { name: 'Try on my own', exact: true });
+		await unaided.waitFor();
+		assert.equal(await menu.getByRole('menuitem', { name: 'Smaller step', exact: true }).isVisible(), true);
+		await page.keyboard.press('c');
+		await page.keyboard.press('Escape');
+		await menu.waitFor({ state: 'hidden' });
+		await page.waitForFunction(button => button === document.activeElement, await more.elementHandle());
+		assert.equal(await choice.isChecked(), true);
+		assert.deepEqual(fixture.sent, []);
+
+		for (const expected of ['What would you check?', 'would']) {
+			if (expected === 'would') await selectReplyWord(page);
+			await more.click();
+			await menu.getByRole('menuitem', { name: /Cop(y|ied) this turn/ }).click();
+			await menu.waitFor({ state: 'hidden' });
+			await page.waitForFunction(async text => await navigator.clipboard.readText() === text, expected);
+		}
+		assert.equal(await choice.isChecked(), true);
+		assert.deepEqual(fixture.sent, []);
+		await more.press('ArrowDown');
+		await unaided.click();
+		await page.locator('.chat-gate-card').waitFor();
+		assert.deepEqual(fixture.sent, [formatSteeringMessage('try-unaided')]);
+	});
+
 	await check('copy-and-steer', async (page, fixture) => {
 		fixture.mode = 'guest-limit';
+		fixture.showGuestQuestion = false;
 		await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
 		await page.goto(origin);
 		const group = page.getByRole('group', { name: 'Steer this turn' });
@@ -549,13 +592,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await group.getByRole('button', { name: 'Copied this turn', exact: true }).waitFor();
 		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'What would you check?');
 		assert.deepEqual(fixture.sent, []);
-		await page.getByText('What would you check?', { exact: true }).evaluate(node => {
-			const range = document.createRange();
-			range.setStart(node.firstChild, 5);
-			range.setEnd(node.firstChild, 10);
-			getSelection().removeAllRanges();
-			getSelection().addRange(range);
-		});
+		await selectReplyWord(page);
 		await group.getByRole('button', { name: /Cop(y|ied) this turn/ }).click();
 		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'would');
 		assert.equal(await unaided.isEnabled(), true);
@@ -687,6 +724,16 @@ async function readFocusPaint(locator) {
 	});
 }
 
+async function selectReplyWord(page) {
+	await page.getByText('What would you check?', { exact: true }).evaluate(node => {
+		const range = document.createRange();
+		range.setStart(node.firstChild, 5);
+		range.setEnd(node.firstChild, 10);
+		getSelection().removeAllRanges();
+		getSelection().addRange(range);
+	});
+}
+
 async function assertNoFocusDecoration(control, paintTarget, before) {
 	assert.equal(await control.evaluate((node) => node.matches(':focus-visible')), true,
 		`${control} receives keyboard focus`);
@@ -778,11 +825,11 @@ function createServices(origin, session) {
 			}
 			if (!url.pathname.endsWith('/events')) {
 				if (fixture.mode === 'guest-limit') return json({ messages: [{
-					role: 'assistant', display: 'visible', parts: [
+					role: 'assistant', display: 'visible', submissionId: 'guest-card', parts: [
 						{ type: 'text', text: 'What would you check?' },
 						...(fixture.showGuestQuestion ? [{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
 							name: 'item', prompt: 'Which step?', required: true, multiple: false,
-							choices: [{ value: 'check', label: 'Check' }, { value: 'retry', label: 'Retry' }],
+							choices: [{ value: 'check', label: 'Check', shortcut: 'c' }, { value: 'retry', label: 'Retry' }],
 						}] } }] : []),
 					],
 				}], settlements: [] });

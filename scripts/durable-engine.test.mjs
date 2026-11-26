@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
+import { Hono } from 'hono';
+import { mountBrowserBridge } from '../src/server/durable/browser-bridge.ts';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { openEngine } from '../src/server/durable/engine.ts';
 import { createDurableStorage } from '../src/server/durable/storage.ts';
@@ -281,21 +283,6 @@ test('a card written as JSON text is retried as a real card and never shows as t
 	} finally { await engine.close(); }
 }));
 
-test('card help the tutor never marks is still labelled from the click (#65)', async () => fixture(async ({ responses, options }) => {
-	const background = [];
-	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work) });
-	try {
-		await engine.submit('learner:help', 'Questionnaire answers:\n- A list has 16 items.\nWhich half do you search next?: Asked for a hint.');
-		await until(async () => responses.length, (count) => count === 1);
-		finish(responses[0], 'Think about what the middle element tells you. Which side can you rule out?');
-		await until(async () => responses.length, (count) => count === 2);
-		finish(responses[1], '');
-		const settled = await until(() => engine.snapshot('learner:help'), (value) => value.submissions[0]?.outcome === 'completed');
-		const reply = settled.messages.find((message) => message.role === 'assistant');
-		assert.deepEqual(reply.data?.reveal, [{ kind: 'hint', target: 'A list has 16 items.\nWhich half do you search next?' }]);
-	} finally { await engine.close(); }
-}));
-
 const paymentQuestion = { prompt: 'Which request reuses the first payment key?',
 	choices: ['Retry the same payment', 'Make a separate purchase'], reasoning: true };
 const paymentClue = 'Count how many purchases the customer intended.';
@@ -308,7 +295,7 @@ function finishTool(stream, name, args, id = name) {
 	stream.end('data: [DONE]\n\n');
 }
 
-function withPaymentCard(run) {
+function withPaymentCard(run, question = paymentQuestion) {
 	return fixture(async ({ target, responses, requests, options }) => {
 		const work = [];
 		const tracked = { ...options, keepAlive: (promise) => work.push(promise) };
@@ -319,13 +306,170 @@ function withPaymentCard(run) {
 		const nextResponse = () => { const position = index++; return until(() => responses[position], Boolean); };
 		const settled = async () => { await Promise.all(work); return reader.snapshot(id); };
 		try {
-			await engine.submit(id, 'Quiz me on payment retries.');
-			finishTool(await nextResponse(), 'present_question', paymentQuestion);
+			const sourceId = await engine.submit(id, 'Quiz me on payment retries.');
+			finishTool(await nextResponse(), 'present_question', question);
 			const original = questionnaireFromReplyData((await settled()).messages.at(-1).data);
-			const askForHint = (card) => engine.submit(id, formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: [], help: 'hint' }]));
-			await run({ target, id, engine, reader, requests, original, askForHint, nextResponse, settled });
+			const askForHint = (card, cardId = sourceId) => engine.submit(id,
+				formatQuestionnaireAnswers(card, [{ name: card.items[0].name, values: [], help: 'hint' }]),
+				undefined, { kind: 'hint', sourceId: cardId });
+			await run({ target, id, engine, reader, requests, original, sourceId, askForHint, nextResponse, settled });
 		} finally { await engine.close(); await reader.close(); }
 	});
+}
+
+function cardClient(engine, id) {
+	const app = new Hono();
+	mountBrowserBridge(app, engine, async () => ({ provider: 'jon-local', modelId: 'synthetic' }));
+	return {
+		send: (body, cardHelp) => app.request('/' + id, { method: 'POST', headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ kind: 'user', body, cardHelp }) }),
+		history: async () => (await app.request('/' + id)).json(),
+	};
+}
+
+function tutorInstructions(messages) {
+	return messages.filter((message) => message.role === 'system' || message.role === 'developer')
+		.map((message) => message.content).join('\n');
+}
+
+const helpCard = { ...paymentQuestion, prompt: 'Two payments have the same total.\nWhich request reused the original payment key?' };
+const followUpCard = { prompt: 'What else should you check?', choices: ['The date', 'The request body'] };
+
+for (const { button, words, kind, reveal } of [
+	{ button: 'Hint', words: 'Asked for a hint.', kind: 'hint', reveal: 'hint' },
+	{ button: "I don't know", words: "I don't know.", kind: 'unknown', reveal: 'partial' },
+]) {
+	for (const tapped of [true, false]) {
+		test(`${tapped ? 'pressing' : 'typing'} ${button} preserves the origin for the tutor and saved history`, () => withPaymentCard(async ({
+			id, engine, reader, requests, original, sourceId, nextResponse, settled,
+		}) => {
+			const item = original.items[0];
+			const answer = formatQuestionnaireAnswers(original, [{ name: item.name, values: [], freeform: words }]);
+			const click = formatQuestionnaireAnswers(original, [{ name: item.name, values: [], help: kind }]);
+			assert.equal(answer, click);
+			const action = tapped ? { kind, sourceId } : undefined;
+			const admission = await cardClient(engine, id).send(answer, action);
+			assert.equal(admission.status, 202);
+			finishTool(await nextResponse(), 'present_question', followUpCard);
+			const snapshot = await settled();
+			const wire = await cardClient(reader, id).history();
+			const learner = wire.messages.at(-2);
+			assert.deepEqual(learner.metadata?.cardHelp, action);
+			assert.equal(learner.parts.find((part) => part.type === 'text')?.text, answer);
+			const reply = snapshot.messages.at(-1);
+			assert.deepEqual(reply.data?.reveal, tapped ? [{ kind: reveal, target: item.prompt }] : undefined);
+			assert.equal(questionnaireFromReplyData(reply.data).items[0].prompt, tapped && kind === 'hint' ? item.prompt : followUpCard.prompt);
+			const sent = requests.at(-1);
+			const currentAction = `Socratink card action: the learner pressed ${button}.`;
+			assert.equal(sent.findLast((message) => message.role === 'user').content, answer);
+			assert.equal(tutorInstructions(sent).includes(currentAction), tapped);
+
+			await reader.submit(id, 'What should I try next?');
+			finishTool(await nextResponse(), 'present_question', followUpCard);
+			await settled();
+			const next = requests.at(-1);
+			const users = next.filter((message) => message.role === 'user');
+			assert.equal(users.at(-1).content, 'What should I try next?');
+			const earlier = users.findIndex((message) => message.content === answer);
+			assert.ok(earlier >= 0);
+			assert.equal(tutorInstructions(next).includes(`Earlier user message ${earlier + 1}: the learner pressed ${button}.`), tapped);
+			assert.ok(!tutorInstructions(next).includes(currentAction), 'an earlier click must not request another hint');
+		}, helpCard));
+	}
+}
+
+test('a completed Hint stays labelled if the tutor returns without marking it (#65)', () => withPaymentCard(async ({
+	original, askForHint, requests, nextResponse, settled,
+}) => {
+	await askForHint(original);
+	finish(await nextResponse(), 'Think about which request you made first.');
+	const correction = await nextResponse();
+	assert.ok(tutorInstructions(requests.at(-1)).includes('Socratink card action: the learner pressed Hint.'));
+	finish(correction, '');
+	const reply = (await settled()).messages.at(-1);
+	assert.deepEqual(reply.data.reveal, [{ kind: 'hint', target: original.items[0].prompt }]);
+}, helpCard));
+
+test('a reported Hint inside a typed sentence does not record a help request', () => withPaymentCard(async ({
+	engine, id, original, nextResponse, settled,
+}) => {
+	const answer = formatQuestionnaireAnswers(original, [{ name: original.items[0].name, values: [], freeform: 'She wrote: Asked for a hint.' }]);
+	await engine.submit(id, answer);
+	finishTool(await nextResponse(), 'present_question', followUpCard);
+	const saved = await settled();
+	assert.equal(saved.messages.at(-2).metadata?.cardHelp, undefined);
+	assert.equal(saved.messages.at(-1).data?.reveal, undefined);
+}));
+
+test('invalid and stale card actions cannot start a tutor turn', () => withPaymentCard(async ({
+	engine, id, original, sourceId, requests, nextResponse, settled,
+}) => {
+	const client = cardClient(engine, id);
+	const hint = formatQuestionnaireAnswers(original, [{ name: original.items[0].name, values: [], help: 'hint' }]);
+	for (const invalid of ['hint', null, { kind: 'other', sourceId }, { kind: 'hint' }, { kind: 'hint', sourceId: '' }]) {
+		const response = await client.send(hint, invalid);
+		assert.equal(response.status, 400);
+		assert.equal((await response.json()).error.type, 'invalid_message');
+	}
+	const mismatched = await client.send(hint, { kind: 'unknown', sourceId });
+	assert.equal(mismatched.status, 409);
+	assert.equal((await mismatched.json()).error.type, 'invalid_card_action');
+	assert.equal(requests.length, 1);
+	const newSource = await engine.submit(id, 'I would check the request.');
+	finishTool(await nextResponse(), 'present_question', { prompt: original.items[0].prompt, choices: ['One payment', 'Two payments'] });
+	const currentCard = questionnaireFromReplyData((await settled()).messages.at(-1).data);
+	const currentHint = formatQuestionnaireAnswers(currentCard, [{ name: currentCard.items[0].name, values: [], help: 'hint' }]);
+	assert.equal(currentHint, hint, 'the stale tab and current tab send the exact same words');
+	assert.notDeepEqual(currentCard.items[0].choices, original.items[0].choices);
+	const stale = await client.send(hint, { kind: 'hint', sourceId });
+	assert.equal(stale.status, 409);
+	assert.equal((await stale.json()).error.type, 'invalid_card_action');
+	assert.equal((await engine.snapshot(id)).submissions.length, 2);
+	const currentAction = { kind: 'hint', sourceId: newSource };
+	const accepted = await client.send(currentHint, currentAction);
+	assert.equal(accepted.status, 202);
+	finishTool(await nextResponse(), 'present_question', followUpCard);
+	const saved = await settled();
+	assert.deepEqual(saved.messages.at(-2).metadata.cardHelp, currentAction);
+	assert.deepEqual(questionnaireFromReplyData(saved.messages.at(-1).data).items[0].choices, currentCard.items[0].choices);
+}));
+
+test('a recovered Hint gives the tutor its recorded action after the original worker stops', () => withPaymentCard(async ({
+	engine, reader, id, requests, original, sourceId, nextResponse, settled,
+}) => {
+	const text = formatQuestionnaireAnswers(original, [{ name: original.items[0].name, values: [], help: 'hint' }]);
+	const action = { kind: 'hint', sourceId };
+	const hintId = await engine.submit(id, text, undefined, action);
+	await nextResponse();
+	await engine.close();
+	await reader.snapshot(id);
+	const recovered = await nextResponse();
+	assert.ok(tutorInstructions(requests.at(-1)).includes('Socratink card action: the learner pressed Hint.'));
+	assert.equal(requests.at(-1).findLast((message) => message.role === 'user').content, text);
+	finishTool(recovered, 'present_question', followUpCard);
+	const history = await settled();
+	assert.deepEqual(history.submissions.map((submission) => submission.outcome), ['completed', 'completed']);
+	assert.equal(history.messages.at(-2).submissionId, hintId);
+	assert.deepEqual(history.messages.at(-2).metadata.cardHelp, action);
+}));
+
+for (const repeatTap of [true, false]) {
+	test(`after a canceled Hint, ${repeatTap ? 'retrying the tap' : 'sending the same words alone'} keeps its own origin`, () => withPaymentCard(async ({
+		engine, reader, id, original, askForHint, nextResponse, settled,
+	}) => {
+		const stopped = await askForHint(original);
+		await nextResponse();
+		assert.equal(await engine.abort(id, stopped), true);
+		const aborted = await settled();
+		assert.equal(aborted.submissions.at(-1).outcome, 'aborted');
+		const text = aborted.submissions.at(-1).text;
+		const action = repeatTap ? aborted.messages.find((m) => m.role === 'user' && m.submissionId === stopped).metadata.cardHelp : undefined;
+		await reader.submit(id, text, undefined, action);
+		finishTool(await nextResponse(), 'present_question', followUpCard);
+		const retried = await settled();
+		assert.deepEqual(retried.messages.at(-2).metadata?.cardHelp, action);
+		assert.equal(questionnaireFromReplyData(retried.messages.at(-1).data).items[0].prompt, repeatTap ? paymentQuestion.prompt : followUpCard.prompt);
+	}));
 }
 
 for (const { name, tutorText, clue } of [
@@ -374,7 +518,7 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 	assert.equal(first.text, guidingQuestion);
 	assert.equal(first.data.reveal[0].kind, 'hint');
 
-	await askForHint(renewed);
+	await askForHint(renewed, first.submissionId);
 	const wrong = await nextResponse();
 	chunk(wrong, { content: paymentClue });
 	finishTool(wrong, 'present_question', { prompt: 'What is the weather?', choices: ['Rain', 'Sun'] }, 'wrong-weather');
@@ -398,36 +542,43 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 	}
 }));
 
-test('reopening a Hint recorded in the old input format preserves its marked question and the learner answer', () => withPaymentCard(async ({
-	target, id, engine, reader, original, askForHint, nextResponse, settled,
-}) => {
-	await askForHint(original);
-	finish(await nextResponse(), guidingQuestion);
-	finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
-	await settled();
-	await engine.submit(id, 'One.');
-	finish(await nextResponse(), 'What tells you that?');
-	await settled();
+for (const retainedSource of [false, true]) {
+	test(`reopening old help with source card = ${retainedSource} preserves recorded assistance without asserting a tap`, () => withPaymentCard(async ({
+		target, id, engine, reader, original, askForHint, nextResponse, settled,
+	}) => {
+		await askForHint(original);
+		finish(await nextResponse(), guidingQuestion);
+		finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
+		await settled();
+		await engine.submit(id, 'One.');
+		finish(await nextResponse(), 'What tells you that?');
+		await settled();
 
-	// Old inputs recorded the click and tutor response without a source-card reference.
-	const db = new DatabaseSync(target.filename);
-	try {
-		const records = db.prepare('SELECT seq, writes FROM pi_commits WHERE namespace = ? AND instr(writes, ?) > 0').all(id, '"hintCardFrom"');
-		assert.ok(records.length);
-		const replace = db.prepare('UPDATE pi_commits SET writes = ? WHERE namespace = ? AND seq = ?');
-		for (const { seq, writes } of records) {
-			const legacy = JSON.parse(writes, (key, value) => key === 'hintCardFrom' ? undefined : value);
-			replace.run(JSON.stringify(legacy), id, seq);
-		}
-	} finally { db.close(); }
+		// Both old formats saved the same text for a click and a typed answer.
+		const db = new DatabaseSync(target.filename);
+		try {
+			const records = db.prepare('SELECT seq, writes FROM pi_commits WHERE namespace = ? AND instr(writes, ?) > 0').all(id, '"cardHelp"');
+			assert.ok(records.length);
+			const replace = db.prepare('UPDATE pi_commits SET writes = ? WHERE namespace = ? AND seq = ?');
+			for (const { seq, writes } of records) {
+				const legacy = JSON.parse(writes, (_key, value) => {
+					if (!value?.cardHelp) return value;
+					const { cardHelp, ...previous } = value;
+					return retainedSource ? { ...previous, hintCardFrom: cardHelp.sourceId } : previous;
+				});
+				replace.run(JSON.stringify(legacy), id, seq);
+			}
+		} finally { db.close(); }
 
-	const history = await reader.snapshot(id);
-	assert.equal(history.messages[3].text, guidingQuestion);
-	assert.equal(questionnaireFromReplyData(history.messages[3].data), undefined);
-	assert.deepEqual(history.messages[3].data.reveal, [{ kind: 'hint' }]);
-	assert.equal(history.messages[4].text, 'One.');
-	assert.equal(history.messages[5].text, 'What tells you that?');
-}));
+		const history = await reader.snapshot(id);
+		assert.equal(history.messages[3].text, guidingQuestion);
+		assert.equal(Boolean(questionnaireFromReplyData(history.messages[3].data)), retainedSource);
+		assert.equal(history.messages[2].metadata?.cardHelp, undefined);
+		assert.deepEqual(history.messages[3].data.reveal, [{ kind: 'hint' }]);
+		assert.equal(history.messages[4].text, 'One.');
+		assert.equal(history.messages[5].text, 'What tells you that?');
+	}));
+}
 
 test('a reveal after the learner asks for the answer is recorded as requested, even when the tutor omits it (#133)', async () => fixture(async ({ responses, options }) => {
 	const background = [];

@@ -33,6 +33,7 @@
 	--muted: #575653;
 	--quiet: #686762;
 	--accent: #1f7a72;
+	--tutor-help: #82571f;
 	--error: #d14d41;
 	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Newsreader", ui-serif, Georgia, serif;
@@ -424,6 +425,7 @@ body.questionnaire-active .stage {
 	--muted: #aaa69e;
 	--quiet: #8f8c85;
 	--accent: #3aa99f;
+	--tutor-help: #dfb477;
 	--wordmark-filter: invert(1);
 	color-scheme: dark;
 }
@@ -440,6 +442,7 @@ body.questionnaire-active .stage {
 		--muted: #aaa69e;
 		--quiet: #8f8c85;
 		--accent: #3aa99f;
+		--tutor-help: #dfb477;
 				--wordmark-filter: invert(1);
 		color-scheme: dark;
 	}

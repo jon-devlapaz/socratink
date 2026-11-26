@@ -126,7 +126,18 @@ function uniqueChoiceValue(label: string, used: ReadonlySet<string>): string {
 	}
 }
 
-export type QuestionnaireHelp = 'hint' | 'unknown';
+const QuestionnaireHelpSchema = v.picklist(['hint', 'unknown']);
+export type QuestionnaireHelp = v.InferOutput<typeof QuestionnaireHelpSchema>;
+
+const CardHelpActionSchema = v.strictObject({
+	kind: QuestionnaireHelpSchema,
+	sourceId: v.pipe(v.string(), v.regex(/\S/)),
+});
+export type CardHelpAction = v.InferOutput<typeof CardHelpActionSchema>;
+
+export function isCardHelpAction(value: unknown): value is CardHelpAction {
+	return v.is(CardHelpActionSchema, value);
+}
 
 export type QuestionnaireAnswer = {
 	name: string;
@@ -137,7 +148,7 @@ export type QuestionnaireAnswer = {
 	help?: QuestionnaireHelp;
 };
 
-export const questionnaireHelpText: Record<QuestionnaireHelp, string> = {
+const questionnaireHelpText: Record<QuestionnaireHelp, string> = {
 	hint: 'Asked for a hint.',
 	unknown: "I don't know.",
 };

@@ -1,17 +1,12 @@
 import type { RevealDefinition } from '../reveal.ts';
 
-const revealWords = {
-	hint: 'hint',
-	worked_example: 'example',
-	partial: 'partial',
-	full_answer: 'answer',
-} as const;
+const revealLabels = {
+	hint: 'Hint from Socratink',
+	worked_example: 'Worked example from Socratink',
+	partial: 'Partial explanation from Socratink',
+	full_answer: 'Full answer from Socratink',
+} satisfies Record<RevealDefinition['kind'], string>;
 
 export function RevealMark({ reveal }: { reveal: RevealDefinition }) {
-	const word = revealWords[reveal.kind];
-	const article = word === 'example' || word === 'answer' ? 'an' : 'a';
-	return <>
-		<span className="sr-only">Socratink supplied {article} {word}.</span>
-		<span className="reveal-mark" aria-hidden="true">{word}</span>
-	</>;
+	return <span className="reveal-mark">{revealLabels[reveal.kind]}</span>;
 }

@@ -6,6 +6,7 @@ import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { Markdown } from './chat-markdown.tsx';
 import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
 import type { LiveReplyView } from './live-reply.ts';
+import type { QuestionDraft } from './client/chat-draft.ts';
 import { Questionnaire } from './questionnaire.tsx';
 import { RevealMark } from './reveal-mark.tsx';
 import type { SteeringKind } from './steering.ts';
@@ -13,17 +14,32 @@ import { SteeringBar } from './steering-view.tsx';
 import { ToolList } from './tool-card.tsx';
 import type { DisplayedToolCall } from './tool-state.ts';
 
-export function HistoryStep({ step, index }: { step: readonly DisplayedTurn[]; index: number }) {
+type HistoryStepProps = {
+	step: readonly DisplayedTurn[];
+	index: number;
+	previousReply?: DisplayedTurn;
+};
+
+export function HistoryStep({ step, index, previousReply }: HistoryStepProps) {
+	const help = step[0]?.cardHelp;
+	const hintedQuestion = help?.kind === 'hint' && help.sourceId === previousReply?.submissionId
+		? previousReply.questionnaire?.items[0]?.prompt : undefined;
 	return <li className="history-step">
 		<span className="history-step-mark" aria-hidden="true">{index + 1}</span>
 		<div className="history-step-body">
 			{step.map((item, turnIndex) => {
+				const body = historyBodyText(item);
 				const reveal = item.role === 'Assistant' && item.text.trim() ? item.reveal : undefined;
-				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}${item.learnerKind === 'hint-request' ? ' turn-action' : ''}`}>
-					<span className="sr-only">{displayLabel(item.role)}</span>
-					<p className={reveal ? 'reveal-copy' : undefined}>
-						{reveal && <RevealMark reveal={reveal} />}{historyBodyText(item)}
-					</p>
+				const question = item.questionnaire?.items[0]?.prompt;
+				const showQuestion = question && !(turnIndex === 1 && question === hintedQuestion);
+				const showBody = body && (reveal || body !== question);
+				if (!showBody && !showQuestion) return null;
+				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}${item.cardHelp ? ' turn-action' : ''}`}>
+					{!reveal && <span className="sr-only">{displayLabel(item.role)}</span>}
+					{showBody && <p className={reveal ? 'reveal-copy' : undefined}>
+						{reveal && <RevealMark reveal={reveal} />}{body}
+					</p>}
+					{showQuestion && <p className="history-question">{question}</p>}
 				</div>;
 			})}
 		</div>
@@ -33,12 +49,12 @@ export function HistoryStep({ step, index }: { step: readonly DisplayedTurn[]; i
 function historyBodyText(item: DisplayedTurn): string {
 	if (item.role === 'You') return item.shownText ?? item.text;
 	const compact = compactMarkdownText(item.shownText ?? item.text);
-	if (compact) return compact;
-	if (item.questionnaire) return item.questionnaire.items.map(question => question.prompt).join(' ');
+	if (compact || item.questionnaire) return compact;
 	return item.tools?.map(call => call.name).join(', ') ?? '';
 }
 
 type ActiveTurnProps = {
+	questionDraft?: QuestionDraft;
 	item: DisplayedTurn;
 	announce?: boolean;
 	stagger?: boolean;
@@ -48,23 +64,28 @@ type ActiveTurnProps = {
 	onSteer: (kind: SteeringKind) => void;
 };
 
-export function ActiveTurn({ item, announce, stagger, interactive, steering, onQuestionnaireSubmit, onSteer }: ActiveTurnProps) {
+export function ActiveTurn({ item, announce, stagger, interactive, steering, questionDraft, onQuestionnaireSubmit, onSteer }: ActiveTurnProps) {
 	const selectionRoot = useRef<HTMLDivElement>(null);
 	const { role, text, questionnaire, modelRoute } = item;
+	const reveal = role === 'Assistant' && text.trim() ? item.reveal : undefined;
 	const asked = !interactive && questionnaire ? questionnaire.items.map(question => question.prompt).join('\n\n') : '';
 	const shown = item.shownText ?? text;
+	const activeCard = interactive && questionnaire;
+	const actions = steering && role === 'Assistant' && text.trim()
+		? <SteeringBar sourceText={text} selectionRoot={selectionRoot} onSteer={onSteer} inMenu={Boolean(activeCard)} />
+		: null;
 	return <div className={`turn ${role.toLowerCase()}${stagger ? ' stagger-item' : ''}`}
 		ref={selectionRoot} aria-live={announce ? 'polite' : undefined}
 		data-model-route={role === 'Assistant' ? modelRoute : undefined}>
-		<div className="turn-head">
+		{!reveal && <div className="turn-head">
 			<span className="turn-label">{displayLabel(role)}</span>
-		</div>
+		</div>}
 		{role === 'Assistant'
-			? <Markdown text={text.trim() || !asked ? text : asked} reveal={text.trim() ? item.reveal : undefined} />
-			: <p hidden={!shown} className={item.learnerKind === 'hint-request' ? 'turn-action' : undefined}>{shown}</p>}
+			? <Markdown text={text.trim() || !asked ? text : asked} reveal={reveal} />
+			: <p hidden={!shown} className={item.cardHelp ? 'turn-action' : undefined}>{shown}</p>}
 		{item.tools && <ToolList calls={item.tools} />}
-		{interactive && questionnaire && <Questionnaire definition={questionnaire} onSubmit={onQuestionnaireSubmit} />}
-		{steering && role === 'Assistant' && text.trim() && <SteeringBar sourceText={text} selectionRoot={selectionRoot} onSteer={onSteer} />}
+		{activeCard ? <Questionnaire key={item.submissionId} definition={activeCard} draft={questionDraft}
+			canAskForHelp={Boolean(item.submissionId)} onSubmit={onQuestionnaireSubmit} moreOptions={actions} /> : actions}
 	</div>;
 }
 

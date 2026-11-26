@@ -12,7 +12,8 @@ import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryRe
 import { parseRevealDefinition, revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
 import { hintCardToolOutput } from './card-hint.ts';
-import { inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
+import { createCardHelpContext } from './card-help-context.ts';
+import { hintCardSource, inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
@@ -20,6 +21,7 @@ const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
 
 export function productRegistry(readState: () => Promise<Snapshot>) {
 	const registry = createRegistry();
+	const cardHelpContext = createCardHelpContext();
 	registry.install({
 		name: 'socratink',
 		sections: [{ key: 'product', tag: false, render: () => systemPrompt }],
@@ -52,7 +54,8 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 						result = { ...result, details: { ...details,
 							reveal: (details?.reveal ?? []).map((reveal) => ({ ...reveal, requested: true })) } };
 					}
-					const sourceId = (entries[0]?.data as InputData | undefined)?.hintCardFrom;
+					const input = inputData(entries[0]);
+					const sourceId = input && hintCardSource(input);
 					if (sourceId && call.name === 'present_question' && !result.isError) {
 						const output = hintCardToolOutput(await readState(), sourceId, result.details as ProductMessage['data']);
 						if (output) result = { ...result, output: [{ type: 'text', text: output }] };
@@ -77,9 +80,9 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 						&& ['hint', 'partial'].includes(parseRevealDefinition(round.arguments)?.kind ?? ''))
 						&& isHelpThenQuestion(assistant?.model?.filter((message) => message.role === 'assistant').map(messageText).join('') ?? '');
 					const terminate = hasQuestion || (invalidQuestion && corrections(earlier).length > 0) || correctedReveal || answered;
-					const help = hasQuestion && call.name === 'present_question' && !result.isError
+					const help = input?.cardHelp && hasQuestion && call.name === 'present_question' && !result.isError
 						&& !revealed(earlier) && !calls.some((round) => round.name === revealToolName)
-						? cardHelpReveal(learnerText(entries)) : undefined;
+						? cardHelpReveal(input.cardHelp.kind, input.cardHelp.target) : undefined;
 					return terminate || help ? { ...result,
 						...(help ? { details: { ...(result.details as object), reveal: [help] } } : {}),
 						control: { ...result.control, ...(terminate ? { terminate: true } : {}) } } : result;
@@ -89,7 +92,7 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 				beforeRequest: async ({ messages }, api, context) => {
 					const entries = await currentInputEntries(api, context, true);
 					const input = entries.findLastIndex((entry) => entry.kind === inputKind);
-					if (!isTryOnceMore(entries.slice(input))) return;
+					if (!isTryOnceMore(entries.slice(input))) return cardHelpContext(messages, entries[input], api, context);
 					const prior = input > 0 && entries[0]?.kind === inputKind
 						? entries[0].model?.find((message) => message.role === 'user') : undefined;
 					const boundary = prior ? messages.findLastIndex((message) => message.role === 'user'
@@ -122,6 +125,7 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 					if (question) return { continue: presentQuestionRetryBodies[question] };
 					const reveal = markRevealRetryReason({
 						revealed: revealed(entries), learnerText: learnerText(entries), assistantText: messageText(answer), alreadyRetried,
+						cardHelp: inputData(entries[0])?.cardHelp?.kind,
 					});
 					return reveal ? { continue: markRevealRetryBodies[reveal] } : undefined;
 				},
@@ -131,8 +135,12 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 	return registry;
 }
 
+function inputData(entry?: EntryRecord): InputData | undefined {
+	return entry?.kind === inputKind ? entry.data as InputData : undefined;
+}
+
 function isTryOnceMore(entries: readonly EntryRecord[]): boolean {
-	return (entries[0]?.data as InputData | undefined)?.tryOnceMore === true && entries[0]?.kind === inputKind;
+	return inputData(entries[0])?.tryOnceMore === true;
 }
 
 function triedCorrection(entries: readonly EntryRecord[]): boolean {

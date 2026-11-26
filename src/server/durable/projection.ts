@@ -55,15 +55,14 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 }
 
 /** A completed reply to the card's Hint or I don't know gave assistance, so it
- * carries that help label even when the tutor never marked it (#65). The
- * learner's click is the record, so older history gets the label too. */
+ * carries that help label even when the tutor never marked it (#65). */
 function labelCardHelp(snapshot: Snapshot) {
 	for (const submission of snapshot.submissions) {
-		const help = submission.outcome === 'completed' ? cardHelpReveal(submission.text) : undefined;
-		const reply = help && snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === submission.id);
+		if (submission.outcome !== 'completed' || !submission.cardHelp) continue;
+		const reply = snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === submission.id);
 		if (!reply || reply.data?.reveal?.length
 			|| reply.tools?.some((tool) => tool.name === revealToolName && tool.state === 'done' && !tool.isError)) continue;
-		(reply.data ??= {}).reveal = [help];
+		(reply.data ??= {}).reveal = [cardHelpReveal(submission.cardHelp.kind, submission.cardHelp.target)];
 	}
 }
 
@@ -74,9 +73,11 @@ async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, en
 	const submissionId = String(record.id);
 	const text = entry.model?.map(messageText).join('') ?? '';
 	snapshot.submissions.push({ id: submissionId, text, ...settlement(record),
+		...(data.cardHelp ? { cardHelp: data.cardHelp } : {}),
 		...(data.hintCardFrom ? { hintCardFrom: data.hintCardFrom } : {}),
 		...(data.tryOnceMore ? { tryOnceMore: true } : {}) });
-	snapshot.messages.push({ role: 'user', submissionId, text });
+	snapshot.messages.push({ role: 'user', submissionId, text,
+		...(data.cardHelp && { metadata: { cardHelp: { kind: data.cardHelp.kind, sourceId: data.cardHelp.sourceId } } }) });
 	const assistant: ProductMessage = { role: 'assistant', submissionId, text: '' };
 	snapshot.messages.push(assistant);
 	return assistant;

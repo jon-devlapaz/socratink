@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { assertHelpLayout } from './reveal-browser-layout.mjs';
 import { appConfig } from '../src/config/app.config.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 
@@ -13,7 +14,9 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 	const results = [];
 	for (const width of [375, 390, 1280]) {
 		for (const kind of ['required', 'skip', 'multiple', 'hint', 'unknown']) {
-			const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width, height: 900 } });
+			const largeDarkHint = kind === 'hint' && width === 375;
+			const context = await browser.newContext({ reducedMotion: 'reduce', colorScheme: largeDarkHint ? 'dark' : 'light', viewport: { width, height: 900 } });
+			if (largeDarkHint) await context.addInitScript(key => localStorage.setItem(key, 'big'), appConfig.typeSizeStorageKey);
 			await context.tracing.start({ screenshots: true, snapshots: true });
 			const page = await context.newPage();
 			page.setDefaultTimeout(5_000);
@@ -21,7 +24,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 			page.on('pageerror', error => errors.push(error.message));
 			const sent = [];
 			const definition = legacyQuestion(kind);
-			await context.route('**/*', route => respond(route, { origin, session, definition, sent }));
+			await context.route('**/*', route => respond(route, { origin, session, definition, sent, nextCard: kind === 'hint' }));
 			try {
 				await page.goto(origin);
 				const form = page.locator('#active-turn .questionnaire');
@@ -65,24 +68,47 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				if (kind === 'required') await form.getByLabel('Your reason', { exact: true }).press('Enter');
 				else if (kind in help) await form.getByRole('button', { name: help[kind].button, exact: true }).click();
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
-				if (kind === 'hint') {
-					const clue = page.getByText(hintClue, { exact: true });
-					await clue.waitFor();
-					assert.equal(await page.locator('#active-turn .you p.turn-action').innerText(), 'You asked for a hint',
-						'a Hint tap shows as an action; after reload the saved words show');
-					await page.reload();
-					await clue.waitFor();
-					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');
-					assert.equal(await form.locator('legend').innerText(), definition.items[0].prompt);
-					assert.equal(await form.getByRole('radio', { name: /First/ }).isEnabled(), true);
-					assert.equal(await form.getByLabel('Your reason', { exact: true }).inputValue(), '');
-				} else {
-					await page.getByText('Recorded reply', { exact: true }).waitFor();
-				}
+				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
+				await reply.waitFor();
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
-				assert.deepEqual(sent, [`Questionnaire answers:\n- Saved question?: ${answer}`]);
-				assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
+				if (kind in help) {
+					expected.cardHelp = { kind, sourceId: 'original-card' };
+					const action = page.locator('#active-turn .you p.turn-action');
+					assert.equal(await action.innerText(), help[kind].label);
+					if (kind === 'hint') await assertCardDraft(form, ['first'], 'My own reasoning');
+					await page.reload();
+					await reply.waitFor();
+					assert.equal(await action.innerText(), help[kind].label);
+				} else {
+					assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+				}
+				if (kind === 'hint') {
+					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
+					await assertHelpLayout(page.locator('#active-turn .reveal-copy'));
+					assert.equal(await form.locator('legend').innerText(), definition.items[0].prompt);
+					assert.equal(await form.getByRole('radio', { name: /First/ }).isEnabled(), true);
+					await assertCardDraft(form, ['first'], 'My own reasoning');
+				}
+				assert.deepEqual(sent, [expected]);
+				if (kind === 'hint' && width === 375) {
+					await form.getByRole('radio', { name: /Second/ }).click();
+					await form.getByLabel('Your reason').fill('My revised reasoning');
+					await form.getByRole('button', { name: 'Hint', exact: true }).click();
+					await page.locator('#trail-toggle').click();
+					assert.equal(await page.locator('.history-turn.you.turn-action p').innerText(), help.hint.label);
+					assert.deepEqual(sent[1], { ...expected, cardHelp: { kind: 'hint', sourceId: 'saved-card-answer-1' } });
+					await page.locator('#trail-toggle').click();
+					await assertCardDraft(form, ['second'], 'My revised reasoning');
+					const nextPost = page.waitForRequest(req => req.method() === 'POST');
+					await form.getByRole('button', { name: 'Hint', exact: true }).click();
+					assert.deepEqual((await nextPost).postDataJSON(), { ...expected, cardHelp: { kind: 'hint', sourceId: 'saved-card-answer-2' } });
+					await form.getByRole('button', { name: 'Continue', exact: true }).click();
+					await page.getByText('Recorded reply', { exact: true }).waitFor();
+					assert.deepEqual(sent[3], { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: Second, My revised reasoning' });
+					await assertCardDraft(form, [], '');
+				}
 				assert.deepEqual(errors, []);
 				results.push({ kind, width, passed: true, submitted: sent[0] });
 			} catch (error) {
@@ -122,7 +148,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					if (activation === 'click') await button.click();
 					else await button.press(activation);
 					await page.getByText('Recorded reply', { exact: true }).waitFor();
-					assert.deepEqual(sent, [`Questionnaire answers:\n- I can show a full answer.: ${choice}`]);
+					assert.deepEqual(sent, [{ kind: 'user', body: `Questionnaire answers:\n- I can show a full answer.: ${choice}` }]);
 					results.push({ kind: 'reveal-consent', width, choice, activation, passed: true });
 				} finally {
 					await writeFile(`${out}/proof.json`, `${JSON.stringify(results, null, 2)}\n`);
@@ -131,15 +157,119 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 			}
 		}
 	}
+	await verifyHelpOrigin(browser, origin, session);
+	await verifyPendingHintDraft(browser, origin, session);
 	console.log('Questionnaire browser passed: restored required, skipped and multiple-choice cards; hint and I don\'t know; shortcuts, reasoning, Enter, validation and narrow/wide screens; consent choices by click, Enter and Space.');
 }
 
-// A help request replaces any selection or reasoning on the card.
 const hintClue = 'Try one example first.';
 const help = {
-	hint: { button: 'Hint', answer: 'Asked for a hint.' },
-	unknown: { button: "I don't know", answer: "I don't know." },
+	hint: { button: 'Hint', answer: 'Asked for a hint.', label: 'You asked for a hint' },
+	unknown: { button: "I don't know", answer: "I don't know.", label: 'You selected “I don’t know”' },
 };
+
+async function assertCardDraft(form, values, reason) {
+	const checked = await form.locator('[data-choice-for][aria-checked="true"]').evaluateAll(nodes => nodes.map(node => node.value));
+	assert.deepEqual(checked.sort(), [...values].sort());
+	assert.equal(await form.getByLabel('Your reason', { exact: true }).inputValue(), reason);
+}
+
+async function verifyPendingHintDraft(browser, origin, session) {
+	const context = await browser.newContext({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+	await context.addInitScript(key => localStorage.setItem(key, 'big'), appConfig.typeSizeStorageKey);
+	const { promise: waitForClue, resolve: showClue } = Promise.withResolvers();
+	try {
+		const page = await context.newPage();
+		page.setDefaultTimeout(5_000);
+		const definition = legacyQuestion('multiple');
+		definition.items[0].description = 'Compare what crosses the boundary of the jar with what stays inside. Explain how each choice would change the scale reading.';
+		definition.items[0].choices.push({ value: 'third', label: 'Third' });
+		const sent = [];
+		let pending = true;
+		await context.route('**/*', async route => {
+			if (new URL(route.request().url()).pathname.endsWith('/events')) await waitForClue;
+			await respond(route, { origin, session, definition, sent, pending });
+		});
+		await page.goto(origin);
+		const form = page.locator('#active-turn .questionnaire');
+		await form.getByRole('checkbox', { name: /First/ }).click();
+		await form.getByRole('checkbox', { name: /Second/ }).click();
+		await form.getByLabel('Your reason').fill('I am comparing two choices.');
+		const reading = () => page.waitForRequest(req => new URL(req.url()).pathname.endsWith('/events'));
+		const firstRead = reading();
+		await form.getByRole('button', { name: 'Hint', exact: true }).click();
+		await firstRead;
+		const restoredRead = reading();
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		await restoredRead;
+		pending = false;
+		showClue();
+		await page.getByText(hintClue, { exact: true }).waitFor();
+		await assertCardDraft(form, ['first', 'second'], 'I am comparing two choices.');
+		const scroller = page.locator('.active-scroll');
+		await scroller.evaluate(node => node.scrollTo(0, 0));
+		await page.waitForFunction(() => document.querySelector('.active-scroll').classList.contains('is-fading-bottom'));
+		const mask = await scroller.evaluate(node => getComputedStyle(node).maskImage);
+		assert.doesNotMatch(mask, /(?:transparent|rgba\(0, 0, 0, 0\)) 100%\)$/, 'enabled question actions keep their ink at the lower scroll edge');
+		assert.deepEqual(sent, [{ kind: 'user', body: 'Questionnaire answers:\n- Saved question?: Asked for a hint.',
+			cardHelp: { kind: 'hint', sourceId: 'original-card' } }]);
+	} finally {
+		showClue();
+		await context.close();
+	}
+}
+
+async function verifyHelpOrigin(browser, origin, session) {
+	for (const { kind, failure, edit } of [
+		{ kind: 'hint' },
+		{ kind: 'unknown' },
+		{ kind: 'hint', failure: 'failed' },
+		{ kind: 'unknown', failure: 'not-admitted' },
+		{ kind: 'hint', failure: 'not-admitted', edit: 'My own explanation.' },
+	]) {
+		const context = await browser.newContext({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+		try {
+			const page = await context.newPage();
+			page.setDefaultTimeout(5_000);
+			const sent = [];
+			const definition = legacyQuestion('required');
+			await context.route('**/*', route => respond(route, { origin, session, definition, sent, failure }));
+			await page.goto(origin);
+			const form = page.locator('#active-turn .questionnaire');
+			const { button, answer, label } = help[kind];
+			const cardHelp = { kind, sourceId: 'original-card' };
+			const body = `Questionnaire answers:\n- Saved question?: ${answer}`;
+			if (failure) {
+				if (kind === 'hint') {
+					await form.getByRole('radio', { name: /First/ }).click();
+					await form.getByLabel('Your reason').fill('Still thinking about the first choice.');
+				}
+				await form.getByRole('button', { name: button, exact: true }).click();
+				const retry = page.getByRole('button', { name: 'Retry', exact: true });
+				await retry.waitFor();
+				if (edit) await page.locator('#message').fill(edit);
+				await retry.click();
+				assert.deepEqual(sent[0], { kind: 'user', body, cardHelp });
+			} else {
+				await form.getByLabel('Your reason', { exact: true }).fill(answer);
+				await form.getByRole('button', { name: 'Continue', exact: true }).click();
+			}
+			const marked = Boolean(failure && !edit);
+			const reply = page.getByText(marked && kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
+			await reply.waitFor();
+			if (marked && kind === 'hint') await assertCardDraft(form, ['first'], 'Still thinking about the first choice.');
+			assert.equal(sent.length, failure ? 2 : 1);
+			assert.deepEqual(sent.at(-1), { kind: 'user', body: edit ?? body, ...(marked && { cardHelp }) });
+			const learner = page.locator('#active-turn .you p');
+			assert.equal(await learner.innerText(), marked ? label : edit ?? answer);
+			await page.reload();
+			await reply.waitFor();
+			assert.equal(await learner.innerText(), marked ? label : edit ?? answer);
+		} finally {
+			await context.close();
+		}
+	}
+}
 
 function legacyQuestion(kind) {
 	return {
@@ -155,7 +285,7 @@ function legacyQuestion(kind) {
 	};
 }
 
-async function respond(route, { origin, session, definition, sent }) {
+async function respond(route, { origin, session, definition, sent, failure, nextCard, pending }) {
 	const url = new URL(route.request().url());
 	if (url.origin !== origin) return route.abort();
 	if (!url.pathname.startsWith('/api/')) return route.continue();
@@ -163,24 +293,36 @@ async function respond(route, { origin, session, definition, sent }) {
 	if (url.pathname === appConfig.sessionPath) return json({ userId: session.userId, aliases: [], kind: 'registered' });
 	if (url.pathname === appConfig.authProvidersPath) return json({ google: false, github: false });
 	if (!url.pathname.startsWith(`${appConfig.chatAgentPath}/`)) throw new Error(`Unexpected API request: ${url.pathname}`);
-	const submissionId = 'saved-card-answer';
-	if (route.request().method() === 'POST') {
-		sent.push(route.request().postDataJSON().body);
+	const posting = route.request().method() === 'POST';
+	if (posting) sent.push(route.request().postDataJSON());
+	const submissionId = `saved-card-answer-${sent.length}`;
+	if (posting) {
+		if (failure === 'not-admitted' && sent.length === 1) return json({ error: { type: 'rejected', message: 'Admission rejected.' } }, 400);
 		return json({ submissionId }, 202);
 	}
 	const card = { type: 'data-questionnaire', data: definition };
 	const messages = [{ role: 'assistant', display: 'visible', submissionId: 'original-card', parts: [card] }];
-	if (sent.length) {
-		messages.push({ role: 'user', display: 'visible', submissionId, parts: [{ type: 'text', text: sent[0] }] });
-		const reply = sent[0].endsWith(help.hint.answer)
-			? [{ type: 'text', text: hintClue }, { type: 'data-reveal', data: { kind: 'hint', target: definition.items[0].prompt } }, card]
-			: [{ type: 'text', text: 'Recorded reply' }];
-		messages.push({ role: 'assistant', display: 'visible', submissionId, parts: reply });
+	const settlements = [];
+	for (const [index, input] of sent.entries()) {
+		if (failure === 'not-admitted' && index === 0) continue;
+		const id = `saved-card-answer-${index + 1}`;
+		messages.push({ role: 'user', display: 'visible', submissionId: id, parts: [{ type: 'text', text: input.body }],
+			...(input.cardHelp && { metadata: { cardHelp: input.cardHelp } }) });
+		if (pending && index === sent.length - 1) continue;
+		const failed = failure === 'failed' && index === 0;
+		settlements.push({ submissionId: id, outcome: failed ? 'failed' : 'completed' });
+		if (failed) continue;
+		const item = definition.items[0];
+		const reorderedCard = { ...card, data: { ...definition, items: [{ ...item, choices: [...item.choices].reverse() }] } };
+		const reply = input.cardHelp?.kind === 'hint'
+			? [{ type: 'text', text: hintClue }, { type: 'data-reveal', data: { kind: 'hint', target: item.prompt } }, reorderedCard]
+			: [{ type: 'text', text: 'Recorded reply' }, ...(nextCard ? [card] : [])];
+		messages.push({ role: 'assistant', display: 'visible', submissionId: id, parts: reply });
 	}
 	if (url.pathname.endsWith('/events')) {
-		const snapshot = { v: 1, conversationId: 'saved-card', messages, settlements: [{ submissionId, outcome: 'completed' }] };
+		const snapshot = { v: 1, conversationId: 'saved-card', messages, settlements };
 		const frame = { type: 'conversation-reset', conversationId: 'saved-card', snapshot, position: { batch: 0, index: 0 } };
 		return route.fulfill({ status: 200, contentType: 'text/event-stream', body: `data: ${JSON.stringify(frame)}\n\n` });
 	}
-	return json({ messages, settlements: [] });
+	return json({ messages, settlements });
 }

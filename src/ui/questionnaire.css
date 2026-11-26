@@ -34,7 +34,7 @@
 	text-wrap: balance;
 }
 
-.questionnaire-item legend + .questionnaire-choices {
+.questionnaire-item legend + :is(.questionnaire-choices, .questionnaire-consent-actions) {
 	margin-top: 0.5rem;
 }
 
@@ -62,9 +62,11 @@
 	gap: 0.55rem;
 }
 
-.questionnaire-choices:has(> button) {
+.questionnaire-choices:has(> button),
+.questionnaire-consent-actions {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	gap: 0.75rem;
 }
 
@@ -157,25 +159,37 @@
 .questionnaire-actions {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: flex-end;
-	gap: 0.5rem;
+	align-items: center;
+	column-gap: 0.25rem;
+	row-gap: 0.5rem;
 }
 
 .questionnaire-button[hidden] {
 	display: none;
 }
 
-.questionnaire-button-ghost {
-	margin-right: auto;
+.questionnaire-actions .questionnaire-button-ghost {
+	padding-inline: 0.65rem;
 }
 
 /* The first ghost's text starts on the prompt's leading edge. */
-.questionnaire-button-ghost:first-child {
-	margin-left: -1.1rem;
+.questionnaire-actions .questionnaire-button-ghost:first-child {
+	margin-inline-start: -0.65rem;
+	justify-content: flex-start;
 }
 
-.questionnaire-button-ghost:has(+ .questionnaire-button-ghost) {
-	margin-right: 0;
+.questionnaire-button-primary {
+	margin-inline-start: auto;
+}
+
+.questionnaire-button[aria-haspopup="menu"] svg {
+	width: 0.8rem;
+	height: 0.8rem;
+}
+
+.questionnaire-button:focus-visible {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
 }
 
 @media (max-width: 560px) {
@@ -183,27 +197,26 @@
 		padding: 1rem 0;
 	}
 
-	.questionnaire-actions {
-		justify-content: flex-start;
-	}
 	.questionnaire-actions .questionnaire-button {
 		max-width: 100%;
 		min-height: 44px;
 		height: auto;
 		white-space: normal;
 		padding-block: 0.55rem;
+		font-size: calc(var(--btn-font) * var(--type-scale, 1));
 	}
 	.questionnaire-actions .questionnaire-button-ghost {
-		padding-inline: 0.6rem;
+		padding-inline: 0.3rem;
 	}
 	.questionnaire-actions .questionnaire-button-ghost:first-child {
-		margin-left: -0.6rem;
+		margin-inline-start: -0.6rem;
+		padding-inline-start: 0.6rem;
+	}
+	.questionnaire-actions .questionnaire-button-primary {
+		flex: 1 0 auto;
+		padding-inline: 0.85rem;
 	}
 	.questionnaire-freeform-label input { font-size: 1rem; }
-
-	.questionnaire-button-primary {
-		flex: 1;
-	}
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,32 +1,40 @@
 import { cardHintText, learnerVisibleText } from '../../learning/learner-text.ts';
 import { displayedChoices } from '../../learning/tools.ts';
-import { cardHelpReveal } from '../../learning/mark-reveal.ts';
-import { formatQuestionnaireAnswers, questionnaireFromReplyData, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
-import type { ProductMessage, Snapshot } from './contract.ts';
+import { formatQuestionnaireAnswers, questionnaireFromReplyData, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
+import { hintCardSource, type CardHelp, type ProductMessage, type Snapshot } from './contract.ts';
 
-/** Bind the click to the card the learner could answer when the input was accepted. */
-export function sourceOfCardHint(snapshot: Snapshot, text: string): string | undefined {
-	const help = cardHelpReveal(text);
-	if (help?.kind !== 'hint') return;
+export class InvalidCardActionError extends Error {
+	constructor() { super('This question has changed. Reload the conversation to see the current question.'); }
+}
+
+/** Resolve a reported button press against the card visible at admission. */
+export function resolveCardHelp(snapshot: Snapshot, text: string, { kind, sourceId }: CardHelpAction): CardHelp {
 	const last = snapshot.submissions.at(-1);
-	if (last?.hintCardFrom && (last.outcome === 'failed' || last.outcome === 'aborted') && last.text === text) return last.hintCardFrom;
+	if (last?.cardHelp?.kind === kind && last.cardHelp.sourceId === sourceId && last.text === text
+		&& (last.outcome === 'failed' || last.outcome === 'aborted')) {
+		return last.cardHelp;
+	}
 	const reply = snapshot.messages.at(-1);
-	if (last?.outcome !== 'completed' || reply?.role !== 'assistant' || reply.submissionId !== last.id) return;
-	const card = questionnaireFromReplyData(reply.data);
-	const item = card?.items[0];
-	if (!card || card.kind === 'reveal-consent' || !item?.choices.length) return;
-	if (text === formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: 'hint' }])) return last.id;
+	if (last?.id === sourceId && last.outcome === 'completed' && reply?.role === 'assistant' && reply.submissionId === sourceId) {
+		const card = questionnaireFromReplyData(reply.data);
+		const item = card?.items[0];
+		if (card && card.kind !== 'reveal-consent' && item
+			&& text === formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: kind }])) {
+			return { kind, sourceId: last.id, target: item.prompt };
+		}
+	}
+	throw new InvalidCardActionError();
 }
 
 /** Keep the card without its temporary empty-clue notice for a later click. */
 export function projectCardHints(snapshot: Snapshot): ReadonlyMap<string, QuestionnaireDefinition> {
 	const hintCards = new Map<string, QuestionnaireDefinition>();
-	const clicks = snapshot.submissions.filter((submission) => submission.hintCardFrom);
-	if (!clicks.length) return hintCards;
+	if (!snapshot.submissions.some((submission) => hintCardSource(submission))) return hintCards;
 	const replies = new Map(snapshot.messages.filter((message) => message.role === 'assistant')
 		.map((message) => [message.submissionId, message]));
-	for (const click of clicks) {
-		const sourceId = click.hintCardFrom!;
+	for (const click of snapshot.submissions) {
+		const sourceId = hintCardSource(click);
+		if (!sourceId) continue;
 		const source = hintCards.get(sourceId) ?? questionnaireFromReplyData(replies.get(sourceId)?.data);
 		const reply = replies.get(click.id);
 		if (!source || !reply) continue;

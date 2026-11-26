@@ -421,6 +421,7 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 			throw new Error('reload must not abort');
 		},
 	};
+	const text = "Questionnaire answers:\n- Why?: I don't know.";
 	const restored = unsettledSubmissionFromHistory({
 		settlements: [{ submissionId: 'sub-old', outcome: 'completed' }],
 		messages: [
@@ -434,12 +435,12 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 				display: 'visible',
 				role: 'user',
 				submissionId: admission.submissionId,
-				parts: [{ type: 'text', text: 'hello' }],
+				metadata: { cardHelp: { kind: 'unknown', sourceId: 'card' } },
+				parts: [{ type: 'text', text }],
 			},
 		],
 	});
-	assert.deepEqual(restored, { text: 'hello', submissionId: admission.submissionId });
-
+	assert.deepEqual(restored, { text, submissionId: admission.submissionId, cardHelp: { kind: 'unknown', sourceId: 'card' } });
 	const coordinator = new ChatRequestCoordinator(conversation, coordinatorOptions);
 	coordinator.beginRestore();
 	assert.deepEqual(chatRequestControls(coordinator.state), {
@@ -452,7 +453,7 @@ test('reload hydrates an unsettled admission and reads only its submissionId wit
 	assert.equal(hydrated.kind, 'recovery');
 	assert.equal(chatRequestControls(hydrated).composerLocked, true);
 	assert.throws(() => coordinator.start('overlap'), /already active/);
-	assert.deepEqual(await coordinator.recheck(), { kind: 'completed', text: 'hello', reply });
+	assert.deepEqual(await coordinator.recheck(), { kind: 'completed', text, reply });
 	assert.equal(sends, 0);
 	assert.deepEqual(reads, [admission.submissionId]);
 });

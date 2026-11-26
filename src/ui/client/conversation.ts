@@ -8,6 +8,7 @@ import {
 } from '../../config/chat-wire.ts';
 import { appConfig } from '../../config/app.config.ts';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
+import type { CardHelpAction } from '../../questionnaire.ts';
 import { assistantTurnHasVisibleContent } from '../assistant-text.ts';
 import { applyToolStreamEvent, type DisplayedToolCall } from '../tool-state.ts';
 import {
@@ -76,6 +77,7 @@ export function chatRequestControls(state: ChatRequestState): {
 
 type PendingRequest = {
 	text: string;
+	cardHelp?: CardHelpAction;
 	controller: AbortController;
 	admission?: SubmissionReference;
 	canceling: boolean;
@@ -141,7 +143,7 @@ export function watchChatTurnSettled(conversationId: string, onSettled: () => vo
 
 export function unsettledSubmissionFromHistory(
 	history: Pick<WireSnapshot, 'messages' | 'settlements'>,
-): { text: string; submissionId: string } | undefined {
+): { text: string; submissionId: string; cardHelp?: CardHelpAction } | undefined {
 	const settled = new Set(history.settlements.map((settlement) => settlement.submissionId));
 	for (let index = history.messages.length - 1; index >= 0; index -= 1) {
 		const message = history.messages[index];
@@ -149,6 +151,7 @@ export function unsettledSubmissionFromHistory(
 		if (settled.has(message.submissionId)) return undefined;
 		return {
 			submissionId: message.submissionId,
+			...(message.metadata?.cardHelp && { cardHelp: message.metadata.cardHelp }),
 			text: message.parts
 				.filter((part) => part.type === 'text')
 				.map((part) => part.text)
@@ -184,7 +187,7 @@ export class ChatRequestCoordinator {
 		this.onEvent?.(event);
 	}
 
-	start(text: string, onAdmitted?: () => void): Promise<ChatRequestState> {
+	start(text: string, { cardHelp, onAdmitted }: { cardHelp?: CardHelpAction; onAdmitted?: () => void } = {}): Promise<ChatRequestState> {
 		if (this.state.kind === 'terminal') {
 			this.pending = undefined;
 			this.state = { kind: 'idle' };
@@ -197,6 +200,7 @@ export class ChatRequestCoordinator {
 		}
 		const pending: PendingRequest = {
 			text,
+			cardHelp,
 			controller: new AbortController(),
 			canceling: false,
 			admissionResult: deferred(),
@@ -291,7 +295,7 @@ export class ChatRequestCoordinator {
 		this.streamTools.length = 0;
 		try {
 			const admission = await this.conversation.send({
-				message: { kind: 'user', body: pending.text },
+				message: { kind: 'user', body: pending.text, ...(pending.cardHelp && { cardHelp: pending.cardHelp }) },
 			});
 			pending.admission = admission;
 			pending.admissionResult.resolve(admission);

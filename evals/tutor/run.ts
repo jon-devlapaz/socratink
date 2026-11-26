@@ -21,10 +21,10 @@ async function runScenario(engine: Engine, scenario: Scenario, conversationId: s
 	while (turns.length < (scenario.maxTurns ?? 6)) {
 		const next = scenario.next(turns);
 		if (!next) break;
-		const { text, ...flags } = next;
+		const { text, cardHelp, ...flags } = next;
 		providerErrors();
 		const started = Date.now();
-		const submissionId = await engine.submit(conversationId, text);
+		const submissionId = await engine.submit(conversationId, text, undefined, cardHelp);
 		const state = await settled(engine, conversationId, submissionId, turnTimeoutMs);
 		const submission = state.submissions.find((s) => s.id === submissionId);
 		const outcome = submission?.outcome ?? 'timeout';

@@ -424,22 +424,54 @@ test('learnerVisibleText removes stacked internal markers', () => {
 	assert.equal(learnerVisibleText('No marker here.'), 'No marker here.');
 });
 
-test('only a Hint tap from the card shows as an action', () => {
-	const twoLines = { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Look at this list:\n1, 2, 3, 4\nWhich half do you search next?' }] };
-	const hint = formatQuestionnaireAnswers(twoLines, [{ name: 'path', values: [], help: 'hint' }]);
-	const tapped = displayedLearnerTurn(hint, twoLines, true);
-	assert.equal(tapped.learnerKind, 'hint-request');
-	assert.equal(tapped.shownText, 'You asked for a hint');
-	assert.equal(tapped.text, hint);
-	const saved = displayedLearnerTurn(hint, twoLines);
-	assert.equal(saved.learnerKind, 'questionnaire-reply', 'saved text cannot tell a tap from typed words');
-	assert.equal(saved.shownText, 'Asked for a hint.', 'a multi-line prompt stays out of the learner words');
+test('a marked help action stays an action after reload and an unmarked answer keeps its words', () => {
+	const card = { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Look at this list:\n1, 2, 3, 4\nWhich half do you search next?' }] };
+	for (const [kind, words, label] of [
+		['hint', 'Asked for a hint.', 'You asked for a hint'],
+		['unknown', "I don't know.", 'You selected “I don’t know”'],
+	]) {
+		const cardHelp = { kind, sourceId: 'card-1' };
+		const text = formatQuestionnaireAnswers(card, [{ name: 'path', values: [], help: kind }]);
+		const typed = formatQuestionnaireAnswers(card, [{ name: 'path', values: [], freeform: words }]);
+		assert.equal(typed, text);
+		const action = displayedLearnerTurn(text, card, cardHelp);
+		assert.equal(action.shownText, label);
+		assert.equal(action.cardHelp, cardHelp);
+		assert.equal(action.text, text);
+		const saved = visibleTurnsFromHistory({
+			settlements: [],
+			messages: [
+				{ role: 'assistant', parts: [{ type: 'data-questionnaire', data: card }] },
+				{ role: 'user', metadata: { cardHelp }, parts: [{ type: 'text', text }] },
+			],
+		});
+		assert.deepEqual(saved.at(-1), action);
+		const unmarked = displayedLearnerTurn(typed, card);
+		assert.equal(unmarked.shownText, words);
+		assert.equal(unmarked.cardHelp, undefined);
+	}
 });
 
-test('typed words that match the Hint text are sent and shown exactly', () => {
-	const typed = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], freeform: 'Asked for a hint.' }]);
-	assert.equal(typed, 'Questionnaire answers:\n- How should we begin?: Asked for a hint.');
-	const turn = displayedLearnerTurn(typed, questionnaire);
-	assert.equal(turn.learnerKind, 'questionnaire-reply');
-	assert.equal(turn.shownText, 'Asked for a hint.');
+test('history keeps a failed help tap when the next submission has the same typed words', () => {
+	const text = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], help: 'hint' }]);
+	const parts = [{ type: 'text', text }];
+	const history = visibleTurnsFromHistory({
+		settlements: [{ submissionId: 'first', outcome: 'failed' }],
+		messages: [
+			{ role: 'user', submissionId: 'first', metadata: { cardHelp: { kind: 'hint', sourceId: 'card-1' } }, parts },
+			{ role: 'user', submissionId: 'second', parts },
+		],
+	});
+	assert.deepEqual(history.map(turn => turn.cardHelp?.kind), ['hint', undefined]);
+});
+
+test('retries dedupe only when they used the same button on the same card', () => {
+	const text = formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], help: 'hint' }]);
+	const help = (submissionId, sourceId) => ({ role: 'user', submissionId,
+		metadata: { cardHelp: { kind: 'hint', sourceId } }, parts: [{ type: 'text', text }] });
+	const turns = visibleTurnsFromHistory({
+		settlements: [{ submissionId: 'one', outcome: 'failed' }, { submissionId: 'two', outcome: 'failed' }],
+		messages: [help('one', 'card-1'), help('two', 'card-2'), help('three', 'card-2')],
+	});
+	assert.deepEqual(turns.map(turn => turn.cardHelp.sourceId), ['card-1', 'card-2']);
 });

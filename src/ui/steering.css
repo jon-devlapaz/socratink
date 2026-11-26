@@ -29,3 +29,18 @@
 	width: 1rem;
 	height: 1rem;
 }
+
+.steering-menu {
+	font-size: calc(0.875rem * var(--type-scale, 1));
+	line-height: 1.4;
+}
+
+.steering-menu-copy {
+	justify-content: space-between;
+}
+
+@media (pointer: coarse) {
+	.steering-menu [role="menuitem"] {
+		min-height: 44px;
+	}
+}

@@ -112,7 +112,7 @@ async function verifyLiveReveal(page, fixture) {
 	await page.locator('#chat').evaluate((form) => form.requestSubmit());
 	const live = page.locator('#active-turn .turn.pending .turn-markdown.reveal-copy');
 	await until(async () => (await live.isVisible()) && (await live.innerText()).includes(supplied), 'supplied text shows live with its mark');
-	assert.equal(await live.locator('.reveal-mark').innerText(), 'hint');
+	assert.equal(await live.locator('.reveal-mark').innerText(), 'Hint from Socratink');
 	held.release();
 	await page.locator('#active-turn .assistant .reveal-copy').filter({ hasText: supplied }).waitFor();
 	assert.deepEqual(await page.evaluate(() => window.unmarkedLiveText), [], 'supplied text never showed live without its mark');

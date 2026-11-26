@@ -14,9 +14,12 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 - Dark paper is true carbon ink `#100f0f`, with neutral steps `#1c1b1a`,
   `#282726`, and `#343331`. Text is `#cecdc3`, secondary ink `#aaa69e`,
   and quiet ink `#8f8c85`.
-- Verdigris is the only accent, `#1f7a72` in light and `#3aa99f` in dark.
-  Use it only for action, selection, focus, or confirmed evidence. Pending
+- Verdigris (`#1f7a72` in light and `#3aa99f` in dark) marks actions,
+  selections, focus, and confirmed evidence. Pending
   work, quotations, and supplied answers are not evidence of learner mastery.
+- Ochre identifies help supplied by Socratink. Use it for the attribution label
+  and margin rule, with ordinary text ink for the explanation. Its light and
+  dark values are `#82571f` and `#dfb477`.
 - Signal red `#d14d41` means an error, never decoration.
 - Rules use `color-mix` with ink at 5–20%. Default dividers use 10%.
   Use tonal paper steps and hairlines before adding an enclosing box.
@@ -78,6 +81,9 @@ Recorded by Codex on 2026-11-21 during the Gridlines pass.
 
 - Current-turn text, composer text, and dictation status use a common inset
   of 1.25rem. The composer border counts toward this inset.
+- Supplied help uses the same text edge for its label, first line, and wrapped
+  lines as the question below. Its 2px rule sits in the margin. Earlier steps
+  follows the same pattern inside its existing text column. (Codex, 2026-11-25.)
 - The first text action in a question starts on the prompt's leading edge.
 - Menu controls share one centered row when there is space for all of them.
   On smaller screens, keep rows centered and align the icons within each row.

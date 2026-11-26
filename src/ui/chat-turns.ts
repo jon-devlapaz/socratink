@@ -1,32 +1,37 @@
 import { revealFromParts, type RevealDefinition } from '../reveal.ts';
 import type { WireSnapshot } from '../config/chat-wire.ts';
-import type { QuestionnaireDefinition } from '../questionnaire.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import { assistantTurnHasVisibleContent } from './assistant-text.ts';
 import { learnerVisibleText } from '../learning/learner-text.ts';
 import {
 	questionnaireAnswerPrefix,
 	questionnaireFromParts,
-	questionnaireHelpText,
+	type CardHelpAction,
+	type QuestionnaireDefinition,
+	type QuestionnaireHelp,
 } from '../questionnaire.ts';
 import { steeringPrefix } from '../config/chat-message.ts';
 import { steeringSaidText } from './steering.ts';
 import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool-state.ts';
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
-type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'hint-request' | 'steering';
+type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
 
-/** A card Hint is an action, so it is shown as one instead of as the learner's words. */
-const hintRequestShownText = 'You asked for a hint';
+const cardHelpText: Record<QuestionnaireHelp, string> = {
+	hint: 'You asked for a hint',
+	unknown: 'You selected “I don’t know”',
+};
 
 export type DisplayedTurn = {
 	reveal?: RevealDefinition;
 	role: ChatMessageRole;
 	text: string;
 	learnerKind?: LearnerTurnKind;
+	cardHelp?: CardHelpAction;
 	/** What a learner turn shows when its sent text is a message for the tutor. */
 	shownText?: string;
 	questionnaire?: QuestionnaireDefinition;
+	submissionId?: string;
 	modelRoute?: string;
 	tools?: DisplayedToolCall[];
 };
@@ -34,6 +39,7 @@ export type DisplayedTurn = {
 export function displayedAssistantTurn(input: {
 	text: string;
 	questionnaire?: QuestionnaireDefinition;
+	submissionId?: string;
 	reveal?: RevealDefinition;
 	modelRoute?: string;
 	tools?: readonly DisplayedToolCall[];
@@ -44,6 +50,7 @@ export function displayedAssistantTurn(input: {
 		role: 'Assistant',
 		text: learnerVisibleText(input.text),
 		...(input.questionnaire ? { questionnaire: input.questionnaire } : {}),
+		...(input.questionnaire && input.submissionId ? { submissionId: input.submissionId } : {}),
 		...(input.reveal ? { reveal: input.reveal } : {}),
 		...(input.modelRoute ? { modelRoute: input.modelRoute } : {}),
 		...(tools.length ? { tools } : {}),
@@ -53,13 +60,10 @@ export function displayedAssistantTurn(input: {
 /** Shows a learner turn in the learner's own words. A card answer drops the
  * protocol header and the question it answers; a steering control shows its
  * short line. `text` stays exactly what was sent. */
-/** `hintTap` comes from the card's Hint button. The sent text alone cannot tell a tap from typed words. */
-export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition, hintTap = false): DisplayedTurn {
+export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition, cardHelp?: CardHelpAction): DisplayedTurn {
+	if (cardHelp) return { role: 'You', text, cardHelp, shownText: cardHelpText[cardHelp.kind] };
 	if (text.startsWith(questionnaireAnswerPrefix)) {
 		const lines = answered && answersByPrompt(text, answered) || answerLines(text, answered);
-		if (hintTap && lines.every((line) => line === questionnaireHelpText.hint)) {
-			return { role: 'You', text, learnerKind: 'hint-request', shownText: hintRequestShownText };
-		}
 		return {
 			role: 'You',
 			text,
@@ -127,12 +131,13 @@ export function visibleTurnsFromHistory(
 		const text = visibleText(message);
 		if (message.role === 'user') {
 			if (!text) continue;
-			visible.push(displayedLearnerTurn(text, visible.at(-1)?.questionnaire));
+			visible.push(displayedLearnerTurn(text, visible.at(-1)?.questionnaire, message.metadata?.cardHelp));
 			continue;
 		}
 		const turn = displayedAssistantTurn({
 			text,
 			questionnaire: questionnaireFromParts(message.parts),
+			submissionId: message.submissionId,
 			reveal: revealFromParts(message.parts),
 			modelRoute: modelRouteLabel(message.metadata),
 			tools: toolsFromParts(message.parts),
@@ -169,7 +174,9 @@ function supersededFailedSubmissionIds(
 		if (!group?.submissionId || !failed.has(group.submissionId) || !nextGroup) continue;
 		const learner = group.messages.find((message) => message.role === 'user');
 		const retry = nextGroup.messages[0];
-		if (learner && retry?.role === 'user' && visibleText(learner) === visibleText(retry)) {
+		if (learner && retry?.role === 'user' && visibleText(learner) === visibleText(retry)
+			&& learner.metadata?.cardHelp?.kind === retry.metadata?.cardHelp?.kind
+			&& learner.metadata?.cardHelp?.sourceId === retry.metadata?.cardHelp?.sourceId) {
 			superseded.add(group.submissionId);
 		}
 	}
@@ -181,6 +188,19 @@ function visibleText(message: WireSnapshot['messages'][number]): string {
 		.filter((part) => part.type === 'text')
 		.map((part) => part.text)
 		.join('\n\n');
+}
+
+/** A Hint presents another copy of the same question. Follow only recorded Hint presses. */
+export function currentQuestionDraftId(turns: readonly DisplayedTurn[]): string | undefined {
+	const current = turns.at(-1);
+	if (!current?.questionnaire) return;
+	let id = current.submissionId;
+	for (let i = turns.length - 2; i > 0; i -= 2) {
+		const help = turns[i]?.cardHelp;
+		if (help?.kind !== 'hint' || turns[i - 1]?.submissionId !== help.sourceId) break;
+		id = help.sourceId;
+	}
+	return id;
 }
 
 export function splitCurrentTurns(items: readonly DisplayedTurn[]): {

@@ -1,5 +1,7 @@
 import type { Hono } from 'hono';
 import { learnerMessageLengthError } from '../../config/chat-message.ts';
+import { isCardHelpAction } from '../../questionnaire.ts';
+import { InvalidCardActionError } from './card-hint.ts';
 import type { Engine, ModelSelection } from './contract.ts';
 import { DurableBusyError } from './engine.ts';
 import { conversationEvents } from './browser-sse.ts';
@@ -13,6 +15,9 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: () => Prom
 		if (message?.kind !== 'user' || typeof message.body !== 'string' || !message.body.trim()) {
 			return c.json({ error: { type: 'invalid_message', message: 'A learner message is required.' } }, 400);
 		}
+		if (message.cardHelp !== undefined && !isCardHelpAction(message.cardHelp)) {
+			return c.json({ error: { type: 'invalid_message', message: 'Unknown question card action.' } }, 400);
+		}
 		const lengthError = learnerMessageLengthError(message.body);
 		if (lengthError) return c.json({ error: { type: 'invalid_message', message: lengthError } }, 400);
 		const id = c.req.param('id');
@@ -21,10 +26,13 @@ export function mountBrowserBridge(app: Hono, engine: Engine, select: () => Prom
 		let submissionId: string;
 		try {
 			const selected = await select();
-			submissionId = await engine.submit(id, message.body, selected);
+			submissionId = await engine.submit(id, message.body, selected, message.cardHelp);
 		} catch (error) {
 			if (error instanceof InferenceUnavailableError) {
 				return c.json({ error: { type: 'inference_unconfigured', message: 'No model provider is set up yet. Please try again later.' } }, 503);
+			}
+			if (error instanceof InvalidCardActionError) {
+				return c.json({ error: { type: 'invalid_card_action', message: error.message } }, 409);
 			}
 			if (error instanceof DurableBusyError) {
 				return c.json({ error: { type: 'busy', message: 'This conversation has pending work.' } }, 409);

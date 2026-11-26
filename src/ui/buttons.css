@@ -170,7 +170,7 @@
 }
 
 /* Ghost: quiet until the pointer or focus arrives. */
-.questionnaire-actions .questionnaire-button-ghost,
+.questionnaire .questionnaire-button-ghost,
 .steering-action,
 .thinking-cancel,
 .dictation-toggle:not([hidden]):not([data-state='listening']):not([data-state='stopping']) {
@@ -180,7 +180,7 @@
 }
 
 :is(
-	.questionnaire-actions .questionnaire-button-ghost,
+	.questionnaire .questionnaire-button-ghost,
 	.steering-action,
 	.thinking-cancel,
 	.dictation-toggle:not([data-state='listening']):not([data-state='stopping'])
