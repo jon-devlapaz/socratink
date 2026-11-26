@@ -25,20 +25,36 @@ export function dispatchArgs(options: RemoteOptions): string[] {
 }
 
 /** Why a ref cannot be evaluated in GitHub as it is here, or undefined. */
-export function refProblem(ref: string, git: (args: string[]) => string | undefined): string | undefined {
+export function refProblem(ref: string, git: Git): string | undefined {
 	if (/^[0-9a-f]{7,40}$/iu.test(ref)) {
 		return git(['branch', '-r', '--contains', ref])?.trim() ? undefined : `Commit ${ref} is not on GitHub yet. Push it first.`;
 	}
-	const remote = git(['ls-remote', 'origin', `refs/heads/${ref}`, `refs/tags/${ref}`])?.split(/\s+/u)[0];
+	const listed = git(['ls-remote', 'origin', `refs/heads/${ref}`, `refs/tags/${ref}`]);
+	if (listed === undefined) return `Could not reach GitHub to check ${ref}. Check your connection and that git fetch origin works, then try again.`;
+	const remote = listed.split(/\s+/u)[0];
 	if (!remote) return `${ref} is not on GitHub yet. Push it first: git push -u origin ${ref}`;
 	const local = git(['rev-parse', '--verify', '--quiet', `refs/heads/${ref}`])?.trim();
-	if (local && local !== remote) return `Your local ${ref} differs from GitHub's. Push it first, so the eval tests what you have: git push origin ${ref}`;
-	return undefined;
+	if (!local || local === remote) return undefined;
+	// GitHub's commit may be newer than anything fetched here; get it before comparing.
+	const known = () => git(['cat-file', '-e', `${remote}^{commit}`]) !== undefined;
+	if (!known() && (git(['fetch', '--quiet', '--no-tags', 'origin', remote]) === undefined || !known())) {
+		return `Could not get GitHub's copy of ${ref} to compare with yours. Run git fetch origin, then try again.`;
+	}
+	// A local copy that is only behind GitHub's is fine: GitHub's is what runs.
+	if (git(['merge-base', '--is-ancestor', local, remote]) !== undefined) return undefined;
+	return `Your local ${ref} has commits GitHub does not have. Push it first, so the eval tests what you have: git push origin ${ref}`;
 }
 
-function git(args: string[]): string | undefined {
-	try { return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return undefined; }
+type Git = (args: string[]) => string | undefined;
+
+/** Runs git in `cwd`; undefined when git fails. */
+export function gitIn(cwd?: string): Git {
+	return (args) => {
+		try { return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return undefined; }
+	};
 }
+
+const git = gitIn();
 
 function gh(args: string[]): string {
 	return execFileSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
@@ -56,7 +72,7 @@ async function main() {
 		const problem = refProblem(name, git);
 		if (problem) throw new Error(problem);
 	}
-	try { gh(['workflow', 'view', workflowFile, '--ref', 'main']); } catch {
+	try { gh(['workflow', 'view', workflowFile, '--ref', 'main', '--yaml']); } catch {
 		throw new Error('The Tutor eval workflow is not on main yet. Merge .github/workflows/tutor-eval.yml first.');
 	}
 	const started = Date.now();
