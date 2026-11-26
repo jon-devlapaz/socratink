@@ -13,7 +13,7 @@
 		"dev:phone": "vite build --config vite.config.ui.ts && HOST=0.0.0.0 node --env-file-if-exists=src/ui/.env.local --watch src/server.ts",
 		"build": "vite build && vite build --config vite.config.ui.ts && node scripts/preview-probe.mjs",
 		"build:ui": "vite build --config vite.config.ui.ts",
-		"check": "pnpm check:file-size && pnpm check:structure && pnpm check:unused && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:auth-db && pnpm test:conversation-index && pnpm test:guest-turns && pnpm test:oauth && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:ask-before-reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:live-reply && pnpm test:learner-text && pnpm test:sound-cues && pnpm test:cross-tab && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm test:tutor-probe && pnpm test:tutor-eval && pnpm test:durable && pnpm build && pnpm test:preview-probe && pnpm test:static-routing",
+		"check": "pnpm check:file-size && pnpm check:structure && pnpm check:unused && pnpm check:types && pnpm test:chat-model && pnpm test:model-route && pnpm test:database-config && pnpm test:session && pnpm test:session-client && pnpm test:auth-db && pnpm test:conversation-index && pnpm test:guest-turns && pnpm test:oauth && pnpm test:questionnaire && pnpm test:present-question && pnpm test:reveal && pnpm test:reveal-ui && pnpm test:ask-before-reveal && pnpm test:conversation && pnpm test:chat-turns && pnpm test:live-reply && pnpm test:learner-text && pnpm test:sound-cues && pnpm test:cross-tab && pnpm test:tool-card && pnpm test:thinking && pnpm test:chat-markdown && pnpm test:dictation && pnpm test:steering && pnpm test:client-id && pnpm test:runtime-monitor && pnpm test:tutor-probe && pnpm test:tutor-eval && pnpm test:durable && pnpm build && pnpm test:preview-probe && pnpm test:static-routing && pnpm test:feedback",
 		"check:file-size": "node --test scripts/check-file-size.test.mjs && node scripts/check-file-size.mjs",
 		"check:structure": "node --test scripts/check-structure.test.mjs && node scripts/check-structure.mjs",
 		"check:unused": "knip --no-progress",
@@ -36,7 +36,7 @@
 		"test:reveal-ui": "node --import tsx --test scripts/reveal-ui.test.mjs",
 		"test:ask-before-reveal": "node --test scripts/ask-before-reveal.test.mjs",
 		"test:steering": "node --test scripts/steering.test.mjs",
-		"test:conversation": "node --test scripts/conversation-client.test.mjs scripts/storage-failure.test.mjs",
+		"test:conversation": "node --test scripts/conversation-client.test.mjs scripts/storage-failure.test.mjs scripts/conversation-controls.test.mjs",
 		"test:chat-turns": "node --test scripts/chat-turns.test.mjs",
 		"test:live-reply": "node --test scripts/live-reply.test.mjs",
 		"test:learner-text": "node --test scripts/learner-text.test.mjs",
@@ -58,7 +58,8 @@
 		"test:durable:postgres": "DURABLE_TEST_POSTGRES=1 node --test scripts/durable-storage.test.mjs scripts/conversation-index.test.mjs scripts/auth-db.test.mjs",
 		"smoke:durable": "node scripts/durable-smoke.mjs",
 		"verify:formal": "node scripts/verify-formal.mjs",
-		"smoke:durable:postgres": "pnpm build && node scripts/durable-postgres-smoke.mjs"
+		"smoke:durable:postgres": "pnpm build && node scripts/durable-postgres-smoke.mjs",
+		"test:feedback": "node --test scripts/feedback-message.test.mjs scripts/feedback-route.test.mjs"
 	},
 	"dependencies": {
 		"@earendil-works/chord": "1.5.0",
@@ -79,6 +80,7 @@
 		"valibot": "^1.4.2"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "4.14.1",
 		"@tailwindcss/vite": "^4.3.5",
 		"@types/node": "^26.1.1",
 		"@types/pg": "^8.23.1",

@@ -1,123 +1,115 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { parseQuestionnaireDefinition } from '../src/questionnaire.ts';
+import { describe, it } from 'node:test';
 import {
-	formatQuestionnaireAnswers,
-	questionnaireFromParts,
-	questionnaireFromReplyData,
-	sameQuestion,
+	formatQuestionnaireAnswers, parseQuestionnaireDefinition, questionnaireFromParts, questionnaireFromReplyData, sameQuestion,
 } from '../src/questionnaire.ts';
 
-const validDefinition = {
-	kind: 'question',
-	submitLabel: 'Continue',
-	items: [
-		{
-			name: 'path',
-			prompt: 'How should we begin?',
-			required: true,
-			multiple: false,
-			choices: [
-				{ value: 'trace', label: 'Example trace', shortcut: '1' },
-				{ value: 'puzzle', label: 'Puzzle' },
-			],
-			input: { label: 'Your reason', placeholder: 'Type a reason…' },
-		},
-	],
+const item = {
+	name: 'path', prompt: 'How should we begin?', required: true, multiple: false,
+	choices: [{ value: 'trace', label: 'Example trace', shortcut: '1' }, { value: 'puzzle', label: 'Puzzle' }],
+	input: { label: 'Your reason', placeholder: 'Type a reason…' },
 };
+const card = { kind: 'question', submitLabel: 'Continue', items: [item] };
+const withItem = (changes) => ({ ...card, items: [{ ...item, ...changes }] });
 
-test('question identity tolerates reordered choices and shortcuts but keeps the answer context', () => {
-	const item = validDefinition.items[0];
-	const withItem = change => ({ ...validDefinition, items: [{ ...item, ...change }] });
-	assert.equal(sameQuestion(validDefinition, withItem({ choices: item.choices.toReversed().map(c => ({ ...c, shortcut: 'x' })) })), true);
-	for (const changed of [
-		undefined, { ...validDefinition, kind: 'quiz' }, withItem({ prompt: 'A different question?' }),
-		withItem({ description: 'Assume nothing can leave the jar.' }), withItem({ multiple: true }), withItem({ input: undefined }),
-		withItem({ choices: item.choices.slice(1) }), withItem({ choices: item.choices.map(c => ({ ...c, label: 'Changed' })) }),
-	]) assert.equal(sameQuestion(validDefinition, changed), false);
+describe('parseQuestionnaireDefinition', () => {
+	const choices = Array.from({ length: 9 }, (_, index) => ({ label: String(index), value: String(index) }));
+	const freeform = { name: 'why', prompt: 'Why?', input: { label: 'Reason' } };
+	for (const [name, raw, expected] of [
+		['a complete card', card, card],
+		['freeform input without choices', { ...card, items: [freeform] },
+			{ ...card, items: [{ ...freeform, required: true, multiple: false, choices: [] }] }],
+		['missing card kind and submit label', { items: [item] }, undefined],
+		['an extra card field', { ...card, extra: true }, undefined],
+		['zero items', { ...card, items: [] }, undefined],
+		['two items', { ...card, kind: 'quiz', items: [item, { ...item, name: 'second' }] }, undefined],
+		['a name starting with a digit', withItem({ name: '1-path' }), undefined],
+		['no choices or freeform input', { ...card, items: [{ name: 'path', prompt: 'Which?' }] }, undefined],
+		['duplicate choice values', withItem({ choices: [{ value: 'same', label: 'A' }, { value: 'same', label: 'B' }] }), undefined],
+		['a multi-select quiz', { ...withItem({ multiple: true }), kind: 'quiz' }, { ...withItem({ multiple: true }), kind: 'quiz' }],
+	]) {
+		it(name, () => assert.deepEqual(parseQuestionnaireDefinition(raw), expected));
+	}
+	for (const count of [7, 8, 9]) {
+		it(`a list of ${count} choices`, () => {
+			const input = withItem({ choices: choices.slice(0, count) });
+			assert.deepEqual(parseQuestionnaireDefinition(input), count === 9 ? undefined : input);
+		});
+	}
+	const fields = [
+		['submit label', 80, (text) => ({ ...card, submitLabel: text })],
+		['item name', 64, (text) => withItem({ name: text })],
+		['prompt', 320, (text) => withItem({ prompt: text })],
+		['item description', 400, (text) => withItem({ description: text })],
+		['choice value', 120, (text) => withItem({ choices: [{ label: 'Trace', value: text }] })],
+		['choice label', 160, (text) => withItem({ choices: [{ label: text, value: 'trace' }] })],
+		['choice description', 260, (text) => withItem({ choices: [{ label: 'Trace', value: 'trace', description: text }] })],
+		['shortcut', 1, (text) => withItem({ choices: [{ label: 'Trace', value: 'trace', shortcut: text }] })],
+		['freeform label', 160, (text) => withItem({ input: { label: text } })],
+		['placeholder', 180, (text) => withItem({ input: { label: 'Why?', placeholder: text } })],
+	];
+	for (const [name, max, build] of fields) {
+		for (const length of new Set([0, 1, 2, max - 1, max, max + 1])) {
+			it(`a ${name} of length ${length}`, () => {
+				const raw = build('x'.repeat(length));
+				assert.deepEqual(parseQuestionnaireDefinition(raw), length > 0 && length <= max ? raw : undefined);
+			});
+		}
+	}
 });
 
-test('reads a validated questionnaire from live reply data and restored history parts', () => {
-	assert.equal(questionnaireFromReplyData({ questionnaire: [validDefinition] })?.items[0]?.name, 'path');
-	assert.equal(
-		questionnaireFromParts([
-			{ type: 'text' },
-			{ type: 'data-questionnaire', data: validDefinition },
-		])?.items[0]?.name,
-		'path',
-	);
+describe('questionnaireFromReplyData', () => {
+	for (const [name, data, expected] of [
+		['no data', undefined, undefined], ['no writes', { questionnaire: [] }, undefined],
+		['two cards', { questionnaire: [{ ...card, submitLabel: 'Before' }, card] }, card],
+		['a malformed last card', { questionnaire: [card, { items: [] }] }, undefined],
+	]) {
+		it(name, () => assert.deepEqual(questionnaireFromReplyData(data), expected));
+	}
 });
 
-test('fails closed on malformed or oversized structured questionnaire data', () => {
-	assert.equal(questionnaireFromReplyData({ questionnaire: [{ items: [] }] }), undefined);
-	assert.equal(
-		parseQuestionnaireDefinition({
-			items: [{ name: 'answer', prompt: 'Question?', choices: [{ value: 'a', label: 'A' }] }],
-		}),
-		undefined,
-	);
-	assert.equal(parseQuestionnaireDefinition({ ...validDefinition, extra: true }), undefined);
-	assert.equal(
-		parseQuestionnaireDefinition({
-			...validDefinition,
-			items: [{ ...validDefinition.items[0], description: 'x'.repeat(401) }],
-		}),
-		undefined,
-	);
-	assert.equal(
-		parseQuestionnaireDefinition({
-			kind: 'quiz',
-			submitLabel: 'Answer',
-			items: [
-				{
-					name: 'answer-0',
-					prompt: 'Question?',
-					choices: [{ value: 'a', label: 'A' }],
-				},
-				{
-					name: 'answer-1',
-					prompt: 'Question?',
-					choices: [{ value: 'b', label: 'B' }],
-				},
-			],
-		}),
-		undefined,
-	);
-	assert.equal(
-		parseQuestionnaireDefinition({
-			...validDefinition,
-			items: [{
-				...validDefinition.items[0],
-				choices: [
-					{ value: 'trace', label: 'Example trace' },
-					{ value: 'trace', label: 'Puzzle' },
-				],
-			}],
-		}),
-		undefined,
-	);
+describe('questionnaireFromParts', () => {
+	const part = { type: 'data-questionnaire', data: card };
+	for (const [name, parts, expected] of [
+		['no parts', [], undefined],
+		['text followed by a card', [{ type: 'text' }, part], card],
+		['two cards mixed with text', [part, { type: 'text' }, { ...part, data: { ...card, submitLabel: 'Finish' } }],
+			{ ...card, submitLabel: 'Finish' }],
+		['a malformed last card', [part, { ...part, data: {} }], undefined],
+	]) {
+		it(name, () => assert.deepEqual(questionnaireFromParts(parts), expected));
+	}
 });
 
-test('formats selected, freeform, skipped and help answers as explicit learner text', () => {
-	const questionnaire = parseQuestionnaireDefinition(validDefinition);
-	assert.ok(questionnaire);
-	assert.equal(
-		formatQuestionnaireAnswers(questionnaire, [
-			{ name: 'path', values: ['trace'], freeform: 'I want a concrete example.' },
-		]),
-		'Questionnaire answers:\n- How should we begin?: Example trace, I want a concrete example.',
-	);
-	assert.match(
-		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], skipped: true }]),
-		/- How should we begin\?: Skipped\.$/,
-	);
-	assert.equal(
-		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: ['trace'], freeform: 'ignored', help: 'hint' }]),
-		'Questionnaire answers:\n- How should we begin?: Asked for a hint.',
-		'a help request replaces any selection',
-	);
-	assert.match(
-		formatQuestionnaireAnswers(questionnaire, [{ name: 'path', values: [], help: 'unknown' }]),
-		/- How should we begin\?: I don't know\.$/,
-	);
+describe('formatQuestionnaireAnswers', () => {
+	for (const [name, answers, answerText] of [
+		['a choice and freeform reasoning', [{ name: 'path', values: ['trace'], freeform: 'I want a concrete example.' }], 'Example trace, I want a concrete example.'],
+		['the learner skips', [{ name: 'path', values: [], skipped: true }], 'Skipped.'],
+		['no answer for this item', [], 'Skipped.'],
+		['a hint replaces a selection and reasoning', [{ name: 'path', values: ['trace'], freeform: 'ignored', help: 'hint' }], 'Asked for a hint.'],
+		['the learner chooses unknown', [{ name: 'path', values: [], help: 'unknown' }], "I don't know."],
+		['a stored value with no matching label', [{ name: 'path', values: ['記号'] }], '記号'],
+		['multiple selected values', [{ name: 'path', values: ['puzzle', 'trace'] }], 'Puzzle, Example trace'],
+	]) {
+		it(name, () => {
+			assert.equal(formatQuestionnaireAnswers(card, answers), `Questionnaire answers:\n- How should we begin?: ${answerText}`);
+		});
+	}
+});
+
+describe('sameQuestion', () => {
+	it('accepts a different display order and shortcuts', () => {
+		const choices = item.choices.toReversed().map(choice => ({ ...choice, shortcut: 'x' }));
+		assert.equal(sameQuestion(card, withItem({ choices })), true);
+	});
+	for (const [name, changed] of [
+		['absent card', undefined], ['different kind', { ...card, kind: 'quiz' }],
+		['different prompt', withItem({ prompt: 'A different question?' })],
+		['different description', withItem({ description: 'Assume nothing can leave the jar.' })],
+		['multiple selections allowed', withItem({ multiple: true })], ['freeform input removed', withItem({ input: undefined })],
+		['fewer choices', withItem({ choices: item.choices.slice(1) })],
+		['different labels', withItem({ choices: item.choices.map(choice => ({ ...choice, label: 'Changed' })) })],
+	]) {
+		it(name, () => assert.equal(sameQuestion(card, changed), false));
+	}
 });

@@ -374,13 +374,17 @@ test('stopForReview blocks active submission until recognition ends', () => {
 	}
 });
 
-test('a bounded fallback aborts capture when stop never reaches end', async () => {
+test('dictation waits two seconds for recognition to end before it aborts capture', (t) => {
+	t.mock.timers.enable({ apis: ['setTimeout'] });
 	const harness = setup();
 	try {
 		const { controller, recognition } = startSession(harness, 'Review ', 7);
 		recognition.emit('start');
 		assert.equal(controller.stopForReview(), true);
-		await new Promise((resolve) => setTimeout(resolve, 2_050));
+		t.mock.timers.tick(1_999);
+		assert.equal(recognition.abortCalls, 0);
+		assert.equal(harness.status.dataset.state, 'stopping');
+		t.mock.timers.tick(1);
 		assert.equal(recognition.abortCalls, 1);
 		assert.equal(harness.status.dataset.state, 'idle');
 		controller.destroy();

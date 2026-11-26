@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test from 'node:test';
+import test, { describe, it } from 'node:test';
 import { feedback } from '../src/config/feedback.ts';
+import { sendAgentFeedback } from '../src/server/modem-feedback.ts';
 import { getAuthDb } from '../src/server/auth-runtime.ts';
 import { openEngine } from '../src/server/durable/engine.ts';
 import { startFixture, until } from './durable-smoke-support.mjs';
@@ -97,4 +98,65 @@ test('tutor sends one approved draft with the right account on its Modem connect
 		process.chdir(workspace);
 		await rm(directory, { recursive: true, force: true });
 	}
+});
+
+describe('sendAgentFeedback', () => {
+	const initialize = 'initialize';
+	const ready = 'notifications/initialized';
+	const send = 'tools/call';
+	const close = 'DELETE';
+	const context = { session_id: 'test-feedback-session', client: 'Socratink tutor', environment: 'test' };
+	const args = { message: 'Keep my place.', category: 'user_feedback' };
+
+	async function deliver(t, answers) {
+		const methods = [];
+		const submitted = [];
+		t.mock.method(globalThis, 'fetch', async (url, init) => {
+			const rpc = init.body && JSON.parse(init.body);
+			const method = rpc?.method ?? init.method;
+			methods.push(method);
+			if (method === send) submitted.push({
+				url, params: rpc.params, account: init.headers.get('X-Modem-App-User'),
+			});
+			const reply = answers[method];
+			if (reply instanceof Error) throw reply;
+			return typeof reply === 'function' ? reply(rpc.id) : reply;
+		});
+		const outcome = await sendAgentFeedback('synthetic-channel', undefined, context, args);
+		return { outcome, methods, submitted };
+	}
+
+	function session(callResult) {
+		return {
+			[initialize]: (id) => Response.json({ id, result: { protocolVersion: '2025-03-26' } }, {
+				headers: { 'Mcp-Session-Id': 'synthetic-modem-session' },
+			}),
+			[ready]: new Response(null, { status: 202 }),
+			[send]: callResult,
+			[close]: new Response(null, { status: 204 }),
+		};
+	}
+
+	for (const [name, callResult, outcome] of [
+		['a receipt in a text response', (id) => Response.json({ id, result: { content: [{ type: 'text', text: '{"id":"receipt"}' }] } }), 'accepted'],
+		['Modem declines the report', (id) => Response.json({ id, result: { isError: true } }), 'rejected'],
+		['the reply has no receipt', (id) => Response.json({ id, result: {} }), 'unconfirmed'],
+		['the connection drops after submission', new Error('Connection closed'), 'unconfirmed'],
+	]) {
+		it(name, async (t) => {
+			const result = await deliver(t, session(callResult));
+			assert.equal(result.outcome, outcome);
+			assert.deepEqual(result.submitted, [{
+				url: feedback.mcp, params: { name: 'submit_feedback', arguments: args }, account: null,
+			}]);
+			assert.deepEqual(result.methods, [initialize, ready, send, close]);
+		});
+	}
+
+	it('Modem is unavailable before submission', async (t) => {
+		const result = await deliver(t, { [initialize]: new Error('Connection refused') });
+		assert.equal(result.outcome, 'unavailable');
+		assert.deepEqual(result.submitted, []);
+		assert.deepEqual(result.methods, [initialize]);
+	});
 });

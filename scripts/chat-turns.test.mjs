@@ -307,9 +307,28 @@ test('groups earlier turns into learner-started steps', () => {
 	assert.deepEqual(groupEarlierSteps([]), []);
 });
 
-test('maps the stored assistant role to the Socratink display label', () => {
-	assert.equal(displayLabel('Assistant'), 'Socratink');
-	assert.equal(displayLabel('You'), 'You');
+for (const [role, label] of [['Assistant', 'Socratink'], ['You', 'You'], ['Error', 'Error']]) {
+	test(`displayLabel for ${role}`, () => assert.equal(displayLabel(role), label));
+}
+
+test('a conversation with no replies keeps the learner turns current', () => {
+	const turns = [{ role: 'You', text: 'Why?' }, { role: 'You', text: 'Can I try?' }];
+	assert.deepEqual(splitCurrentTurns(turns), { earlier: [], current: turns });
+});
+
+test('an error closes the latest learner turn', () => {
+	const first = { role: 'Assistant', text: 'Welcome' };
+	const asked = { role: 'You', text: 'Why?' };
+	const error = { role: 'Error', text: 'No reply' };
+	assert.deepEqual(splitCurrentTurns([first, asked, error]), { earlier: [first], current: [asked, error] });
+});
+
+test('adjacent completed submissions retain the same learner words', () => {
+	const message = (id) => ({ role: 'user', submissionId: id, parts: [{ type: 'text', text: 'Again?' }] });
+	assert.deepEqual(visibleTurnsFromHistory({
+		messages: [message('a'), message('b')],
+		settlements: [{ submissionId: 'a', outcome: 'completed' }, { submissionId: 'b', outcome: 'completed' }],
+	}), [{ role: 'You', text: 'Again?' }, { role: 'You', text: 'Again?' }]);
 });
 
 test('projects the routed model from assistant response metadata', () => {

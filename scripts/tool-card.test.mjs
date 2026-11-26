@@ -116,12 +116,38 @@ test('a late input event does not reopen a settled tool', () => {
 	assert.equal(calls[0]?.state, 'done');
 });
 
-test('formats object output as JSON and labels each execution state', () => {
-	assert.equal(formatToolOutput('plain'), 'plain');
-	assert.equal(formatToolOutput({ a: 1 }), '{\n  "a": 1\n}');
-	assert.equal(toolStateLabel('running'), 'Running');
-	assert.equal(toolStateLabel('done'), 'Done');
-	assert.equal(toolStateLabel('failed'), 'Failed');
+for (const [name, input, expected] of [
+	['plain text', 'plain', 'plain'], ['object output', { a: 1 }, '{\n  "a": 1\n}'],
+	['null', null, ''], ['undefined', undefined, ''], ['a bigint', 7n, '7'],
+]) {
+	test(`formatToolOutput with ${name}`, () => assert.equal(formatToolOutput(input), expected));
+}
+
+for (const size of [7_999, 8_000, 8_001]) {
+	test(`formatToolOutput with ${size} characters`, () => {
+		const input = 'a'.repeat(size);
+		assert.equal(formatToolOutput(input), size === 8_001 ? 'a'.repeat(8_000) + '\n…' : input);
+	});
+}
+
+for (const [state, label] of [['running', 'Running'], ['done', 'Done'], ['failed', 'Failed']]) {
+	test(`toolStateLabel for ${state}`, () => assert.equal(toolStateLabel(state), label));
+}
+
+test('a failure received before its input shows the error under a generic tool name', () => {
+	const calls = [];
+	const event = { type: 'tool-output-error', toolCallId: 'lost-input', errorText: 'Try again.' };
+	assert.equal(applyToolStreamEvent(calls, event), true);
+	assert.deepEqual(calls, [{ id: 'lost-input', name: 'tool', state: 'failed', output: 'Try again.' }]);
+	assert.equal(applyToolStreamEvent(calls, event), false);
+});
+
+test('a failed question tool still shows the error', () => {
+	assert.equal(visibleToolOutput({ id: 'q', name: 'present_question', state: 'failed', output: 'Missing choice.' }), 'Missing choice.');
+});
+
+test('a tool with no output has nothing to show', () => {
+	assert.equal(visibleToolOutput({ id: 't', name: 'trace', state: 'running' }), undefined);
 });
 
 test('keeps present_question output off the card once the form is up', () => {

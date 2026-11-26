@@ -151,3 +151,54 @@ test('a question card takes the text\'s own question away once it arrives, as th
 	assert.equal(live.apply(card), true);
 	assert.equal(live.view().markdown, 'Close. You ruled out the slow option.');
 });
+
+test('a repeated message start preserves the text already received', () => {
+	const live = createLiveReply(learner);
+	const start = { type: 'message-started', messageId: 'm' };
+	assert.equal(live.apply(start), true);
+	live.apply(delta('What changes?', 'm'));
+	assert.equal(live.apply(start), false);
+	assert.deepEqual(live.view(), { markdown: 'What changes?' });
+});
+
+test('a malformed second mark preserves the last valid reveal', () => {
+	const live = createLiveReply(learner);
+	const mark = { type: 'tool-input', messageId: 'm', toolName: 'mark_reveal' };
+	live.apply({ ...mark, toolCallId: 'r1', input: { kind: 'hint' } });
+	assert.equal(live.apply({ ...mark, toolCallId: 'r2', input: { kind: 'score' } }), false);
+	assert.deepEqual(fold(live, [delta('Compare both ends.', 'm')]), { markdown: 'Compare both ends.', reveal: { kind: 'hint' } });
+});
+
+test('the latest valid reveal describes the live reply', () => {
+	const live = createLiveReply(learner);
+	const mark = { type: 'tool-input', messageId: 'm', toolName: 'mark_reveal' };
+	live.apply({ ...mark, toolCallId: 'r1', input: { kind: 'hint' } });
+	live.apply({ ...mark, toolCallId: 'r2', input: { kind: 'full_answer', target: 'Middle' } });
+	assert.deepEqual(fold(live, [delta('The middle.', 'm')]), {
+		markdown: 'The middle.', reveal: { kind: 'full_answer', target: 'Middle' },
+	});
+});
+
+test('a settled submission with no assistant reply has no text or data', () => {
+	const snapshot = { messages: [
+		{ role: 'user', submissionId: 'mine', parts: [{ type: 'text', text: 'My question' }] },
+		{ role: 'assistant', submissionId: 'other', parts: [{ type: 'text', text: 'Another reply' }] },
+	] };
+	assert.deepEqual(replyFrom(snapshot, 'mine'), { text: '', data: {} });
+});
+
+test('the settled reply joins text and keeps ordered data and metadata from its last message', () => {
+	const snapshot = { messages: [
+		{ role: 'assistant', submissionId: 's1', parts: [{ type: 'text', text: 'Earlier' }] },
+		{ role: 'assistant', submissionId: 's1', metadata: { routedModel: 'tutor' }, parts: [
+			{ type: 'text', text: 'First' }, { type: 'data-reveal', data: { kind: 'hint' } },
+			{ type: 'data-score', data: 1 }, { type: 'data-reveal', data: { kind: 'partial' } },
+			{ type: 'text', text: 'Second' },
+		] },
+	] };
+	assert.deepEqual(replyFrom(snapshot, 's1'), {
+		text: 'First\n\nSecond',
+		data: { reveal: [{ kind: 'hint' }, { kind: 'partial' }], score: [1] },
+		metadata: { routedModel: 'tutor' },
+	});
+});

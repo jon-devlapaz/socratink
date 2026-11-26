@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { describe, it } from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { parseInline, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
+import { compactMarkdownText, parseInline, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
@@ -125,14 +125,105 @@ test('rejects unsafe hrefs and keeps http(s), mailto, and relative links', () =>
 });
 
 test('keeps parentheses inside markdown link hrefs', () => {
-	const [link] = parseInline('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))');
-	assert.equal(link?.type, 'link');
-	assert.equal(link?.type === 'link' && link.href, 'https://en.wikipedia.org/wiki/Foo_(bar)');
+	assert.deepEqual(parseInline('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))'), [
+		{ type: 'link', href: 'https://en.wikipedia.org/wiki/Foo_(bar)', children: [{ type: 'text', value: 'Wiki' }] },
+	]);
 });
 
 test('keeps pipes inside inline code and escaped cells', () => {
-	const [table] = parseMarkdownBlocks(['| A | B |', '| --- | --- |', '| `x|y` | z \\| w |'].join('\n'));
-	assert.equal(table?.type, 'table');
-	if (table?.type !== 'table') return;
-	assert.deepEqual(table.rows[0], ['`x|y`', 'z | w']);
+	const blocks = parseMarkdownBlocks(['| A | B |', '| --- | --- |', '| `x|y` | z \\| w |'].join('\n'));
+	assert.deepEqual(blocks, [{ type: 'table', header: ['A', 'B'], rows: [['`x|y`', 'z | w']] }]);
+});
+
+describe('parseMarkdownBlocks', () => {
+	for (const [name, source, blocks] of [
+		['blank input', ' \n\t', []],
+		['a paragraph with Windows line breaks', 'one\r\ntwo', [{ type: 'paragraph', text: 'one\ntwo' }]],
+		['a first-level heading', '# Topic', [{ type: 'heading', level: 1, text: 'Topic' }]],
+		['a sixth-level heading', '###### Topic', [{ type: 'heading', level: 6, text: 'Topic' }]],
+		['seven heading markers', '####### Topic', [{ type: 'paragraph', text: '####### Topic' }]],
+		['a quote on two lines', '> One\n> Two', [{ type: 'blockquote', text: 'One\nTwo' }]],
+		['two hyphens', '--', [{ type: 'paragraph', text: '--' }]],
+		['three hyphens', '---', [{ type: 'hr' }]],
+		['a code fence with a language', '~~~ts\nlet n = 1;\n~~~', [{ type: 'code', language: 'ts', text: 'let n = 1;' }]],
+		['an open code fence', '~~~\nfirst line', [{ type: 'code', language: '', text: 'first line' }]],
+		['a continued list item', '- a\n  b\n- c', [{ type: 'list', ordered: false, items: ['a\nb', 'c'] }]],
+		['a change from ordered to unordered items', '1. one\n2. two\n- end', [
+			{ type: 'list', ordered: true, items: ['one', 'two'] }, { type: 'list', ordered: false, items: ['end'] },
+		]],
+		['table rows with missing and extra cells', 'A|B\n---|---\n|one|\ntwo|three|four', [
+			{ type: 'table', header: ['A', 'B'], rows: [['one', ''], ['two', 'three']] },
+		]],
+	]) {
+		it(name, () => assert.deepEqual(parseMarkdownBlocks(source), blocks));
+	}
+});
+
+describe('parseInline', () => {
+	const text = (value) => ({ type: 'text', value });
+	for (const [name, source, nodes] of [
+		['empty text', '', []],
+		['plain Unicode', '∑ Δ', [text('∑ Δ')]],
+		['an escaped marker', '\\*', [text('*')]],
+		['an unfinished code span', '`unfinished', [text('`unfinished')]],
+		['literal formatting in a code span', '`*x*`', [{ type: 'code', value: '*x*' }]],
+		['strong text', '**yes**', [{ type: 'strong', children: [text('yes')] }]],
+		['emphasized text', '_yes_', [{ type: 'em', children: [text('yes')] }]],
+		['strong and emphasized text', '***yes***', [{ type: 'strong', children: [{ type: 'em', children: [text('yes')] }] }]],
+		['underscores in an identifier', 'item_one_two', [text('item_one_two')]],
+		['a link with formatted text', '[**guide**](/docs)', [{ type: 'link', href: '/docs', children: [{ type: 'strong', children: [text('guide')] }] }]],
+		['image alt text', '![range diagram](range.png)', [text('range diagram')]],
+		['an unfinished link', '[guide](/docs', [text('[guide](/docs')]],
+	]) {
+		it(name, () => assert.deepEqual(parseInline(source), nodes));
+	}
+});
+
+describe('compactMarkdownText', () => {
+	for (const [name, source, expected] of [
+		['empty text', '', ''],
+		['a heading and paragraph', '# Topic\n\nA **strong** claim.', 'Topic A strong claim.'],
+		['a quote with inline code', '> Compare `N`', 'Compare N'],
+		['a list with emphasis and a link', '- _First_\n- [Next](#second)', 'First Next'],
+		['a code block with extra whitespace', '~~~\na  b\n  c\n~~~', 'a b c'],
+		['a table with inline formatting', 'A|B\n---|---\n*x*|y', 'A B x y'],
+		['a separator between two paragraphs', 'before\n\n---\n\nafter', 'before after'],
+	]) {
+		it(name, () => assert.equal(compactMarkdownText(source), expected));
+	}
+});
+
+describe('safeHref', () => {
+	for (const [name, raw, expected] of [
+		['a blank address', '  ', undefined],
+		['a document name containing whitespace', 'two words', undefined],
+		['a URL with outer whitespace', '  https://example.com/help  ', 'https://example.com/help'],
+		['a plain HTTP address', 'http://example.com/read', 'http://example.com/read'],
+		['an uppercase HTTP scheme', 'HTTP://example.com/read', 'HTTP://example.com/read'],
+		['a relative document', '../notes/lesson.md', '../notes/lesson.md'],
+		['a query on the current page', '?topic=math', '?topic=math'],
+	]) {
+		it(name, () => assert.equal(safeHref(raw), expected));
+	}
+});
+
+test('an empty update hides the previous turn and the next update restores it', async () => {
+	await withRenderer(async ({ renderer }) => {
+		renderer.update('# Previous');
+		renderer.update('');
+		assert.equal(renderer.element.firstElementChild.hidden, true);
+		assert.equal(renderer.element.firstElementChild.childElementCount, 0);
+		renderer.update('## Next');
+		assert.equal(renderer.element.firstElementChild.hidden, false);
+		assert.equal(renderer.element.querySelector('h2').textContent, 'Next');
+	});
+});
+
+test('copy writes the text of the selected code block', async () => {
+	const writes = [];
+	await withRenderer(async ({ renderer }) => {
+		renderer.update('~~~sh\nprintf "%s" sample\n~~~');
+		await act(async () => copyButtons(renderer)[0].click());
+		assert.deepEqual(writes, ['printf "%s" sample']);
+	}, async (value) => { writes.push(value); });
 });

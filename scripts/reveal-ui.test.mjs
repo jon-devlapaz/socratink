@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { revealFromReply } from '../src/reveal.ts';
 import { visibleTurnsFromHistory } from '../src/ui/chat-turns.ts';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -97,13 +96,6 @@ test('earlier steps show the original question after setup and keep it outside t
 	const withoutSource = render(HistoryStep, { step: [action, hint], index: 0 });
 	assert.equal(withoutSource.querySelector('.history-question').textContent, prompt);
 	assert.ok(!withoutSource.querySelector('.reveal-copy').textContent.includes(prompt));
-});
-
-test('completed replies use the last validated reveal write', () => {
-	assert.equal(revealFromReply(undefined), undefined);
-	assert.equal(revealFromReply({ reveal: [] }), undefined);
-	assert.deepEqual(revealFromReply({ reveal: [{ kind: 'hint' }, { kind: 'full_answer' }] }), { kind: 'full_answer' });
-	assert.equal(revealFromReply({ reveal: [{ kind: 'hint' }, { kind: 'score' }] }), undefined);
 });
 
 function render(component, props) {

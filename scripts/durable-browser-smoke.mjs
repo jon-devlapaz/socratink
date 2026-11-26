@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import { expect } from 'playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { clientFor, gate, until } from './durable-smoke-support.mjs';
+import { assertAccessible } from './browser-accessibility.mjs';
+import { verifySignInBrowser } from './sign-in-browser-smoke.mjs';
 
 async function openBrowser(app, session, conversationId, out) {
 	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -34,18 +37,19 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 	try {
 		await page.goto(app.origin);
 		await page.locator('#message').fill(marker);
-		await page.locator('#chat').evaluate((form) => form.requestSubmit());
+		await page.getByRole('button', { name: 'Send message', exact: true }).click();
 		await until(async () => fixture.count(marker) === 1
 			&& (await page.locator('#active-turn .pending .thinking-step-copy').allTextContents()).join('') === 'Working from what you wrote',
 			'the browser shows a status line while the provider remains held');
 		await until(async () => (await clientFor(app, session, id).history()).messages.some((m) => m.role === 'assistant'),
 			'the held reply has started on the server');
 		assert.equal((await page.locator('body').innerText()).includes(reasoning), false, 'raw reasoning never shows to the learner');
-		assert.equal(await page.locator('#active-turn .assistant').count(), 0);
+		await expect(page.locator('#active-turn .assistant')).toHaveCount(0);
 		assert.equal(await page.locator('#active-turn .you p').innerText(), marker);
 		await page.screenshot({ path: join(out, 'reasoning-pending.png') });
 		await page.reload();
 		await page.locator('#active-turn .request-state.recovery').waitFor();
+		await assertAccessible(page, 'Pending reply after reload');
 		assert.equal(fixture.count(marker), 1, 'pending reload must not resubmit');
 		await page.screenshot({ path: join(out, 'reasoning-recovery.png') });
 		held.release();
@@ -62,10 +66,12 @@ export async function verifyDurableBrowser({ app, session, fixture, out }) {
 		assert.equal((await clientFor(app, session, id).history()).settlements.at(-1).outcome, 'completed');
 		await page.screenshot({ path: join(out, 'reasoning-reloaded.png') });
 		await verifyLiveText(page, fixture, out);
+		const signIn = await verifySignInBrowser({ browser, app, fixture });
 		assert.ok(paths.some((path) => path.endsWith('/events')), 'the browser follows turns over SSE');
 		assert.deepEqual(errors, []);
 		return { browser: browser.version(), statusInsteadOfReasoning: true, pendingReloadNoResubmit: true,
-			completedReload: true, liveTextBeforeSettlement: true, liveRevealMarked: true, screenshots: 6 };
+			completedReload: true, liveTextBeforeSettlement: true, liveRevealMarked: true,
+			signInSurvivesReload: true, ...signIn, screenshots: 6 };
 	} finally {
 		held.release();
 		await browser.close();
@@ -79,16 +85,16 @@ async function verifyLiveText(page, fixture, out) {
 	const held = gate();
 	fixture.plan(marker, { text: 'The **live** reply arrives while the model is still writing.', afterText: held });
 	await page.locator('#message').fill(marker);
-	await page.locator('#chat').evaluate((form) => form.requestSubmit());
+	await page.getByRole('button', { name: 'Send message', exact: true }).click();
 	const live = page.locator('#active-turn .turn.pending .turn-markdown');
 	await until(async () => (await live.isVisible()) && (await live.innerText()) === words, 'reply text shows while the provider is held');
 	assert.equal(await live.locator('strong').innerText(), 'live', 'live text renders as markdown');
-	assert.equal(await live.getAttribute('aria-hidden'), 'true', 'streaming text is not announced word by word');
-	assert.equal(await page.locator('#active-turn .assistant').filter({ hasText: words }).count(), 0, 'the turn has not settled');
+	await expect(live, 'streaming text is not announced word by word').toHaveAttribute('aria-hidden', 'true');
+	await expect(page.locator('#active-turn .assistant').filter({ hasText: words }), 'the turn has not settled').toHaveCount(0);
 	await page.screenshot({ path: join(out, 'live-text-pending.png') });
 	held.release();
 	await page.locator('#active-turn .assistant').filter({ hasText: words }).waitFor();
-	assert.equal(await page.locator('#active-turn .turn.pending').count(), 0);
+	await expect(page.locator('#active-turn .turn.pending')).toHaveCount(0);
 	const shown = await page.locator('#active-turn').innerText();
 	assert.equal(shown.split(words).length - 1, 1, 'the settled reply shows its text exactly once');
 	await page.screenshot({ path: join(out, 'live-text-settled.png') });
@@ -109,7 +115,7 @@ async function verifyLiveReveal(page, fixture) {
 		}).observe(document.querySelector('#active-turn'), { childList: true, subtree: true, characterData: true, attributes: true });
 	});
 	await page.locator('#message').fill(marker);
-	await page.locator('#chat').evaluate((form) => form.requestSubmit());
+	await page.getByRole('button', { name: 'Send message', exact: true }).click();
 	const live = page.locator('#active-turn .turn.pending .turn-markdown.reveal-copy');
 	await until(async () => (await live.isVisible()) && (await live.innerText()).includes(supplied), 'supplied text shows live with its mark');
 	assert.equal(await live.locator('.reveal-mark').innerText(), 'Hint from Socratink');
@@ -128,8 +134,8 @@ export async function verifyDurableHistoryBrowser({ app, session, conversationId
 			await assertHiddenRoute(page);
 			if (question) await page.locator('#active-turn .questionnaire').filter({ hasText: question }).waitFor();
 			if (reveal) {
-				assert.equal(await page.locator('#active-turn .assistant .reveal-mark').count(), 1);
-				assert.equal(await page.locator('#active-turn .you .reveal-mark').count(), 0);
+				await expect(page.locator('#active-turn .assistant .reveal-mark')).toHaveCount(1);
+				await expect(page.locator('#active-turn .you .reveal-mark')).toHaveCount(0);
 			}
 			await page.screenshot({ path: join(out, `history-${action}.png`) });
 		}

@@ -256,6 +256,14 @@ html:has(.menu-panel[data-state='open']) :is(.skip-link, .peek-handle) {
 	user-select: none;
 }
 
+.menu-orbs .type-icon::before {
+	content: 's' / '';
+}
+
+.menu-orbs .type-icon.is-big::before {
+	content: 'S' / '';
+}
+
 .menu-orbs .type-icon.is-small {
 	font-size: 0.72rem;
 }

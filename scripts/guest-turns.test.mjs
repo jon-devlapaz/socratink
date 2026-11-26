@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
-import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import {
 	guestTurnLimit,
 	guestTurnLimitError,
@@ -13,21 +9,10 @@ import {
 	guestTurnGateMiddleware,
 } from '../src/server/guest-turns.ts';
 import { mintSessionUserId, mountSessionRoutes, writeSessionCookie } from '../src/server/session.ts';
+import { withAuthDb } from './auth-db-fixture.mjs';
 import { cookiePairFromResponse, mergeCookies } from './session-fixture.mjs';
 
 const testSecret = 'test-session-secret-for-hmac-sha256';
-
-async function withAuthDb(run) {
-	const directory = await mkdtemp(join(tmpdir(), 'socratink-guest-turns-'));
-	const filename = join(directory, 'auth.db');
-	const db = createSqliteAuthDb(filename);
-	try {
-		return await run(db);
-	} finally {
-		await db.close();
-		await rm(directory, { recursive: true, force: true });
-	}
-}
 
 test('guest turn gate allows registered users without turn cap', async () => {
 	await withAuthDb(async (authDb) => {

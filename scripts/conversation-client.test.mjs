@@ -6,7 +6,6 @@ import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import {
 	ChatRequestCoordinator,
 	chatRequestControls,
-	chatTurnErrorMessage,
 	openChatConversation,
 	settlementReadTimeoutMs,
 	startNewChatConversation,
@@ -542,29 +541,6 @@ test('openChatConversation keeps a stored conversation id owned by an alias', ()
 	}
 });
 
-test('reload does not revive an older unsettled record after a newer submission settled', () => {
-	assert.equal(
-		unsettledSubmissionFromHistory({
-			settlements: [{ submissionId: 'sub-new', outcome: 'completed' }],
-			messages: [
-				{
-					display: 'visible',
-					role: 'user',
-					submissionId: 'sub-old',
-					parts: [{ type: 'text', text: 'old' }],
-				},
-				{
-					display: 'visible',
-					role: 'user',
-					submissionId: 'sub-new',
-					parts: [{ type: 'text', text: 'new' }],
-				},
-			],
-		}),
-		undefined,
-	);
-});
-
 test('Retry resends exactly once only after an aborted settlement is confirmed', async () => {
 	let sends = 0;
 	let reads = 0;
@@ -722,56 +698,6 @@ test('rejects every overlapping admission attempt', async () => {
 	assert.throws(() => coordinator.start('second'), /already active/);
 	await coordinator.cancel();
 	await running;
-});
-
-test('maps user-facing errors without treating cancellation as a generic failure', () => {
-	assert.equal(chatTurnErrorMessage(new Error('provider rejected')), 'provider rejected');
-	assert.equal(
-		chatTurnErrorMessage(new ChatApiError(503, { error: { type: 'inference_unconfigured', message: 'ignored' } })),
-		'No model provider is set up yet. Please try again later.',
-	);
-	// #38: the learner sees the reason, never the internal submission id.
-	const failed = new ChatTurnError({ submissionId: '13', failure: 'failed', error: 'The model request could not complete.' });
-	assert.match(failed.message, /submission 13/);
-	assert.equal(chatTurnErrorMessage(failed), 'The model request could not complete.');
-	assert.equal(chatTurnErrorMessage(executionError('failed')), 'The reply could not finish.');
-	assert.equal(chatTurnErrorMessage(executionError('terminal_event_missing')), 'The reply stopped before it finished.');
-});
-
-test('recovery locks the composer; a confirmed stop leaves it open', () => {
-	assert.deepEqual(chatRequestControls({ kind: 'idle' }), {
-		busy: false,
-		composerLocked: false,
-		startOverDisabled: false,
-	});
-	assert.deepEqual(chatRequestControls({ kind: 'waiting', text: 'hello' }), {
-		busy: true,
-		composerLocked: true,
-		startOverDisabled: true,
-	});
-	assert.deepEqual(chatRequestControls({ kind: 'restoring' }), {
-		busy: true,
-		composerLocked: true,
-		startOverDisabled: true,
-	});
-	assert.deepEqual(chatRequestControls({ kind: 'canceling', text: 'hello' }), {
-		busy: true,
-		composerLocked: true,
-		startOverDisabled: true,
-	});
-	assert.deepEqual(
-		chatRequestControls({ kind: 'recovery', text: 'hello', detail: 'Outcome unknown.' }),
-		{ busy: false, composerLocked: true, startOverDisabled: false },
-	);
-	assert.deepEqual(
-		chatRequestControls({
-			kind: 'terminal',
-			text: 'hello',
-			outcome: 'aborted',
-			detail: 'Canceled.',
-		}),
-		{ busy: false, composerLocked: false, startOverDisabled: false },
-	);
 });
 
 test('rejects oversized learner messages before admission', async () => {
@@ -996,4 +922,45 @@ test('watchChatConversationReset reloads when both keys already hold the same id
 		if (originalStorage === undefined) delete globalThis.localStorage;
 		else globalThis.localStorage = originalStorage;
 	}
+});
+
+const inactiveTransport = {
+	send() { assert.fail('unexpected send'); },
+	read() { assert.fail('unexpected read'); },
+	abort() { assert.fail('unexpected abort'); },
+};
+
+for (const command of ['cancel', 'recheck']) {
+	test(`${command} without an active request leaves the conversation idle`, async () => {
+		const coordinator = new ChatRequestCoordinator(inactiveTransport);
+		assert.deepEqual(await coordinator[command](), { kind: 'idle' });
+	});
+}
+
+test('acknowledging a completed reply permits the next message', async () => {
+	const messages = [];
+	const coordinator = new ChatRequestCoordinator({
+		...inactiveTransport,
+		async send({ message }) { messages.push(message.body); return admission; },
+		async read() { return reply; },
+	});
+	await coordinator.start('First');
+	coordinator.acknowledgeCompleted();
+	assert.deepEqual(coordinator.state, { kind: 'idle' });
+	assert.deepEqual(await coordinator.start('Second'), { kind: 'completed', text: 'Second', reply });
+	assert.deepEqual(messages, ['First', 'Second']);
+});
+
+test('finishing a restore or acknowledging a reply leaves a recovered admission pending', () => {
+	const coordinator = new ChatRequestCoordinator(inactiveTransport);
+	const recovered = coordinator.hydrate('Hello', 'sub-1');
+	coordinator.finishRestore();
+	coordinator.acknowledgeCompleted();
+	assert.deepEqual(coordinator.state, {
+		kind: 'recovery', text: 'Hello', admission: { submissionId: 'sub-1' },
+		detail: 'This admitted reply is still settling. Recheck before sending again.',
+	});
+	assert.throws(() => coordinator.beginRestore(), /already active/);
+	assert.throws(() => coordinator.hydrate('Another', 'sub-2'), /already active/);
+	assert.deepEqual(coordinator.state, recovered);
 });

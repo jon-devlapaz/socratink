@@ -12,6 +12,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_MODEM_FEEDBACK_TOKEN: synthetic-browser-feedback
 
     steps:
       - name: Check out repository

@@ -35,7 +35,7 @@ export async function close(server) {
 
 // Synthetic transport only. Keep the normal application, auth, provider selection,
 // browser SDK, and durable storage in the path exercised by each test.
-export async function startFixture() {
+export async function startFixture({ onFeedback } = {}) {
 	const plans = new Map();
 	const calls = [];
 	const errors = [];
@@ -43,8 +43,26 @@ export async function startFixture() {
 	const held = new Set();
 	const server = createServer(async (request, response) => {
 		try {
+			if (onFeedback && request.url === '/feedback') {
+				await onFeedback(request, response);
+				return;
+			}
 			let raw = '';
 			for await (const chunk of request) raw += chunk;
+			if (request.url.startsWith('/oauth/authorize?')) {
+				assert.equal(request.headers.cookie, undefined, 'the provider must not receive app cookies');
+				const params = new URL(request.url, 'http://localhost').searchParams;
+				const callback = params.get('redirect_uri');
+				const state = params.get('state');
+				assert.match(callback, /^http:\/\/127\.0\.0\.1:\d+\/api\/auth\/google\/callback$/);
+				assert.match(state, /^[A-Za-z0-9_-]+$/);
+				response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+				response.end(`<!doctype html><title>Synthetic provider</title><form action="${callback}">
+					<input type="hidden" name="state" value="${state}">
+					<button name="error" value="access_denied">Decline</button>
+					<button name="code" value="synthetic-browser">Allow</button></form>`);
+				return;
+			}
 			if (request.url === '/oauth/token') {
 				const code = new URLSearchParams(raw).get('code');
 				assert.match(code, /^synthetic-[a-z]+$/);

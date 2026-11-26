@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { expect } from 'playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { assertHelpLayout } from './reveal-browser-layout.mjs';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import { questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
+import { assertAccessible } from './browser-accessibility.mjs';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
@@ -31,13 +33,13 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				await page.goto(origin);
 				const form = page.locator('#active-turn .questionnaire');
 				await form.waitFor();
-				assert.equal(await form.getAttribute('aria-label'), kind === 'multiple' ? 'Quiz' : 'Questions');
-				assert.equal(await form.getByText('Saved card context', { exact: true }).count(), 1);
-				assert.equal(await form.getByText('First saved choice', { exact: true }).count(), 1);
-				assert.equal(await form.getByRole('button', { name: 'Previous', exact: true }).isVisible(), false);
-				assert.equal(await form.getByRole('button', { name: 'Next', exact: true }).isVisible(), false);
-				assert.equal(await form.getByRole('button', { name: 'Hint', exact: true }).isVisible(), true);
-				assert.equal(await form.getByRole('button', { name: "I don't know", exact: true }).isVisible(), true);
+				await expect(form).toHaveAttribute('aria-label', kind === 'multiple' ? 'Quiz' : 'Questions');
+				await expect(form.getByText('Saved card context', { exact: true })).toHaveCount(1);
+				await expect(form.getByText('First saved choice', { exact: true })).toHaveCount(1);
+				await expect(form.getByRole('button', { name: 'Previous', exact: true })).not.toBeVisible();
+				await expect(form.getByRole('button', { name: 'Next', exact: true })).not.toBeVisible();
+				await expect(form.getByRole('button', { name: 'Hint', exact: true })).toBeVisible();
+				await expect(form.getByRole('button', { name: "I don't know", exact: true })).toBeVisible();
 				await page.waitForFunction(() => getComputedStyle(document.querySelector('.dock')).opacity === '0');
 				for (const key of ['Tab', 'Shift+Tab']) {
 					await form.locator('fieldset').focus();
@@ -49,18 +51,19 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				}
 				if (kind === 'required') {
 					await form.getByRole('button', { name: 'Continue', exact: true }).click();
-					assert.equal(await form.locator('[aria-invalid="true"]').count(), 1);
+					await expect(form.locator('[aria-invalid="true"]')).toHaveCount(1);
 					assert.deepEqual(sent, []);
+					if (width === 390) await assertAccessible(page, 'Required question with a validation message');
 				}
 				await form.locator('fieldset').focus();
 				await page.keyboard.press('Control+a');
-				assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 0, 'browser commands keep their normal meaning');
+				await expect(form.locator('[data-choice-for][aria-checked="true"]'), 'browser commands keep their normal meaning').toHaveCount(0);
 				await page.keyboard.press('a');
-				assert.equal(await form.getByRole(kind === 'multiple' ? 'checkbox' : 'radio', { name: /First/ }).isChecked(), true);
-				assert.equal(await form.locator('[aria-invalid="true"]').count(), 0);
+				await expect(form.getByRole(kind === 'multiple' ? 'checkbox' : 'radio', { name: /First/ })).toBeChecked();
+				await expect(form.locator('[aria-invalid="true"]')).toHaveCount(0);
 				if (kind === 'multiple') {
 					await page.keyboard.press('b');
-					assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 2);
+					await expect(form.locator('[data-choice-for][aria-checked="true"]')).toHaveCount(2);
 				}
 				if (kind === 'required') await chooseSecondWithArrows(form, page);
 				assert.deepEqual(sent, [], 'ordinary choices still require submission');

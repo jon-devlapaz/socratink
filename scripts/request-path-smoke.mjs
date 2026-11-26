@@ -130,6 +130,19 @@ try {
 	appProcess.stderr.on('data', (chunk) => { appError += chunk; });
 	const origin = `http://127.0.0.1:${appPort}`;
 	await waitForApp(origin);
+	const emptySession = await mintSessionFixture(origin);
+	const emptyUrl = origin + '/api/agents/chat/' + encodeURIComponent(namespacedConversationId(emptySession.userId, 'empty'));
+	const blank = await fetch(emptyUrl, {
+		method: 'POST', headers: { cookie: emptySession.cookie, 'content-type': 'application/json' },
+		body: JSON.stringify({ kind: 'user', body: '  ' }),
+	});
+	assert.equal(blank.status, 400);
+	assert.deepEqual(await blank.json(), { error: { type: 'invalid_message', message: 'A learner message is required.' } });
+	const emptyHistory = await fetch(emptyUrl, { headers: { cookie: emptySession.cookie } });
+	assert.equal(emptyHistory.status, 200);
+	assert.deepEqual((await emptyHistory.json()).messages, []);
+	assert.deepEqual(calls, []);
+	checks.push('A blank learner message gets 400, leaves history empty and makes no provider call.');
 	const [alice, bob] = await Promise.all([mintSessionFixture(origin), mintSessionFixture(origin)]);
 	assert.notEqual(alice.userId, bob.userId);
 	const first = await Promise.all([

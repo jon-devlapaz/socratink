@@ -14,15 +14,18 @@ test('the client ships the notices for its components, fonts, and bundled depend
 	assert.ok(dependencies.includes('react-dom') && dependencies.includes('MIT License'));
 });
 
-test('hosted login alias reaches the static login document without a loop', () => {
-	for (const source of ['/login', '/login/']) {
+for (const source of ['/login', '/login/']) {
+	test(`the hosted ${source} alias reaches the login document`, () => {
 		const alias = config.redirects?.find((redirect) => redirect.source === source);
 		assert.deepEqual(alias, {
 			source,
 			destination: '/login.html',
 			permanent: false,
 		});
-	}
+	});
+}
+
+test('the login document is the final destination', () => {
 	assert.ok(!config.redirects.some(({ source }) => source === '/login.html'));
 });
 
