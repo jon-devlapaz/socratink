@@ -3,7 +3,7 @@ import { learnerVisibleText } from './learner-text.ts';
 /** Sent once when a text reply breaks "Ask ONE question at a time" or keeps
  * writing after its question (#163). The rewrite replaces the reply the
  * learner sees, so it must stand on its own. */
-export const oneQuestionRetryBody = 'Your reply asked more than one question, or kept writing after its question. Rewrite the whole reply for the learner: keep what helps, ask only the single most useful question, and end the message right after it.';
+export const oneQuestionRetryBody = 'Your reply asked more than one question, or kept writing after its question. Rewrite the whole reply for the learner: keep what helps, ask only the single most useful question, and end the message right after it. If that question offers defined choices, call present_question with them instead of listing them in text.';
 
 // A short tag such as "Why or why not?" belongs to the question before it.
 const tagQuestion = /^(?:and |or )?(?:why|how)(?: or why not| or how| not| so)?\?+$/iu;

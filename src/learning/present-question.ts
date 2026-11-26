@@ -16,6 +16,12 @@ export type PresentQuestionRetryReason = keyof typeof presentQuestionRetryBodies
 
 export function looksLikeUnboxedChoices(text: string): boolean {
 	const lines = text.replace(/^ {0,3}```[^\n]*\n[\s\S]*?^ {0,3}```[ \t]*$/gm, '').trimEnd().split('\n');
+	// A lettered list may be followed by one closing question ("Which one is right, and why?").
+	const last = lines.at(-1) ?? '';
+	const beforeLast = lines.slice(0, -1).filter((line) => line.trim() !== '').at(-1) ?? '';
+	if (last.trim().endsWith('?') && !listItem.test(last) && letteredItem.test(beforeLast)) {
+		return looksLikeUnboxedChoices(lines.slice(0, -1).join('\n'));
+	}
 	let start = lines.length;
 	while (start > 0) {
 		const line = lines[start - 1] ?? '';
@@ -29,8 +35,9 @@ export function looksLikeUnboxedChoices(text: string): boolean {
 	return /\b(?:which|choose|pick|select|would you rather|do you want)\b/i.test(lines.slice(0, start).join('\n'));
 }
 
-const letteredItem = /^( {0,3})[A-H][.)]\s+\S/;
-const listItem = /^( {0,3})(?:[A-H][.)]|[-*+]|\d{1,9}[.)])[ \t]+\S/;
+// Letters may be bold or italic: "**A.**", "*B)*".
+const letteredItem = /^( {0,3})(?:\*\*|__|\*|_)?[A-H][.)](?:\*\*|__|\*|_)?[ \t]+\S/;
+const listItem = /^( {0,3})(?:(?:\*\*|__|\*|_)?[A-H][.)](?:\*\*|__|\*|_)?|[-*+]|\d{1,9}[.)])[ \t]+\S/;
 
 export function presentQuestionRetryReason(input: {
 	readonly toolCalls: readonly { tool: string; isError: boolean }[];

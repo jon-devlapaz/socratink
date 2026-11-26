@@ -18,6 +18,7 @@ import { steeringMessages } from '../src/config/chat-message.ts';
 import { executeLearningTool } from '../src/learning/tools.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { oneQuestionRetryBody } from '../src/learning/one-question.ts';
+import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData } from '../src/questionnaire.ts';
 
 async function fixture(run, failures = 0) {
@@ -317,6 +318,22 @@ test('a rewrite is asked for once; a second miss settles as written (#163)', asy
 		const settled = await until(() => engine.snapshot('learner:still-two'), (value) => value.submissions[0]?.outcome === 'completed');
 		assert.equal(learnerVisibleText(settled.messages[1].text), 'What floats in water? And what sinks?');
 		assert.equal(responses.length, 2);
+	} finally { await engine.close(); }
+}));
+
+test('a rewrite that lists choices in text still gets one card retry (#163)', async () => fixture(async ({ requests, responses, options }) => {
+	const engine = await openEngine(options);
+	try {
+		await engine.submit('learner:rewrite-quiz', 'Why is the sky blue?');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], 'What color is sunlight? And what happens to it in air?');
+		await until(async () => responses.length, (count) => count === 2);
+		finish(responses[1], 'Where does the blue come from?\n\n**A.** Air molecules scatter it\n**B.** The ocean reflects it\n\nWhich one is right, and why?');
+		await until(async () => responses.length, (count) => count === 3);
+		assert.equal(requests[2].at(-1).content, presentQuestionRetryBodies.unboxed);
+		finish(responses[2], 'Where does the blue come from?');
+		await until(() => engine.snapshot('learner:rewrite-quiz'), (value) => value.submissions[0]?.outcome === 'completed');
+		assert.equal(responses.length, 3, 'no further retry after the card retry');
 	} finally { await engine.close(); }
 }));
 

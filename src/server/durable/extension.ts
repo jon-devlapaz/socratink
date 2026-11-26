@@ -118,12 +118,14 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 						return valid || triedCorrection(entries) ? undefined : { continue: tryOnceMoreCorrection };
 					}
 					const messages = entries.flatMap((entry) => entry.model ?? []);
-					const alreadyRetried = corrections(entries).length > 0;
+					const tried = corrections(entries);
+					const alreadyRetried = tried.length > 0;
 					const question = presentQuestionRetryReason({
 						toolCalls: messages.flatMap((message) => message.role === 'toolResult'
 							? [{ tool: message.toolName, isError: message.isError }] : []),
 						assistantText: messageText(answer),
-						alreadyRetried,
+						// A one-question rewrite can turn into a text quiz; it still gets one card retry.
+						alreadyRetried: tried.some((body) => body !== oneQuestionRetryBody),
 					});
 					if (question) return { continue: presentQuestionRetryBodies[question] };
 					const reveal = markRevealRetryReason({
