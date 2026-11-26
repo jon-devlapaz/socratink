@@ -12,9 +12,10 @@ function decodeRoute(value: string): string {
 }
 
 export function parseFallbackAttempts(value: string | undefined): number {
-	if (value === undefined) return 0;
-	const n = Number.parseInt(value, 10);
-	return Number.isFinite(n) && n >= 0 ? n : 0;
+	const digits = value?.trim();
+	if (!digits || !/^\d+$/.test(digits)) return 0;
+	const count = Number(digits);
+	return Number.isSafeInteger(count) ? count : 0;
 }
 
 export function routingFromHeaders(headers: Headers | Record<string, string>): {

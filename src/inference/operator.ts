@@ -39,8 +39,8 @@ export function resolveChatModel(environment: ChatModelEnvironment): ChatModel |
 
 	return {
 		providerId: chatProviderId,
-		baseUrl: environment.JON_LOCAL_BASE_URL ?? appConfig.defaultLocalBaseUrl,
-		modelId: environment.JON_LOCAL_MODEL_ID ?? appConfig.defaultLocalModelId,
+		baseUrl: environment.JON_LOCAL_BASE_URL?.trim() || appConfig.defaultLocalBaseUrl,
+		modelId: environment.JON_LOCAL_MODEL_ID?.trim() || appConfig.defaultLocalModelId,
 		apiKey: environment.JON_LOCAL_API_KEY,
 		...localChatModelLimits,
 	};
