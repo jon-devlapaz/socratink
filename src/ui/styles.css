@@ -34,7 +34,7 @@
 	--quiet: #686762;
 	--accent: #1f7a72;
 	--tutor-help: #82571f;
-	--error: #d14d41;
+	--error: color-mix(in srgb, #d14d41 90%, var(--ink));
 	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Newsreader", ui-serif, Georgia, serif;
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

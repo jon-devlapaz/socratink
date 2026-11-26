@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { expect } from 'playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { assertHelpLayout } from './reveal-browser-layout.mjs';
+import { assertAccessible } from './browser-accessibility.mjs';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { guestTurnLimit, guestTurnsHeader } from '../src/server/guest-turns.ts';
 
@@ -32,10 +34,10 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 	const artifacts = [];
 	let guestTurns = 0;
 	async function answer(choice, reason) {
-		const form = page.locator('#active-turn .questionnaire');
+		const form = page.getByRole('form', { name: 'Questions', exact: true });
 		await form.getByText(choice, { exact: true }).click();
 		await form.getByRole('textbox').fill(reason);
-		await form.evaluate((node) => node.requestSubmit());
+		await form.getByRole('button', { name: 'Submit', exact: true }).click();
 		guestTurns += 1;
 	}
 	try {
@@ -50,16 +52,16 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 				await page.goto(origin);
 				const input = page.locator('#message');
 				await input.fill('Check input');
-				assert.equal(await input.inputValue(), 'Check input');
+				await expect(input).toHaveValue('Check input');
 				await input.fill('');
 				const peek = page.locator('#peek-handle');
 				await peek.click();
-				assert.equal(await peek.getAttribute('aria-expanded'), 'true');
+				await expect(peek).toHaveAttribute('aria-expanded', 'true');
 				assert.equal(await page.locator('#menu-dialog').evaluate((node) =>
 					!node.inert && node.contains(document.activeElement)), true);
 				await page.keyboard.press('Escape');
-				assert.equal(await peek.getAttribute('aria-expanded'), 'false');
-				await page.waitForFunction(() => document.activeElement?.id === 'peek-handle');
+				await expect(peek).toHaveAttribute('aria-expanded', 'false');
+				await expect(peek).toBeFocused();
 				assert.equal(await input.evaluate((node) => !!node.closest('[inert]')), false);
 				const shell = await input.evaluate((node) => ({
 					bodyCursor: getComputedStyle(document.body).cursor,
@@ -78,28 +80,30 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.locator('#appearance-toggle').click();
 		await page.locator('#type-size-toggle').click();
 		await page.locator('#type-size-toggle').click();
-		assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 		assert.equal(await page.locator('#type-size-label').innerText(), 'Big');
+		await assertAccessible(page, 'Menu, dark theme and large text');
 		const blockModules = route => route.abort();
 		await page.route('**/assets/*.js', blockModules);
 		try {
 			await page.reload({ waitUntil: 'domcontentloaded' });
-			assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-			assert.equal(await page.locator('html').getAttribute('data-type-size'), 'big');
-			assert.equal(await page.locator('#theme-color').getAttribute('content'), '#100f0f');
+			await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+			await expect(page.locator('html')).toHaveAttribute('data-type-size', 'big');
+			await expect(page.locator('#theme-color')).toHaveAttribute('content', '#100f0f');
 		} finally {
 			await page.unroute('**/assets/*.js', blockModules);
 		}
 		await page.reload();
 		await page.locator('#peek-handle').click();
-		assert.equal(await page.locator('#appearance-toggle').getAttribute('aria-pressed'), 'true');
+		await expect(page.locator('#appearance-toggle')).toHaveAttribute('aria-pressed', 'true');
 		assert.equal(await page.locator('#type-size-label').innerText(), 'Big');
 		await page.locator('#appearance-toggle').click();
 		await page.locator('#type-size-toggle').click();
 		await page.keyboard.press('Escape');
+		await assertAccessible(page, 'Empty conversation, light theme');
 		artifacts.push({ kind: 'preferences', restoredBeforeAppModule: true, themeAndTextSizeSurviveReload: true });
-		await page.locator('#message').fill(initialMessage);
-		await page.locator('#chat').evaluate((form) => form.requestSubmit());
+		await page.getByRole('textbox', { name: 'Message Socratink', exact: true }).fill(initialMessage);
+		await page.getByRole('button', { name: 'Send message', exact: true }).click();
 		guestTurns += 1;
 		await answer(baselineChoice, baselineReason);
 		await answer(comparisonChoice, comparisonReason);
@@ -115,10 +119,11 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		// The settled turn, not the pending turn that may show the same text live.
 		const supplied = page.locator('#active-turn .turn.assistant .reveal-copy');
 		await supplied.waitFor();
+		await assertAccessible(page, 'Supplied answer in the conversation');
 		assert.ok((await supplied.innerText()).includes(assistanceText));
 		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'Full answer from Socratink');
 		assert.equal((await supplied.ariaSnapshot()).split('Full answer from Socratink').length - 1, 1);
-		assert.equal(await page.locator('.you .reveal-mark').count(), 0);
+		await expect(page.locator('.you .reveal-mark')).toHaveCount(0);
 		const live = await supplied.evaluate((node) => ({
 			text: node.textContent, color: getComputedStyle(node).color,
 		}));
@@ -130,7 +135,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 				text: node.textContent, color: getComputedStyle(node).color,
 			})), live);
 			const geometry = await assertHelpLayout(supplied);
-			assert.equal(await page.locator('.you .reveal-mark').count(), 0);
+			await expect(page.locator('.you .reveal-mark')).toHaveCount(0);
 			await supplied.scrollIntoViewIfNeeded();
 			await page.screenshot({ path: `${out}/${width}-restored.png` });
 			artifacts.push({ width, live, geometry, accessibility: await supplied.ariaSnapshot() });
@@ -150,7 +155,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		const notSent = page.locator('#active-turn .request-state.not-admitted');
 		await notSent.getByText('Not sent', { exact: true }).waitFor();
 		assert.ok((await notSent.innerText()).includes('Sign in to continue this conversation.'));
-		assert.equal(await notSent.getByRole('button', { name: 'Retry', exact: true }).isEnabled(), true);
+		await expect(notSent.getByRole('button', { name: 'Retry', exact: true })).toBeEnabled();
 		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'Full answer from Socratink');
 		await page.reload();
 		await supplied.waitFor();
@@ -180,7 +185,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await earlier.first().waitFor();
 		assert.deepEqual(await earlier.locator('.reveal-mark').allInnerTexts(), ['Full answer from Socratink', 'Hint from Socratink']);
 		assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
-		assert.equal(await page.locator('.you .reveal-mark').count(), 0);
+		await expect(page.locator('.you .reveal-mark')).toHaveCount(0);
 		for (const width of [375, 390, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
 			await assertHelpLayout(earlier.nth(1));

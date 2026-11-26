@@ -29,6 +29,7 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 					className="active-node gap-0 rounded-none border-0 bg-transparent py-0 shadow-none"
 					aria-label="Current step"
 				>
+					<h1 className="sr-only">Your conversation</h1>
 					<Button
 						size="sm"
 						variant="ghost"

@@ -20,7 +20,7 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 - Ochre identifies help supplied by Socratink. Use it for the attribution label
   and margin rule, with ordinary text ink for the explanation. Its light and
   dark values are `#82571f` and `#dfb477`.
-- Signal red `#d14d41` means an error, never decoration.
+- Error text mixes 90% signal red (`#d14d41`) with 10% theme ink for contrast.
 - Rules use `color-mix` with ink at 5–20%. Default dividers use 10%.
   Use tonal paper steps and hairlines before adding an enclosing box.
 - The sign-in page uses a faint grayscale paper texture at 7.6% opacity

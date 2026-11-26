@@ -153,9 +153,9 @@ function MenuActions({
 					onClick={(event) => cycleTypeSize(event.currentTarget)}
 				>
 					<span className="orb-glyph" aria-hidden="true">
-						<span className="type-icon is-small">s</span>
-						<span className="type-icon is-medium">s</span>
-						<span className="type-icon is-big">S</span>
+						<span className="type-icon is-small" />
+						<span className="type-icon is-medium" />
+						<span className="type-icon is-big" />
 					</span>
 					<span id="type-size-label">Medium</span>
 				</Button>

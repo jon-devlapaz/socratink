@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { expect } from 'playwright/test';
+import { assertAccessible } from './browser-accessibility.mjs';
 import { appConfig } from '../src/config/app.config.ts';
 import { conversationTitle } from '../src/config/conversations.ts';
 import { guestTurnLimit } from '../src/server/guest-turns.ts';
@@ -261,7 +263,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				const previousTurn = source === 'composer'
 					? page.getByText('What would you check?', { exact: true })
 					: page.locator('#active-turn .questionnaire');
-				await previousTurn.waitFor();
+				await expect(previousTurn).toBeVisible();
 				await page.evaluate(() => {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
@@ -275,27 +277,36 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					: source === 'steering' ? formatSteeringMessage('smaller-step')
 						: 'Questionnaire answers:\n- Which step?: Asked for a hint.';
 				assert.deepEqual(fixture.sent, [expected]);
-				assert.equal(await page.locator('#message').inputValue(), expected);
-				assert.equal(await page.locator('#message').isDisabled(), true);
-				assert.equal(await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(), true);
+				await expect(page.locator('#message')).toHaveValue(expected);
+				await expect(page.locator('#message')).toBeDisabled();
+				await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
 				assert.equal(await page.locator('.chat-gate-message').innerText(),
 					`You’ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`);
-				assert.equal(await page.locator('.chat-gate-card a').count(), 2);
-				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
-				assert.equal(await page.locator('#active-turn .questionnaire, #active-turn .steering-bar').count(), 0);
+				await expect(page.locator('.chat-gate-card a')).toHaveCount(2);
+				if (width === 390 && source === 'question') await assertAccessible(page, 'Guest sign-in prompt');
+				await expect(page.locator('#active-turn .you, #messages .you')).toHaveCount(0);
+				await expect(page.locator('#active-turn .questionnaire, #active-turn .steering-bar')).toHaveCount(0);
 				await page.locator('#chat').evaluate(form => form.requestSubmit());
 				await page.evaluate(() => window.guestButtons.forEach(button => button.click()));
 				await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 				assert.deepEqual(fixture.sent, [expected]);
-				assert.equal(await page.locator('.chat-gate-card').count(), 1);
+				await expect(page.locator('.chat-gate-card')).toHaveCount(1);
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 				await page.reload();
-				await previousTurn.waitFor();
-				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
-				assert.equal(await page.locator('#message').inputValue(), source === 'composer' ? expected : '');
+				await expect(previousTurn).toBeVisible();
+				await expect(page.locator('#active-turn .you, #messages .you')).toHaveCount(0);
+				await expect(page.locator('#message')).toHaveValue(source === 'composer' ? expected : '');
 			});
 		}
 	}
+
+	await check('404-recovery-page', async (page) => {
+		await page.goto(`${origin}/404.html`);
+		await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+		await assertAccessible(page, 'Page not found');
+		await page.getByRole('link', { name: 'Home' }).click();
+		await expect(page.getByRole('textbox', { name: 'Message Socratink' })).toBeEnabled();
+	});
 
 	await check('controls-before-app-startup', async (page) => {
 		await page.route('**/assets/*.js', (route) => route.abort());
@@ -625,14 +636,14 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const retry = page.getByRole('button', { name: 'Retry', exact: true });
 		await retry.click();
 		await page.locator('.turn.pending').waitFor();
-		assert.equal(await page.locator('.turn.pending .tool-card').count(), 0);
+		await expect(page.locator('.turn.pending .tool-card')).toHaveCount(0);
 		assert.doesNotMatch(await page.locator('.turn.pending').innerText(), /Old attempt/);
 		fixture.finishReply();
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
-		assert.equal(await page.locator('#active-turn .tool-card').count(), 0);
-		assert.equal(await page.locator('#active-turn .turn.you').count(), 1);
+		await expect(page.locator('#active-turn .tool-card')).toHaveCount(0);
+		await expect(page.locator('#active-turn .turn.you')).toHaveCount(1);
 		assert.deepEqual(fixture.sent, ['Explain the constraint', 'Explain the constraint']);
-		assert.equal(await page.locator('#message').evaluate((node) => document.activeElement === node), true);
+		await expect(page.locator('#message')).toBeFocused();
 	});
 
 	await check('retry-admission-rejection', async (page, fixture) => {
@@ -642,7 +653,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByRole('button', { name: 'Retry', exact: true }).click();
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.deepEqual(fixture.sent, ['Keep this learner message', 'Keep this learner message']);
-		assert.equal(await page.locator('#active-turn .turn.you').count(), 1);
+		await expect(page.locator('#active-turn .turn.you')).toHaveCount(1);
 	});
 
 	await check('retry-edited-oversized-message', async (page, fixture) => {
@@ -662,15 +673,15 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await send(page, 'Recheck this admission');
 		const recheck = page.getByRole('button', { name: 'Recheck', exact: true });
 		await recheck.waitFor();
-		assert.equal(await recheck.evaluate((node) => document.activeElement === node), true);
-		assert.equal(await page.locator('#message').isDisabled(), true);
+		await expect(recheck).toBeFocused();
+		await expect(page.locator('#message')).toBeDisabled();
 		await page.locator('#peek-handle').click();
-		assert.equal(await page.locator('#start-over').isEnabled(), true);
+		await expect(page.locator('#start-over')).toBeEnabled();
 		await page.keyboard.press('Escape');
 		await recheck.click();
 		await page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
-		assert.equal(await page.locator('#message').isEnabled(), true);
-		assert.equal(await page.locator('#message').evaluate((node) => document.activeElement === node), true);
+		await expect(page.locator('#message')).toBeEnabled();
+		await expect(page.locator('#message')).toBeFocused();
 		assert.deepEqual(fixture.sent, ['Recheck this admission']);
 	});
 
@@ -684,7 +695,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
 		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-		assert.equal(await page.locator('#active-turn .request-state').count(), 1);
+		await expect(page.locator('#active-turn .request-state')).toHaveCount(1);
 		assert.equal(await page.locator('#active-turn .request-state .turn-label').textContent(), 'Canceled');
 		assert.equal(fixture.aborts, 1);
 		assert.deepEqual(fixture.abortBodies, [{ submissionId: 'browser-submission-1' }], 'Cancel names the reply it stops');
@@ -698,8 +709,8 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.deepEqual(fixture.sent, ['Use the operator model']);
 		assert.deepEqual(fixture.modelHeaders, [undefined]);
-		assert.equal(await page.getByRole('button', { name: /Providers/ }).count(), 0);
-		assert.equal(await page.getByRole('listbox', { name: /models/i }).count(), 0);
+		await expect(page.getByRole('button', { name: /Providers/ })).toHaveCount(0);
+		await expect(page.getByRole('listbox', { name: /models/i })).toHaveCount(0);
 	});
 
 	assert.equal(results.filter((result) => !result.passed).length, 0, JSON.stringify(results.filter((result) => !result.passed)));
@@ -769,8 +780,8 @@ async function skipToMain(page) {
 }
 
 async function send(page, text) {
-	await page.locator('#message').fill(text);
-	await page.locator('#chat').evaluate((form) => form.requestSubmit());
+	await page.getByRole('textbox', { name: 'Message Socratink' }).fill(text);
+	await page.getByRole('button', { name: 'Send message', exact: true }).click();
 }
 
 function createServices(origin, session) {
