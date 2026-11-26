@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { QuestionnaireAnswer, QuestionnaireDefinition } from '../questionnaire.ts';
 import type { AnswerFields, QuestionDraft } from './client/chat-draft.ts';
 
+const arrowSteps = new Map([['ArrowUp', -1], ['ArrowDown', 1], ['ArrowLeft', -1], ['ArrowRight', 1]]);
+
 type QuestionnaireProps = {
 	draft?: QuestionDraft;
 	definition: QuestionnaireDefinition;
@@ -63,6 +65,19 @@ export function Questionnaire({ definition, canAskForHelp, draft, onSubmit, more
 		document.getElementById(`${id}-choice-${index}`)?.click();
 	}
 
+	function moveRadio(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+		const step = arrowSteps.get(event.key);
+		if (!step || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || event.nativeEvent.isComposing) return;
+		// Radix defers arrow focus. A quick key release can otherwise leave the old answer checked.
+		event.preventDefault();
+		const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+		const offset = horizontal && event.currentTarget.matches(':dir(rtl)') ? -step : step;
+		const next = (index + offset + item.choices.length) % item.choices.length;
+		const radio = document.getElementById(`${id}-choice-${next}`);
+		radio?.focus();
+		radio?.click();
+	}
+
 	const choices = item.choices.map((choice, index) => {
 		if (consent) return (
 			<Button key={choice.value} type="button" className="questionnaire-button"
@@ -79,7 +94,7 @@ export function Questionnaire({ definition, canAskForHelp, draft, onSubmit, more
 					? <Checkbox {...choiceProps} name={item.name} checked={answer.values.includes(choice.value)}
 						onCheckedChange={checked => edit({ ...answer, values: checked === true
 							? [...answer.values, choice.value] : answer.values.filter(value => value !== choice.value) })} />
-					: <RadioGroupItem {...choiceProps} />}
+					: <RadioGroupItem {...choiceProps} onKeyDown={event => moveRadio(event, index)} />}
 				<span className="questionnaire-choice-copy">
 					<span className="questionnaire-choice-label">{choice.label}</span>
 					{choice.description && <span className="questionnaire-choice-description">{choice.description}</span>}

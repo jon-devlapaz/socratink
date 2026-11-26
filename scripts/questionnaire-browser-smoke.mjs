@@ -62,12 +62,13 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					await page.keyboard.press('b');
 					assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 2);
 				}
+				if (kind === 'required') await chooseSecondWithArrows(form, page);
 				assert.deepEqual(sent, [], 'ordinary choices still require submission');
 				const field = form.getByRole('textbox', { name: 'Your reason', exact: true });
 				let reasoning = 'My own reasoning';
 				if (kind === 'required' && width === 375) {
 					reasoning = await writePhoneReasoning(field);
-					assert.equal(await form.getByRole('radio', { name: /First/ }).isChecked(), true, 'typing leaves the selected choice intact');
+					assert.equal(await form.getByRole('radio', { name: /Second/ }).isChecked(), true, 'typing leaves the selected choice intact');
 					assert.deepEqual(sent, [], 'typing and confirming composition must not submit');
 				} else await field.fill(reasoning);
 				if (kind === 'skip') await form.getByRole('button', { name: 'Skip', exact: true }).click();
@@ -79,7 +80,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
 				await reply.waitFor();
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
-					: `${kind === 'multiple' ? 'First, Second' : 'First'}, ${reasoning}`;
+					: `${kind === 'multiple' ? 'First, Second' : 'Second'}, ${reasoning}`;
 				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
 				if (kind in help) {
 					expected.cardHelp = { kind, sourceId: 'original-card' };
@@ -176,6 +177,24 @@ const help = {
 	hint: { button: 'Hint', answer: 'Asked for a hint.', label: 'You asked for a hint' },
 	unknown: { button: "I don't know", answer: "I don't know.", label: 'You selected “I don’t know”' },
 };
+
+async function chooseSecondWithArrows(form, page) {
+	await form.getByRole('radio', { name: /First/ }).focus();
+	for (const [key, value] of [['ArrowUp', 'second'], ['ArrowDown', 'first'], ['ArrowRight', 'second']]) {
+		// Release in the same task, as a keyboard or assistive tool can do before deferred focus runs.
+		await page.evaluate(key => {
+			const target = document.activeElement;
+			for (const type of ['keydown', 'keyup']) {
+				target.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true, cancelable: true }));
+			}
+		}, key);
+		const focused = form.locator(`[role="radio"][value="${value}"]:focus`);
+		await focused.waitFor();
+		assert.equal(await focused.isChecked(), true, 'the focused option must be the answer that Submit will send');
+	}
+	await page.keyboard.press('Tab');
+	assert.equal(await form.getByLabel('Your reason').evaluate(node => node === document.activeElement), true);
+}
 
 async function writePhoneReasoning(field) {
 	const firstLine = 'I predict the reading stays the same. The jar is closed, so the water and the trapped air are still on the scale.';
