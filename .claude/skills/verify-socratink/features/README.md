@@ -13,8 +13,8 @@ This directory is the maintained source for verifying what a learner sees and do
 - Send by typing into `#message` and pressing the `Send message` button (`send()` in `learner.mjs`).
 - A reply is settled when `#active-turn` has an `.assistant` turn and no `.turn.pending` (`waitForReply()`).
 - While a reply streams, its text is in `#active-turn .turn.pending .turn-markdown`.
-- Request outcomes show as `#active-turn .request-state` with the label `Not sent`, `Canceled`, `Reply failed` (button `Retry`) or `Outcome unknown` (button `Recheck`).
-- Prefer these ids, roles and labels over CSS position. Find others in `src/ui/index.html`, `src/ui/turn-view.ts` and `src/ui/chat-request-view.ts`.
+- Request outcomes show as `#active-turn .request-state` with the label `Not sent`, `Canceled`, `Socratink couldn’t reply` (button `Retry`) or `Outcome unknown` (button `Recheck`).
+- Prefer these ids, roles and labels over CSS position. Find others in `src/ui/conversation-layout.tsx`, `src/ui/turn-view.tsx` and `src/ui/chat-request-view.tsx`.
 
 ## Proof and skip reporting
 

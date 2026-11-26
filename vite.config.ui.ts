@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
@@ -44,6 +45,20 @@ export default defineConfig({
 	root: ui,
 	resolve: { alias },
 	plugins: [renderPages(), tailwindcss(), {
+		name: 'socratink-ui-notices',
+		apply: 'build',
+		async generateBundle() {
+			const notices = {
+				'shadcn/ui': 'components/ui/LICENSE',
+				'Magic UI': 'components/magicui/LICENSE',
+				Inter: 'fonts/OFL-inter.txt',
+				Newsreader: 'fonts/OFL-newsreader.txt',
+			};
+			const sections = await Promise.all(Object.entries(notices).map(async ([name, path]) =>
+				`${name}\n\n${await readFile(resolve(ui, path), 'utf8')}`));
+			this.emitFile({ type: 'asset', fileName: 'licenses/ui.txt', source: sections.join('\n\n') });
+		},
+	}, {
 		name: 'socratink-html-constants',
 		transformIndexHtml: (html) => html.replace(/%SOCRATINK_([A-Z_]+)%/g, (placeholder, name: string) => {
 			const value = htmlConstants[name];
@@ -65,6 +80,7 @@ export default defineConfig({
 	build: {
 		outDir: '../../dist/client',
 		emptyOutDir: true,
+		license: { fileName: 'licenses/dependencies.txt' },
 		rollupOptions: {
 			input: {
 				main: resolve(rootDir, 'src/ui/index.html'),

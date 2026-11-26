@@ -5,6 +5,15 @@ import { appConfig } from '../src/config/app.config.ts';
 
 const config = JSON.parse(await readFile('vercel.json', 'utf8'));
 
+test('the client ships the notices for its components, fonts, and bundled dependencies', async () => {
+	const notices = await readFile('dist/client/licenses/ui.txt', 'utf8');
+	for (const source of ['components/ui/LICENSE', 'components/magicui/LICENSE', 'fonts/OFL-inter.txt', 'fonts/OFL-newsreader.txt']) {
+		assert.ok(notices.includes(await readFile(`src/ui/${source}`, 'utf8')), `Missing complete notice from ${source}`);
+	}
+	const dependencies = await readFile('dist/client/licenses/dependencies.txt', 'utf8');
+	assert.ok(dependencies.includes('react-dom') && dependencies.includes('MIT License'));
+});
+
 test('hosted login alias reaches the static login document without a loop', () => {
 	for (const source of ['/login', '/login/']) {
 		const alias = config.redirects?.find((redirect) => redirect.source === source);

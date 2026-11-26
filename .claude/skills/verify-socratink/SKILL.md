@@ -37,7 +37,7 @@ node .claude/skills/verify-socratink/control.mjs doctor
 
 Read-only. It checks that the processes this run started are alive, `/healthz` is ok with the expected inference route (`local` for scripted and local, `gateway` for gateway), the page serves the composer, and the scripted model answers its control port. `stale` is set when `HEAD` moved after launch: relaunch, because the running build is not your change. `builtFrom` says if the build included uncommitted changes. Run doctor first whenever a journey behaves strangely.
 
-Doctor cannot tell whether a `local` model answers. A dead local model shows as "Reply failed" in the first journey.
+Doctor cannot tell whether a `local` model answers. A dead local model shows as “Socratink couldn’t reply” in the first journey.
 
 ## Drive
 
