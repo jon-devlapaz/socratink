@@ -11,9 +11,9 @@ import { isHelpThenQuestion } from '../../learning/learner-text.ts';
 import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName } from '../../reveal.ts';
 import { executeLearningTool as executeTool, learningToolDefinitions as toolDefinitions } from '../../learning/tools.ts';
-import { hintCardToolOutput } from './card-hint.ts';
+import { hintCardToolResult } from './card-hint.ts';
 import { createCardHelpContext } from './card-help-context.ts';
-import { hintCardSource, inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
+import { hintCardSource, inputKind, type InputData, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
@@ -57,8 +57,9 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 					const input = inputData(entries[0]);
 					const sourceId = input && hintCardSource(input);
 					if (sourceId && call.name === 'present_question' && !result.isError) {
-						const output = hintCardToolOutput(await readState(), sourceId, result.details as ProductMessage['data']);
-						if (output) result = { ...result, output: [{ type: 'text', text: output }] };
+						const shown = hintCardToolResult(await readState(), sourceId);
+						if (shown) result = { ...result, output: [{ type: 'text', text: shown.text }],
+							details: { ...(result.details as object), questionnaire: [shown.card] } };
 					}
 					const assistant = entries[assistantIndex];
 					const calls = assistant?.model?.flatMap((message) =>

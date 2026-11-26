@@ -51,7 +51,7 @@ function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, c
 		if (reply.data) delete reply.data.questionnaire;
 		return;
 	}
-	const card = retryCard(source, questionnaireFromReplyData(reply.data));
+	const card = recordedHintCard(source, questionnaireFromReplyData(reply.data));
 	const item = card.items[0]!;
 	reply.text = cardHintText(learnerVisibleText(reply.text), item.prompt);
 	(reply.data ??= {}).questionnaire = [reply.text || item.description ? card : { ...card, items: [
@@ -60,19 +60,19 @@ function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, c
 	return card;
 }
 
-export function hintCardToolOutput(snapshot: Snapshot, sourceId: string, freshData: ProductMessage['data']): string | undefined {
+export function hintCardToolResult(snapshot: Snapshot, sourceId: string) {
 	const reply = snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === sourceId);
-	const source = questionnaireFromReplyData(reply?.data);
-	if (!source) return;
-	const item = retryCard(source, questionnaireFromReplyData(freshData)).items[0]!;
-	return `Question shown to the learner: ${item.prompt}\n${displayedChoices(item)}`;
+	const card = questionnaireFromReplyData(reply?.data);
+	if (!card) return;
+	const item = card.items[0]!;
+	return { card, text: `Question shown to the learner: ${item.prompt}\n${displayedChoices(item)}` };
 }
 
-// A fresh call can reorder the same choices. It cannot replace the learner's question or reasoning field.
-function retryCard(source: QuestionnaireDefinition, fresh: QuestionnaireDefinition | undefined): QuestionnaireDefinition {
+// Older Hints reshuffled the choices. A saved letter still refers to the row shown on that turn.
+function recordedHintCard(source: QuestionnaireDefinition, recorded: QuestionnaireDefinition | undefined): QuestionnaireDefinition {
 	const item = source.items[0]!;
-	const renewed = fresh?.items[0];
-	if (!renewed || fresh?.kind !== source.kind || renewed.prompt !== item.prompt || renewed.choices.length !== item.choices.length) return source;
+	const renewed = recorded?.items[0];
+	if (!renewed || recorded?.kind !== source.kind || renewed.prompt !== item.prompt || renewed.choices.length !== item.choices.length) return source;
 	const choices: QuestionnaireItem['choices'] = [];
 	for (const freshChoice of renewed.choices) {
 		const original = item.choices.find((choice) => choice.value === freshChoice.value && choice.label === freshChoice.label);

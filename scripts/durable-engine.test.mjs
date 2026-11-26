@@ -513,8 +513,7 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 	finishTool(fresh, 'present_question', { ...paymentQuestion, reasoning: false }, 'fresh-payment');
 	const first = (await settled()).messages.at(-1);
 	const renewed = questionnaireFromReplyData(first.data);
-	const expected = original.items[0].choices.toReversed().map((choice, i) => ({ ...choice, shortcut: ['A', 'B'][i] }));
-	assert.deepEqual(renewed, { ...original, items: [{ ...original.items[0], choices: expected }] });
+	assert.deepEqual(renewed, original);
 	assert.equal(first.text, guidingQuestion);
 	assert.equal(first.data.reveal[0].kind, 'hint');
 
@@ -542,6 +541,56 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 	}
 }));
 
+function rewriteSavedRecords(target, id, containing, convert) {
+	const db = new DatabaseSync(target.filename);
+	try {
+		const records = db.prepare('SELECT seq, writes FROM pi_commits WHERE namespace = ? AND instr(writes, ?) > 0').all(id, containing);
+		assert.ok(records.length);
+		const replace = db.prepare('UPDATE pi_commits SET writes = ? WHERE namespace = ? AND seq = ?');
+		for (const { seq, writes } of records) {
+			replace.run(JSON.stringify(JSON.parse(writes, (_key, value) => convert(value))), id, seq);
+		}
+	} finally { db.close(); }
+}
+
+test('reopening a historically shuffled Hint preserves what B meant for both learner and tutor', () => withPaymentCard(async ({
+	target, id, reader, requests, original, askForHint, nextResponse, settled,
+}) => {
+	const oldCallId = 'fresh-payment';
+	const oldArgs = { ...paymentQuestion, reasoning: false };
+	const hintId = await askForHint(original);
+	finishTool(await nextResponse(), 'present_question', oldArgs, oldCallId);
+	await settled();
+
+	// Earlier versions saved the shuffled result and sent those letters to the tutor.
+	const choices = [
+		{ value: 'retry-the-same-payment', label: 'Retry the same payment', shortcut: 'A' },
+		{ value: 'make-a-separate-purchase', label: 'Make a separate purchase', shortcut: 'B' },
+	];
+	const oldItem = { name: 'item', prompt: paymentQuestion.prompt, choices, required: true, multiple: false };
+	const oldCard = { kind: 'question', submitLabel: 'Submit', items: [oldItem] };
+	const oldText = `Question shown to the learner: ${oldItem.prompt}\nChoices in displayed order:\nA. Retry the same payment\nB. Make a separate purchase`;
+	assert.notDeepEqual(choices, original.items[0].choices);
+	rewriteSavedRecords(target, id, oldCallId, (value) => value?.role === 'toolResult' && value.toolCallId === oldCallId
+		? { ...value, content: [{ type: 'text', text: oldText }], details: { ...value.details, questionnaire: [oldCard] } } : value);
+
+	const reopened = questionnaireFromReplyData((await reader.snapshot(id)).messages.at(-1).data);
+	assert.deepEqual(reopened.items[0].choices, choices);
+	assert.deepEqual(reopened.items[0].input, original.items[0].input);
+	await askForHint(reopened, hintId);
+	finishTool(await nextResponse(), 'present_question', paymentQuestion, 'next-hint');
+	assert.deepEqual(questionnaireFromReplyData((await settled()).messages.at(-1).data), reopened);
+
+	await reader.submit(id, 'B');
+	finish(await nextResponse(), 'How did you decide?');
+	assert.equal((await settled()).messages.at(-2).text, 'B');
+	const request = requests.at(-1);
+	assert.equal(request.at(-1).content, 'B');
+	for (const callId of [oldCallId, 'next-hint']) {
+		assert.equal(request.find((message) => message.role === 'tool' && message.tool_call_id === callId).content, oldText);
+	}
+}));
+
 for (const retainedSource of [false, true]) {
 	test(`reopening old help with source card = ${retainedSource} preserves recorded assistance without asserting a tap`, () => withPaymentCard(async ({
 		target, id, engine, reader, original, askForHint, nextResponse, settled,
@@ -555,20 +604,11 @@ for (const retainedSource of [false, true]) {
 		await settled();
 
 		// Both old formats saved the same text for a click and a typed answer.
-		const db = new DatabaseSync(target.filename);
-		try {
-			const records = db.prepare('SELECT seq, writes FROM pi_commits WHERE namespace = ? AND instr(writes, ?) > 0').all(id, '"cardHelp"');
-			assert.ok(records.length);
-			const replace = db.prepare('UPDATE pi_commits SET writes = ? WHERE namespace = ? AND seq = ?');
-			for (const { seq, writes } of records) {
-				const legacy = JSON.parse(writes, (_key, value) => {
-					if (!value?.cardHelp) return value;
-					const { cardHelp, ...previous } = value;
-					return retainedSource ? { ...previous, hintCardFrom: cardHelp.sourceId } : previous;
-				});
-				replace.run(JSON.stringify(legacy), id, seq);
-			}
-		} finally { db.close(); }
+		rewriteSavedRecords(target, id, '"cardHelp"', (value) => {
+			if (!value?.cardHelp) return value;
+			const { cardHelp, ...previous } = value;
+			return retainedSource ? { ...previous, hintCardFrom: cardHelp.sourceId } : previous;
+		});
 
 		const history = await reader.snapshot(id);
 		assert.equal(history.messages[3].text, guidingQuestion);
