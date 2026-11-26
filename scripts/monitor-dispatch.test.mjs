@@ -1,14 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import test from 'node:test';
+import test, { describe, it } from 'node:test';
+import handler from '../api/runtime-monitor.ts';
 
-// Failures: public or preview invocation, missing credentials, changed dispatch
-// target, HTTP/network failure, and private error text entering the logs.
-test('scheduled entry point dispatches only the production monitor', async (t) => {
-	const { default: handler } = await import('../api/runtime-monitor.ts');
-	const originalFetch = globalThis.fetch;
-	const originalError = console.error;
-	const originalEnv = { ...process.env };
+describe('runtime monitor dispatch', () => {
 	const privateText = 'SYNTHETIC_PRIVATE_TOKEN_AND_ERROR';
 	const cases = [
 		['production', {}, 200, 1],
@@ -23,42 +18,37 @@ test('scheduled entry point dispatches only the production monitor', async (t) =
 		['unexpected success body', { status: 200 }, 502, 1],
 		['network failure', { network: true }, 502, 1],
 	];
-	try {
-		for (const [name, options, status, expectedCalls] of cases) await t.test(name, async () => {
-			process.env.VERCEL_ENV = options.environment ?? 'production';
-			process.env.MONITOR_GITHUB_TOKEN = options.token ?? privateText;
-			const calls = [];
-			const errors = [];
-			console.error = (...args) => errors.push(args);
-			globalThis.fetch = async (url, init) => {
-				calls.push({ url, ...init });
-				if (options.network) throw new Error(privateText);
-				return new Response(options.status ? privateText : null, { status: options.status ?? 204 });
-			};
-			const response = await handler.fetch(new Request('https://local.invalid/api/runtime-monitor', {
-				method: options.method ?? 'POST', headers: options.headers ?? {
-					'ce-type': 'com.vercel.schedule.v1beta', 'ce-vssschedulename': 'runtime-monitor',
-				},
-			}));
-			assert.equal(response.status, status);
-			assert.ok(!(await response.text()).includes(privateText));
-			assert.equal(calls.length, expectedCalls);
-			assert.deepEqual(errors, status === 503 ? [['runtime_monitor_dispatch_unconfigured']]
-				: status === 502 ? [['runtime_monitor_dispatch_failed']] : []);
-			for (const call of calls) {
-				assert.equal(call.url, 'https://api.github.com/repos/jon-devlapaz/socratink/actions/workflows/runtime-monitor.yml/dispatches');
-				assert.equal(call.method, 'POST');
-				assert.equal(call.redirect, 'error');
-				assert.ok(call.signal instanceof AbortSignal);
-				assert.equal(call.headers.Authorization, `Bearer ${privateText}`);
-				assert.deepEqual(JSON.parse(call.body), { ref: 'main' });
-			}
+	for (const [name, options, status, expectedCalls] of cases) it(name, async (t) => {
+		const originalEnv = process.env;
+		process.env = { ...originalEnv, VERCEL_ENV: options.environment ?? 'production', MONITOR_GITHUB_TOKEN: options.token ?? privateText };
+		t.after(() => { process.env = originalEnv; });
+		const calls = [];
+		const errors = [];
+		t.mock.method(console, 'error', (...args) => errors.push(args));
+		t.mock.method(globalThis, 'fetch', async (url, init) => {
+			calls.push({ url, ...init });
+			if (options.network) throw new Error(privateText);
+			return new Response(options.status ? privateText : null, { status: options.status ?? 204 });
 		});
-	} finally {
-		globalThis.fetch = originalFetch;
-		console.error = originalError;
-		process.env = originalEnv;
-	}
+		const response = await handler.fetch(new Request('https://local.invalid/api/runtime-monitor', {
+			method: options.method ?? 'POST', headers: options.headers ?? {
+				'ce-type': 'com.vercel.schedule.v1beta', 'ce-vssschedulename': 'runtime-monitor',
+			},
+		}));
+		assert.equal(response.status, status);
+		assert.equal(await response.text(), '');
+		assert.equal(calls.length, expectedCalls);
+		assert.deepEqual(errors, status === 503 ? [['runtime_monitor_dispatch_unconfigured']]
+			: status === 502 ? [['runtime_monitor_dispatch_failed']] : []);
+		for (const call of calls) {
+			assert.equal(call.url, 'https://api.github.com/repos/jon-devlapaz/socratink/actions/workflows/runtime-monitor.yml/dispatches');
+			assert.equal(call.method, 'POST');
+			assert.equal(call.redirect, 'error');
+			assert.ok(call.signal instanceof AbortSignal);
+			assert.equal(call.headers.Authorization, `Bearer ${privateText}`);
+			assert.deepEqual(JSON.parse(call.body), { ref: 'main' });
+		}
+	});
 });
 
 test('schedule is private and fits the current Hobby interval', async () => {
