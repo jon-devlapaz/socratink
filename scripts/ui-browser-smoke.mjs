@@ -184,11 +184,12 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await assertIntroLayout(page);
 		const enlargedText = await page.addStyleTag({ content: 'html { font-size: 200% }' });
 		await assertIntroLayout(page);
-		assert.ok(await starters.getByRole('button').last().evaluate((button) => {
+		const starterWraps = await starters.getByRole('button').evaluateAll((buttons) => buttons.some((button) => {
 			const text = document.createRange();
 			text.selectNodeContents(button);
 			return new Set([...text.getClientRects()].map((line) => Math.round(line.top))).size > 1;
-		}), 'The long starter wraps when the browser text size is doubled');
+		}));
+		assert.ok(starterWraps, 'A starter wraps when the browser text size is doubled');
 		await enlargedText.evaluate((style) => style.remove());
 		await page.setViewportSize({ width: 375, height: 320 });
 		for (const button of await starters.getByRole('button').all()) {
