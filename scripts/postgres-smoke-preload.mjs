@@ -5,6 +5,7 @@ if (fixture.protocol !== 'http:' || fixture.hostname !== '127.0.0.1') {
 	throw new Error('Postgres smoke requires a loopback fixture.');
 }
 const redirects = new Map([
+	['https://ingest.modem.dev/feedback', '/feedback'],
 	['https://oauth2.googleapis.com/token', '/oauth/token'],
 	['https://openidconnect.googleapis.com/v1/userinfo', '/oauth/userinfo'],
 ]);

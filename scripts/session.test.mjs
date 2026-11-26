@@ -29,6 +29,7 @@ import {
 	readSession,
 	writeSessionCookie,
 } from '../src/server/session.ts';
+import { withAuthDb } from './auth-db-fixture.mjs';
 import { cookiePairFromResponse } from './session-fixture.mjs';
 
 const testSecret = 'test-session-secret-for-hmac-sha256';
@@ -53,15 +54,6 @@ function createTestApp(options = {}) {
 	app.use('/signed', requireSignedSession({ secret: testSecret, rateLimiter: limiter, authDb }));
 	app.get('/signed', (context) => context.json({ ok: true }));
 	return app;
-}
-
-async function withAuthDb(run) {
-	const authDb = createSqliteAuthDb(':memory:');
-	try {
-		return await run(authDb);
-	} finally {
-		await authDb.close();
-	}
 }
 
 async function mintCookie(app) {

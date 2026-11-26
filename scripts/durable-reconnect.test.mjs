@@ -4,7 +4,6 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
@@ -14,21 +13,25 @@ import { sseTiming } from '../src/server/durable/browser-sse.ts';
 import { createStreamClient } from '../src/ui/client/conversation-stream.ts';
 import { ChatRequestCoordinator } from '../src/ui/client/conversation.ts';
 
-// A reply that streams for about two seconds, so events connections end mid-reply.
 const words = Array.from({ length: 16 }, (_, index) => `word${index} `);
-const wordMs = 120;
 
 /** Real engine on SQLite, real bridge served by the production Node adapter,
  * real stream client over HTTP. Only the model endpoint is synthetic. */
-async function fixture(run) {
+async function fixture(resumeOnConnection, run) {
 	const directory = await mkdtemp(join(tmpdir(), 'socratink-durable-reconnect-'));
+	const firstPaint = Promise.withResolvers();
+	const connectionReady = Promise.withResolvers();
 	const model = createServer(async (request, response) => {
 		for await (const _chunk of request) {}
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
 		const chunk = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'synthetic', model: 'synthetic',
 			choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
 		chunk({ role: 'assistant', content: '' });
-		for (const word of words) { await delay(wordMs); chunk({ content: word }); }
+		chunk({ content: words[0] });
+		await firstPaint.promise;
+		chunk({ content: words[1] });
+		await connectionReady.promise;
+		for (const word of words.slice(2)) chunk({ content: word });
 		chunk({}, 'stop');
 		response.end('data: [DONE]\n\n');
 	});
@@ -43,12 +46,19 @@ async function fixture(run) {
 	const server = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1', serverOptions: { requestTimeout: 0 } });
 	await once(server, 'listening');
 	const connections = [];
-	server.on('request', (request) => { if (request.url.endsWith('/events')) connections.push(request.socket); });
+	server.on('request', (request) => {
+		if (!request.url.endsWith('/events')) return;
+		connections.push(request.socket);
+		if (connections.length === resumeOnConnection) connectionReady.resolve();
+	});
 	const timing = { ...sseTiming };
 	sseTiming.pollMs = 20;
 	const url = `http://127.0.0.1:${server.address().port}/${encodeURIComponent('learner:reconnect')}`;
-	try { await run({ client: createStreamClient({ url }), url, connections }); }
+	const painted = painter(connections, firstPaint.resolve);
+	try { await run({ client: createStreamClient({ url }), url, connections, painted }); }
 	finally {
+		firstPaint.resolve();
+		connectionReady.resolve();
 		Object.assign(sseTiming, timing);
 		server.closeAllConnections(); model.closeAllConnections();
 		await new Promise((resolve) => server.close(resolve));
@@ -59,7 +69,7 @@ async function fixture(run) {
 }
 
 /** Text deltas as forwarded by read(), split by the events connection that carried them. */
-function painter(connections) {
+function painter(connections, onText) {
 	const byConnection = [];
 	return {
 		byConnection,
@@ -67,6 +77,7 @@ function painter(connections) {
 		onEvent(event) {
 			if (event.type !== 'message-delta' || event.kind !== 'text') return;
 			byConnection[connections.length - 1] = (byConnection[connections.length - 1] ?? '') + event.delta;
+			onText();
 		},
 	};
 }
@@ -76,10 +87,9 @@ function historyText(history, submissionId) {
 		.parts.filter((part) => part.type === 'text').map((part) => part.text).join('\n\n');
 }
 
-test('a reply survives the server ending the events stream at its time cap mid-turn', async () => fixture(async ({ client, connections }) => {
+test('a reply survives the server ending the events stream at its time cap mid-turn', async () => fixture(3, async ({ client, connections, painted }) => {
 	sseTiming.maxMs = 300;
 	const admission = await client.send({ message: { kind: 'user', body: 'Synthetic question.' } });
-	const painted = painter(connections);
 	const reply = await client.read(admission, { onEvent: painted.onEvent, signal: AbortSignal.timeout(15_000) });
 	const history = await client.history();
 	assert.equal(history.settlements.find((s) => s.submissionId === admission.submissionId)?.outcome, 'completed');
@@ -91,9 +101,13 @@ test('a reply survives the server ending the events stream at its time cap mid-t
 	assert.equal(painted.text(), reply.text, 'streamed deltas fold to the reply with no repeated or missing segment');
 }));
 
-test('a reply survives the network dropping the events connection mid-reply, as the UI coordinator sees it', async () => fixture(async ({ client, connections }) => {
-	const painted = painter(connections);
-	const requests = new ChatRequestCoordinator(client, {
+test('a reply survives the network dropping the events connection mid-reply, as the UI coordinator sees it', async () => fixture(2, async ({ client, connections, painted }) => {
+	const requests = new ChatRequestCoordinator({
+		...client,
+		read: (admission, options) => client.read(admission, {
+			...options, signal: AbortSignal.any([options.signal, AbortSignal.timeout(15_000)]),
+		}),
+	}, {
 		onEvent(event) {
 			painted.onEvent(event);
 			// Drop the socket under the client, not through its abort signal.
@@ -107,12 +121,12 @@ test('a reply survives the network dropping the events connection mid-reply, as 
 	assert.equal(state.reply.text, historyText(history, state.reply.submissionId), 'the UI paints the stored reply');
 	assert.equal(connections.length, 2, 'one drop, one reconnect');
 	assert.ok(painted.byConnection[0] && painted.byConnection[0].length < state.reply.text.length, 'the drop came mid-reply');
+	assert.ok(painted.byConnection[1].startsWith(words[1]), 'the reconnect delivers the word written after the socket dropped');
 	assert.equal(painted.text(), state.reply.text, 'streamed deltas fold to the reply with no repeated or missing segment');
 }));
 
-test('an uninterrupted turn needs one events connection, and a connection after settlement returns at once', async () => fixture(async ({ client, url, connections }) => {
+test('an uninterrupted turn needs one events connection, and a connection after settlement returns at once', async () => fixture(1, async ({ client, url, connections, painted }) => {
 	const admission = await client.send({ message: { kind: 'user', body: 'Synthetic question.' } });
-	const painted = painter(connections);
 	const reply = await client.read(admission, { onEvent: painted.onEvent, signal: AbortSignal.timeout(15_000) });
 	assert.equal(connections.length, 1, 'the closing reset carries the settlement, so no second connection is needed');
 	assert.equal(painted.text(), reply.text);

@@ -1,16 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import test from 'node:test';
 import { Hono } from 'hono';
 import { appConfig } from '../src/config/app.config.ts';
 import { parseSessionCookieValue, sessionCookieName } from '../src/config/session.ts';
-import { createSqliteAuthDb } from '../src/server/auth-db.ts';
 import { requireChatSession } from '../src/server/chat-access.ts';
 import { mountOAuthRoutes, selectVerifiedGitHubEmail } from '../src/server/oauth.ts';
 import { createRateLimiter } from '../src/server/rate-limit.ts';
 import { mountSessionRoutes } from '../src/server/session.ts';
+import { withAuthDb } from './auth-db-fixture.mjs';
 import { cookiePairFromResponse, mergeCookies } from './session-fixture.mjs';
 
 const testSecret = 'test-session-secret-for-hmac-sha256';
@@ -26,18 +23,6 @@ const testAuthConfig = {
 	},
 	redirectBaseUrl: 'http://localhost:5173',
 };
-
-async function withAuthDb(run) {
-	const directory = await mkdtemp(join(tmpdir(), 'socratink-oauth-'));
-	const filename = join(directory, 'auth.db');
-	const db = createSqliteAuthDb(filename);
-	try {
-		return await run(db);
-	} finally {
-		await db.close();
-		await rm(directory, { recursive: true, force: true });
-	}
-}
 
 test('OAuth login routes redirect with PKCE parameters and set oauth_state cookie', async () => {
 	await withAuthDb(async (authDb) => {
