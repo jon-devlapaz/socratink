@@ -47,18 +47,17 @@
 	opacity: 1;
 }
 
-html:has(.menu-layer.is-open) .skip-link,
-html:has(.menu-layer.is-open) .peek-handle,
-html:has(.menu-layer.is-pulling) .peek-handle {
+html:has(.menu-panel[data-state='open']) :is(.skip-link, .peek-handle) {
 	visibility: hidden;
 	pointer-events: none;
 }
 
 .brand-lockup {
 	position: fixed;
-	top: clamp(1.25rem, 2.5vw, 1.8rem);
+	top: var(--brand-top);
 	left: clamp(1.25rem, 2.5vw, 1.8rem);
 	z-index: 4;
+	gap: 0;
 	display: inline-flex;
 	align-items: center;
 	padding: 0;
@@ -104,7 +103,6 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 }
 
 .brand-name-viewport {
-	overflow: clip;
 	padding-left: 0.54em;
 }
 
@@ -112,87 +110,50 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	display: block;
 	height: 0.78em;
 	width: auto;
-	transform-origin: left center;
 	filter: var(--wordmark-filter);
-	transition-property: transform, opacity, filter;
-	transition-duration: 240ms, 160ms;
-	transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1), ease-out;
+	transition: opacity 160ms ease-out;
 }
 
 .encounter-active .brand-name {
 	opacity: 0;
-	transform: translateX(calc(-100% - 0.54em)) scaleX(0.88);
 }
 
 .encounter-active .brand-lockup:focus-visible .brand-name {
 	opacity: 1;
-	transform: none;
 	transition: none;
 }
 
-@media (any-hover: hover) and (any-pointer: fine) {
+@media (hover: hover) {
+	.brand-lockup:hover .brand-mark {
+		background: var(--accent);
+	}
+
 	.encounter-active .brand-lockup:hover .brand-name {
 		opacity: 1;
-		transform: none;
 	}
 }
 
-.menu-layer {
-	position: fixed;
-	inset: 0;
-	z-index: 20;
-	pointer-events: none;
-}
-
-.menu-layer.is-open {
-	pointer-events: auto;
-}
-
-.menu-backdrop {
-	position: absolute;
-	inset: 0;
-	border: 0;
-	padding: 0;
-	background: oklch(0 0 0 / 0.4);
-	opacity: 0;
-	cursor: pointer;
-	transition-property: opacity;
-	transition-duration: var(--drawer-ms);
-	transition-timing-function: var(--drawer);
-}
-
-.menu-layer.is-open .menu-backdrop {
-	opacity: 1;
-}
-
 .menu-panel {
-	position: absolute;
-	top: 0;
-	right: 0;
-	left: 0;
-	width: 100%;
-	min-height: min(52vh, 28rem);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	padding-top: env(safe-area-inset-top, 0px);
-	border-radius: 0;
+	min-height: min(52dvh, 28rem);
+	max-height: 100dvh;
+	overflow: auto;
+	padding: env(safe-area-inset-top, 0px) 0 0;
 	border-bottom: 1px solid var(--rule);
 	background: var(--paper);
-	box-shadow: var(--shadow-border), var(--panel-shadow);
-	backdrop-filter: blur(14px);
-	transform: translate3d(0, -110%, 0);
-	transition-property: transform;
-	transition-duration: var(--drawer-ms);
-	transition-timing-function: var(--drawer);
 }
 
-.menu-layer.is-open .menu-panel {
-	transform: translate3d(0, 0, 0);
-}
-
-.menu-panel.is-dragging {
+.menu-panel[data-preview] {
+	pointer-events: none;
+	animation: none;
 	transition: none;
+}
+
+.menu-orbs svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
 .menu-orbs {
@@ -220,7 +181,8 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	align-items: center;
 	gap: 0.4rem;
 	width: 4.4rem;
-	min-height: 0;
+	min-height: 44px;
+	height: auto;
 	padding: 0;
 	border: 0;
 	border-radius: 0;
@@ -278,7 +240,7 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
-.menu-orbs .theme-icon svg {
+.menu-orbs :is(.theme-icon, .orb-glyph) svg {
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0;
@@ -333,6 +295,9 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 }
 
 .menu-handle {
+	padding: 0;
+	border: 0;
+	background: transparent;
 	position: relative;
 	flex: none;
 	width: 44px;
@@ -353,31 +318,35 @@ html:has(.menu-layer.is-pulling) .peek-handle {
 	transform: translate(-50%, -50%);
 }
 
-html:has(.menu-layer.is-open) {
-	background: #000;
-}
-
-html:has(.menu-layer.is-open) body {
-	background: #000;
-	overflow: hidden;
-}
-
-html:has(.menu-layer.is-open) .app-canvas {
+html:has(.menu-panel[data-state='open']) .app-canvas {
 	overflow: hidden;
 	border-radius: 8px;
 	transform: scale(calc((100vw - 26px) / 100vw));
 }
 
 @media (max-width: 560px) {
+	.menu-panel {
+		min-height: 0;
+	}
+	.menu-handle {
+		margin: 0.5rem auto 0.15rem;
+	}
+	.menu-orbs {
+		column-gap: clamp(0.5rem, 2.5vw, 0.85rem);
+	}
+
 	.brand-lockup {
 		font-size: 1.35rem;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
+	:is([data-slot='sheet-content'], [data-slot='sheet-overlay'], [data-slot='dialog-content'], [data-slot='dialog-overlay']) {
+		animation: none !important;
+	}
+
 	.brand-name,
 	.peek-handle,
-	.menu-backdrop,
 	.menu-panel,
 	.menu-orbs a,
 	.menu-orbs button,
@@ -389,21 +358,12 @@ html:has(.menu-layer.is-open) .app-canvas {
 		transition: none;
 	}
 
-	html:has(.menu-layer.is-open) .app-canvas {
+	html:has(.menu-panel[data-state='open']) .app-canvas {
 		overflow: visible;
 		border-radius: 0;
 		transform: none;
 	}
 
-	.menu-panel {
-		transform: none;
-		opacity: 0;
-	}
-
-	.menu-layer.is-open .menu-panel {
-		transform: none;
-		opacity: 1;
-	}
 
 	.brand-lockup.is-working .brand-mark {
 		animation: none;
@@ -412,11 +372,6 @@ html:has(.menu-layer.is-open) .app-canvas {
 	.menu-orbs a:active,
 	.menu-orbs button:active:not(:disabled) {
 		scale: none;
-	}
-
-	.menu-layer.is-open .menu-panel,
-	.menu-layer.is-open .menu-backdrop {
-		transition: none;
 	}
 
 	#appearance-toggle.is-night .theme-icon.is-sun,
@@ -462,11 +417,7 @@ html:has(.menu-layer.is-open) .app-canvas {
 	box-shadow: var(--panel-shadow);
 }
 
-#start-over-dialog::backdrop {
-	background: rgb(0 0 0 / 38%);
-}
-
-#start-over-dialog form {
+.start-over-content {
 	display: grid;
 	gap: 0.8rem;
 }

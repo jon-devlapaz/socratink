@@ -1,3 +1,7 @@
+import type { CardHelpAction } from '../questionnaire.ts';
+
+export type WireUserInput = { kind: 'user'; body: string; cardHelp?: CardHelpAction };
+
 export type WirePart =
 	| { type: 'text'; text: string; state: 'streaming' | 'done' }
 	| { type: `data-${string}`; data: unknown }
@@ -13,7 +17,7 @@ export type WireMessage = {
 	display: 'visible';
 	submissionId?: string;
 	parts: WirePart[];
-	metadata?: Record<string, unknown>;
+	metadata?: Record<string, unknown> & { cardHelp?: CardHelpAction };
 };
 
 export type WireSettlement = {

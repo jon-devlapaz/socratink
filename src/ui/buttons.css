@@ -53,6 +53,7 @@
 .feedback-actions button,
 .start-over-actions button,
 .login-oauth-btn,
+.intro-starter,
 .jump-latest,
 .code-block-copy,
 .steering-action,
@@ -142,6 +143,7 @@
 .feedback-actions button:not(#feedback-send),
 .start-over-actions button,
 .login-oauth-btn,
+.intro-starter,
 .jump-latest,
 .code-block-copy {
 	border-color: var(--btn-secondary-edge);
@@ -159,6 +161,7 @@
 	.feedback-actions button:not(#feedback-send),
 	.start-over-actions button,
 	.login-oauth-btn,
+	.intro-starter,
 	.jump-latest,
 	.code-block-copy
 ):hover:not(:disabled) {
@@ -167,7 +170,7 @@
 }
 
 /* Ghost: quiet until the pointer or focus arrives. */
-.questionnaire-actions .questionnaire-button-ghost,
+.questionnaire .questionnaire-button-ghost,
 .steering-action,
 .thinking-cancel,
 .dictation-toggle:not([hidden]):not([data-state='listening']):not([data-state='stopping']) {
@@ -177,7 +180,7 @@
 }
 
 :is(
-	.questionnaire-actions .questionnaire-button-ghost,
+	.questionnaire .questionnaire-button-ghost,
 	.steering-action,
 	.thinking-cancel,
 	.dictation-toggle:not([data-state='listening']):not([data-state='stopping'])
@@ -196,6 +199,7 @@
 	.feedback-actions button,
 	.start-over-actions button,
 	.login-oauth-btn,
+	.intro-starter,
 	.jump-latest,
 	.code-block-copy,
 	.steering-action,
@@ -216,6 +220,7 @@
 	.feedback-actions button,
 	.start-over-actions button,
 	.login-oauth-btn,
+	.intro-starter,
 	.jump-latest,
 	.code-block-copy,
 	.steering-action,
@@ -252,6 +257,7 @@
 		.feedback-actions button,
 		.start-over-actions button,
 		.login-oauth-btn,
+		.intro-starter,
 		.jump-latest,
 		.code-block-copy,
 		.steering-action,
@@ -271,6 +277,7 @@
 		.feedback-actions button,
 		.start-over-actions button,
 		.login-oauth-btn,
+		.intro-starter,
 		.jump-latest,
 		.code-block-copy,
 		.steering-action,

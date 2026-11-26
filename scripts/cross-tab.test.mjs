@@ -9,8 +9,7 @@ let origin;
 
 before(async () => {
 	server = await createServer({
-		configFile: false,
-		root: new URL('../src/ui', import.meta.url).pathname,
+		configFile: new URL('../vite.config.ui.ts', import.meta.url).pathname,
 		server: { host: '127.0.0.1', port: 0 },
 	});
 	await server.listen();

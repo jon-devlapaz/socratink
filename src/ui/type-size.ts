@@ -13,7 +13,8 @@ function storedTypeSize(): TypeSize | null {
 }
 
 function resolvedTypeSize(): TypeSize {
-	return storedTypeSize() ?? 'medium';
+	const active = document.documentElement.dataset.typeSize ?? null;
+	return storedTypeSize() ?? (isTypeSize(active) ? active : 'medium');
 }
 
 function nextTypeSize(size: TypeSize): TypeSize {

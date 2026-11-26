@@ -5,6 +5,7 @@ import {
 	formatQuestionnaireAnswers,
 	questionnaireFromParts,
 	questionnaireFromReplyData,
+	sameQuestion,
 } from '../src/questionnaire.ts';
 
 const validDefinition = {
@@ -24,6 +25,17 @@ const validDefinition = {
 		},
 	],
 };
+
+test('question identity tolerates reordered choices and shortcuts but keeps the answer context', () => {
+	const item = validDefinition.items[0];
+	const withItem = change => ({ ...validDefinition, items: [{ ...item, ...change }] });
+	assert.equal(sameQuestion(validDefinition, withItem({ choices: item.choices.toReversed().map(c => ({ ...c, shortcut: 'x' })) })), true);
+	for (const changed of [
+		undefined, { ...validDefinition, kind: 'quiz' }, withItem({ prompt: 'A different question?' }),
+		withItem({ description: 'Assume nothing can leave the jar.' }), withItem({ multiple: true }), withItem({ input: undefined }),
+		withItem({ choices: item.choices.slice(1) }), withItem({ choices: item.choices.map(c => ({ ...c, label: 'Changed' })) }),
+	]) assert.equal(sameQuestion(validDefinition, changed), false);
+});
 
 test('reads a validated questionnaire from live reply data and restored history parts', () => {
 	assert.equal(questionnaireFromReplyData({ questionnaire: [validDefinition] })?.items[0]?.name, 'path');

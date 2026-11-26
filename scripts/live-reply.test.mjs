@@ -112,8 +112,8 @@ test('a mark_reveal call marks the live text as soon as it arrives', () => {
 test('text the server would still check for an unmarked reveal waits for the mark', () => {
 	const card = { items: [{ name: 'item', prompt: 'Which request reuses the key?', choices: [] }] };
 	const help = formatQuestionnaireAnswers(card, [{ name: 'item', values: [], help: 'hint' }]);
-	for (const learnerText of [help, 'Honestly I do not know.']) {
-		const live = createLiveReply(learnerText);
+	for (const [learnerText, cardHelp] of [[help, 'hint'], ['Honestly I do not know.']]) {
+		const live = createLiveReply(learnerText, cardHelp);
 		assert.deepEqual(fold(live, [delta('Think about what the provider saw.')]), { markdown: '' });
 		live.apply({ type: 'tool-input', messageId: 's1:assistant', toolCallId: 'r1', toolName: 'mark_reveal', input: { kind: 'hint' } });
 		assert.deepEqual(live.view(), { markdown: 'Think about what the provider saw.', reveal: { kind: 'hint' } });
@@ -134,8 +134,8 @@ test('a reveal cue mid-stream freezes the text already shown until the mark arri
 test('a turn held from its start still shows nothing', () => {
 	const card = { items: [{ name: 'item', prompt: 'Which request reuses the key?', choices: [] }] };
 	const help = formatQuestionnaireAnswers(card, [{ name: 'item', values: [], help: 'unknown' }]);
-	for (const learnerText of [help, 'Just tell me the answer.']) {
-		const live = createLiveReply(learnerText);
+	for (const [learnerText, cardHelp] of [[help, 'unknown'], ['Just tell me the answer.']]) {
+		const live = createLiveReply(learnerText, cardHelp);
 		for (const chunk of ['Here', ' is', ' the whole answer.']) {
 			assert.deepEqual(fold(live, [delta(chunk)]), { markdown: '' }, learnerText);
 		}

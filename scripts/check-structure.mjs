@@ -10,14 +10,14 @@ const TEXT_RULE = /\/(?:\\.|[^/\n])+\/[dgimsuy]*|\.(?:indexOf|lastIndexOf|starts
 export const rules = [
 	{
 		name: 'postgres-setup-retries',
-		applies: (file) => /^(src|api)\/.*\.ts$/.test(file) && !/\.test\.ts$/.test(file) && file !== 'src/server/setup-once.ts',
+		applies: (file) => /^(src|api)\/.*\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file) && file !== 'src/server/setup-once.ts',
 		check: (text) => DDL.test(text) && POSTGRES.test(text) && !/\bsetupOnce\(/.test(text),
 		fix: 'sends schema setup to Postgres without setupOnce(). Wrap the setup in setupOnce() from src/server/setup-once.ts. '
 			+ 'It runs on first use and forgets a failure, so the next request retries instead of the instance staying broken (#78, #80).',
 	},
 	{
 		name: 'learner-text-owner',
-		applies: (file) => /^(src|api)\/.*\.ts$/.test(file) && !/\.test\.ts$/.test(file) && file !== 'src/learning/learner-text.ts',
+		applies: (file) => /^(src|api)\/.*\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file) && file !== 'src/learning/learner-text.ts',
 		check: (text) => (text.match(TEXT_RULE) ?? []).some((rule) => HIDDEN_TEXT.test(rule)),
 		fix: 'filters tutor text the learner must not see outside src/learning/learner-text.ts. Add the rule to '
 			+ 'learnerVisibleText() or splitReasoning() there instead, so live and settled replies both drop it '

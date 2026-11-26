@@ -30,49 +30,17 @@
 	height: 1rem;
 }
 
-.steering-tip {
-	position: absolute;
-	bottom: calc(100% + 0.4rem);
-	right: 0;
-	z-index: 8;
-	padding: 0.3rem 0.55rem;
-	border-radius: 6px;
-	color: var(--paper);
-	background: var(--ink);
-	font-size: 0.72rem;
-	font-weight: 500;
-	letter-spacing: 0.01em;
-	line-height: 1.2;
-	white-space: nowrap;
-	pointer-events: none;
-	opacity: 0;
-	scale: 0.95;
-	translate: 0 4px;
-	transform-origin: 100% 100%;
-	transition-property: opacity, scale, translate;
-	transition-duration: 150ms;
-	transition-delay: 0ms;
-	transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+.steering-menu {
+	font-size: calc(0.875rem * var(--type-scale, 1));
+	line-height: 1.4;
 }
 
-@media (hover: hover) {
-	.steering-action:hover .steering-tip {
-		opacity: 1;
-		scale: 1;
-		translate: 0 0;
-		transition-delay: 200ms;
-	}
+.steering-menu-copy {
+	justify-content: space-between;
 }
 
-.steering-action:focus-visible .steering-tip {
-	opacity: 1;
-	scale: 1;
-	translate: 0 0;
-	transition-delay: 0ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.steering-tip {
-		transition: none;
+@media (pointer: coarse) {
+	.steering-menu [role="menuitem"] {
+		min-height: 44px;
 	}
 }

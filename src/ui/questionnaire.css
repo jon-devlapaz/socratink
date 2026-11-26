@@ -5,6 +5,7 @@
 	padding: 1.25rem 0;
 	border-block: 1px solid var(--rule);
 	background: transparent;
+	overflow-wrap: anywhere;
 }
 
 .questionnaire-item {
@@ -33,7 +34,7 @@
 	text-wrap: balance;
 }
 
-.questionnaire-item legend + .questionnaire-choices {
+.questionnaire-item legend + :is(.questionnaire-choices, .questionnaire-consent-actions) {
 	margin-top: 0.5rem;
 }
 
@@ -61,9 +62,11 @@
 	gap: 0.55rem;
 }
 
-.questionnaire-choices:has(> button) {
+.questionnaire-choices:has(> button),
+.questionnaire-consent-actions {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	gap: 0.75rem;
 }
 
@@ -73,7 +76,7 @@
 
 .questionnaire-choice {
 	display: grid;
-	grid-template-columns: auto 1fr auto;
+	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 0.65rem;
 	padding: 0.72rem 0.8rem;
@@ -85,12 +88,14 @@
 	transition: background-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), scale 150ms var(--ease-out);
 }
 
-.questionnaire-choice:hover {
-	background: var(--path-hover);
-	box-shadow: none;
+@media (hover: hover) {
+	.questionnaire-choice:hover {
+		background: var(--path-hover);
+		box-shadow: none;
+	}
 }
 
-.questionnaire-choice:has(input:checked) {
+.questionnaire-choice:has([aria-checked="true"]) {
 	background: color-mix(in srgb, var(--accent) 7%, var(--paper));
 	box-shadow: inset 2px 0 0 var(--accent);
 }
@@ -99,11 +104,12 @@
 	scale: 0.96;
 }
 
-.questionnaire-choice input {
+.questionnaire-choice [data-choice-for] {
+	min-height: 0;
 	width: 1rem;
 	height: 1rem;
 	margin: 0;
-	accent-color: var(--accent);
+
 }
 
 .questionnaire-choice-copy {
@@ -140,7 +146,7 @@
 	font-size: 0.78rem;
 }
 
-.questionnaire-freeform-label input {
+.questionnaire-freeform-label textarea {
 	width: 100%;
 	border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
 	border-radius: 10px;
@@ -148,30 +154,47 @@
 	color: var(--ink);
 	background: var(--chip);
 	font: inherit;
+	font-size: calc(1rem * var(--type-scale, 1));
+	line-height: 1.45;
+	min-height: calc(2lh + 1.4rem + 2px);
+	max-height: 12lh;
+	resize: none;
 }
 
 .questionnaire-actions {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: flex-end;
-	gap: 0.5rem;
+	align-items: center;
+	column-gap: 0.25rem;
+	row-gap: 0.5rem;
 }
 
 .questionnaire-button[hidden] {
 	display: none;
 }
 
-.questionnaire-button-ghost {
-	margin-right: auto;
+.questionnaire-actions .questionnaire-button-ghost {
+	padding-inline: 0.65rem;
 }
 
 /* The first ghost's text starts on the prompt's leading edge. */
-.questionnaire-button-ghost:first-child {
-	margin-left: -1.1rem;
+.questionnaire-actions .questionnaire-button-ghost:first-child {
+	margin-inline-start: -0.65rem;
+	justify-content: flex-start;
 }
 
-.questionnaire-button-ghost:has(+ .questionnaire-button-ghost) {
-	margin-right: 0;
+.questionnaire-button-primary {
+	margin-inline-start: auto;
+}
+
+.questionnaire-button[aria-haspopup="menu"] svg {
+	width: 0.8rem;
+	height: 0.8rem;
+}
+
+.questionnaire-button:focus-visible {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
 }
 
 @media (max-width: 560px) {
@@ -179,12 +202,24 @@
 		padding: 1rem 0;
 	}
 
-	.questionnaire-actions {
-		justify-content: stretch;
+	.questionnaire-actions .questionnaire-button {
+		max-width: 100%;
+		min-height: 44px;
+		height: auto;
+		white-space: normal;
+		padding-block: 0.55rem;
+		font-size: calc(var(--btn-font) * var(--type-scale, 1));
 	}
-
-	.questionnaire-button-primary {
-		flex: 1;
+	.questionnaire-actions .questionnaire-button-ghost {
+		padding-inline: 0.3rem;
+	}
+	.questionnaire-actions .questionnaire-button-ghost:first-child {
+		margin-inline-start: -0.6rem;
+		padding-inline-start: 0.6rem;
+	}
+	.questionnaire-actions .questionnaire-button-primary {
+		flex: 1 0 auto;
+		padding-inline: 0.85rem;
 	}
 }
 

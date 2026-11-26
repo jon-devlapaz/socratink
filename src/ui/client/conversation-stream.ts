@@ -1,4 +1,4 @@
-import { ChatApiError, ChatTurnError, replyFrom, type WireAdmission, type WireEvent, type WireReply, type WireSnapshot } from '../../config/chat-wire.ts';
+import { ChatApiError, ChatTurnError, replyFrom, type WireAdmission, type WireEvent, type WireReply, type WireSnapshot, type WireUserInput } from '../../config/chat-wire.ts';
 
 type Headers = Record<string, string> | (() => Record<string, string>);
 type ReadOptions = { signal?: AbortSignal; onEvent?: (event: WireEvent) => void | Promise<void> };
@@ -21,7 +21,7 @@ export function createStreamClient(options: { url: string; headers?: Headers }) 
 
 	return {
 		url,
-		send({ message, signal }: { message: { kind: 'user'; body: string }; signal?: AbortSignal }) {
+		send({ message, signal }: { message: WireUserInput; signal?: AbortSignal }) {
 			return json<WireAdmission>('', { method: 'POST', body: JSON.stringify(message), signal });
 		},
 		abort({ submissionId, signal }: { submissionId: string; signal?: AbortSignal }) {

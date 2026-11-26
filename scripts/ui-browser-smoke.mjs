@@ -79,6 +79,128 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		});
 	}
 
+	await check('intro-starters-375', async (page, fixture) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const input = page.locator('#message:enabled');
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		const choices = starters.getByRole('button');
+		await input.waitFor();
+		await skipToMain(page);
+		await page.keyboard.press('Tab');
+		assert.equal(await input.evaluate((node) => node === document.activeElement), true);
+		await starters.waitFor();
+		assert.equal(await choices.count(), 3);
+		const requests = [];
+		page.on('request', (request) => {
+			if (new URL(request.url()).pathname.startsWith('/api/')) requests.push(request.method() + ' ' + request.url());
+		});
+		for (let index = 0; index < 3; index++) {
+			const button = choices.nth(index);
+			const label = await button.innerText();
+			if (index === 0) await button.press('Enter');
+			else await button.click();
+			const value = await input.inputValue();
+			assert.equal(value, label.replace(/…$/, '').trimEnd() + ' ');
+			assert.deepEqual(await input.evaluate((node) =>
+				[node === document.activeElement, node.selectionStart, node.selectionEnd]), [true, value.length, value.length]);
+			await starters.waitFor({ state: 'hidden' });
+			if (index < 2) {
+				await input.fill('');
+				await starters.waitFor();
+			}
+		}
+		await page.keyboard.type('why ice floats.');
+		assert.deepEqual(requests, []);
+		const question = await input.inputValue();
+		await page.getByRole('button', { name: 'Send message', exact: true }).click();
+		await page.getByText('Fresh reply', { exact: true }).waitFor();
+		assert.deepEqual(fixture.sent, [question]);
+		assert.equal(await page.locator('#intro-title').isVisible(), false);
+		assert.equal(await starters.isVisible(), false);
+	});
+
+	await check('intro-drafts-375', async (page, fixture) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const input = page.locator('#message:enabled');
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		await starters.waitFor();
+		await input.pressSequentially('My own question');
+		await starters.waitFor({ state: 'hidden' });
+		await page.reload();
+		await input.waitFor();
+		assert.equal(await input.inputValue(), 'My own question');
+		assert.equal(await starters.isVisible(), false);
+		await input.fill('');
+		await starters.waitFor();
+
+		// Dictation writes the transcript and emits input without a keyboard event.
+		await input.evaluate((node) => {
+			node.value = 'Spoken question';
+			node.dispatchEvent(new Event('input', { bubbles: true }));
+		});
+		await starters.waitFor({ state: 'hidden' });
+		assert.equal(await input.inputValue(), 'Spoken question');
+		await input.fill('');
+		await starters.waitFor();
+		assert.deepEqual(fixture.sent, []);
+	});
+
+	await check('intro-layout-375', async (page) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		const starters = page.getByRole('list', { name: 'Ways to start' });
+		await starters.waitFor();
+		await page.evaluate(() => document.fonts.ready);
+		const text = page.locator('h1#intro-title, .intro p, ul[aria-label="Ways to start"] button');
+		const fontSizes = () => text.evaluateAll((nodes) => nodes.map((node) => parseFloat(getComputedStyle(node).fontSize)));
+		const medium = await fontSizes();
+		const heading = page.getByRole('heading', { level: 1 });
+		const headingLines = () => heading.evaluate((node) => {
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+		});
+		for (const width of [375, 1280]) {
+			await page.setViewportSize({ width, height: 667 });
+			assert.equal(await headingLines(), 1, `The opening title fits the writing column at ${width}px`);
+		}
+		await page.setViewportSize({ width: 375, height: 667 });
+		await assertIntroLayout(page);
+		await page.locator('#menu-trigger').click();
+		const size = page.locator('#type-size-toggle');
+		await size.click();
+		await size.click();
+		await page.keyboard.press('Escape');
+		await page.locator('html[data-type-size=big]').waitFor();
+		const big = await fontSizes();
+		assert.equal(big.length, 5);
+		assert.ok(big.every((value, index) => value > medium[index]), 'Big enlarges the heading, explanation, and starters');
+		assert.ok(await headingLines() > 1, 'The enlarged heading wraps inside the phone width');
+		await assertIntroLayout(page);
+		const enlargedText = await page.addStyleTag({ content: 'html { font-size: 200% }' });
+		await assertIntroLayout(page);
+		assert.ok(await starters.getByRole('button').last().evaluate((button) => {
+			const text = document.createRange();
+			text.selectNodeContents(button);
+			return new Set([...text.getClientRects()].map((line) => Math.round(line.top))).size > 1;
+		}), 'The long starter wraps when the browser text size is doubled');
+		await enlargedText.evaluate((style) => style.remove());
+		await page.setViewportSize({ width: 375, height: 320 });
+		for (const button of await starters.getByRole('button').all()) {
+			await button.click({ trial: true });
+		}
+		await page.locator('#message').fill('I have a follow-up.');
+		const send = page.getByRole('button', { name: 'Send message', exact: true });
+		await send.click({ trial: true });
+		for (const control of [page.locator('#message'), send]) {
+			const box = await control.boundingBox();
+			assert.ok(box && box.y >= 0 && box.y + box.height <= 320, 'Composer controls fit the shorter viewport');
+		}
+	});
+
 	for (const forcedColors of ['none', 'active']) {
 		await check(`keyboard-focus-decoration-${forcedColors}`, async (page, fixture) => {
 			await page.emulateMedia({ forcedColors });
@@ -133,15 +255,21 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		for (const source of ['composer', 'steering', 'question']) {
 			await check(`guest-wall-${source}-${width}`, async (page, fixture) => {
 				fixture.mode = 'guest-limit';
+				fixture.showGuestQuestion = source !== 'composer';
 				await page.setViewportSize({ width, height: 900 });
 				await page.goto(origin);
-				await page.locator('#active-turn .questionnaire').waitFor();
+				const previousTurn = source === 'composer'
+					? page.getByText('What would you check?', { exact: true })
+					: page.locator('#active-turn .questionnaire');
+				await previousTurn.waitFor();
 				await page.evaluate(() => {
 					window.guestButtons = [...document.querySelectorAll('#active-turn button')];
 				});
 				if (source === 'composer') await send(page, 'Keep my unsent question');
-				else if (source === 'steering') await page.getByRole('button', { name: 'Smaller step', exact: true }).click();
-				else await page.getByRole('button', { name: 'Hint', exact: true }).click();
+				else if (source === 'steering') {
+					await page.getByRole('button', { name: 'More options', exact: true }).click();
+					await page.getByRole('menuitem', { name: 'Smaller step', exact: true }).click();
+				} else await page.getByRole('button', { name: 'Hint', exact: true }).click();
 				await page.locator('.chat-gate-card').waitFor();
 				const expected = source === 'composer' ? 'Keep my unsent question'
 					: source === 'steering' ? formatSteeringMessage('smaller-step')
@@ -162,7 +290,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 				assert.equal(await page.locator('.chat-gate-card').count(), 1);
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 				await page.reload();
-				await page.locator('#active-turn .questionnaire').waitFor();
+				await previousTurn.waitFor();
 				assert.equal(await page.locator('#active-turn .you, #messages .you').count(), 0);
 				assert.equal(await page.locator('#message').inputValue(), source === 'composer' ? expected : '');
 			});
@@ -175,8 +303,35 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.deepEqual({
 			composerDisabled: await page.locator('#message').isDisabled(),
 			sendDisabled: await page.getByRole('button', { name: 'Send message', exact: true }).isDisabled(),
-			menuInert: await page.locator('#menu-layer').evaluate((node) => node.inert),
-		}, { composerDisabled: true, sendDisabled: true, menuInert: true });
+			menuClosed: await page.getByRole('dialog').count() === 0 && await page.locator('#menu-trigger').isDisabled(),
+		}, { composerDisabled: true, sendDisabled: true, menuClosed: true });
+	});
+
+	await check('menu-pull-preview-375', async (page) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.emulateMedia({ reducedMotion: 'no-preference' });
+		await page.goto(origin);
+		await page.locator('#message:enabled').focus();
+		const touch = await page.context().newCDPSession(page);
+		const drag = (type, y) => touch.send('Input.dispatchTouchEvent', {
+			type, touchPoints: y === undefined ? [] : [{ x: 187, y }],
+		});
+		await drag('touchStart', 10);
+		await drag('touchMove', 39);
+		const panel = page.locator('#menu-dialog');
+		await panel.waitFor({ state: 'attached' });
+		const box = await panel.boundingBox();
+		assert.ok(box.y < 0 && box.y + box.height > 0, 'a partial pull shows part of the actual menu');
+		assert.equal(await panel.evaluate(node => node.inert), true);
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'message');
+		await drag('touchCancel');
+		await panel.waitFor({ state: 'detached' });
+		assert.equal(await page.evaluate(() => document.activeElement.id), 'message');
+		await drag('touchStart', 10);
+		await drag('touchMove', 90);
+		await drag('touchEnd');
+		await page.waitForFunction(() => document.activeElement.id === 'type-size-toggle');
+		assert.equal(await page.locator('#peek-handle').getAttribute('aria-expanded'), 'true');
 	});
 
 	await check('menu-returns-focus-to-its-opener', async (page) => {
@@ -186,9 +341,9 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const trigger = page.locator(selector);
 			await trigger.focus();
 			await page.keyboard.press('Enter');
-			await page.locator('#menu-layer.is-open').waitFor();
+			await page.getByRole('dialog', { name: 'Menu' }).waitFor();
 			await page.keyboard.press('Escape');
-			assert.equal(await trigger.evaluate((node) => document.activeElement === node), true, selector);
+			await page.waitForFunction(selector => document.activeElement?.matches(selector), selector);
 		}
 	});
 
@@ -233,14 +388,30 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.equal(await input.inputValue(), '');
 
+		// Start over resets every open tab, so an empty tab still warns about the others.
+		const [draftTab] = await Promise.all([
+			page.waitForEvent('popup'),
+			page.evaluate(() => { window.open(location.href); }),
+		]);
+		await ready(draftTab);
+		await draftTab.locator('#message').fill('A sentence in another tab');
+		await page.locator('#peek-handle').click();
+		await page.getByRole('button', { name: 'Start over' }).click();
+		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
+			'Anything unsent in your other open tabs will be deleted. Saved conversations are in History.');
+		await page.keyboard.press('Escape');
+		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
+		assert.equal(await draftTab.locator('#message').inputValue(), 'A sentence in another tab');
+		await draftTab.close();
+
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
-		const confirm = page.locator('#start-over-dialog[open]');
+		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			'Your draft will be deleted. You can reopen this conversation from History.');
+			'What you haven’t sent will be deleted, here and in your other open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
@@ -277,7 +448,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const openHistory = async () => {
 				await page.locator('#peek-handle').click();
 				await page.getByRole('button', { name: 'History' }).click();
-				await page.locator('#history-dialog[open]').waitFor();
+				await page.locator('#history-dialog[data-state=open]').waitFor();
 				// History loads from the server each time it opens.
 				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
@@ -289,7 +460,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			await openHistory();
 			await page.getByText('Your conversations appear here after you send a message.').waitFor();
 			await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
-			assert.match(await page.evaluate(() => document.activeElement.id), /^(peek-handle|menu-trigger)$/);
+			await page.waitForFunction(() => /^(peek-handle|menu-trigger)$/.test(document.activeElement.id));
 
 			await send(page, 'Why is the sky blue?');
 			// The fixture's history read repeats the last reply in every conversation.
@@ -333,7 +504,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	async function openHistory(page) {
 		await page.locator('#peek-handle').click();
 		await page.getByRole('button', { name: 'History' }).click();
-		await page.locator('#history-dialog[open]').waitFor();
+		await page.locator('#history-dialog[data-state=open]').waitFor();
 	}
 
 	await check('history-says-when-it-cannot-load', async (page, fixture) => {
@@ -368,11 +539,83 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.goto(origin);
 		await send(page, 'Hold this reply');
 		await page.locator('.turn.pending').waitFor();
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#history-trigger').isDisabled(), true);
 		assert.equal(await page.locator('#start-over').isDisabled(), true);
+		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#history-trigger').isEnabled(), true);
+	});
+
+	await check('card-more-options-375', async (page, fixture) => {
+		fixture.mode = 'guest-limit';
+		await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto(origin);
+		const more = page.getByRole('button', { name: 'More options', exact: true });
+		const menu = page.getByRole('menu');
+		const choice = page.getByRole('radio', { name: 'Retry', exact: true });
+		await choice.click();
+		const actionBoxes = await page.locator('.questionnaire-actions button').evaluateAll(buttons =>
+			buttons.map(button => ({ top: button.offsetTop, height: button.offsetHeight })));
+		assert.equal(new Set(actionBoxes.map(box => box.top)).size, 1, 'the standard actions fit on one row at 375px');
+		assert.ok(actionBoxes.every(box => box.height >= 44), 'the actions keep their touch height');
+		assert.equal(await page.getByRole('button', { name: 'Smaller step', exact: true }).count(), 0);
+		await more.press('Enter');
+		const unaided = menu.getByRole('menuitem', { name: 'Try on my own', exact: true });
+		await unaided.waitFor();
+		assert.equal(await menu.getByRole('menuitem', { name: 'Smaller step', exact: true }).isVisible(), true);
+		await page.keyboard.press('c');
+		await page.keyboard.press('Escape');
+		await menu.waitFor({ state: 'hidden' });
+		await page.waitForFunction(button => button === document.activeElement, await more.elementHandle());
+		assert.equal(await choice.isChecked(), true);
+		assert.deepEqual(fixture.sent, []);
+
+		for (const expected of ['What would you check?', 'would']) {
+			if (expected === 'would') await selectReplyWord(page);
+			await more.click();
+			await menu.getByRole('menuitem', { name: /Cop(y|ied) this turn/ }).click();
+			await menu.waitFor({ state: 'hidden' });
+			await page.waitForFunction(async text => await navigator.clipboard.readText() === text, expected);
+		}
+		assert.equal(await choice.isChecked(), true);
+		assert.deepEqual(fixture.sent, []);
+		await more.press('ArrowDown');
+		await unaided.click();
+		await page.locator('.chat-gate-card').waitFor();
+		assert.deepEqual(fixture.sent, [formatSteeringMessage('try-unaided')]);
+	});
+
+	await check('copy-and-steer', async (page, fixture) => {
+		fixture.mode = 'guest-limit';
+		fixture.showGuestQuestion = false;
+		await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+		await page.goto(origin);
+		const group = page.getByRole('group', { name: 'Steer this turn' });
+		const smaller = group.getByRole('button', { name: 'Smaller step', exact: true });
+		const unaided = group.getByRole('button', { name: 'Try on my own', exact: true });
+		const copy = group.getByRole('button', { name: 'Copy this turn', exact: true });
+		await copy.waitFor();
+		assert.equal(await copy.locator('svg').count(), 1);
+		await copy.click();
+		await group.getByRole('button', { name: 'Copied this turn', exact: true }).waitFor();
+		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'What would you check?');
+		assert.deepEqual(fixture.sent, []);
+		await selectReplyWord(page);
+		await group.getByRole('button', { name: /Cop(y|ied) this turn/ }).click();
+		assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'would');
+		assert.equal(await unaided.isEnabled(), true);
+		const previousButtons = await group.getByRole('button').elementHandles();
+		await smaller.click();
+		await page.locator('.chat-gate-card').waitFor();
+		for (const button of previousButtons) {
+			assert.equal(await button.evaluate(node => !node.isConnected || node.disabled), true);
+			await button.evaluate(node => node.click());
+		}
+		assert.deepEqual(fixture.sent, [formatSteeringMessage('smaller-step')]);
 	});
 
 	await check('retry-clears-streamed-attempt', async (page, fixture) => {
@@ -421,7 +664,9 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await recheck.waitFor();
 		assert.equal(await recheck.evaluate((node) => document.activeElement === node), true);
 		assert.equal(await page.locator('#message').isDisabled(), true);
+		await page.locator('#peek-handle').click();
 		assert.equal(await page.locator('#start-over').isEnabled(), true);
+		await page.keyboard.press('Escape');
 		await recheck.click();
 		await page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
 		assert.equal(await page.locator('#message').isEnabled(), true);
@@ -461,6 +706,24 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 	console.log(`UI browser passed: ${results.length} keyboard, retry, cancel, and operator scenarios.`);
 }
 
+async function assertIntroLayout(page) {
+	const selectors = ['h1#intro-title', '.intro p', '#chat', 'ul[aria-label="Ways to start"]'];
+	const ordered = await Promise.all(selectors.map((selector) =>
+		page.locator(selector).evaluate((node) => node.getBoundingClientRect().toJSON())));
+	for (const [index, box] of ordered.entries()) {
+		assert.ok(box && box.height > 0 && box.left >= 0 && box.right <= 375);
+		if (index > 0) assert.ok(ordered[index - 1].bottom <= box.top + 1, 'Heading, explanation, composer, and starters appear in order without overlap');
+	}
+	const choices = page.getByRole('list', { name: 'Ways to start' }).getByRole('button');
+	assert.equal(await choices.count(), 3);
+	for (const button of await choices.all()) {
+		await button.click({ trial: true });
+		assert.ok(await button.evaluate((node) =>
+			node.scrollWidth <= node.clientWidth + 1 && node.scrollHeight <= node.clientHeight + 1), 'Starter text fits its button');
+	}
+	assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Page fits the phone width');
+}
+
 async function readFocusPaint(locator) {
 	return locator.evaluate(async (node) => {
 		await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
@@ -470,6 +733,16 @@ async function readFocusPaint(locator) {
 			borderColor: style.borderColor,
 			boxShadow: style.boxShadow,
 		};
+	});
+}
+
+async function selectReplyWord(page) {
+	await page.getByText('What would you check?', { exact: true }).evaluate(node => {
+		const range = document.createRange();
+		range.setStart(node.firstChild, 5);
+		range.setEnd(node.firstChild, 10);
+		getSelection().removeAllRanges();
+		getSelection().addRange(range);
 	});
 }
 
@@ -510,6 +783,7 @@ function createServices(origin, session) {
 	const abortRequested = new Promise((resolve) => { releaseAbort = resolve; });
 	const fixture = {
 		mode: 'success',
+		showGuestQuestion: true,
 		sent: [],
 		// Stands in for the server's conversation index; the rules themselves
 		// are proven by conversation-index.test.mjs and the real-server smoke.
@@ -563,12 +837,12 @@ function createServices(origin, session) {
 			}
 			if (!url.pathname.endsWith('/events')) {
 				if (fixture.mode === 'guest-limit') return json({ messages: [{
-					role: 'assistant', display: 'visible', parts: [
+					role: 'assistant', display: 'visible', submissionId: 'guest-card', parts: [
 						{ type: 'text', text: 'What would you check?' },
-						{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
+						...(fixture.showGuestQuestion ? [{ type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{
 							name: 'item', prompt: 'Which step?', required: true, multiple: false,
-							choices: [{ value: 'check', label: 'Check' }, { value: 'retry', label: 'Retry' }],
-						}] } },
+							choices: [{ value: 'check', label: 'Check', shortcut: 'c' }, { value: 'retry', label: 'Retry' }],
+						}] } }] : []),
 					],
 				}], settlements: [] });
 				return json({ messages: completed ? [{ role: 'assistant', display: 'visible', submissionId, parts: [{ type: 'text', text: 'Fresh reply' }] }] : [], settlements: [] });

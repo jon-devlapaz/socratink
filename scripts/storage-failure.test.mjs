@@ -11,8 +11,7 @@ let origin;
 
 before(async () => {
 	server = await createServer({
-		configFile: false,
-		root: new URL('../src/ui', import.meta.url).pathname,
+		configFile: new URL('../vite.config.ui.ts', import.meta.url).pathname,
 		server: { host: '127.0.0.1', port: 0 },
 	});
 	await server.listen();
@@ -25,20 +24,19 @@ after(async () => {
 });
 
 async function assertNoticeLayout(page, reply) {
-	for (const width of [390, 1280]) {
+	for (const width of [375, 390, 1280]) {
 		await page.setViewportSize({ width, height: 844 });
 		await page.evaluate(() => document.fonts.ready);
 		await page.waitForFunction((reply) => {
-			const notice = document.querySelector('#storage-notice').getBoundingClientRect();
-			const composer = document.querySelector('#chat').getBoundingClientRect();
-			const stage = document.querySelector('.stage');
-			const stageStyle = getComputedStyle(stage);
-			const contentBottom = reply
-				? [...document.querySelectorAll('#active-turn p')].find((p) => p.textContent === reply)?.getBoundingClientRect().bottom
-				: stage.getBoundingClientRect().bottom - parseFloat(stageStyle.paddingBottom);
-			const headingPresent = reply || getComputedStyle(stage, '::before').content.includes('Make the thinking your own.');
-			return headingPresent && contentBottom <= notice.top - 1 && notice.bottom <= composer.top
-				&& notice.top >= 0 && composer.bottom <= window.innerHeight;
+			const content = reply
+				? [[...document.querySelectorAll('#active-turn p')].find((p) => p.textContent === reply)]
+				: [document.querySelector('h1#intro-title'), document.querySelector('.intro p')];
+			const elements = [...content, document.querySelector('#storage-notice'), document.querySelector('#chat')];
+			if (!reply) elements.push(document.querySelector('ul[aria-label="Ways to start"]'));
+			if (!elements.every((element) => element?.checkVisibility())) return false;
+			const boxes = elements.map((element) => element.getBoundingClientRect());
+			return boxes.every((box, index) => box.height > 0 && box.top >= 0 && box.bottom <= innerHeight
+				&& box.left >= 0 && box.right <= innerWidth && (index === 0 || boxes[index - 1].bottom <= box.top + 1));
 		}, reply, { timeout: 5_000 });
 	}
 }
@@ -105,12 +103,13 @@ for (const [mode, description] of [
 		await notice.waitFor({ timeout: 5_000 });
 		await page.waitForFunction(() => document.querySelector('#message')?.disabled === false, null, { timeout: 5_000 });
 		assert.equal(await notice.count(), 1);
+		await page.getByRole('heading', { level: 1, name: 'Make the thinking your own.', exact: true }).waitFor();
 		await assertNoticeLayout(page, null);
 		if (mode === 'blocked') {
+			await page.locator('#menu-trigger').click();
 			assert.equal(await page.locator('#appearance-toggle').getAttribute('aria-pressed'), 'false');
 			assert.equal(await page.locator('html').getAttribute('data-type-size'), 'medium');
 			assert.equal(await page.locator('#sound-toggle').getAttribute('aria-pressed'), 'false');
-			await page.locator('#menu-trigger').click();
 			await page.locator('#type-size-toggle').click();
 			await page.locator('#sound-toggle').click();
 			await page.locator('#appearance-toggle').click();
@@ -139,7 +138,7 @@ for (const [mode, description] of [
 			await page.locator('.dock').evaluate(async (dock) => {
 				await Promise.allSettled(dock.getAnimations().map((animation) => animation.finished));
 			});
-			for (const width of [390, 1280]) {
+			for (const width of [375, 390, 1280]) {
 				await page.setViewportSize({ width, height: 844 });
 				await page.waitForFunction(() => {
 					const notice = document.querySelector('#storage-notice').getBoundingClientRect();

@@ -78,8 +78,19 @@
 }
 
 .turn-markdown a {
+	display: inline;
+	padding: 0;
+	font: inherit;
+	white-space: normal;
 	color: var(--accent);
 	text-underline-offset: 0.12em;
+}
+
+@media (hover: hover) {
+	.turn-markdown a:hover {
+		color: var(--ink);
+		text-decoration: underline;
+	}
 }
 
 .turn-markdown :not(pre) > code {
@@ -142,7 +153,7 @@
 	font-size: inherit;
 }
 
-.markdown-table-wrap {
+.turn-markdown [data-slot="table-container"] {
 	overflow-x: auto;
 	border-radius: 10px;
 	box-shadow: var(--shadow-border);
@@ -160,6 +171,7 @@
 	border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 	text-align: left;
 	vertical-align: top;
+	white-space: normal;
 }
 
 .markdown-table th {

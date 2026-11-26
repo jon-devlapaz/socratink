@@ -502,7 +502,7 @@ try {
 	);
 	questionnaireFromReply(transfer, transferQuestionnaire, 'transfer');
 	const hinted = await client.read(
-		await client.send({ message: { kind: 'user', body: hintRequest } }),
+		await client.send({ message: { kind: 'user', body: hintRequest, cardHelp: { kind: 'hint', sourceId: transfer.submissionId } } }),
 	);
 	assert.equal(hinted.text, hintText);
 	questionnaireFromReply(hinted, transferQuestionnaire, 'card asked again after a hint');
@@ -515,6 +515,7 @@ try {
 	assert.deepEqual(scaffold.data?.reveal?.at(-1), scaffoldReveal, 'an unmarked reply to a plea for help gets one correction');
 	assert.equal(providerTurns, 11, 'consent adds one reveal call; only the unmarked reply takes a correction call');
 	const relabeled = visibleTurnsFromHistory(await client.history()).slice(-4);
+	assert.equal(relabeled[0].shownText, 'You asked for a hint', 'saved history identifies the card button');
 	assert.deepEqual(relabeled.map(({ role, text, reveal }) => ({ role, text, reveal })), [
 		{ role: 'You', text: hintRequest, reveal: undefined },
 		{ role: 'Assistant', text: hintText, reveal: { kind: 'hint', target: transferPresent.prompt } },

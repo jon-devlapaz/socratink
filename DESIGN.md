@@ -14,14 +14,17 @@ claims and teaching direction belong to [NORTH-STAR.md](NORTH-STAR.md).
 - Dark paper is true carbon ink `#100f0f`, with neutral steps `#1c1b1a`,
   `#282726`, and `#343331`. Text is `#cecdc3`, secondary ink `#aaa69e`,
   and quiet ink `#8f8c85`.
-- Verdigris is the only accent, `#1f7a72` in light and `#3aa99f` in dark.
-  Use it only for action, selection, focus, or confirmed evidence. Pending
+- Verdigris (`#1f7a72` in light and `#3aa99f` in dark) marks actions,
+  selections, focus, and confirmed evidence. Pending
   work, quotations, and supplied answers are not evidence of learner mastery.
+- Ochre identifies help supplied by Socratink. Use it for the attribution label
+  and margin rule, with ordinary text ink for the explanation. Its light and
+  dark values are `#82571f` and `#dfb477`.
 - Signal red `#d14d41` means an error, never decoration.
 - Rules use `color-mix` with ink at 5–20%. Default dividers use 10%.
   Use tonal paper steps and hairlines before adding an enclosing box.
-- Paper grain is an SVG turbulence layer, multiply at 38% in light and
-  overlay at 50% in dark. It does not receive pointer events.
+- The sign-in page uses a faint grayscale paper texture at 7.6% opacity
+  in light mode and 10% in dark mode.
 
 ## Type
 
@@ -43,6 +46,17 @@ code. Do not use it for conversation prose or tool-output prose.
 
 ## Surfaces and actions
 
+Before the first message, show the heading and a short explanation above the
+composer. Size the heading to the writing column. At the default text size,
+it fits on one line at 375px and on desktop. Let it wrap when the learner
+enlarges the text or the column gets narrower.
+
+Place the three starter buttons below the composer in reading and keyboard
+order. A starter fills the empty composer and focuses it. The learner edits
+the text and sends it. Hide starters whenever the composer contains a draft,
+including a draft restored on reload. Let the empty screen scroll and the
+button labels wrap when text is large or the keyboard leaves little space.
+
 The active conversation rests directly on paper. Earlier steps meet it at a
 hairline, with the existing bookmark control. Do not add rounded message
 bubbles, decorative badges, or floating panels.
@@ -55,8 +69,7 @@ The consent card keeps its two direct actions, "See it" and "Try once more".
 "Try once more" is the primary button. "See it" is secondary. Do not change the
 submission contract or add an extra confirmation step for a visual change.
 
-Buttons are Kinetik UI buttons drawn in paper and ink, and `buttons.css` owns
-them. Every button is a pill with a hairline edge. A primary button is ink
+Buttons use shadcn/ui. `buttons.css` keeps their paper and ink finish. Every button is a pill with a hairline edge. A primary button is ink
 with a soft top sheen and an inset highlight; use one per place, for the
 forward action (send, submit, "Try once more", send feedback). A secondary
 button is a paper pill. A ghost button has no fill until hover, for quiet
@@ -72,6 +85,9 @@ Recorded by Codex on 2026-11-21 during the Gridlines pass.
 
 - Current-turn text, composer text, and dictation status use a common inset
   of 1.25rem. The composer border counts toward this inset.
+- Supplied help uses the same text edge for its label, first line, and wrapped
+  lines as the question below. Its 2px rule sits in the margin. Earlier steps
+  follows the same pattern inside its existing text column. (Codex, 2026-11-25.)
 - The first text action in a question starts on the prompt's leading edge.
 - Menu controls share one centered row when there is space for all of them.
   On smaller screens, keep rows centered and align the icons within each row.
@@ -84,16 +100,17 @@ trail, and reveal provenance. Supplied help remains visibly attributed and
 must not look like learner work. The tutor alone rates subskills through the
 teaching policy. A visual state does not establish mastery.
 
-Interactive controls hold at least 44px touch targets. Native choice inputs
-use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
+Interactive controls hold at least 44px touch targets. Choice controls use their enclosing label as the touch target. Keyboard focus adds no outline, ring, or fill.
 Preserve reduced-motion alternatives, safe-area spacing, adjustable text size,
 and explicit as well as system light/dark preferences. Code and tables scroll
 within their own regions, never across the whole page.
 
 ## Motion
 
-Kinetik UI (kinetikui.singhgourav.site, MIT) is the motion reference. Port
-its ideas into plain CSS and TypeScript; do not add its React components.
+Use Magic UI’s Animated Shiny Text for the Thinking and Transcribing states.
+Keep animation off when the learner requests reduced motion.
+When a conversation starts or reopens, the wordmark fades in place. The
+dot stays visible and the full name returns on hover or keyboard focus.
 Motion uses opacity, blur, and scale, never width, height, or position, so the
 conversation never moves when a control appears or a reply ends. Springs use
 `--spring-pop` from `styles.css`. The composer hint blurs in on focus, and the
@@ -112,7 +129,9 @@ and consent styling. `reveal-mark.css` owns supplied-help attribution.
 `login.css` owns sign-in appearance. `history.css` owns the History page:
 rows and hairlines on paper, with the open conversation marked by a verdigris
 rule and the words "Open now" in full ink. It leaves by "Back to conversation". Other UI styles use the shared tokens.
-Behavior stays in the existing TypeScript modules.
+The three pages render to HTML at build time. React hydrates chat and sign-in.
+The 404 links work with JavaScript disabled. Shared shadcn/ui controls live in
+`src/ui/components/ui/`, with Magic UI in `src/ui/components/magicui/`.
 
 Run `pnpm check` and `REVEAL_BROWSER=1 pnpm smoke`. Compare conversation,
 question, and consent screenshots at 390px and 1280px in both themes. Screenshots

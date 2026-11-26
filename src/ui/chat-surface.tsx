@@ -1,5 +1,7 @@
 import { ChatApiError, type WireReply } from '../config/chat-wire.ts';
-import { createAuthGateCard, hasAuthProvider } from './chat-gate.ts';
+import type { ReactNode } from 'react';
+import { flushSync } from 'react-dom';
+import { AuthGateCard } from './chat-gate.tsx';
 import './chat-gate.css';
 import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
@@ -11,14 +13,16 @@ import {
 	startNewChatConversation,
 	unsettledSubmissionFromHistory,
 	watchChatConversationReset,
+	switchChatConversation,
 	announceChatTurnSettled,
 	watchChatTurnSettled,
 } from './client/conversation.ts';
-import { mountChatDraft } from './client/chat-draft.ts';
-import { initAppearance, toggleAppearance } from './theme.ts';
-import { cycleTypeSize, initTypeSize } from './type-size.ts';
+import { mountChatDraft, openQuestionDraft } from './client/chat-draft.ts';
+import { mountSoundCues } from './sound-cues.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
+	keepsQuestionDraft,
+	questionsWithDrafts,
 	displayedAssistantTurn,
 	displayedLearnerTurn,
 	groupEarlierSteps,
@@ -30,6 +34,7 @@ import { modelRouteLabel } from '../config/model-route.ts';
 import {
 	formatQuestionnaireAnswers,
 	questionnaireFromReplyData,
+	type CardHelpAction,
 } from '../questionnaire.ts';
 import { revealToolName, revealFromReply } from '../reveal.ts';
 import { formatSteeringMessage } from './steering.ts';
@@ -39,69 +44,38 @@ import {
 } from './tool-state.ts';
 import { mountDictation } from './dictation.ts';
 import { createLiveReply } from './live-reply.ts';
-import type { MarkdownRenderer } from './chat-markdown.ts';
-import {
-	createActiveTurn,
-	createHistoryStep,
-	createPendingTurn,
-	type PendingTurnSession,
-	type TurnStreamSinks,
-} from './turn-view.ts';
-import { mountMenuSheet } from './menu-sheet.ts';
-import { mountHistory } from './history.ts';
-import { mountSoundCues } from './sound-cues.ts';
+import { ActiveTurn, HistoryStep, PendingTurn } from './turn-view.tsx';
 import { requireElement } from './dom.ts';
 import {
 	applyRequestControlState,
-	buildRequestStateTurn,
+	RequestStateTurn,
 	focusAfterRequestStatePaint,
-} from './chat-request-view.ts';
+} from './chat-request-view.tsx';
 
 type PaintKind = 'restore' | 'new-turn' | 'hold';
+type SendSource =
+	| { kind: 'composer' | 'steering' }
+	| { kind: 'card'; cardHelp?: CardHelpAction }
+	| { kind: 'retry'; attempt: Extract<ChatRequestState, { kind: 'terminal' }> };
 
-type ChatSurfaceElements = {
-	form: HTMLFormElement;
-	input: HTMLTextAreaElement;
-	messages: HTMLOListElement;
-	button: HTMLButtonElement;
-	lockup: HTMLButtonElement;
-	canvas: HTMLElement;
-	startOver: HTMLButtonElement;
-	history: HTMLButtonElement;
-	card: HTMLElement;
-	activeTurn: HTMLElement;
-	peekHandle: HTMLButtonElement;
-	menuLayer: HTMLElement;
-	menuPanel: HTMLElement;
-	menuHandle: HTMLElement;
-	menuBackdrop: HTMLButtonElement;
-	menuFirst: HTMLElement;
-	trailToggle: HTMLButtonElement;
-	trailLabel: HTMLElement;
-	appearance: HTMLButtonElement;
-	typeSize: HTMLButtonElement;
-	dictationToggle: HTMLButtonElement;
-	dictationStatus: HTMLElement;
-};
-
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export type TranscriptContent = { history: ReactNode; active: ReactNode; questionActive: boolean };
 
 export function mountChatSurface(options: Readonly<{
 	userId: string;
 	aliases: readonly string[];
+	onStartOverDisabledChange: (disabled: boolean) => void;
+	onTranscriptChange: (content: TranscriptContent) => void;
 }>) {
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const elements = queryChatSurface();
 	const {
 		form,
 		input,
 		messages,
-		startOver,
 		card,
 		activeTurn,
 		trailToggle,
 		trailLabel,
-		appearance,
-		typeSize,
 		dictationToggle,
 		dictationStatus,
 	} = elements;
@@ -117,6 +91,7 @@ export function mountChatSurface(options: Readonly<{
 		storageNotice.textContent = 'Reloading this page could lose your place in this chat. You can keep chatting in this tab.';
 	}
 	const draft = mountChatDraft(input, conversation.id);
+	const cardDraft = openQuestionDraft(conversation.id);
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	let liveReply = createLiveReply('');
@@ -124,10 +99,9 @@ export function mountChatSurface(options: Readonly<{
 	let liveFrame = 0;
 	const requests = new ChatRequestCoordinator(conversation, {
 		onEvent: (event) => {
-			if (liveReply.apply(event) && !liveFrame) liveFrame = requestAnimationFrame(paintLiveText);
-			if (isQuietToolStreamEvent(event, quietToolIds)) return;
-			if (!applyToolStreamEvent(liveTools, event)) return;
-			pendingSession?.setTools(liveTools);
+			const replyChanged = liveReply.apply(event);
+			const toolsChanged = !isQuietToolStreamEvent(event, quietToolIds) && applyToolStreamEvent(liveTools, event);
+			if ((replyChanged || toolsChanged) && !liveFrame) liveFrame = requestAnimationFrame(paintLiveText);
 		},
 	});
 	let trailOpen = false;
@@ -135,38 +109,31 @@ export function mountChatSurface(options: Readonly<{
 	let turns: DisplayedTurn[] = [];
 	let requestState: ChatRequestState = requests.state;
 	const transcript = attachTranscriptScroll(card);
-	const markdownRenderers: MarkdownRenderer[] = [];
-	let pendingSession: PendingTurnSession | undefined;
-	const turnSinks: TurnStreamSinks = {
-		trackRenderer: (renderer) => {
-			markdownRenderers.push(renderer);
-		},
-	};
-	function wait(ms: number) {
-		return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-	}
+	let history: ReactNode = null;
+	let visibleTurns: ReactNode = null;
+	let status: ReactNode = null;
+	let questionActive = false;
+	let paintVersion = 0;
 
-	function clearStream() {
-		for (const renderer of markdownRenderers) renderer.destroy();
-		markdownRenderers.length = 0;
-	}
-
-	function releasePending() {
-		pendingSession?.dispose();
-		pendingSession = undefined;
+	function renderTranscript() {
+		const pending = requestState.kind === 'waiting' || requestState.kind === 'canceling';
+		const view = requestState.kind === 'waiting' ? liveReply.view() : { markdown: '' };
+		if (view.markdown) liveTextShown = true;
+		const active = <>
+			{visibleTurns}
+			{pending ? <PendingTurn
+				view={view}
+				tools={liveTools}
+				cancelDisabled={requestState.kind === 'canceling'}
+				onCancel={() => void runRequestCommand(requests.cancel())}
+			/> : status}
+		</>;
+		flushSync(() => options.onTranscriptChange({ history, active, questionActive }));
 	}
 
 	function paintLiveText() {
 		liveFrame = 0;
-		const session = pendingSession;
-		if (!session) return;
-		if (requestState.kind !== 'waiting') {
-			session.setText({ markdown: '' });
-			return;
-		}
-		const view = liveReply.view();
-		if (view.markdown) liveTextShown = true;
-		transcript.grow(() => session.setText(view));
+		if (requestState.kind === 'waiting') transcript.grow(renderTranscript);
 	}
 
 	let cachedProviders: AuthProviders | undefined;
@@ -177,25 +144,19 @@ export function mountChatSurface(options: Readonly<{
 
 	async function requestStateElement(
 		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
-	): Promise<HTMLElement> {
+	) {
 		if (isGuestTurnLimitError(state)) {
 			const providers = await gateProviders();
-			if (hasAuthProvider(providers)) return createAuthGateCard(providers);
+			if (providers.google || providers.github) return <AuthGateCard providers={providers} />;
 		}
-		return createRequestStateTurn(state);
-	}
-
-	function createRequestStateTurn(
-		state: Extract<ChatRequestState, { kind: 'recovery' | 'terminal' }>,
-	) {
-		return buildRequestStateTurn(state, () => {
+		return <RequestStateTurn state={state} onAction={() => {
 			if (state.kind === 'recovery') {
 				void runRequestCommand(requests.recheck());
-				return;
+			} else {
+				const text = state.outcome === 'not-admitted' ? input.value.trim() || state.text : state.text;
+				void sendMessage(text, { kind: 'retry', attempt: state });
 			}
-			const text = state.outcome === 'not-admitted' ? input.value.trim() || state.text : state.text;
-			void startRequest(text, state);
-		});
+		}} />;
 	}
 
 	function setTrailOpen(open: boolean) {
@@ -225,72 +186,52 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	async function paint(kind: PaintKind, landing: 'start' | 'live-edge' = 'start') {
+		const version = ++paintVersion;
 		const render = async () => {
 			const { earlier, current } = splitCurrentTurns(turns);
-			messages.replaceChildren(
-				...groupEarlierSteps(earlier).map((step, index) => createHistoryStep(step, index)),
-			);
-			syncTrail();
-
 			if (kind === 'new-turn' && hasEntered && !reduceMotion && activeTurn.childElementCount > 0) {
 				activeTurn.classList.add('is-exiting');
-				await wait(150);
+				await new Promise<void>((resolve) => window.setTimeout(resolve, 150));
 				activeTurn.classList.remove('is-exiting');
 			}
-			const stateElement = requestState.kind === 'recovery' || requestState.kind === 'terminal'
-				? await requestStateElement(requestState) : undefined;
-
-			clearStream();
-			activeTurn.replaceChildren(
-				...current.map((item, index) => {
-					const isLast = index === current.length - 1;
-					return createActiveTurn(item, {
-						announce: kind === 'hold' && isLast,
-						stagger: kind === 'hold' && hasEntered && !reduceMotion && isLast && item.role !== 'Assistant',
-						interactive: isLast && Boolean(item.questionnaire) && !chatRequestControls(requestState).composerLocked,
-						steering: isLast && item.role === 'Assistant' && requestState.kind === 'idle',
-					}, turnSinks, {
-						onQuestionnaireSubmit: (answers) => {
-							const questionnaire = item.questionnaire;
-							if (questionnaire) {
-								void sendMessage(formatQuestionnaireAnswers(questionnaire, answers));
-							}
-						},
-						onSteer: (steering) => {
-							void sendMessage(formatSteeringMessage(steering));
-						},
-					});
-				}),
-			);
-			if (requestState.kind === 'waiting' || requestState.kind === 'canceling') {
-				if (!pendingSession) {
-					pendingSession = createPendingTurn({
-						cancelDisabled: requestState.kind === 'canceling',
-						tools: liveTools,
-						onCancel: () => {
-							void runRequestCommand(requests.cancel());
-						},
-					});
-				} else {
-					pendingSession.setCancelDisabled(requestState.kind === 'canceling');
-					pendingSession.setTools(liveTools);
-				}
-				if (requestState.kind === 'canceling') pendingSession.setText({ markdown: '' });
-				else if (!liveFrame) liveFrame = requestAnimationFrame(paintLiveText);
-				activeTurn.append(pendingSession.element);
-			} else {
-				releasePending();
-			}
-			if (stateElement) activeTurn.append(stateElement);
+			const nextStatus = requestState.kind === 'recovery' || requestState.kind === 'terminal'
+				? await requestStateElement(requestState) : null;
+			if (version !== paintVersion) return;
+			status = nextStatus;
+			questionActive = Boolean(current.at(-1)?.questionnaire) && !chatRequestControls(requestState).composerLocked;
+			const draftIds = questionsWithDrafts(turns);
+			const questionDraft = questionActive ? cardDraft.forQuestion(draftIds.current) : undefined;
+			if (turns.at(-1)?.role === 'Assistant') cardDraft.retain(draftIds);
+			const earlierDrafts = cardDraft.earlierDrafts(draftIds.earlier);
+			history = groupEarlierSteps(earlier).map((step, index, steps) =>
+				<HistoryStep key={index} step={step} index={index} previousReply={steps[index - 1]?.at(-1)}
+					drafts={earlierDrafts} />);
+			visibleTurns = current.map((item, index) => {
+				const last = index === current.length - 1;
+				return <ActiveTurn key={`${earlier.length + index}-${item.role}`}
+					item={item}
+					questionDraft={last ? questionDraft : undefined}
+					announce={kind === 'hold' && last}
+					stagger={kind === 'hold' && hasEntered && !reduceMotion && last && item.role !== 'Assistant'}
+					interactive={last && Boolean(item.questionnaire) && !chatRequestControls(requestState).composerLocked}
+					steering={last && item.role === 'Assistant' && requestState.kind === 'idle'}
+					onQuestionnaireSubmit={(answers) => {
+						if (!item.questionnaire) return;
+						const kind = answers[0]?.help;
+						const cardHelp = kind && item.submissionId ? { kind, sourceId: item.submissionId } : undefined;
+						void sendMessage(formatQuestionnaireAnswers(item.questionnaire, answers), { kind: 'card', cardHelp });
+					}}
+					onSteer={(kind) => void sendMessage(formatSteeringMessage(kind), { kind: 'steering' })}
+				/>;
+			});
+			renderTranscript();
+			syncTrail();
 			if (kind === 'new-turn' || kind === 'hold') hasEntered = true;
 			document.body.classList.toggle('encounter-active', turns.length > 1);
 			const nothingSaidYet = current.length === 0 && requestState.kind === 'idle';
 			document.body.classList.toggle('conversation-empty', nothingSaidYet);
 			input.placeholder = nothingSaidYet ? 'What are you working on?' : 'Your reply';
-			document.body.classList.toggle(
-				'questionnaire-active',
-				Boolean(current.at(-1)?.questionnaire && requestState.kind === 'idle'),
-			);
+			document.body.classList.toggle('questionnaire-active', questionActive);
 		};
 
 		switch (kind) {
@@ -314,13 +255,13 @@ export function mountChatSurface(options: Readonly<{
 
 	function applyRequestControls(state: ChatRequestState) {
 		applyRequestControlState(state, elements);
+		options.onStartOverDisabledChange(chatRequestControls(state).startOverDisabled);
 		dictation.setEnabled(!chatRequestControls(state).composerLocked);
 	}
 
-	initAppearance(appearance);
-	initTypeSize(typeSize);
-	const sound = mountSoundCues(requireElement<HTMLButtonElement>('#sound-toggle'));
+	const sound = mountSoundCues();
 	watchChatConversationReset(() => {
+		cardDraft.clear();
 		draft.clear();
 		location.reload();
 	});
@@ -331,28 +272,6 @@ export function mountChatSurface(options: Readonly<{
 		const typing = document.activeElement === input;
 		await restoreConversation();
 		if (typing && !input.disabled) input.focus();
-	});
-	appearance.addEventListener('click', () => toggleAppearance(appearance));
-	typeSize.addEventListener('click', () => cycleTypeSize(typeSize));
-	const closeMenu = mountMenuSheet(elements, {
-		reduceMotion,
-	});
-	const startOverDialog = requireElement<HTMLDialogElement>('#start-over-dialog');
-	startOver.addEventListener('click', () => {
-		closeMenu();
-		startOverDialog.returnValue = '';
-		startOverDialog.showModal();
-	});
-	startOverDialog.addEventListener('close', () => {
-		if (startOverDialog.returnValue !== 'start') return requireElement<HTMLButtonElement>('#menu-trigger').focus();
-		dictation.cancel();
-		draft.clear();
-		startNewChatConversation(options.userId);
-	});
-	mountHistory({
-		currentId: conversation.id,
-		closeMenu,
-		beforeSwitch: () => dictation.cancel(),
 	});
 	trailToggle.addEventListener('click', () => setTrailOpen(!trailOpen));
 
@@ -372,32 +291,30 @@ export function mountChatSurface(options: Readonly<{
 		}
 	});
 
-	async function sendMessage(text: string, fromComposer = false) {
-		if (chatRequestControls(requests.state).composerLocked) return;
-		await startRequest(text, undefined, fromComposer);
-	}
-
-	async function startRequest(
-		text: string,
-		retryOf?: Extract<ChatRequestState, { kind: 'terminal' }>,
-		fromComposer = false,
-	) {
+	async function sendMessage(text: string, source: SendSource) {
+		const retryOf = source.kind === 'retry' ? source.attempt : undefined;
+		if (!retryOf && chatRequestControls(requests.state).composerLocked) return;
 		liveTools.length = 0;
 		quietToolIds.clear();
-		liveReply = createLiveReply(text);
 		liveTextShown = false;
-		releasePending();
 		sound.beginReply();
-		const submittedDraft = (fromComposer || retryOf?.outcome === 'not-admitted') && input.value.trim() === text
+		const submittedDraft = (source.kind === 'composer' || retryOf?.outcome === 'not-admitted') && input.value.trim() === text
 			? input.value : undefined;
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
-		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire);
-		const result = requests.start(text, () => {
-			if (submittedDraft === undefined || input.value !== submittedDraft) return;
-			input.value = '';
-			draft.clear();
+		const cardHelp = source.kind === 'card' ? source.cardHelp
+			: replacesAttempt && previous.text === text ? previous.cardHelp : undefined;
+		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire, cardHelp);
+		liveReply = createLiveReply(text, cardHelp?.kind);
+		const result = requests.start(text, {
+			cardHelp,
+			onAdmitted() {
+				if (!keepsQuestionDraft(learnerTurn)) cardDraft.discard(questionsWithDrafts(before).current);
+				if (submittedDraft === undefined || input.value !== submittedDraft) return;
+				input.value = '';
+				draft.clear();
+			},
 		});
 		requestState = requests.state;
 		applyRequestControls(requestState);
@@ -416,6 +333,7 @@ export function mountChatSurface(options: Readonly<{
 		const turn = displayedAssistantTurn({
 			text: reply.text,
 			questionnaire: questionnaireFromReplyData(reply.data),
+			submissionId: reply.submissionId,
 			reveal: revealFromReply(reply.data),
 			modelRoute: modelRouteLabel(reply.metadata),
 			tools: liveTools,
@@ -447,7 +365,7 @@ export function mountChatSurface(options: Readonly<{
 			applyRequestControls(requestState);
 			sound.complete(state.reply);
 			await appendAssistantReply(state.reply);
-			if (moveFocus) input.focus();
+			if (moveFocus) focusAfterRequestStatePaint(requestState, elements);
 			return;
 		}
 		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
@@ -465,7 +383,7 @@ export function mountChatSurface(options: Readonly<{
 		if (dictation.stopForReview()) return;
 		const text = input.value.trim();
 		if (!text || chatRequestControls(requests.state).composerLocked) return;
-		await sendMessage(text, true);
+		await sendMessage(text, { kind: 'composer' });
 	});
 
 	async function restoreConversation() {
@@ -491,6 +409,7 @@ export function mountChatSurface(options: Readonly<{
 					: history;
 				visible = visibleTurnsFromHistory(restoredHistory);
 				if (unsettled) {
+					liveReply = createLiveReply(unsettled.text, unsettled.cardHelp?.kind);
 					requestState = requests.hydrate(unsettled.text, unsettled.submissionId);
 				} else {
 					requests.finishRestore();
@@ -520,7 +439,29 @@ export function mountChatSurface(options: Readonly<{
 	}
 
 	void restoreConversation();
-	return closeMenu;
+	return {
+		conversationId: conversation.id,
+		/** Whether this tab holds words or card choices the learner has not sent. Other tabs cannot be read. */
+		hasUnsentWork() {
+			if (input.value.trim() || cardDraft.hasWork()) return true;
+			const question = activeTurn.querySelector('.questionnaire');
+			if (!question) return false;
+			if (question.querySelector('[data-state="checked"], [aria-checked="true"]')) return true;
+			return [...question.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')]
+				.some((field) => field.value.trim() !== '');
+		},
+		startOver() {
+			dictation.cancel();
+			cardDraft.clear();
+			draft.clear();
+			startNewChatConversation(options.userId);
+		},
+		switchConversation(id: string) {
+			dictation.cancel();
+			switchChatConversation(id);
+		},
+		sound,
+	};
 }
 
 function isQuietToolStreamEvent(
@@ -534,32 +475,19 @@ function isQuietToolStreamEvent(
 	return Boolean(event.toolCallId && quietToolIds.has(event.toolCallId));
 }
 
-function queryChatSurface(): ChatSurfaceElements {
+function queryChatSurface() {
 	const form = requireElement<HTMLFormElement>('#chat');
 	const lockup = requireElement<HTMLButtonElement>('#menu-trigger');
-	const canvas = lockup.closest<HTMLElement>('.app-canvas');
-	if (!canvas) throw new Error('Socratink chat markup is missing required nodes.');
 	return {
 		form,
 		input: requireElement<HTMLTextAreaElement>('#message'),
 		messages: requireElement<HTMLOListElement>('#messages'),
 		button: requireElement<HTMLButtonElement>('.composer-send button[type="submit"]', form),
 		lockup,
-		canvas,
-		startOver: requireElement<HTMLButtonElement>('#start-over'),
-		history: requireElement<HTMLButtonElement>('#history-trigger'),
 		card: requireElement<HTMLElement>('.active-node'),
 		activeTurn: requireElement<HTMLElement>('#active-turn'),
-		peekHandle: requireElement<HTMLButtonElement>('#peek-handle'),
-		menuLayer: requireElement<HTMLElement>('#menu-layer'),
-		menuPanel: requireElement<HTMLElement>('#menu-dialog'),
-		menuHandle: requireElement<HTMLElement>('#menu-handle'),
-		menuBackdrop: requireElement<HTMLButtonElement>('#menu-backdrop'),
-		menuFirst: requireElement<HTMLElement>('.menu-orbs a, .menu-orbs button'),
 		trailToggle: requireElement<HTMLButtonElement>('#trail-toggle'),
 		trailLabel: requireElement<HTMLElement>('#trail-toggle-label'),
-		appearance: requireElement<HTMLButtonElement>('#appearance-toggle'),
-		typeSize: requireElement<HTMLButtonElement>('#type-size-toggle'),
 		dictationToggle: requireElement<HTMLButtonElement>('#dictation-toggle'),
 		dictationStatus: requireElement<HTMLElement>('#dictation-status'),
 	};

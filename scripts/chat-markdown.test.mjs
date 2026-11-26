@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { parseInline, parseMarkdownBlocks, safeHref } from '../src/ui/chat-markdown-parse.ts';
-import { createMarkdownRenderer } from '../src/ui/chat-markdown.ts';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { JSDOM } from 'jsdom';
+import { Markdown } from '../src/ui/chat-markdown.tsx';
 
 // Failures: malformed block detection makes no progress; copy buttons cancel
 // each other's reset; an unresolved clipboard write outlives its rendered turn.
@@ -21,12 +24,10 @@ test('each code copy control resets independently', async () => {
 	await withRenderer(async ({ renderer, timers }) => {
 		renderer.update('```js\none\n```\n\n```js\ntwo\n```');
 		const buttons = copyButtons(renderer);
-		buttons[0].listeners.click();
-		await Promise.resolve();
-		buttons[1].listeners.click();
-		await Promise.resolve();
+		await act(async () => buttons[0].click());
+		await act(async () => buttons[1].click());
 		assert.deepEqual(buttons.map(button => button.textContent), ['Copied', 'Copied']);
-		for (const [id, callback] of [...timers]) { timers.delete(id); callback(); }
+		await act(() => { for (const [id, callback] of [...timers]) { timers.delete(id); callback(); } });
 		assert.deepEqual(buttons.map(button => button.textContent), ['Copy', 'Copy']);
 	});
 });
@@ -35,8 +36,8 @@ test('repeated copies reset once and destroyed renderers clear pending resets', 
 	await withRenderer(async ({ renderer, timers }) => {
 		renderer.update('```\none\n```');
 		const [button] = copyButtons(renderer);
-		button.listeners.click(); await Promise.resolve();
-		button.listeners.click(); await Promise.resolve();
+		await act(async () => button.click());
+		await act(async () => button.click());
 		assert.equal(timers.size, 1);
 		renderer.destroy();
 		assert.equal(timers.size, 0);
@@ -49,10 +50,10 @@ for (const end of ['destroy', 'update']) {
 		await withRenderer(async ({ renderer, timers }) => {
 			renderer.update('```\none\n```');
 			const [button] = copyButtons(renderer);
-			button.listeners.click();
+			await act(async () => button.click());
 			if (end === 'update') renderer.update('New turn');
 			else renderer.destroy();
-			resolveWrite(); await Promise.resolve();
+			await act(async () => resolveWrite());
 			assert.equal(timers.size, 0);
 			assert.equal(button.textContent, 'Copy');
 		}, () => new Promise(resolve => { resolveWrite = resolve; }));
@@ -63,41 +64,45 @@ test('a rejected clipboard write does not announce a successful copy', async () 
 	await withRenderer(async ({ renderer, timers }) => {
 		renderer.update('```\none\n```');
 		const [button] = copyButtons(renderer);
-		button.listeners.click(); await Promise.resolve();
+		await act(async () => button.click());
 		assert.equal(button.textContent, 'Copy');
 		assert.equal(timers.size, 0);
 	}, () => Promise.reject(new Error('Clipboard unavailable')));
 });
 
 function copyButtons(renderer) {
-	const descendants = node => [node, ...(node.children ?? []).flatMap(descendants)];
-	return descendants(renderer.element).filter(node => node.tagName === 'button' && node.attributes['aria-label'] === 'Copy code');
+	return [...renderer.element.querySelectorAll('button[aria-label="Copy code"]')];
 }
 
 async function withRenderer(run, writeText = async () => {}) {
-	class Element {
-		children = []; textContent = ''; listeners = {}; attributes = {};
-		constructor(tagName) { this.tagName = tagName; }
-		append(...nodes) { this.children.push(...nodes); }
-		replaceChildren(...nodes) { this.children = nodes; }
-		setAttribute(name, value) { this.attributes[name] = value; }
-		addEventListener(name, listener) { this.listeners[name] = listener; }
-	}
-	let nextTimer = 0;
+	const dom = new JSDOM('<div id="root"></div>');
+	const { window } = dom;
 	const timers = new Map();
-	const replacements = {
-		document: { createElement: tag => new Element(tag), createTextNode: text => ({ textContent: text }) },
-		window: { setTimeout(fn) { timers.set(++nextTimer, fn); return nextTimer; }, clearTimeout(id) { timers.delete(id); } },
-		navigator: { clipboard: { writeText } },
-	};
+	let nextTimer = 0;
+	window.setTimeout = callback => { timers.set(++nextTimer, callback); return nextTimer; };
+	window.clearTimeout = id => timers.delete(id);
+	const replacements = { window, document: window.document, navigator: { clipboard: { writeText } }, IS_REACT_ACT_ENVIRONMENT: true };
 	const descriptors = new Map(Object.keys(replacements).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 	for (const [key, value] of Object.entries(replacements)) Object.defineProperty(globalThis, key, { configurable: true, value });
-	try { await run({ renderer: createMarkdownRenderer(), timers }); }
+	const element = window.document.querySelector('#root');
+	const root = createRoot(element);
+	let mounted = true;
+	const renderer = {
+		element,
+		update(text) { act(() => root.render(createElement(Markdown, { text }))); },
+		destroy() {
+			if (mounted) act(() => root.unmount());
+			mounted = false;
+		},
+	};
+	try { await run({ renderer, timers }); }
 	finally {
+		renderer.destroy();
 		for (const [key, descriptor] of descriptors) {
 			if (descriptor) Object.defineProperty(globalThis, key, descriptor);
 			else delete globalThis[key];
 		}
+		dom.window.close();
 	}
 }
 

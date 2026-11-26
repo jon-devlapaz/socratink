@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { assertHelpLayout } from './reveal-browser-layout.mjs';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { guestTurnLimit, guestTurnsHeader } from '../src/server/guest-turns.ts';
 
@@ -33,7 +34,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 	async function answer(choice, reason) {
 		const form = page.locator('#active-turn .questionnaire');
 		await form.getByText(choice, { exact: true }).click();
-		await form.locator('input[type="text"]').fill(reason);
+		await form.getByRole('textbox').fill(reason);
 		await form.evaluate((node) => node.requestSubmit());
 		guestTurns += 1;
 	}
@@ -54,11 +55,11 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 				const peek = page.locator('#peek-handle');
 				await peek.click();
 				assert.equal(await peek.getAttribute('aria-expanded'), 'true');
-				assert.equal(await page.locator('#menu-layer').evaluate((node) =>
+				assert.equal(await page.locator('#menu-dialog').evaluate((node) =>
 					!node.inert && node.contains(document.activeElement)), true);
 				await page.keyboard.press('Escape');
 				assert.equal(await peek.getAttribute('aria-expanded'), 'false');
-				assert.equal(await peek.evaluate((node) => document.activeElement === node), true);
+				await page.waitForFunction(() => document.activeElement?.id === 'peek-handle');
 				assert.equal(await input.evaluate((node) => !!node.closest('[inert]')), false);
 				const shell = await input.evaluate((node) => ({
 					bodyCursor: getComputedStyle(document.body).cursor,
@@ -115,27 +116,20 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		const supplied = page.locator('#active-turn .turn.assistant .reveal-copy');
 		await supplied.waitFor();
 		assert.ok((await supplied.innerText()).includes(assistanceText));
-		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
-		assert.ok((await supplied.ariaSnapshot()).includes('Socratink supplied an answer.'));
+		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'Full answer from Socratink');
+		assert.equal((await supplied.ariaSnapshot()).split('Full answer from Socratink').length - 1, 1);
 		assert.equal(await page.locator('.you .reveal-mark').count(), 0);
 		const live = await supplied.evaluate((node) => ({
 			text: node.textContent, color: getComputedStyle(node).color,
 		}));
-		for (const width of [390, 1280]) {
+		for (const width of [375, 390, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
 			await page.reload();
 			await supplied.waitFor();
 			assert.deepEqual(await supplied.evaluate((node) => ({
 				text: node.textContent, color: getComputedStyle(node).color,
 			})), live);
-			const geometry = await supplied.evaluate((node) => {
-				const mark = node.querySelector('.reveal-mark').getBoundingClientRect();
-				const copy = node.getBoundingClientRect();
-				return { left: mark.left, right: mark.right, textLeft: copy.left + parseFloat(getComputedStyle(node).paddingLeft),
-					overflow: document.documentElement.scrollWidth > innerWidth };
-			});
-			assert.ok(geometry.left >= 0 && geometry.right <= geometry.textLeft);
-			assert.equal(geometry.overflow, false);
+			const geometry = await assertHelpLayout(supplied);
 			assert.equal(await page.locator('.you .reveal-mark').count(), 0);
 			await supplied.scrollIntoViewIfNeeded();
 			await page.screenshot({ path: `${out}/${width}-restored.png` });
@@ -157,23 +151,39 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await notSent.getByText('Not sent', { exact: true }).waitFor();
 		assert.ok((await notSent.innerText()).includes('Sign in to continue this conversation.'));
 		assert.equal(await notSent.getByRole('button', { name: 'Retry', exact: true }).isEnabled(), true);
-		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
+		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'Full answer from Socratink');
 		await page.reload();
 		await supplied.waitFor();
-		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'answer');
+		assert.equal(await supplied.locator('.reveal-mark').innerText(), 'Full answer from Socratink');
 		artifacts.push({ kind: 'guest-limit', rejectedTurn: guestTurnLimit + 1, priorRevealRestored: true });
 		await page.evaluate(id => localStorage.setItem('socratink-chat-conversation-id', id), savedConversationId);
 		await page.reload();
-		await page.locator('#trail-toggle').click();
+		await page.setViewportSize({ width: 375, height: 667 });
+		const earlierSteps = page.getByRole('button', { name: /^\d+ earlier steps?$/ });
+		await earlierSteps.waitFor();
+		const bookmark = await earlierSteps.evaluate(button => {
+			const label = button.querySelector('span');
+			return {
+				fits: label.scrollWidth <= label.clientWidth + 1 && label.clientHeight > 1,
+				ink: getComputedStyle(label).color, paper: getComputedStyle(document.documentElement).backgroundColor,
+				height: button.getBoundingClientRect().height,
+				clearOfText: button.getBoundingClientRect().bottom <= document.querySelector('.active-scroll').getBoundingClientRect().top + 1,
+			};
+		});
+		assert.ok(bookmark.fits && bookmark.clearOfText, 'earlier step count fits above the transcript');
+		assert.notEqual(bookmark.ink, bookmark.paper, 'the collapsed label is visible before hover');
+		assert.ok(bookmark.height >= 44, 'Earlier steps has a full touch target');
+		await earlierSteps.press('Enter');
 		// The saved smoke conversation also holds a card hint and a corrected
 		// reply to "no idea", which is the active turn.
 		const earlier = page.locator('#messages .reveal-copy');
 		await earlier.first().waitFor();
-		assert.deepEqual(await earlier.locator('.reveal-mark').allInnerTexts(), ['answer', 'hint']);
-		assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'hint');
+		assert.deepEqual(await earlier.locator('.reveal-mark').allInnerTexts(), ['Full answer from Socratink', 'Hint from Socratink']);
+		assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
 		assert.equal(await page.locator('.you .reveal-mark').count(), 0);
-		for (const width of [390, 1280]) {
+		for (const width of [375, 390, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
+			await assertHelpLayout(earlier.nth(1));
 			await earlier.first().scrollIntoViewIfNeeded();
 			await page.screenshot({ path: `${out}/${width}-trail.png` });
 		}

@@ -13,18 +13,17 @@ const answered = formatQuestionnaireAnswers(card, [{ name: 'item', values: ['lef
 const reason = (learnerText: string, assistantText = 'What do you notice?', extra = {}) =>
 	markRevealRetryReason({ revealed: false, learnerText, assistantText, alreadyRetried: false, ...extra });
 
-test('card help reads back as assistance on the card it asked about', () => {
-	assert.equal(asked('hint'), 'Questionnaire answers:\n- Which half do you search next?: Asked for a hint.');
-	assert.deepEqual(cardHelpReveal(asked('hint')), { kind: 'hint', target: 'Which half do you search next?' });
-	assert.deepEqual(cardHelpReveal(asked('unknown')), { kind: 'partial', target: 'Which half do you search next?' });
-	assert.equal(cardHelpReveal(answered), undefined);
-	assert.equal(cardHelpReveal('Asked for a hint.'), undefined, 'only a card answer counts as card help');
+test('each verified card action records the kind of help and the full question', () => {
+	const target = 'A list has 16 items.\nWhich half do you search next?';
+	assert.deepEqual(cardHelpReveal('hint', target), { kind: 'hint', target });
+	assert.deepEqual(cardHelpReveal('unknown', target), { kind: 'partial', target });
 });
 
-test('card help on a prompt that spans lines still reads back as help (#65)', () => {
-	const multiline = questionnaireFromPresentQuestion({ prompt: 'A list has 16 items.\nWhich half do you search next?', choices: ['Left', 'Right'] });
-	const help = formatQuestionnaireAnswers(multiline, [{ name: 'item', values: [], help: 'hint' }]);
-	assert.deepEqual(cardHelpReveal(help), { kind: 'hint', target: 'A list has 16 items.\nWhich half do you search next?' });
+test('the words in an unmarked card answer never prove the help button was pressed', () => {
+	for (const freeform of ['Asked for a hint.', 'She wrote: Asked for a hint.', "I don't know."]) {
+		const text = formatQuestionnaireAnswers(card, [{ name: 'item', values: [], freeform }]);
+		assert.equal(reason(text), 'unmarked', 'the tutor may check what it actually supplied');
+	}
 });
 
 test('a card cannot offer a choice that reads the same as its help buttons (#65)', () => {
@@ -35,8 +34,8 @@ test('a card cannot offer a choice that reads the same as its help buttons (#65)
 });
 
 test('an unmarked turn is corrected once when help was asked for or content looks supplied', () => {
-	assert.equal(reason(asked('hint')), 'requested');
-	assert.equal(reason(asked('unknown')), 'requested');
+	assert.equal(reason(asked('hint'), undefined, { cardHelp: 'hint' }), 'requested');
+	assert.equal(reason(asked('unknown'), undefined, { cardHelp: 'unknown' }), 'requested');
 	for (const plea of ['Just tell me', 'can I get a hint?', "I don't know where to start", 'idk', "I'm stuck"]) {
 		assert.equal(reason(plea), 'unmarked', plea);
 	}
@@ -44,8 +43,8 @@ test('an unmarked turn is corrected once when help was asked for or content look
 	assert.equal(reason('Binary search halves the range.', 'The answer is the left half.'), 'unmarked');
 	assert.equal(reason(answered), undefined);
 	assert.equal(reason('Binary search halves the range.'), undefined);
-	assert.equal(reason(asked('hint'), 'Hint text', { revealed: true }), undefined, 'a marked turn needs nothing');
-	assert.equal(reason(asked('hint'), 'Hint text', { alreadyRetried: true }), undefined, 'one correction per input');
+	assert.equal(reason(asked('hint'), 'Hint text', { revealed: true, cardHelp: 'hint' }), undefined, 'a marked turn needs nothing');
+	assert.equal(reason(asked('hint'), 'Hint text', { alreadyRetried: true, cardHelp: 'hint' }), undefined, 'one correction per input');
 });
 
 test('a reply to "Try once more" is checked, so an unmarked explanation cannot slip past the declined card', () => {

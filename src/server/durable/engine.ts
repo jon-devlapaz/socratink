@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
 import { inputKind, type Engine, type EngineOptions, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
-import { sourceOfCardHint } from './card-hint.ts';
+import { resolveCardHelp } from './card-hint.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
 import { readSnapshot } from './projection.ts';
@@ -85,7 +85,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					const turn = await readSnapshot(owner.storage);
 					const submission = turn.submissions.find((entry) => entry.id === String(submissionId));
 					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
-					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink.routedModel ?? owner.modelId() };
+					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink?.routedModel ?? owner.modelId() };
 					if (submission?.outcome === 'failed') {
 						reportFailed();
 						const recent = await owner.storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
@@ -122,7 +122,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		} catch (error) { await owner.stop(); active.delete(id); throw error; }
 	}
 	return {
-		async submit(id, text, selection) {
+		async submit(id, text, selection, help) {
 			const owner = await claim(id);
 			if (!owner) throw new DurableBusyError();
 			try {
@@ -134,10 +134,10 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				}
 				const requestId = randomUUID();
 				const tryOnceMore = choseTryOnceMore(state, text);
-				const hintCardFrom = sourceOfCardHint(state, text);
+				const cardHelp = help && resolveCardHelp(state, text, help);
 				const input = { type: 'input', content: text, whenBusy: 'reject', requestId,
 					entry: { kind: inputKind, data: { requestId, revealConsent: true,
-						...(hintCardFrom ? { hintCardFrom } : {}),
+						...(cardHelp ? { cardHelp } : {}),
 						...(tryOnceMore ? { tryOnceMore: true } : {}), ...(selection ? { selection } : {}) } } } as const;
 				const edits = await rejectedTryOnceMoreEdits(owner.root, state.submissions.at(-1), context);
 				const submissionId = edits.length ? await owner.root.commit(async (tx) => {
@@ -194,7 +194,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		} while (cursor);
 		return undefined;
 	}, (config) => { modelId = config.modelId; });
-	const registry = productRegistry(() => readSnapshot(storage));
+	const registry = productRegistry(() => readSnapshot(storage, { showEmptyHintNotice: false }));
 	const feedback = await feedbackExtension(id);
 	if (feedback) registry.install(feedback);
 	const harness = await Harness.open(storage, { models, registry,

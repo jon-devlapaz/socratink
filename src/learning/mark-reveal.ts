@@ -1,5 +1,5 @@
 import { steeringPrefix } from '../config/chat-message.ts';
-import { questionnaireAnswerPrefix, questionnaireHelpText, type QuestionnaireHelp } from '../questionnaire.ts';
+import { questionnaireAnswerPrefix, type QuestionnaireHelp } from '../questionnaire.ts';
 import { revealToolName, type RevealDefinition } from '../reveal.ts';
 
 
@@ -12,19 +12,8 @@ export type MarkRevealRetryReason = keyof typeof markRevealRetryBodies;
 
 const helpKinds: Record<QuestionnaireHelp, RevealDefinition['kind']> = { hint: 'hint', unknown: 'partial' };
 
-/** The reveal a card help request records when the tutor did not mark one.
- * A card holds one item, so help is the whole answer, whatever lines its
- * prompt spans. */
-export function cardHelpReveal(learnerText: string): RevealDefinition | undefined {
-	const head = `${questionnaireAnswerPrefix}\n- `;
-	if (!learnerText.startsWith(head)) return undefined;
-	for (const [help, text] of Object.entries(questionnaireHelpText) as [QuestionnaireHelp, string][]) {
-		const suffix = `: ${text}`;
-		if (!learnerText.endsWith(suffix)) continue;
-		const target = learnerText.slice(head.length, -suffix.length).trim();
-		return { kind: helpKinds[help], ...(target ? { target } : {}) };
-	}
-	return undefined;
+export function cardHelpReveal(help: QuestionnaireHelp, target?: string): RevealDefinition {
+	return { kind: helpKinds[help], ...(target ? { target } : {}) };
 }
 
 const helpRequest = /\b(?:hints?|clue|just tell me|tell me the answer|give me the answer|what(?:'s| is) the answer|i (?:don'?t|do not) know|idk|no idea|i'?m stuck|i am stuck|explain (?:it|this|that)|show me how)\b/i;
@@ -33,11 +22,12 @@ export const revealCue = /\b(?:here'?s a hint|hint:|the (?:answer|key idea|trick
 export function markRevealRetryReason(input: {
 	readonly revealed: boolean;
 	readonly learnerText: string;
+	readonly cardHelp?: QuestionnaireHelp;
 	readonly assistantText: string;
 	readonly alreadyRetried: boolean;
 }): MarkRevealRetryReason | undefined {
 	if (input.revealed || input.alreadyRetried) return undefined;
-	if (cardHelpReveal(input.learnerText)) return 'requested';
+	if (input.cardHelp) return 'requested';
 	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
 		|| (input.learnerText.startsWith(questionnaireAnswerPrefix) && input.learnerText.endsWith(': Try once more'))) return 'unmarked';
 	return undefined;

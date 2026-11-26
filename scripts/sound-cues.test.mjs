@@ -21,9 +21,9 @@ before(async () => {
 	const fault = process.env.SOUND_CUES_FAULT;
 	if (fault) assert.ok(source.includes(faults[fault][0]), `fault target exists: ${fault}`);
 	server = await createServer({
-		configFile: false,
+		configFile: new URL('../vite.config.ui.ts', import.meta.url).pathname,
 		root: new URL('../src/ui', import.meta.url).pathname,
-		server: { host: '127.0.0.1', port: 0 },
+		server: { host: '127.0.0.1', port: 0, hmr: false, watch: null },
 		plugins: [{
 			name: 'sound-guard-fault',
 			enforce: 'pre',
@@ -121,8 +121,7 @@ async function setup(t, { saved = false, restored = false, unsettled = false } =
 		return route.fulfill({ json: snapshot });
 	});
 	await page.goto(origin);
-	await page.waitForFunction(() => document.querySelector('#sound-toggle')?.textContent === 'Sound on'
-		|| document.querySelector('#message')?.disabled === false);
+	await page.locator(unsettled ? '#peek-handle:enabled' : '#message:enabled').waitFor();
 	if (unsettled) {
 		await page.locator('#peek-handle').click();
 		release();
@@ -153,17 +152,20 @@ async function setup(t, { saved = false, restored = false, unsettled = false } =
 
 test('Sound defaults off and the plain menu toggle saves its state', async t => {
 	const ui = await setup(t);
+	await ui.page.locator('#peek-handle').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'false');
 	assert.equal(await ui.starts(), 0);
 	assert.equal(await ui.page.evaluate(() => window.audio.contexts), 0);
-	await ui.enable();
+	await ui.toggle.click();
+	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'true');
 	await ui.page.reload();
 	await ui.page.waitForFunction(() => document.querySelector('#message')?.disabled === false);
+	await ui.page.locator('#peek-handle').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'true');
 	assert.equal(await ui.starts(), 0);
-	await ui.page.locator('#peek-handle').click();
 	await ui.toggle.click();
 	await ui.page.reload();
+	await ui.page.locator('#peek-handle').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'false');
 });
 
@@ -245,9 +247,7 @@ test('duplicate completion delivery produces one tick total', async t => {
 		const history = await (await fetch(`/api/agents/chat/${encodeURIComponent(id)}`)).json();
 		const submissionId = history.settlements.at(-1).submissionId;
 		const reply = { ...replyFrom(history, submissionId), submissionId };
-		const button = document.createElement('button');
-		button.innerHTML = '<span id="sound-label"></span>';
-		const probe = mountSoundCues(button);
+		const probe = mountSoundCues();
 		window.completeSoundProbe = () => {
 			probe.beginReply();
 			probe.complete(reply);

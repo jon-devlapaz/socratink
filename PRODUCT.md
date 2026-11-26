@@ -12,7 +12,9 @@ The app provides a single-learner conversation with an AI learning partner:
   diagnostic, a skill map with levels 0-5, one question at a time, in-session
   spaced review, and a final assessment.
 - Structured `present_question` cards with choices, optional reasoning, and
-  Hint and "I don't know" buttons, so a card never forces a guess.
+  Hint and "I don't know" buttons, so a card never forces a guess. A button
+  press is saved with its question. The tutor and History can distinguish it
+  from the same words typed by the learner. Older turns show their saved words.
 - Records of hints, worked examples, partial explanations, and full answers
   through `mark_reveal`, keeping assistance distinguishable from learner work.
   A card help request always counts as assistance. A reply that answers a

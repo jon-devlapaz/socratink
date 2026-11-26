@@ -1,4 +1,5 @@
 import type { WireEventBody } from '../config/chat-wire.ts';
+import type { QuestionnaireHelp } from '../questionnaire.ts';
 import { markRevealRetryReason } from '../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName, type RevealDefinition } from '../reveal.ts';
 import { learnerVisibleText, withoutQuestionBesideCard } from '../learning/learner-text.ts';
@@ -17,7 +18,7 @@ export type LiveReplyView = { markdown: string; reveal?: RevealDefinition };
  * never takes away text already shown: it keeps the last shown text, frozen.
  * A question card, once it arrives, takes the text's own question away, as
  * the settled reply does (#163). */
-export function createLiveReply(learnerText: string) {
+export function createLiveReply(learnerText: string, cardHelp?: QuestionnaireHelp) {
 	const texts = new Map<string, string>();
 	let reveal: RevealDefinition | undefined;
 	let card = false;
@@ -52,7 +53,7 @@ export function createLiveReply(learnerText: string) {
 			const latest = learnerVisibleText([...texts.values()].at(-1) ?? '');
 			const text = card ? withoutQuestionBesideCard(latest) : latest;
 			const unmarked = markRevealRetryReason({
-				revealed: Boolean(reveal), learnerText, assistantText: text, alreadyRetried: false,
+				revealed: Boolean(reveal), learnerText, cardHelp, assistantText: text, alreadyRetried: false,
 			});
 			if (unmarked) return { markdown: shown };
 			shown = text;

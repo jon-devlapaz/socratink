@@ -37,9 +37,9 @@ checks aliases for returning users. Foreign ids return 403.
 
 ## Files
 
-- `../login.html`, `../login.ts`, `../login.css` — explicit login page
+- `../login.html`, `../login.tsx`, `../login.css` — explicit login page
 - `../session.ts` — browser session helpers
-- `../chat-gate.ts`, `../chat-gate.css` — inline auth gate card
+- `../chat-gate.tsx`, `../chat-gate.css` — inline auth gate card
 - `../brand-wordmark.png` — shared product wordmark
 - `../../server/oauth.ts` — in-tree OAuth module (PKCE, Google, GitHub)
 - `../../server/auth-db.ts` — user, account, and alias storage
