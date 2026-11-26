@@ -202,3 +202,23 @@ test('the settled reply joins text and keeps ordered data and metadata from its 
 		metadata: { routedModel: 'tutor' },
 	});
 });
+
+test('a rewritten reply streams as itself, never beside the reply it replaces (#163)', () => {
+	const progress = initialProgress();
+	const live = createLiveReply(learner);
+	const at = (revision, text, rewrites) => project('c', { revision, messages: [question,
+		{ role: 'assistant', submissionId: 's1', text, ...(rewrites ? { metadata: { rewrites } } : {}) }], submissions: pending });
+	assert.equal(fold(live, progressEvents(at(1, 'What color is sunlight? And what'), progress)).markdown, 'What color is sunlight? And what');
+	assert.equal(fold(live, progressEvents(at(2, '', 1), progress)).markdown, '', 'the rejected text leaves when the rewrite is asked for');
+	assert.equal(fold(live, progressEvents(at(3, 'What color', 1), progress)).markdown, 'What color',
+		'a rewrite that starts like the old text still streams from its start');
+	assert.equal(fold(live, progressEvents(at(4, 'What color is sunlight?', 1), progress)).markdown, 'What color is sunlight?');
+	const settled = project('c', { revision: 5, messages: [question, { role: 'assistant', submissionId: 's1', text: 'What color is sunlight?', metadata: { rewrites: 1 } }],
+		submissions: [{ ...pending[0], outcome: 'completed' }] });
+	assert.equal(replyFrom(settled, 's1').text, 'What color is sunlight?');
+	const reconnect = initialProgress();
+	const replay = createLiveReply(learner);
+	assert.equal(fold(replay, progressEvents(at(4, 'What color is sunlight?', 1), reconnect)).markdown, 'What color is sunlight?',
+		'a reconnect mid-rewrite shows only the rewrite');
+});
+

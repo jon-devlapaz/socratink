@@ -8,6 +8,7 @@ import type { Message } from '@earendil-works/pi-ai';
 import { steeringMessages } from '../../config/chat-message.ts';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../learning/present-question.ts';
+import { needsOneQuestionRewrite, oneQuestionRetryBody } from '../../learning/one-question.ts';
 import { isHelpThenQuestion } from '../../learning/learner-text.ts';
 import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName } from '../../reveal.ts';
@@ -17,7 +18,7 @@ import { createCardHelpContext } from './card-help-context.ts';
 import { hintCardSource, inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
-const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
+const retryBodies: readonly string[] = [...Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies }), oneQuestionRetryBody];
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
 
 export function productRegistry(readState: () => Promise<Snapshot>) {
@@ -129,7 +130,10 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 						revealed: revealed(entries), learnerText: learnerText(entries), assistantText: messageText(answer), alreadyRetried,
 						cardHelp: inputData(entries[0])?.cardHelp?.kind,
 					});
-					return reveal ? { continue: markRevealRetryBodies[reveal] } : undefined;
+					if (reveal) return { continue: markRevealRetryBodies[reveal] };
+					// One question, then stop (#163). The rewrite replaces this reply for the learner.
+					return needsOneQuestionRewrite({ assistantText: messageText(answer), alreadyRetried })
+						? { continue: oneQuestionRetryBody } : undefined;
 				},
 			}),
 		],

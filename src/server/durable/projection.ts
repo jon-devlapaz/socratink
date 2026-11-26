@@ -6,6 +6,7 @@ import { inputKind } from './contract.ts';
 import { messageText } from './extension.ts';
 import { messageRoute } from './provider.ts';
 import { asksForNoText, splitReasoning, withoutQuestionBesideCard } from '../../learning/learner-text.ts';
+import { oneQuestionRetryBody } from '../../learning/one-question.ts';
 import { cardHelpReveal } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { withRevealConsent } from './reveal-consent.ts';
@@ -86,6 +87,11 @@ async function beginSubmission(snapshot: Snapshot, storage: CommittedStorage, en
 function appendEntry(assistant: ProductMessage, entry: EntryRecord, tools: Map<string, ProductTool>, tryOnceMore: boolean, silenced: boolean): boolean {
 	for (const message of entry.model ?? []) {
 		if (message.role === 'user' && asksForNoText(messageText(message))) silenced = true;
+		// The rewrite replaces the reply that asked more than one question; tools and reveals stay.
+		if (message.role === 'user' && messageText(message) === oneQuestionRetryBody) {
+			assistant.text = '';
+			assistant.metadata = { ...assistant.metadata, rewrites: (assistant.metadata?.rewrites ?? 0) + 1 };
+		}
 		if (message.role === 'assistant') {
 			// Each attempt replaces the previous candidate. Only the final question can be shown.
 			if (tryOnceMore && !silenced) {
@@ -126,7 +132,7 @@ function appendAssistant(target: ProductMessage, message: AssistantMessage, sile
 	if (text) target.text += `${target.text ? '\n\n' : ''}${text}`;
 	if (reasoning) target.reasoning = `${target.reasoning ? `${target.reasoning}\n\n` : ''}${reasoning}`;
 	const route = messageRoute(message);
-	if (route) target.metadata = { socratink: route };
+	if (route) target.metadata = { ...target.metadata, socratink: route };
 }
 
 function settlement(record: SubmissionRecord): { outcome?: 'completed' | 'failed' | 'aborted'; error?: string } {

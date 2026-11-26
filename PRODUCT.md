@@ -10,7 +10,9 @@ The app provides a single-learner conversation with an AI learning partner:
 - Streamed explanations, questions, and feedback in a persistent conversation.
 - Socratic tutoring by Jane Street's MIT-licensed socratic-tutor skill: a
   diagnostic, a skill map with levels 0-5, one question at a time, in-session
-  spaced review, and a final assessment.
+  spaced review, and a final assessment. A text reply that asks more than
+  one question, or keeps writing after its question, is rewritten once, and
+  the learner sees only the rewrite.
 - Structured `present_question` cards with choices, optional reasoning, and
   Hint and "I don't know" buttons, so a card never forces a guess. A button
   press is saved with its question. The tutor and History can distinguish it

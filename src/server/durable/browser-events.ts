@@ -3,11 +3,13 @@ import type { WireEventBody, WireSnapshot } from '../../config/chat-wire.ts';
 export type Progress = {
 	text: Record<string, string>;
 	started: string[]; tools: Record<string, string>; settled: string[];
+	/** Rewrites seen per reply. Each rewrite streams as a fresh live message, so the rejected text is not shown beside it. */
+	rewrites: Record<string, number>;
 };
 export type NewEvent = WireEventBody;
 
 export function initialProgress(): Progress {
-	return { text: {}, started: [], tools: {}, settled: [] };
+	return { text: {}, started: [], tools: {}, settled: [], rewrites: {} };
 }
 
 /** Diff one snapshot against what a connection already sent: tool results and
@@ -34,11 +36,18 @@ export function progressEvents(snapshot: WireSnapshot, state: Progress): NewEven
 			}
 			if (!previous || previous === 'input-available') state.tools[part.toolCallId] = part.state;
 		}
+		const rewrites = typeof message.metadata?.rewrites === 'number' ? message.metadata.rewrites : 0;
+		const liveId = rewrites ? `${message.id}~${rewrites}` : message.id;
+		if (rewrites !== (state.rewrites[message.id] ?? 0)) {
+			state.rewrites[message.id] = rewrites;
+			state.text[message.id] = '';
+			events.push({ type: 'message-started', messageId: liveId, submissionId: message.submissionId });
+		}
 		const text = message.parts.flatMap((part) => part.type === 'text' ? [part.text] : []).join('\n\n');
 		const previous = state.text[message.id] ?? '';
 		if (text && text !== previous && !previous.startsWith(text)) {
 			const delta = text.startsWith(previous) ? text.slice(previous.length) : `\n\n${text}`;
-			events.push({ type: 'message-delta', messageId: message.id, kind: 'text', delta });
+			events.push({ type: 'message-delta', messageId: liveId, kind: 'text', delta });
 			state.text[message.id] = text;
 		}
 	}
