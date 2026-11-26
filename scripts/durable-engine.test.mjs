@@ -14,6 +14,8 @@ import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { openEngine } from '../src/server/durable/engine.ts';
 import { createDurableStorage } from '../src/server/durable/storage.ts';
 import { readSnapshot } from '../src/server/durable/projection.ts';
+import { steeringMessages } from '../src/config/chat-message.ts';
+import { executeLearningTool } from '../src/learning/tools.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData } from '../src/questionnaire.ts';
 
@@ -540,6 +542,59 @@ test('after repeated Hints the tutor receives the same question and shortcuts as
 			item.choices.map((choice) => `${choice.shortcut}. ${choice.label}`));
 	}
 }));
+
+for (const [scenario, steering, next, retained] of [
+	['repeats the same card', 'try-unaided', paymentQuestion, true],
+	['follows an empty clue', 'try-unaided', paymentQuestion, true],
+	['retries an interrupted request', 'try-unaided', paymentQuestion, true],
+	['changes the question', 'try-unaided', { ...paymentQuestion, prompt: 'Which request needs a new payment key?' }, false],
+	['changes the reasoning field', 'try-unaided', { ...paymentQuestion, reasoning: false }, false],
+	['follows a turn without a card', 'try-unaided', paymentQuestion, false],
+	['asks for a smaller step', 'smaller-step', paymentQuestion, false],
+]) {
+	test(`steering after a Hint ${scenario}: the learner and tutor receive the intended card order`, () => withPaymentCard(async ({
+		id, engine, reader, requests, original, askForHint, nextResponse, settled,
+	}) => {
+		await askForHint(original);
+		if (scenario === 'follows an empty clue') {
+			finishTool(await nextResponse(), 'present_question', paymentQuestion, 'empty-clue');
+			const assisted = questionnaireFromReplyData((await settled()).messages.at(-1).data);
+			assert.match(assisted.items[0].description, /try Hint again/u);
+		} else {
+			finish(await nextResponse(), guidingQuestion);
+			finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
+			assert.deepEqual(questionnaireFromReplyData((await settled()).messages.at(-1).data), original);
+		}
+
+		const text = steeringMessages[steering];
+		if (scenario === 'retries an interrupted request') {
+			const attempt = await reader.submit(id, text);
+			await nextResponse();
+			await engine.abort(id, attempt);
+			assert.equal((await settled()).submissions.at(-1).outcome, 'aborted');
+		}
+		if (scenario === 'follows a turn without a card') {
+			await reader.submit(id, 'One purchase.');
+			finish(await nextResponse(), 'What do you think happened?');
+			await settled();
+		}
+
+		const callId = 'fresh-payment';
+		await reader.submit(id, text);
+		finishTool(await nextResponse(), 'present_question', next, callId);
+		const shown = questionnaireFromReplyData((await settled()).messages.at(-1).data);
+		const fresh = questionnaireFromReplyData(executeLearningTool('present_question', next, callId).data);
+		assert.notDeepEqual(fresh.items[0].choices, original.items[0].choices);
+		assert.deepEqual(shown, retained ? original : fresh);
+
+		await reader.submit(id, 'B');
+		finish(await nextResponse(), 'Why did you choose B?');
+		await settled();
+		const tool = requests.at(-1).find((message) => message.role === 'tool' && message.tool_call_id === callId);
+		assert.deepEqual(tool.content.split('\n').filter((line) => /^[A-B]\. /u.test(line)),
+			shown.items[0].choices.map((choice) => `${choice.shortcut}. ${choice.label}`));
+	}));
+}
 
 function rewriteSavedRecords(target, id, containing, convert) {
 	const db = new DatabaseSync(target.filename);

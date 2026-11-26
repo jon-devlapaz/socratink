@@ -1,6 +1,7 @@
+import { steeringMessages } from '../../config/chat-message.ts';
 import { cardHintText, learnerVisibleText } from '../../learning/learner-text.ts';
 import { displayedChoices } from '../../learning/tools.ts';
-import { formatQuestionnaireAnswers, questionnaireFromReplyData, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
+import { formatQuestionnaireAnswers, questionnaireFromReplyData, sameQuestion, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
 import { hintCardSource, type CardHelp, type ProductMessage, type Snapshot } from './contract.ts';
 
 export class InvalidCardActionError extends Error {
@@ -27,7 +28,7 @@ export function resolveCardHelp(snapshot: Snapshot, text: string, { kind, source
 }
 
 /** Keep the card without its temporary empty-clue notice for a later click. */
-export function projectCardHints(snapshot: Snapshot): ReadonlyMap<string, QuestionnaireDefinition> {
+export function projectCardHints(snapshot: Snapshot, showEmptyHintNotice: boolean): ReadonlyMap<string, QuestionnaireDefinition> {
 	const hintCards = new Map<string, QuestionnaireDefinition>();
 	if (!snapshot.submissions.some((submission) => hintCardSource(submission))) return hintCards;
 	const replies = new Map(snapshot.messages.filter((message) => message.role === 'assistant')
@@ -38,13 +39,13 @@ export function projectCardHints(snapshot: Snapshot): ReadonlyMap<string, Questi
 		const source = hintCards.get(sourceId) ?? questionnaireFromReplyData(replies.get(sourceId)?.data);
 		const reply = replies.get(click.id);
 		if (!source || !reply) continue;
-		const card = applyCardHint(reply, source, click.outcome === 'completed');
+		const card = applyCardHint(reply, source, click.outcome === 'completed', showEmptyHintNotice);
 		if (card) hintCards.set(click.id, card);
 	}
 	return hintCards;
 }
 
-function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, completed: boolean): QuestionnaireDefinition | undefined {
+function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, completed: boolean, showEmptyHintNotice: boolean): QuestionnaireDefinition | undefined {
 	if (!completed) {
 		// A streamed question cannot be taken back. Show the clue and its card together.
 		reply.text = '';
@@ -54,16 +55,26 @@ function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, c
 	const card = recordedHintCard(source, questionnaireFromReplyData(reply.data));
 	const item = card.items[0]!;
 	reply.text = cardHintText(learnerVisibleText(reply.text), item.prompt);
-	(reply.data ??= {}).questionnaire = [reply.text || item.description ? card : { ...card, items: [
+	const showNotice = showEmptyHintNotice && !reply.text && !item.description;
+	(reply.data ??= {}).questionnaire = [showNotice ? { ...card, items: [
 		{ ...item, description: 'You can try Hint again for a clue or answer the question.' },
-	] }];
+	] } : card];
 	return card;
 }
 
-export function hintCardToolResult(snapshot: Snapshot, sourceId: string) {
+function cardBeforeUnaided(snapshot: Snapshot): string | undefined {
+	for (let index = snapshot.submissions.length - 2; index >= 0; index--) {
+		const prior = snapshot.submissions[index]!;
+		if (prior.outcome === 'completed') return prior.id;
+		if (!prior.outcome || prior.text !== steeringMessages['try-unaided']) return;
+	}
+}
+
+export function repeatedCardToolResult(snapshot: Snapshot, hintSourceId: string | undefined, presented: ProductMessage['data']) {
+	const sourceId = hintSourceId ?? cardBeforeUnaided(snapshot);
 	const reply = snapshot.messages.find((message) => message.role === 'assistant' && message.submissionId === sourceId);
 	const card = questionnaireFromReplyData(reply?.data);
-	if (!card) return;
+	if (!card || (!hintSourceId && !sameQuestion(card, questionnaireFromReplyData(presented)))) return;
 	const item = card.items[0]!;
 	return { card, text: `Question shown to the learner: ${item.prompt}\n${displayedChoices(item)}` };
 }

@@ -194,7 +194,7 @@ async function openOwner(id: string, storage: OwnedStorage, options: EngineOptio
 		} while (cursor);
 		return undefined;
 	}, (config) => { modelId = config.modelId; });
-	const registry = productRegistry(() => readSnapshot(storage));
+	const registry = productRegistry(() => readSnapshot(storage, { showEmptyHintNotice: false }));
 	const feedback = await feedbackExtension(id);
 	if (feedback) registry.install(feedback);
 	const harness = await Harness.open(storage, { models, registry,

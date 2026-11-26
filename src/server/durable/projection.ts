@@ -12,7 +12,7 @@ import { withRevealConsent } from './reveal-consent.ts';
 import { projectCardHints } from './card-hint.ts';
 import type { CommittedStorage } from './storage.ts';
 
-export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot> {
+export async function readSnapshot(storage: CommittedStorage, { showEmptyHintNotice = true } = {}): Promise<Snapshot> {
 	const snapshot: Snapshot = { revision: storage.revision, messages: [], submissions: [] };
 	if (!await storage.conversation(ROOT_CONVERSATION_ID, context)) return snapshot;
 	let cursor: Cursor | undefined;
@@ -42,7 +42,7 @@ export async function readSnapshot(storage: CommittedStorage): Promise<Snapshot>
 		const tool = tools.get(slot.callId);
 		if (tool && slot.output) tool.output = slot.output;
 	}
-	const hintCards = projectCardHints(snapshot);
+	const hintCards = projectCardHints(snapshot, showEmptyHintNotice);
 	labelCardHelp(snapshot);
 	for (const message of snapshot.messages) {
 		if (hintCards.has(message.submissionId)) continue;
