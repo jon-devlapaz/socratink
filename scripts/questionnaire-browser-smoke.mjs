@@ -61,17 +61,23 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					assert.equal(await form.locator('[data-choice-for][aria-checked="true"]').count(), 2);
 				}
 				assert.deepEqual(sent, [], 'ordinary choices still require submission');
-				await form.getByLabel('Your reason', { exact: true }).fill('My own reasoning');
+				const field = form.getByRole('textbox', { name: 'Your reason', exact: true });
+				let reasoning = 'My own reasoning';
+				if (kind === 'required' && width === 375) {
+					reasoning = await writePhoneReasoning(field);
+					assert.equal(await form.getByRole('radio', { name: /First/ }).isChecked(), true, 'typing leaves the selected choice intact');
+					assert.deepEqual(sent, [], 'typing and confirming composition must not submit');
+				} else await field.fill(reasoning);
 				if (kind === 'skip') await form.getByRole('button', { name: 'Skip', exact: true }).click();
 				assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 				await page.screenshot({ path: `${out}/${kind}-${width}.png` });
-				if (kind === 'required') await form.getByLabel('Your reason', { exact: true }).press('Enter');
+				if (kind === 'required') await field.press('Enter');
 				else if (kind in help) await form.getByRole('button', { name: help[kind].button, exact: true }).click();
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
 				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
 				await reply.waitFor();
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
-					: `${kind === 'multiple' ? 'First, Second' : 'First'}, My own reasoning`;
+					: `${kind === 'multiple' ? 'First, Second' : 'First'}, ${reasoning}`;
 				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
 				if (kind in help) {
 					expected.cardHelp = { kind, sourceId: 'original-card' };
@@ -141,7 +147,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					const form = page.locator('#active-turn .questionnaire');
 					await form.waitFor();
 					assert.deepEqual(await form.getByRole('button').allTextContents(), ['See it', 'Try once more']);
-					assert.equal(await form.locator('input').count(), 0);
+					assert.equal(await form.locator('input, textarea').count(), 0);
 					const button = form.getByRole('button', { name: choice, exact: true });
 					await button.focus();
 					assert.equal(await button.evaluate(node => document.activeElement === node && node.tabIndex === 0), true);
@@ -167,6 +173,21 @@ const help = {
 	hint: { button: 'Hint', answer: 'Asked for a hint.', label: 'You asked for a hint' },
 	unknown: { button: "I don't know", answer: "I don't know.", label: 'You selected “I don’t know”' },
 };
+
+async function writePhoneReasoning(field) {
+	const firstLine = 'I predict the reading stays the same. The jar is closed, so the water and the trapped air are still on the scale.';
+	await field.pressSequentially(firstLine);
+	const fits = await field.evaluate(node => node.scrollWidth === node.clientWidth && node.scrollHeight === node.clientHeight);
+	assert.equal(fits, true, 'the full explanation must be readable without scrolling the field');
+	for (const composition of [{ isComposing: true }, { keyCode: 229 }]) {
+		await field.dispatchEvent('keydown', { key: 'Enter', ...composition });
+	}
+	await field.press('Shift+Enter');
+	await field.pressSequentially('Both stay inside.');
+	const text = `${firstLine}\nBoth stay inside.`;
+	assert.equal(await field.inputValue(), text);
+	return text;
+}
 
 async function assertCardDraft(form, values, reason) {
 	const checked = await form.locator('[data-choice-for][aria-checked="true"]').evaluateAll(nodes => nodes.map(node => node.value));

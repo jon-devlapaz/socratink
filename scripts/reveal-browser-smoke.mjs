@@ -34,7 +34,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 	async function answer(choice, reason) {
 		const form = page.locator('#active-turn .questionnaire');
 		await form.getByText(choice, { exact: true }).click();
-		await form.locator('input[type="text"]').fill(reason);
+		await form.getByRole('textbox').fill(reason);
 		await form.evaluate((node) => node.requestSubmit());
 		guestTurns += 1;
 	}

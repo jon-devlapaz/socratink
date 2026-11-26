@@ -146,7 +146,7 @@
 	font-size: 0.78rem;
 }
 
-.questionnaire-freeform-label input {
+.questionnaire-freeform-label textarea {
 	width: 100%;
 	border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
 	border-radius: 10px;
@@ -154,6 +154,11 @@
 	color: var(--ink);
 	background: var(--chip);
 	font: inherit;
+	font-size: calc(1rem * var(--type-scale, 1));
+	line-height: 1.45;
+	min-height: calc(2lh + 1.4rem + 2px);
+	max-height: 12lh;
+	resize: none;
 }
 
 .questionnaire-actions {
@@ -216,7 +221,6 @@
 		flex: 1 0 auto;
 		padding-inline: 0.85rem;
 	}
-	.questionnaire-freeform-label input { font-size: 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

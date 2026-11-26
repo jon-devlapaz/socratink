@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import type { QuestionnaireAnswer, QuestionnaireDefinition } from '../questionnaire.ts';
 import type { AnswerFields, QuestionDraft } from './client/chat-draft.ts';
 
@@ -40,16 +40,23 @@ export function Questionnaire({ definition, canAskForHelp, draft, onSubmit, more
 		const freeform = answer.freeform.trim();
 		if (item.required && values.length === 0 && !freeform) {
 			setInvalid(true);
-			section.current?.querySelector<HTMLElement>('[data-choice-for], input[type="text"]')?.focus();
+			section.current?.querySelector<HTMLElement>('[data-choice-for], [data-freeform-for]')?.focus();
 			return;
 		}
 		onSubmit([{ name: item.name, values, ...(freeform && { freeform }), ...(skipped && { skipped }) }]);
 	}
 
-	function shortcut(event: KeyboardEvent<HTMLFormElement>) {
-		if (consent || event.altKey || event.ctrlKey || event.metaKey || event.nativeEvent.isComposing) return;
+	function handleKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+		if (consent || event.altKey || event.ctrlKey || event.metaKey) return;
+		if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
 		if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
-		if (event.target instanceof HTMLInputElement && event.target.type === 'text') return;
+		if (event.target instanceof HTMLTextAreaElement) {
+			if (event.key === 'Enter' && !event.shiftKey) {
+				event.preventDefault();
+				event.currentTarget.requestSubmit();
+			}
+			return;
+		}
 		const index = item.choices.findIndex(choice => choice.shortcut?.toLowerCase() === event.key.toLowerCase());
 		if (index < 0) return;
 		event.preventDefault();
@@ -84,7 +91,7 @@ export function Questionnaire({ definition, canAskForHelp, draft, onSubmit, more
 
 	return (
 		<form className="questionnaire" aria-label={definition.kind === 'quiz' ? 'Quiz' : 'Questions'}
-			onSubmit={submit} onKeyDown={shortcut}>
+			onSubmit={submit} onKeyDown={handleKeyDown}>
 			<fieldset ref={section} className="questionnaire-item" data-item={item.name} data-skipped={skipped}
 				tabIndex={-1} aria-invalid={invalid || undefined}
 				aria-describedby={[item.description && `${id}-description`, `${id}-error`].filter(Boolean).join(' ')}>
@@ -99,7 +106,7 @@ export function Questionnaire({ definition, canAskForHelp, draft, onSubmit, more
 				{item.input && (
 					<div className="questionnaire-freeform-label">
 						<Label htmlFor={`${id}-freeform`}>{item.input.label}</Label>
-						<Input id={`${id}-freeform`} type="text" name={`${item.name}__freeform`} data-freeform-for={item.name}
+						<Textarea id={`${id}-freeform`} rows={2} name={`${item.name}__freeform`} data-freeform-for={item.name}
 							placeholder={item.input.placeholder} value={answer.freeform}
 							onChange={event => edit({ ...answer, freeform: event.target.value })} />
 					</div>
