@@ -1,6 +1,7 @@
 // Runs scripted conversations through the real durable engine, tools, hooks and consent
 // projection, then checks what the learner saw. The model is whatever `resolveModel`
 // returns: a fake server in tests, the operator model when live.
+import { routeStopReason } from './credential.ts';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -59,7 +60,7 @@ async function settled(engine: Engine, conversationId: string, submissionId: str
 /** Each scenario `runs` times, each in a fresh conversation, on a temporary SQLite
  * database that is removed afterwards. */
 export async function runEval(options: { scenarios: readonly Scenario[]; runs?: number; resolveModel: EngineOptions['resolveModel'];
-	turnTimeoutMs?: number; onResult?: (result: ScenarioResult) => void }): Promise<ScenarioResult[]> {
+	turnTimeoutMs?: number; onResult?: (result: ScenarioResult) => void; onStop?: (reason: string) => void }): Promise<ScenarioResult[]> {
 	await mkdir('.cache', { recursive: true });
 	const directory = await mkdtemp(resolve('.cache/tutor-eval-db-'));
 	const work: Promise<void>[] = [];
@@ -79,8 +80,9 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 		return statuses.get(`${conversationId}:${submissionId}`);
 	};
 	const results: ScenarioResult[] = [];
+	const streak = { count: 0 };
 	try {
-		for (let run = 1; run <= (options.runs ?? 1); run += 1) {
+		runs: for (let run = 1; run <= (options.runs ?? 1); run += 1) {
 			for (const scenario of options.scenarios) {
 				let outcome: Omit<ScenarioResult, 'scenario' | 'run'>;
 				try {
@@ -91,6 +93,11 @@ export async function runEval(options: { scenarios: readonly Scenario[]; runs?: 
 				const result = { scenario: scenario.name, run, ...outcome };
 				results.push(result);
 				options.onResult?.(result);
+				const stop = routeStopReason(result.checks, streak);
+				if (stop) {
+					options.onStop?.(stop);
+					break runs;
+				}
 			}
 		}
 	} finally {

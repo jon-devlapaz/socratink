@@ -11,6 +11,7 @@ import { modelConfig } from '../../src/inference/index.ts';
 import { resolveChatModel } from '../../src/inference/operator.ts';
 import { scenarios as allScenarios } from './scenarios.ts';
 import { runEval, summarize } from './run.ts';
+import { gatewayCredentialProblem, modelRouteProblem } from './credential.ts';
 
 const { values } = parseArgs({ options: {
 	live: { type: 'boolean', default: false },
@@ -43,8 +44,18 @@ if (!operator) {
 	console.error('No model credential: set AI_GATEWAY_API_KEY (with VERCEL=1) or the JON_LOCAL_* settings.');
 	process.exit(2);
 }
+const problem = process.env.VERCEL === '1' ? gatewayCredentialProblem(process.env, 10) : undefined;
+if (problem) {
+	console.error(problem);
+	process.exit(2);
+}
 const config = modelConfig(operator);
 console.log(`Model: ${config.modelId} at ${config.baseUrl}${config.fallbackModelIds?.length ? ` (fallback ${config.fallbackModelIds.join(', ')})` : ''}`);
+const routeProblem = await modelRouteProblem(config);
+if (routeProblem) {
+	console.error(`${routeProblem}\nNo conversation ran.`);
+	process.exit(2);
+}
 console.log(`Scenarios: ${scenarios.length} x ${runs} run(s)\n`);
 
 const started = new Date();
@@ -53,7 +64,7 @@ const results = await runEval({ scenarios, runs, resolveModel: async () => confi
 	const skippedCount = entry.checks.filter((c) => c.status === 'skip').length;
 	console.log(`${failed.length ? 'FAIL' : 'PASS'} ${entry.scenario} run ${entry.run}: ${entry.turns.length} turn(s)${skippedCount ? `, ${skippedCount} skipped` : ''}`);
 	for (const c of failed) console.log(`  - ${c.check}${c.turn === undefined ? '' : ` (turn ${c.turn + 1})`}: ${c.detail ?? ''}`);
-} });
+}, onStop: (reason) => console.error(`\nStopped early: ${reason}`) });
 
 const summary = summarize(results);
 console.log('\nCheck                      pass  fail  skip');
