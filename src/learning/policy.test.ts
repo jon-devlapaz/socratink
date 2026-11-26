@@ -32,23 +32,43 @@ test('the tutor keeps tool names and bookkeeping out of learner text', () => {
 	assert.ok(systemPrompt.includes('Never mention internal tools or bookkeeping to the learner.'));
 });
 
-test('questions use current validation and presentation; reveals retain provenance without ending the turn', () => {
+test('a question ends the turn with the validated card and its displayed order', () => {
 	const question = executeLearningTool('present_question', { prompt: ' Which step? ', choices: [' Recheck ', 'Retry'], reasoning: true }, 'question-1');
 	assert.equal(question.terminate, true);
 	const card = parseQuestionnaireDefinition(question.data.questionnaire?.[0]);
 	assert.ok(card);
-	card.items[0]!.choices = card.items[0]!.choices.map(({ shortcut: _shortcut, ...choice }) => choice);
-	card.items[0]!.choices.sort((left, right) => left.value.localeCompare(right.value));
-	assert.deepEqual([card], [{ kind: 'question', submitLabel: 'Submit', items: [{
-		name: 'item', prompt: 'Which step?', required: true, multiple: false,
-		choices: [{ value: 'recheck', label: 'Recheck' }, { value: 'retry', label: 'Retry' }], input: { label: 'Your reasoning' },
-	}] }]);
-	assert.throws(() => executeLearningTool('present_question', { prompt: 'Which step?', choices: ['Only one'] }, 'question-2'));
+	const choices = card.items[0]!.choices;
+	assert.deepEqual(choices.map(choice => choice.shortcut), ['A', 'B']);
+	assert.equal(question.output, `Question presented on the card. Choices in displayed order:\nA. ${choices[0]!.label}\nB. ${choices[1]!.label}`);
+	const ordered = choices.map(({ value, label }) => ({ value, label })).sort((a, b) => a.value.localeCompare(b.value));
+	assert.deepEqual({ ...card, items: [{ ...card.items[0], choices: ordered }] }, {
+		kind: 'question', submitLabel: 'Submit', items: [{
+			name: 'item', prompt: 'Which step?', required: true, multiple: false,
+			choices: [{ value: 'recheck', label: 'Recheck' }, { value: 'retry', label: 'Retry' }], input: { label: 'Your reasoning' },
+		}],
+	});
+});
+
+test('a question with only one choice fails validation', () => {
+	assert.throws(() => executeLearningTool('present_question', { prompt: 'Which step?', choices: ['Only one'] }, 'question-2'), { name: 'ValiError' });
+});
+
+test('a hint records the target and lets the turn continue', () => {
 	assert.deepEqual(executeLearningTool('mark_reveal', { kind: 'hint', target: ' recovery ' }, 'reveal-3'), {
 		output: 'Reveal recorded.', data: { reveal: [{ kind: 'hint', target: 'recovery' }] }, terminate: false,
 	});
-	assert.throws(() => executeLearningTool('mark_reveal', { kind: 'praise' }, 'reveal-4'));
+});
+
+test('an unknown assistance kind fails validation', () => {
+	assert.throws(() => executeLearningTool('mark_reveal', { kind: 'praise' }, 'reveal-4'), { name: 'ValiError' });
+});
+
+test('the available learning tools are present_question and mark_reveal', () => {
 	assert.deepEqual(learningToolDefinitions.map((tool) => tool.name), ['present_question', 'mark_reveal']);
+});
+
+test('an unknown learning tool fails with its name', () => {
+	assert.throws(() => executeLearningTool('missing', {}, 'unknown-1'), { message: 'Unknown tool: missing' });
 });
 
 test('the shared correction policy permits only one extra attempt', () => {

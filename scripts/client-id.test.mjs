@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { feedbackSubmissionId, randomId } from '../src/ui/client/random-id.ts';
 import { appConfig } from '../src/config/app.config.ts';
 import { openChatConversation } from '../src/ui/client/conversation.ts';
 
@@ -28,4 +29,16 @@ test('openChatConversation makes a conversation id without crypto.randomUUID', (
 		if (originalLocation === undefined) delete globalThis.location;
 		else globalThis.location = originalLocation;
 	}
+});
+
+test('a secure browser creates a standard UUID', (t) => {
+	const id = '11111111-2222-4333-8444-555555555555';
+	t.mock.method(crypto, 'randomUUID', () => id);
+	assert.equal(randomId(), id);
+});
+
+test('a feedback ID retains the timestamp and sets the UUID version and variant bits', (t) => {
+	t.mock.method(Date, 'now', () => 0x010203040506);
+	t.mock.method(crypto, 'getRandomValues', (bytes) => bytes.fill(0xff));
+	assert.equal(feedbackSubmissionId(), '01020304-0506-7fff-bfff-ffffffffffff');
 });
