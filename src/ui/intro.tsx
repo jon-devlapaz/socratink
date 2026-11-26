@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 
-const starters = ['I keep mixing up', 'I want to understand why', 'Check whether I really understand'];
+const starters = ['I want to understand', 'I’m stuck on', 'I’m teaching'];
 
 export function Intro() {
 	return (
