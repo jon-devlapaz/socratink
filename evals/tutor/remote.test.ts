@@ -14,13 +14,18 @@ test('the workflow inputs are separate arguments, bounded and checked before any
 	assert.throws(() => dispatchArgs({ ref: ' ', compare: '', only: 'all', runs: '3' }), /--ref/);
 });
 
-test('a ref must be on GitHub and match the local copy', () => {
+test('a ref must be on GitHub and hold every local commit', () => {
 	const repo = (answers: Record<string, string | undefined>) => (args: string[]) => answers[args.join(' ')];
 	assert.match(refProblem('fix', repo({})) ?? '', /not on GitHub yet\. Push it first: git push -u origin fix/);
 	assert.match(refProblem('fix', repo({
 		'ls-remote origin refs/heads/fix refs/tags/fix': 'aaa\trefs/heads/fix\n',
 		'rev-parse --verify --quiet refs/heads/fix': 'bbb\n',
-	})) ?? '', /differs from GitHub's/);
+	})) ?? '', /has commits GitHub does not have/);
+	assert.equal(refProblem('main', repo({
+		'ls-remote origin refs/heads/main refs/tags/main': 'aaa\trefs/heads/main\n',
+		'rev-parse --verify --quiet refs/heads/main': 'bbb\n',
+		'merge-base --is-ancestor bbb aaa': '',
+	})), undefined, 'a local copy that is only behind GitHub runs GitHub\'s');
 	assert.equal(refProblem('fix', repo({
 		'ls-remote origin refs/heads/fix refs/tags/fix': 'aaa\trefs/heads/fix\n',
 		'rev-parse --verify --quiet refs/heads/fix': 'aaa\n',

@@ -32,7 +32,9 @@ export function refProblem(ref: string, git: (args: string[]) => string | undefi
 	const remote = git(['ls-remote', 'origin', `refs/heads/${ref}`, `refs/tags/${ref}`])?.split(/\s+/u)[0];
 	if (!remote) return `${ref} is not on GitHub yet. Push it first: git push -u origin ${ref}`;
 	const local = git(['rev-parse', '--verify', '--quiet', `refs/heads/${ref}`])?.trim();
-	if (local && local !== remote) return `Your local ${ref} differs from GitHub's. Push it first, so the eval tests what you have: git push origin ${ref}`;
+	// A local copy that is only behind GitHub's is fine: GitHub's is what runs.
+	const behind = local && git(['merge-base', '--is-ancestor', local, remote]) !== undefined;
+	if (local && local !== remote && !behind) return `Your local ${ref} has commits GitHub does not have. Push it first, so the eval tests what you have: git push origin ${ref}`;
 	return undefined;
 }
 
@@ -56,7 +58,7 @@ async function main() {
 		const problem = refProblem(name, git);
 		if (problem) throw new Error(problem);
 	}
-	try { gh(['workflow', 'view', workflowFile, '--ref', 'main']); } catch {
+	try { gh(['workflow', 'view', workflowFile, '--ref', 'main', '--yaml']); } catch {
 		throw new Error('The Tutor eval workflow is not on main yet. Merge .github/workflows/tutor-eval.yml first.');
 	}
 	const started = Date.now();
