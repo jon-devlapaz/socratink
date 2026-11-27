@@ -12,7 +12,7 @@ export function NotFoundPage() {
 					<a href="/">Home</a>
 				</Button>
 				<Button asChild variant="link">
-					<a href="/login">Log in</a>
+					<a href="/login">Sign in</a>
 				</Button>
 			</nav>
 		</main>

@@ -10,12 +10,17 @@ type HistoryState = { kind: 'loading' | 'error' } | { kind: 'loaded'; entries: C
 type HistoryProps = {
 	open: boolean;
 	currentId: string;
+	hasConversation: boolean;
+	registered: boolean;
+	onStart: () => void;
 	onClose: () => void;
 	onCloseFocus: () => void;
 	onSelect: (id: string) => void;
 };
 
-export function HistoryDialog({ open, currentId, onClose, onCloseFocus, onSelect }: HistoryProps) {
+export function HistoryDialog({
+	open, currentId, hasConversation, registered, onStart, onClose, onCloseFocus, onSelect,
+}: HistoryProps) {
 	return (
 		<Dialog
 			open={open}
@@ -32,6 +37,9 @@ export function HistoryDialog({ open, currentId, onClose, onCloseFocus, onSelect
 			>
 				<HistoryList
 					currentId={currentId}
+					hasConversation={hasConversation}
+					registered={registered}
+					onStart={onStart}
 					onSelect={(id) => (id === currentId ? onClose() : onSelect(id))}
 					onClose={onClose}
 				/>
@@ -41,10 +49,13 @@ export function HistoryDialog({ open, currentId, onClose, onCloseFocus, onSelect
 }
 
 function HistoryList({
+	hasConversation,
+	registered,
+	onStart,
 	currentId,
 	onSelect,
 	onClose,
-}: Pick<HistoryProps, 'currentId' | 'onSelect' | 'onClose'>) {
+}: Pick<HistoryProps, 'currentId' | 'hasConversation' | 'registered' | 'onStart' | 'onSelect' | 'onClose'>) {
 	const [state, setState] = useState<HistoryState>({ kind: 'loading' });
 	const [attempt, setAttempt] = useState(0);
 	const retry = useRef<HTMLButtonElement>(null);
@@ -65,16 +76,19 @@ function HistoryList({
 	useEffect(() => {
 		if (state.kind === 'error') retry.current?.focus();
 	}, [state]);
+	const empty = state.kind === 'loaded' && state.entries.length === 0;
 	return (
 		<div className="history-page">
 			<div className="history-head">
-				<DialogTitle>History</DialogTitle>
+				<DialogTitle>{empty ? 'No conversations yet' : 'History'}</DialogTitle>
 				<Button id="history-close" type="button" variant="secondary" onClick={onClose}>
-					Back to conversation
+					{hasConversation ? 'Back to conversation' : 'Close'}
 				</Button>
 			</div>
-			<DialogDescription className="history-note">
-				Your conversations. Choose one to open it.
+			<DialogDescription id={empty ? 'history-empty' : undefined} className="history-note">
+				{empty
+					? 'Your conversations appear here after you send a message.'
+					: 'Your conversations. Choose one to open it.'}
 			</DialogDescription>
 			{state.kind === 'loading' && (
 				<p id="history-status" role="status">
@@ -123,7 +137,16 @@ function HistoryList({
 						))}
 					</ol>
 				) : (
-					<p id="history-empty">Your conversations appear here after you send a message.</p>
+					<>
+						<Button id="history-start" type="button" onClick={onStart}>
+							Start a conversation
+						</Button>
+						{!registered && (
+							<p id="history-guest" className="history-note">
+								<Button asChild variant="link"><a href="/login.html">Sign in</a></Button> to keep your History across devices.
+							</p>
+						)}
+					</>
 				))}
 		</div>
 	);

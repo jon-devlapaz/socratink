@@ -41,13 +41,14 @@
 	font-weight: 400;
 }
 
-#history-retry {
+#history-retry,
+#history-start {
 	align-self: flex-start;
 }
 
 .history-note,
 #history-status,
-#history-empty {
+#history-guest {
 	margin: 0;
 	color: var(--muted);
 	font-size: 0.85em;
@@ -126,4 +127,16 @@
 	#history-dialog {
 		padding-top: max(1.25rem, 6vh);
 	}
+}
+
+#history-guest a {
+	padding: 0;
+	height: auto;
+	min-height: 44px;
+}
+
+#history-dialog #history-start {
+	white-space: normal;
+	height: auto;
+	min-height: 44px;
 }

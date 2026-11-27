@@ -23,7 +23,7 @@ export async function verifySignInBrowser({ browser, app, fixture }) {
 		await page.goto(app.origin);
 		const composer = page.getByRole('textbox', { name: 'Message Socratink' });
 		await expect(composer).toBeEnabled();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		const feedback = page.getByRole('button', { name: 'Feedback', exact: true });
 		if (process.env.VITE_MODEM_FEEDBACK_TOKEN?.trim()) await expect(feedback).toBeVisible();
 		const feedbackAvailable = await feedback.isVisible();
@@ -34,10 +34,10 @@ export async function verifySignInBrowser({ browser, app, fixture }) {
 			await expect(dialog.getByRole('textbox', { name: 'Message', exact: true })).toBeEditable();
 			await assertAccessible(page, 'Guest feedback dialog');
 			await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-			await page.locator('#peek-handle').click();
+			await page.locator('#menu-trigger').click();
 		}
 		await page.getByRole('link', { name: 'Sign in', exact: true }).click();
-		const google = page.getByRole('button', { name: 'Google', exact: true });
+		const google = page.getByRole('button', { name: 'Continue with Google', exact: true });
 		await expect(google).toBeVisible();
 		await assertAccessible(page, 'Sign in');
 		await google.click();
@@ -47,11 +47,11 @@ export async function verifySignInBrowser({ browser, app, fixture }) {
 		await google.click();
 		await page.getByRole('button', { name: 'Allow' }).click();
 		await expect(composer).toBeEnabled();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await expect(page.getByRole('link', { name: 'Sign out' })).toBeVisible();
 		await page.reload();
 		await expect(composer).toBeEnabled();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await expect(page.getByRole('link', { name: 'Sign out' })).toBeVisible();
 		assert.equal((await (await page.request.get(`${app.origin}/api/session`)).json()).kind, 'registered');
 		return { guestFeedbackDialogScanned: feedbackAvailable };

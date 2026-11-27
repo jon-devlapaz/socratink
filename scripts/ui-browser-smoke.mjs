@@ -228,7 +228,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			if (await page.locator('#dictation-toggle:focus').count()) await page.keyboard.press('Tab');
 			await assertNoFocusDecoration(send, send, sendBefore);
 
-			await page.locator('#peek-handle').press('Enter');
+			await page.locator('#menu-trigger').press('Enter');
 			const startOver = page.locator('#start-over');
 			const icon = startOver.locator(':scope > svg');
 			const iconBefore = await readFocusPaint(icon);
@@ -343,21 +343,28 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await drag('touchMove', 90);
 		await drag('touchEnd');
 		await page.waitForFunction(() => document.activeElement.id === 'type-size-toggle');
-		assert.equal(await page.locator('#peek-handle').getAttribute('aria-expanded'), 'true');
+		assert.equal(await page.locator('#menu-trigger').getAttribute('aria-expanded'), 'true');
 	});
 
-	await check('menu-returns-focus-to-its-opener', async (page) => {
-		await page.goto(origin);
-		await page.locator('#message:enabled').waitFor();
-		for (const selector of ['#menu-trigger', '#peek-handle']) {
-			const trigger = page.locator(selector);
-			await trigger.focus();
-			await page.keyboard.press('Enter');
-			await page.getByRole('dialog', { name: 'Menu' }).waitFor();
-			await page.keyboard.press('Escape');
-			await page.waitForFunction(selector => document.activeElement?.matches(selector), selector);
-		}
-	});
+	for (const width of [390, 1280]) {
+		await check(`single-menu-opener-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto(origin);
+			await page.locator('#message:enabled').waitFor();
+			const trigger = page.getByRole('button', { name: 'Open menu', exact: true });
+			await expect(trigger).toHaveCount(1);
+			for (const activation of ['pointer', 'Enter', 'Space']) {
+				if (activation === 'pointer') await trigger.click();
+				else await trigger.press(activation);
+				const menu = page.getByRole('dialog', { name: 'Menu', exact: true });
+				await expect(menu).toBeVisible();
+				await expect(menu.locator(':focus')).toHaveCount(1);
+				await page.keyboard.press('Escape');
+				await expect(menu).toBeHidden();
+				await expect(trigger).toBeFocused();
+			}
+		});
+	}
 
 	await check('unavailable-dictation-stays-hidden', async (page) => {
 		await page.addInitScript(() => {
@@ -400,17 +407,16 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.equal(await input.inputValue(), '');
 
-		// Start over resets every open tab, so an empty tab still warns about the others.
 		const [draftTab] = await Promise.all([
 			page.waitForEvent('popup'),
 			page.evaluate(() => { window.open(location.href); }),
 		]);
 		await ready(draftTab);
 		await draftTab.locator('#message').fill('A sentence in another tab');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
-			'Anything unsent in your other open tabs will be deleted. Saved conversations are in History.');
+			'Unsent work in your other open tabs will be deleted. This conversation will close in your open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await draftTab.locator('#message').inputValue(), 'A sentence in another tab');
@@ -418,24 +424,24 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			'What you haven’t sent will be deleted, here and in your other open tabs. Saved conversations are in History.');
+			'Your unsent text in this tab will be deleted. This conversation will close in your open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
 		assert.equal(await input.inputValue(), 'A draft for the old conversation');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		await page.getByRole('button', { name: 'Keep this conversation' }).click();
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
 		await page.reload();
 		await ready(page);
 		assert.equal(await input.inputValue(), 'A draft for the old conversation');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 		await ready(page);
@@ -458,27 +464,43 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const ready = () => page.locator('#message[placeholder]:enabled').waitFor();
 			const storedId = () => page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 			const openHistory = async () => {
-				await page.locator('#peek-handle').click();
+				await page.locator('#menu-trigger').click();
 				await page.getByRole('button', { name: 'History' }).click();
 				await page.locator('#history-dialog[data-state=open]').waitFor();
 				// History loads from the server each time it opens.
 				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
 			await ready();
-			await page.locator('#peek-handle').click();
+			await page.locator('#menu-trigger').click();
 			await page.getByRole('button', { name: 'History' }).waitFor();
 			await page.screenshot({ path: `${out}/history-menu-${colorScheme}-${width}.png` });
 			await page.keyboard.press('Escape');
 			await openHistory();
 			await page.getByText('Your conversations appear here after you send a message.').waitFor();
-			await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
-			await page.waitForFunction(() => /^(peek-handle|menu-trigger)$/.test(document.activeElement.id));
+			await page.getByRole('heading', { name: 'No conversations yet', exact: true }).waitFor();
+			assert.equal(await page.locator('#history-dialog button[data-variant="default"]').count(), 1);
+			assert.equal(await page.locator('#history-start').evaluate((button) => {
+				const style = getComputedStyle(button);
+				return style.borderRadius === '999px' && button.getBoundingClientRect().height >= 44;
+			}), true);
+			assert.equal(await page.locator('#history-guest').count(), 0);
+			await page.screenshot({ path: `${out}/history-empty-${colorScheme}-${width}.png` });
+			await page.getByRole('button', { name: 'Close', exact: true }).click();
+			await page.waitForFunction(() => document.activeElement.id === 'menu-trigger');
+
+			const emptyId = await storedId();
+			await page.locator('#message').fill('What is 2 + 2?');
+			await openHistory();
+			await page.getByRole('button', { name: 'Start a conversation', exact: true }).click();
+			await page.waitForFunction(() => document.activeElement.id === 'message');
+			assert.equal(await storedId(), emptyId);
+			assert.equal(await page.locator('#message').inputValue(), 'What is 2 + 2?');
 
 			await send(page, 'Why is the sky blue?');
 			// The fixture's history read repeats the last reply in every conversation.
 			await page.locator('#active-turn').getByText('Fresh reply', { exact: true }).waitFor();
 			const firstId = await storedId();
-			await page.locator('#peek-handle').click();
+			await page.locator('#menu-trigger').click();
 			await page.getByRole('button', { name: 'Start over' }).click();
 			await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 			await ready();
@@ -512,9 +534,21 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		});
 	}
 
+	await check('history-empty-guest', async (page, fixture) => {
+		fixture.userKind = 'guest';
+		await page.setViewportSize({ width: 390, height: 900 });
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		await openHistory(page);
+		await page.getByRole('heading', { name: 'No conversations yet', exact: true }).waitFor();
+		assert.equal(await page.locator('#history-guest').innerText(), 'Sign in to keep your History across devices.');
+		assert.equal(await page.locator('#history-guest a').getAttribute('href'), '/login.html');
+		await assertAccessible(page, 'Empty guest History');
+	});
+
 	const historyRows = (page) => page.locator('#history-list button');
 	async function openHistory(page) {
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'History' }).click();
 		await page.locator('#history-dialog[data-state=open]').waitFor();
 	}
@@ -551,13 +585,13 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.goto(origin);
 		await send(page, 'Hold this reply');
 		await page.locator('.turn.pending').waitFor();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		assert.equal(await page.locator('#history-trigger').isDisabled(), true);
 		assert.equal(await page.locator('#start-over').isDisabled(), true);
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		assert.equal(await page.locator('#history-trigger').isEnabled(), true);
 	});
 
@@ -676,7 +710,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await recheck.waitFor();
 		await expect(recheck).toBeFocused();
 		await expect(page.locator('#message')).toBeDisabled();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await expect(page.locator('#start-over')).toBeEnabled();
 		await page.keyboard.press('Escape');
 		await recheck.click();
@@ -808,7 +842,7 @@ function createServices(origin, session) {
 		async handle(route, url) {
 			const json = (body, status = 200, headers = {}) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers });
 			if (url.pathname === appConfig.sessionPath) {
-				return json({ userId: session.userId, aliases: [], kind: 'registered' });
+				return json({ userId: session.userId, aliases: [], kind: fixture.userKind ?? 'registered' });
 			}
 			if (url.pathname === `${appConfig.sessionPath}/logout`) {
 				return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Signed out</p>' });
