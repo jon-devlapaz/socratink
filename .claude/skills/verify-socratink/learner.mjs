@@ -8,10 +8,12 @@
 //
 // One learner is one browser context: one guest cookie and one localStorage, so its
 // tabs share the same conversation, exactly like two tabs in a learner's own browser.
+import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { connect as tcpConnect, createServer } from 'node:net';
 import { join } from 'node:path';
 import { readState } from './control.mjs';
+import { readProductionDeployment } from './production-deployment.mjs';
 
 // The browser reaches the app through this loopback proxy, so a run can drop the
 // learner's network, or only the reply streams (GET .../events), the way a flaky
@@ -187,9 +189,14 @@ export async function journey(feature, body, options) {
 		result.screenshots.push(path);
 	};
 	try {
+		const deployment = options?.production ? readProductionDeployment() : undefined;
 		await body({ ...session, record, shot });
 		const errors = session.learner.tabs.flatMap((tab) => tab.errors);
 		if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
+		if (deployment) {
+			assert.deepEqual(readProductionDeployment(), deployment, 'Production changed during the guest check.');
+			Object.assign(result, deployment);
+		}
 		result.passed = true;
 	} catch (error) {
 		result.passed = false;
