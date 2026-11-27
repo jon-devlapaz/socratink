@@ -14,13 +14,13 @@ Open Socratink in a fresh browser profile. Start the seasons quiz. Open a second
 
 ## Driving it with learner.mjs
 
-Run from the repository root after the production deploy succeeds.
+Run from the repository root after the production deploy succeeds. Sign in to GitHub CLI so the journey can read Vercel's production deployment record.
 
 ```sh
 node .claude/skills/verify-socratink/journeys/production-guest.mjs
 ```
 
-Use the printed `result.json` path to find the observations and screenshots. A pass requires a settled reply immediately after the submitted reasoning.
+Use the printed `result.json` path to find the observations and screenshots. A pass requires a settled reply immediately after the submitted reasoning and the same successful production deployment before and after the run. The result saves the verified commit in `builtFrom` and the Vercel link in `deploymentUrl`.
 
 ## Gotchas
 
