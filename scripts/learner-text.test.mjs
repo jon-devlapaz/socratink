@@ -18,6 +18,10 @@ const leaks = [
 	['#131 a literal "(no text)"', '(no text)', '(no text)', ''],
 	['#136 a reveal note', 'Close. No answer shown. What happens to the key?', 'No answer shown', 'Close. What happens to the key?'],
 	['#164 a present_question call written as text', 'Look at the middle element first.\n\n{"prompt":"After checking the middle element, what happens next?","choices":[{"label":"Search the left half only","value":"left_half_only"},{"label":"Recheck the full list","value":"full_list_recompare"}],"reasoning":true}', '"prompt"', 'Look at the middle element first.'],
+	// Eval runs 45984402183 and 45948005835: tool inputs the retry and the filter missed.
+	['a broken card input written as the whole reply', '{"note":"{"reasoning":true"}', 'note', ''],
+	['a mark_reveal input written as the reply after See it', '{"target":"Why ice floats on water"}', 'target', ''],
+	['a mark_reveal input written before the reveal', '{"kind":"full_answer","target":"Why ice floats"}  Ice is less dense than water.', 'full_answer', 'Ice is less dense than water.'],
 	['a reveal note in the reply itself (first live eval wording)', 'What color would the sky look on the Moon?\n\nYour last reply only asked a question and supplied no target content, so no reveal was marked.', 'no reveal was marked', 'What color would the sky look on the Moon?'],
 ];
 

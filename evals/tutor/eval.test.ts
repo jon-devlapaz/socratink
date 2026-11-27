@@ -31,6 +31,12 @@ test('a present_question call written as JSON text fails on its internal notes (
 	assert.ok(failing(reply(text)).includes('no-internal-notes'));
 });
 
+test('a reply that is only a tool input written as JSON text fails on its internal notes (eval run 45984402183)', () => {
+	for (const text of ['{"note":"{"reasoning":true"}', '{"target":"Why ice floats on water"}']) {
+		assert.ok(failing(reply(text)).includes('no-internal-notes'), text);
+	}
+});
+
 test('two questions fail; a skill map fence and a quoted question do not count', () => {
 	assert.deepEqual(failing(reply('What is a vector? And what is a scalar?')), ['one-question']);
 	const map = '```text\nWhy? ███░░ 3/5\n```\n\n> Is this a quote?\n\nWhich force pulls the apple down?';

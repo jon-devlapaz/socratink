@@ -79,4 +79,6 @@ test('retries once when the card is written as JSON text instead of a call (#164
 	assert.equal(presentQuestionRetryReason({ toolCalls: [{ tool: presentQuestionToolName, isError: false }], assistantText, alreadyRetried: false }), undefined);
 	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText, alreadyRetried: true }), undefined);
 	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText: 'In JSON, `{"a": 1}` is an object. What is a key?', alreadyRetried: false }), undefined);
+	// Eval run 45984402183: a broken card input that opened on "note", not on "prompt".
+	assert.equal(presentQuestionRetryReason({ toolCalls: [], assistantText: '{"note":"{"reasoning":true"}', alreadyRetried: false }), 'asText');
 });

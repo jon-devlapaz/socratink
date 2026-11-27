@@ -17,6 +17,7 @@ import { readSnapshot } from '../src/server/durable/projection.ts';
 import { steeringMessages } from '../src/config/chat-message.ts';
 import { executeLearningTool } from '../src/learning/tools.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
+import { markRevealRetryBodies } from '../src/learning/mark-reveal.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData } from '../src/questionnaire.ts';
 
 async function fixture(run, failures = 0) {
@@ -282,6 +283,28 @@ test('a card written as JSON text is retried as a real card and never shows as t
 		assert.equal(reply.data?.questionnaire?.[0]?.items?.[0]?.prompt, 'After checking the middle element, what happens next?');
 		assert.equal(learnerVisibleText(reply.text), 'Each check halves the list.');
 		assert.equal(responses.length, 2);
+	} finally { await engine.close(); }
+}));
+
+// Eval run 45984402183: a reply that was only the mark_reveal input showed as text, unmarked.
+test('a mark written as JSON text is retried as a real mark and never shows as text', async () => fixture(async ({ responses, requests, options }) => {
+	const engine = await openEngine({ ...options, keepAlive: () => {} });
+	const json = '{"target":"Why ice floats on water"}';
+	const hint = 'Compare how tightly the molecules pack in ice and in liquid water.';
+	try {
+		await engine.submit('learner:json-mark', 'Why does ice float?');
+		await until(async () => responses.length, (count) => count === 1);
+		finish(responses[0], json);
+		await until(async () => responses.length, (count) => count === 2);
+		assert.equal(requests[1].at(-1).content, markRevealRetryBodies.asText);
+		finishTool(responses[1], 'mark_reveal', { kind: 'hint', target: 'Why ice floats on water' });
+		await until(async () => responses.length, (count) => count === 3);
+		finish(responses[2], `${hint} What happens to the spacing when water freezes?`);
+		const settled = await until(() => engine.snapshot('learner:json-mark'), (value) => value.submissions[0]?.outcome === 'completed');
+		const reply = settled.messages.find((message) => message.role === 'assistant');
+		assert.deepEqual(reply.data?.reveal, [{ kind: 'hint', target: 'Why ice floats on water' }]);
+		assert.equal(learnerVisibleText(reply.text), `${hint} What happens to the spacing when water freezes?`);
+		assert.equal(responses.length, 3);
 	} finally { await engine.close(); }
 }));
 

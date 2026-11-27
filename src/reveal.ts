@@ -14,6 +14,10 @@ export const RevealSchema = v.strictObject({
 
 export type RevealDefinition = v.InferOutput<typeof RevealSchema>;
 
+/** Where a mark_reveal input written out as JSON text, not called, begins:
+ * an object opening on one of its keys. */
+export const revealJson = /\{\s*"(?:kind|target|requested)"\s*:/u;
+
 export const revealExample = {
 	kind: 'full_answer',
 	target: 'Recover an admitted request after the response stream drops',
