@@ -45,6 +45,7 @@
 }
 
 /* Shape shared by every kind. */
+#history-start,
 .questionnaire-button,
 .questionnaire-choices > button,
 .request-action,
@@ -122,6 +123,7 @@
 /* Primary: the forward action. */
 .questionnaire-actions .questionnaire-button-primary,
 .questionnaire-choices > button:last-child,
+#history-start,
 #feedback-send,
 .composer-send button[type='submit'],
 .dictation-toggle[data-state='listening'],
@@ -136,6 +138,7 @@
 :is(
 	.questionnaire-actions .questionnaire-button-primary,
 	.questionnaire-choices > button:last-child,
+	#history-start,
 	#feedback-send,
 	.composer-send button[type='submit'],
 	.dictation-toggle[data-state='listening'],
@@ -200,6 +203,7 @@
 
 /* Press, settle on the spring, and disabled. */
 :is(
+	#history-start,
 	.questionnaire-button,
 	.questionnaire-choices > button,
 	.request-action,
@@ -221,6 +225,7 @@
 }
 
 :is(
+	#history-start,
 	.questionnaire-button,
 	.questionnaire-choices > button,
 	.request-action,
@@ -258,6 +263,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 	:is(
+		#history-start,
 		.questionnaire-button,
 		.questionnaire-choices > button,
 		.request-action,
@@ -278,6 +284,7 @@
 	}
 
 	:is(
+		#history-start,
 		.questionnaire-button,
 		.questionnaire-choices > button,
 		.request-action,

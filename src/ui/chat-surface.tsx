@@ -441,6 +441,12 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
+		hasConversation() {
+			return turns.length > 0 || requestState.kind !== 'idle';
+		},
+		focusComposer() {
+			input.focus();
+		},
 		/** Whether this tab holds words or card choices the learner has not sent. Other tabs cannot be read. */
 		hasUnsentWork() {
 			if (input.value.trim() || cardDraft.hasWork()) return true;

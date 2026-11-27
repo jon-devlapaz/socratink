@@ -34,6 +34,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	const opener = useRef<HTMLButtonElement | null>(null);
 	const brand = useRef<HTMLButtonElement>(null);
 	const skipMenuFocus = useRef(false);
+	const focusHistoryComposer = useRef(false);
 	useEffect(() => {
 		if (startChat) void startChat(setStartOverDisabled, setContent).then(setSession);
 	}, [startChat]);
@@ -115,9 +116,19 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 				<HistoryDialog
 					open={layer === 'history'}
 					currentId={session.conversationId}
+					hasConversation={session.hasConversation()}
+					registered={session.user.kind === 'registered'}
+					onStart={() => {
+						focusHistoryComposer.current = true;
+						closeDialog();
+					}}
 					onSelect={session.switchConversation}
 					onClose={closeDialog}
-					onCloseFocus={restoreFocus}
+					onCloseFocus={() => {
+						if (focusHistoryComposer.current) session.focusComposer();
+						else restoreFocus();
+						focusHistoryComposer.current = false;
+					}}
 				/>
 			)}
 			<Dialog
