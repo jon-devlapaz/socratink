@@ -53,6 +53,9 @@ const baselinePresent = {
 	],
 	reasoning: true,
 };
+const baselineUnknown = formatQuestionnaireAnswers(
+	{ items: [{ name: 'item', prompt: baselinePresent.prompt, choices: [] }] }, [{ name: 'item', values: [], help: 'unknown' }]);
+const baselineHint = 'Think about which part of the request the server could have seen.';
 const comparisonPresent = {
 	prompt: 'Which observation best distinguishes safe recovery from duplicate work?',
 	choices: [
@@ -286,6 +289,7 @@ const scriptedProviderTurns = [
 	},
 ];
 
+let providerScript = scriptedProviderTurns;
 let providerTurns = 0;
 const fakeProvider = createServer(async (request, response) => {
 	assert.equal(request.method, 'POST');
@@ -300,8 +304,8 @@ const fakeProvider = createServer(async (request, response) => {
 	assert.ok(JSON.stringify(payload.tools).includes('present_question'));
 	assert.ok(JSON.stringify(payload.tools).includes('mark_reveal'));
 
-	const turn = scriptedProviderTurns[providerTurns];
-	assert.ok(turn, 'the smoke should use exactly eleven provider calls');
+	const turn = providerScript[providerTurns];
+	assert.ok(turn, 'the smoke should use only scripted provider calls');
 	providerTurns += 1;
 	for (const expected of turn.expectedMessages) assertProviderReceived(payload.messages, expected);
 	writeCompletion(response, `chatcmpl-smoke-${providerTurns}`, scriptedCompletionDeltas(turn));
@@ -524,10 +528,17 @@ try {
 	], 'help labels survive a history read');
 
 	if (process.env.REVEAL_BROWSER === '1') {
+		providerScript = [
+			...scriptedProviderTurns.slice(0, 2),
+			{ expectedMessages: [baselineUnknown], text: baselineHint, finishReason: 'stop' },
+			{ expectedMessages: [baselineUnknown, markRevealRetryBodies.requested],
+				tools: [{ id: 'call_unknown_hint', name: 'mark_reveal', arguments: { kind: 'hint' } }], finishReason: 'tool_calls' },
+			...scriptedProviderTurns.slice(2),
+		];
 		providerTurns = 0;
 		const { verifyRevealBrowser } = await import('./reveal-browser-smoke.mjs');
 		await verifyRevealBrowser({ origin, session, savedConversationId: conversationId, initialMessage, assistanceText,
-			baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
+			baselineChoice, baselineReason, baselineHint, comparisonChoice, comparisonReason, revisedChoice, revisedReason });
 	}
 	console.log(
 		`smoke passed: health, SPA fallback, unknown API 404s, session 401/403, ${assetPaths.length} assets, present_question retry, mark_reveal, card help, reveal correction, learning exchange, restart persistence`,
