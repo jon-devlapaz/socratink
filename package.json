@@ -40,7 +40,7 @@
 		"test:chat-turns": "node --test scripts/chat-turns.test.mjs",
 		"test:live-reply": "node --test scripts/live-reply.test.mjs",
 		"test:learner-text": "node --test scripts/learner-text.test.mjs",
-		"test:cross-tab": "node --test scripts/cross-tab.test.mjs",
+		"test:cross-tab": "node --test scripts/cross-tab.test.mjs scripts/start-over-empty-session.test.mjs scripts/start-over-work-at-risk.test.mjs scripts/start-over-loss-description.test.mjs",
 		"test:sound-cues": "node --test scripts/sound-cues.test.mjs",
 		"test:menu": "node --test --test-concurrency=1 scripts/menu-control-accessibility.test.mjs scripts/menu-focus-return.test.mjs",
 		"test:tool-card": "node --test scripts/tool-card.test.mjs",

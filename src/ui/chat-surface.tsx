@@ -18,6 +18,7 @@ import {
 	watchChatTurnSettled,
 } from './client/conversation.ts';
 import { mountChatDraft, openQuestionDraft } from './client/chat-draft.ts';
+import { mountUnsentWork } from './client/unsent-work.ts';
 import { mountSoundCues } from './sound-cues.ts';
 import { attachTranscriptScroll } from './transcript-scroll.ts';
 import {
@@ -92,6 +93,15 @@ export function mountChatSurface(options: Readonly<{
 	}
 	const draft = mountChatDraft(input, conversation.id);
 	const cardDraft = openQuestionDraft(conversation.id);
+	function hasCardWork() {
+		if (cardDraft.hasWork()) return true;
+		const question = activeTurn.querySelector('.questionnaire');
+		if (!question) return false;
+		if (question.querySelector('[data-state="checked"], [aria-checked="true"]')) return true;
+		return [...question.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')]
+			.some((field) => field.value.trim() !== '');
+	}
+	const unsentWork = mountUnsentWork(options.userId, () => Boolean(input.value.trim()) || hasCardWork());
 	const liveTools: DisplayedToolCall[] = [];
 	const quietToolIds = new Set<string>();
 	let liveReply = createLiveReply('');
@@ -232,6 +242,7 @@ export function mountChatSurface(options: Readonly<{
 			document.body.classList.toggle('conversation-empty', nothingSaidYet);
 			input.placeholder = nothingSaidYet ? 'What are you working on?' : 'Your reply';
 			document.body.classList.toggle('questionnaire-active', questionActive);
+			unsentWork.sync();
 		};
 
 		switch (kind) {
@@ -441,16 +452,19 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
-		/** Whether this tab holds words or card choices the learner has not sent. Other tabs cannot be read. */
-		hasUnsentWork() {
-			if (input.value.trim() || cardDraft.hasWork()) return true;
-			const question = activeTurn.querySelector('.questionnaire');
-			if (!question) return false;
-			if (question.querySelector('[data-state="checked"], [aria-checked="true"]')) return true;
-			return [...question.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')]
-				.some((field) => field.value.trim() !== '');
+		dispose: unsentWork.dispose,
+		startOverDescription() {
+			const affected: string[] = [];
+			if (input.value.trim()) affected.push('Your unsent text in this tab will be deleted.');
+			if (hasCardWork()) affected.push('Your question-card work in this tab will be deleted.');
+			const elsewhere = unsentWork.elsewhere();
+			if (elsewhere === 'present') affected.push('Unsent work in your other open tabs will be deleted.');
+			if (elsewhere === 'unknown') affected.push('Unsent work in other open tabs could be deleted.');
+			if (turns.length) affected.push('This conversation will close in your open tabs.');
+			return affected.length ? affected.join(' ') : undefined;
 		},
 		startOver() {
+			unsentWork.clearStale();
 			dictation.cancel();
 			cardDraft.clear();
 			draft.clear();
