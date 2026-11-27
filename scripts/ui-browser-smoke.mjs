@@ -416,7 +416,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
-			'If the switch succeeds: Unsent work in your other open tabs could be deleted. This conversation will close in this tab. Other open tabs could switch too. Saved conversations are in History.');
+			'Unsent work in your other open tabs will be deleted. This conversation will close in your open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await draftTab.locator('#message').inputValue(), 'A sentence in another tab');
@@ -429,7 +429,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
 		assert.equal(await confirm.locator('p').innerText(),
-			'If the switch succeeds: Your unsent text in this tab will be deleted. This conversation will close in this tab. Other open tabs could switch too. Saved conversations are in History.');
+			'Your unsent text in this tab will be deleted. This conversation will close in your open tabs. Saved conversations are in History.');
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);

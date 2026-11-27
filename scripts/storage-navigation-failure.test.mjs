@@ -103,9 +103,8 @@ async function run(t, baseline, mode, action) {
 			await page.locator('#start-over').click();
 			const copy = await page.locator('#start-over-dialog [data-slot="dialog-description"]').innerText();
 			if (!baseline) {
-				assert.match(copy, /If the switch succeeds/);
-				assert.match(copy, /other open tabs could/i);
-				assert.match(copy, /Saved conversations are in History/);
+				const otherWork = mode === 'read' ? '' : 'Unsent work in other open tabs could be deleted. ';
+				assert.equal(copy, `Your unsent text in this tab will be deleted. ${otherWork}This conversation will close in your open tabs. Saved conversations are in History.`);
 			}
 			await page.locator('#start-over-confirm').click();
 		} else {
@@ -126,7 +125,7 @@ async function run(t, baseline, mode, action) {
 		}
 		assert.deepEqual(errors, [], 'navigation must not throw');
 		assert.equal(reloads, 0, 'failed navigation must not reload into another conversation');
-		await page.getByText(guidance, { exact: true }).waitFor();
+		await page.getByRole('alert').getByText(guidance, { exact: true }).waitFor();
 		await page.keyboard.press('Escape');
 		assert.equal(await page.locator('#message').inputValue(), draft);
 		assert.equal(await page.getByText('Ocean reply to Why do tides happen?', { exact: true }).isVisible(), true);

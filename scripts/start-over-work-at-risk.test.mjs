@@ -22,7 +22,7 @@ for (const composerOnly of [false, true]) {
 			}
 			const description = await ui.protect(page);
 			if (other) {
-				assert.match(description, /[Uu]nsent work in your other open tabs could be deleted/);
+				assert.match(description, /[Uu]nsent work in your other open tabs will be deleted/);
 				assert.equal(await other.locator('#message').inputValue(), 'Other tab, unfinished.');
 			} else {
 				assert.match(description, /question-card work/);
