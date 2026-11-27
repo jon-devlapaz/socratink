@@ -77,7 +77,17 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 			<footer className="dock">
 				<div className="composer-shell">
 					<p id="storage-notice" role="status" />
-					<form id="chat" inert={questionActive}>
+					<form
+						id="chat"
+						inert={questionActive}
+						onPointerDown={(event) => {
+							const input = message.current;
+							if (!input || input.disabled || questionActive || event.button !== 0) return;
+							if (!(event.target instanceof Element) || event.target.closest('button, textarea, label')) return;
+							event.preventDefault();
+							input.focus();
+						}}
+					>
 						<Label className="sr-only" htmlFor="message">
 							Message Socratink
 						</Label>
