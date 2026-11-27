@@ -1,0 +1,1 @@
+{"command":"pnpm build && HOST=127.0.0.1 PORT=4173 node dist/server.mjs","url":"http://127.0.0.1:4173"}
