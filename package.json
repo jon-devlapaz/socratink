@@ -44,7 +44,7 @@
 		"test:learner-text": "node --test scripts/learner-text.test.mjs",
 		"test:cross-tab": "node --test scripts/cross-tab.test.mjs scripts/start-over-empty-session.test.mjs scripts/start-over-work-at-risk.test.mjs scripts/start-over-loss-description.test.mjs",
 		"test:sound-cues": "node --test scripts/sound-cues.test.mjs",
-		"test:menu": "node --test --test-concurrency=1 scripts/menu-control-accessibility.test.mjs scripts/menu-focus-return.test.mjs",
+		"test:menu": "node --test --test-concurrency=1 scripts/menu-control-accessibility.test.mjs scripts/menu-focus-return.test.mjs scripts/large-text-dialogs.test.mjs",
 		"test:tool-card": "node --test scripts/tool-card.test.mjs",
 		"test:thinking": "node --test scripts/thinking.test.mjs",
 		"test:chat-markdown": "node --import tsx --test scripts/chat-markdown.test.mjs",
