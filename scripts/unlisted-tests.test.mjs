@@ -20,19 +20,27 @@ function repo(files) {
 }
 
 const pass = (name) => `import test from 'node:test'; test('${name}', () => console.log('RAN ${name}'));`;
-const scripts = { 'test:named': 'node --test scripts/named.test.mjs src/group/*.test.ts' };
+const scripts = {
+	check: 'pnpm test:named && pnpm run test:quoted',
+	'test:named': 'node --test scripts/named.test.mjs src/group/*.test.ts',
+	'test:quoted': "node --test 'src/quoted/*.test.ts'",
+	'test:outside': 'node --test scripts/outside.test.mjs',
+};
 
-test('a test no script names runs, and named tests and globs are left to their scripts', () => {
+test('a test the gate does not reach runs, and tests check already runs are left to their scripts', () => {
 	const dir = repo({
 		'package.json': JSON.stringify({ type: 'module', scripts }),
 		'scripts/named.test.mjs': pass('named'),
 		'src/group/globbed.test.ts': pass('globbed'),
+		'src/quoted/q.test.ts': pass('quoted'),
+		'scripts/outside.test.mjs': pass('outside'),
 		'scripts/new.test.mjs': pass('new'),
 	});
 	const run = spawnSync(process.execPath, [runner], { cwd: dir, encoding: 'utf8' });
 	assert.equal(run.status, 0, run.stderr);
 	assert.match(run.stdout, /RAN new/);
-	assert.doesNotMatch(run.stdout, /RAN named|RAN globbed/);
+	assert.match(run.stdout, /RAN outside/, 'a script outside check does not count');
+	assert.doesNotMatch(run.stdout, /RAN named|RAN globbed|RAN quoted/);
 });
 
 test('a failing unlisted test fails the gate', () => {

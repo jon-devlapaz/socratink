@@ -74,7 +74,7 @@ pnpm audit --prod
 ```
 
 `pnpm check` runs the current type, contract, build, and static-routing checks.
-It also runs every `*.test.mjs` or `*.test.ts` file that no `package.json` script names,
+It also runs every `*.test.mjs` or `*.test.ts` file that no script reached from `check` names,
 so a new test needs no script entry.
 `pnpm smoke` starts local processes with a deterministic fake model provider;
 it requires no external credentials. The complete command list is in
