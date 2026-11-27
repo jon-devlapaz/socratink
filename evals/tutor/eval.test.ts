@@ -50,7 +50,7 @@ test('naming the right ice choice without a recorded reveal fails (eval run 4576
 		required: true, multiple: false, choices: [{ value: 'a', label: 'Ice is less dense than liquid water' }, { value: 'b', label: 'Ice is denser than liquid water' }] }] } };
 	const say = 'Which one was right? Was it the top one?';
 	const status = (text: string, parts: WirePart[] = []) => scenario.expect([{ learner: '', outcome: 'completed', reply: reply('', [card]) },
-		{ learner: say, step: say, outcome: 'completed', reply: reply(text, parts) }]).find((c) => c.check === 'reveal-marked')?.status;
+		{ learner: say, step: say, outcome: 'completed', reply: reply(text, parts) }]).find((c) => c.check === 'named-choice-marked')?.status;
 	for (const text of ['No — the correct choice was **"Ice is less dense than liquid water."** What does density measure?',
 		'Yes — the top one.\n\n**Solid ice is less dense because its molecules lock into an open lattice.**', 'Option A was right.']) {
 		assert.equal(status(text), 'fail', text);
@@ -256,7 +256,7 @@ test('a policy-following tutor passes every scenario', async () => {
 test('a tutor with the known bugs fails every behaviour rule and the displayed choice check', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, CheckName[]> = {
-		'no-choice-position': ['no-choice-position', 'reveal-marked'],
+		'no-choice-position': ['no-choice-position', 'named-choice-marked'],
 		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],

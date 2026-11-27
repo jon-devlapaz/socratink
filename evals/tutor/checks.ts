@@ -142,7 +142,7 @@ export function expectRevealedAnswerMarked(message: WireMessage | undefined, giv
 	const text = prose(textOf(message)).replace(/[*_`]/g, '');
 	const statements = text.split(/(?<=[.!?]["”’')]?)\s+|\n+|\s[—–]\s/).filter((sentence) => sentence.trim() && !/\?\s*["”']?$/.test(sentence.trim()));
 	const given = statements.filter((sentence) => giveaways.some((pattern) => pattern.test(sentence)));
-	return result('reveal-marked', given.length === 0 || revealsOf(message).length > 0 || isConsent(message),
+	return result('named-choice-marked', given.length === 0 || revealsOf(message).length > 0 || isConsent(message),
 		`answer given with no recorded reveal: ${given.join(' | ').slice(0, 160)}`);
 }
 

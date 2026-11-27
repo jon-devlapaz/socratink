@@ -17,7 +17,8 @@ export type Scenario = {
 	next: (turns: readonly Turn[]) => NextMessage | null;
 	expect: (turns: readonly Turn[]) => CheckResult[];
 };
-type Step = { say: string; help?: QuestionnaireHelp; plain?: true };
+/** `avoid` skips choices that match it, so the learner can pick a wrong one. */
+type Step = { say: string; help?: QuestionnaireHelp; plain?: true; avoid?: RegExp };
 
 function consentAnswer(card: QuestionnaireDefinition, value: 'see-it' | 'try-once-more'): string {
 	return formatQuestionnaireAnswers(card, [{ name: card.items[0]?.name ?? 'item', values: [value] }]);
@@ -33,7 +34,7 @@ function learnerMessage(step: Step, card: QuestionnaireDefinition | undefined, s
 		if (!sourceId) throw new Error('The question card has no submission ID.');
 		return { cardHelp: { kind: step.help, sourceId }, text: formatQuestionnaireAnswers(card, [{ name: item.name, values: [], help: step.help }]) };
 	}
-	const choice = item.choices[0]?.value;
+	const choice = (item.choices.find((c) => !step.avoid?.test(c.label)) ?? item.choices[0])?.value;
 	return { text: formatQuestionnaireAnswers(card, [{ name: item.name, values: choice ? [choice] : [], ...(item.input ? { freeform: step.say } : {}) }]) };
 }
 
@@ -65,7 +66,8 @@ export const scenarios: readonly Scenario[] = [
 		summary: 'After a card answer, match choice letters and positions to the displayed order.',
 		next: scripted([
 			{ say: 'Give me a question card about why ice floats on water, with choices and reasoning.' },
-			{ say: 'I picked this one but I am not sure.' },
+			// The learner picks a wrong choice: confirming a right pick is feedback, not a reveal.
+				{ say: 'I picked this one but I am not sure.', avoid: /less dense|lower density|lattice|crystal|expand|more (?:space|volume)/i },
 			{ say: 'Which one was right? Was it the top one?', plain: true },
 		]),
 		expect: (turns) => {
