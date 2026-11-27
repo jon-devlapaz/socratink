@@ -17,11 +17,11 @@ for (const category of ['local', 'other-tab', 'card', 'past']) {
 		const description = await ui.protect(page);
 		const expected = {
 			local: 'Your unsent text in this tab will be deleted. Saved conversations are in History.',
-			'other-tab': 'Unsent work in your other open tabs will be deleted. Saved conversations are in History.',
-			card: 'Your question-card work in this tab will be deleted. This conversation will close in your open tabs. Saved conversations are in History.',
-			past: 'This conversation will close in your open tabs. Saved conversations are in History.',
+			'other-tab': 'Unsent work in your other open tabs could be deleted. Saved conversations are in History.',
+			card: 'Your question-card work in this tab will be deleted. This conversation will close in this tab. Other open tabs could switch too. Saved conversations are in History.',
+			past: 'This conversation will close in this tab. Other open tabs could switch too. Saved conversations are in History.',
 		};
-		assert.equal(description, expected[category]);
+		assert.equal(description, `If the switch succeeds: ${expected[category]}`);
 		assert.equal(await page.locator('#active-turn').innerText(), before);
 		assert.equal(await page.locator('#message').inputValue(), category === 'local' ? 'Local draft, unfinished.' : '');
 		if (other) assert.equal(await other.locator('#message').inputValue(), 'Other draft, unfinished.');

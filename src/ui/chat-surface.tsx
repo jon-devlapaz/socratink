@@ -6,6 +6,7 @@ import './chat-gate.css';
 import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
 	ChatRequestCoordinator,
+	conversationSwitchGuidance,
 	chatRequestControls,
 	isGuestTurnLimitError,
 	type ChatRequestState,
@@ -275,7 +276,7 @@ export function mountChatSurface(options: Readonly<{
 		cardDraft.clear();
 		draft.clear();
 		location.reload();
-	});
+	}, () => { storageNotice.textContent = conversationSwitchGuidance; });
 	// Another tab's turn settled: an idle tab shows it. A busy tab keeps its own state.
 	let settledElsewhere = false;
 	watchChatTurnSettled(conversation.id, async () => {
@@ -464,21 +465,21 @@ export function mountChatSurface(options: Readonly<{
 			if (input.value.trim()) affected.push('Your unsent text in this tab will be deleted.');
 			if (hasCardWork()) affected.push('Your question-card work in this tab will be deleted.');
 			const elsewhere = unsentWork.elsewhere();
-			if (elsewhere === 'present') affected.push('Unsent work in your other open tabs will be deleted.');
+			if (elsewhere === 'present') affected.push('Unsent work in your other open tabs could be deleted.');
 			if (elsewhere === 'unknown') affected.push('Unsent work in other open tabs could be deleted.');
-			if (turns.length) affected.push('This conversation will close in your open tabs.');
-			return affected.length ? affected.join(' ') : undefined;
+			if (turns.length) affected.push('This conversation will close in this tab. Other open tabs could switch too.');
+			return affected.length ? `If the switch succeeds: ${affected.join(' ')}` : undefined;
 		},
 		startOver() {
-			unsentWork.clearStale();
-			dictation.cancel();
-			cardDraft.clear();
-			draft.clear();
-			startNewChatConversation(options.userId);
+			return startNewChatConversation(options.userId, () => {
+				unsentWork.clearStale();
+				dictation.cancel();
+				cardDraft.clear();
+				draft.clear();
+			});
 		},
 		switchConversation(id: string) {
-			dictation.cancel();
-			switchChatConversation(id);
+			return switchChatConversation(id, () => dictation.cancel());
 		},
 		sound,
 	};
