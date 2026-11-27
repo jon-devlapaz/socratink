@@ -9,6 +9,7 @@ type HistoryState = { kind: 'loading' | 'error' } | { kind: 'loaded'; entries: C
 
 type HistoryProps = {
 	open: boolean;
+	navigationError?: string;
 	currentId: string;
 	hasConversation: boolean;
 	registered: boolean;
@@ -19,7 +20,7 @@ type HistoryProps = {
 };
 
 export function HistoryDialog({
-	open, currentId, hasConversation, registered, onStart, onClose, onCloseFocus, onSelect,
+	open, currentId, hasConversation, registered, onStart, onClose, onCloseFocus, onSelect, navigationError,
 }: HistoryProps) {
 	return (
 		<Dialog
@@ -35,6 +36,7 @@ export function HistoryDialog({
 					onCloseFocus();
 				}}
 			>
+				{navigationError && <p role="alert">{navigationError}</p>}
 				<HistoryList
 					currentId={currentId}
 					hasConversation={hasConversation}

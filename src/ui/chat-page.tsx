@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { MenuSheet, useSheetGesture } from './menu-sheet.tsx';
 import type { mountChatSurface, TranscriptContent } from './chat-surface.tsx';
 import type { SessionUser } from './session.ts';
+import { conversationSwitchGuidance } from './client/conversation.ts';
 import wordmark from './brand-wordmark.png';
 
 type ChatSession = { user: SessionUser } & ReturnType<typeof mountChatSurface>;
@@ -31,6 +32,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	const [layer, setLayer] = useState<'menu' | DialogPage>();
 	const [startOverDisabled, setStartOverDisabled] = useState(true);
 	const [startOverDescription, setStartOverDescription] = useState('');
+	const [navigationError, setNavigationError] = useState(false);
 	const brand = useRef<HTMLButtonElement>(null);
 	const skipMenuFocus = useRef(false);
 	const focusHistoryComposer = useRef(false);
@@ -54,6 +56,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	};
 	const openDialog = (page: DialogPage) => {
 		skipMenuFocus.current = true;
+		setNavigationError(false);
 		setLayer(page);
 	};
 	const closeDialog = () => setLayer(undefined);
@@ -128,7 +131,10 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 						focusHistoryComposer.current = true;
 						closeDialog();
 					}}
-					onSelect={session.switchConversation}
+					navigationError={navigationError ? conversationSwitchGuidance : undefined}
+					onSelect={(id) => {
+						if (!session.switchConversation(id)) setNavigationError(true);
+					}}
 					onClose={closeDialog}
 					onCloseFocus={() => {
 						if (focusHistoryComposer.current) session.focusComposer();
@@ -156,11 +162,14 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 							{startOverDescription}{' '}
 							Saved conversations are in History.
 						</DialogDescription>
+						{navigationError && <p role="alert">{conversationSwitchGuidance}</p>}
 						<div className="start-over-actions">
 							<Button variant="secondary" onClick={closeDialog}>
 								Keep this conversation
 							</Button>
-							<Button variant="secondary" id="start-over-confirm" onClick={() => session?.startOver()}>
+							<Button variant="secondary" id="start-over-confirm" onClick={() => {
+								if (!session?.startOver()) setNavigationError(true);
+							}}>
 								Start new conversation
 							</Button>
 						</div>

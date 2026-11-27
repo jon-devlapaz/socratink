@@ -823,7 +823,10 @@ test('startNewChatConversation stores a shared reset token before reload', () =>
 		},
 	};
 	try {
-		startNewChatConversation('user-a');
+		assert.equal(startNewChatConversation('user-a', () => {
+			assert.equal(reloaded, false);
+			assert.ok(store.get(appConfig.chatConversationStorageKey));
+		}), true);
 		const conversationId = store.get(appConfig.chatConversationStorageKey);
 		assert.match(conversationId, /^user-a:/);
 		assert.equal(store.get(appConfig.chatConversationResetKey), conversationId);
@@ -865,7 +868,7 @@ test('watchChatConversationReset syncs other tabs to the new conversation id', (
 	try {
 		watchChatConversationReset(() => {
 			reset += 1;
-		});
+		}, () => assert.fail('reset should succeed'));
 		window[`on-storage`]({
 			key: appConfig.chatConversationResetKey,
 			newValue: 'user-a:new',
@@ -909,7 +912,7 @@ test('watchChatConversationReset reloads when both keys already hold the same id
 	try {
 		watchChatConversationReset(() => {
 			reset += 1;
-		});
+		}, () => assert.fail('reset should succeed'));
 		window[`on-storage`]({
 			key: appConfig.chatConversationResetKey,
 			newValue: 'user-a:new',
