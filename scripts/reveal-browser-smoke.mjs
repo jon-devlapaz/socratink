@@ -54,14 +54,14 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 				await input.fill('Check input');
 				await expect(input).toHaveValue('Check input');
 				await input.fill('');
-				const peek = page.locator('#peek-handle');
-				await peek.click();
-				await expect(peek).toHaveAttribute('aria-expanded', 'true');
+				const trigger = page.locator('#menu-trigger');
+				await trigger.click();
+				await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 				assert.equal(await page.locator('#menu-dialog').evaluate((node) =>
 					!node.inert && node.contains(document.activeElement)), true);
 				await page.keyboard.press('Escape');
-				await expect(peek).toHaveAttribute('aria-expanded', 'false');
-				await expect(peek).toBeFocused();
+				await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+				await expect(trigger).toBeFocused();
 				assert.equal(await input.evaluate((node) => !!node.closest('[inert]')), false);
 				const shell = await input.evaluate((node) => ({
 					bodyCursor: getComputedStyle(document.body).cursor,
@@ -76,7 +76,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 			}
 		}
 		await page.emulateMedia({ colorScheme: 'light' });
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.locator('#appearance-toggle').click();
 		await page.locator('#type-size-toggle').click();
 		await page.locator('#type-size-toggle').click();
@@ -94,7 +94,7 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 			await page.unroute('**/assets/*.js', blockModules);
 		}
 		await page.reload();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await expect(page.locator('#appearance-toggle')).toHaveAttribute('aria-pressed', 'true');
 		assert.equal(await page.locator('#type-size-label').innerText(), 'Big');
 		await page.locator('#appearance-toggle').click();
