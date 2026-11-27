@@ -7,6 +7,7 @@ export const behaviourRules = {
 	'choices-boxed': { policy: 'Never write the choices as a numbered, lettered, or bullet list in text', issues: [] },
 	'no-internal-notes': { policy: 'Never mention internal tools or bookkeeping to the learner.', issues: [136] },
 	'reveal-marked': { policy: 'whenever a turn supplies target content, call mark_reveal before writing the reveal text', issues: [] },
+	'named-choice-marked': { policy: 'Telling the learner which choice was right, when they picked another, is a full_answer reveal', issues: [] },
 	'just-tell-me': {
 		policy: 'If the learner\'s own last message explicitly asks for the answer, such as "just tell me", set requested: true on mark_reveal and show the reveal without a consent card.',
 		issues: [133],

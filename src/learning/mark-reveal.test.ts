@@ -43,7 +43,9 @@ describe('markRevealRetryReason', () => {
 			assert.equal(reason(asked(cardHelp), undefined, { cardHelp }), 'requested');
 		});
 	}
-	for (const plea of ['Just tell me', 'can I get a hint?', "I don't know where to start", 'idk', "I'm stuck"]) {
+	// Eval run 45769953592: the tutor named the right ice choice with no recorded reveal.
+	for (const plea of ['Just tell me', 'can I get a hint?', "I don't know where to start", 'idk', "I'm stuck",
+		'Which one was right? Was it the top one?', "What's the correct answer?"]) {
 		it(`the learner says “${plea}”`, () => assert.equal(reason(plea), 'unmarked'));
 	}
 	for (const text of ["Here's a hint: compare with the middle.", 'The answer is the left half.']) {
