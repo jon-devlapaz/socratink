@@ -1,11 +1,12 @@
 import { steeringPrefix } from '../config/chat-message.ts';
 import { questionnaireAnswerPrefix, type QuestionnaireHelp } from '../questionnaire.ts';
-import { revealToolName, type RevealDefinition } from '../reveal.ts';
+import { revealJson, revealToolName, type RevealDefinition } from '../reveal.ts';
 
 
 export const markRevealRetryBodies = {
 	requested: `The learner used the question card's help, so this turn gave assistance. Call ${revealToolName} now with the kind you gave: hint, worked_example, partial, or full_answer. Write no text.`,
 	unmarked: `Check your last reply. If it supplied target content (a hint, worked example, partial explanation, or full answer, including a short explanation of new material), call ${revealToolName} now with that kind and write no text. If it only asked a question or gave feedback, end the turn with no text.`,
+	asText: `Your reply wrote the ${revealToolName} input as JSON text, which the learner cannot use. Call ${revealToolName} now with that input, then write the content it marks for the learner.`,
 } as const;
 
 export type MarkRevealRetryReason = keyof typeof markRevealRetryBodies;
@@ -27,8 +28,11 @@ export function markRevealRetryReason(input: {
 	readonly alreadyRetried: boolean;
 }): MarkRevealRetryReason | undefined {
 	if (input.revealed || input.alreadyRetried) return undefined;
+	const markAsText = revealJson.test(input.assistantText);
+	// A reply that is only the input has nothing to show yet; one with text beside it needs only the call.
+	if (markAsText && /^\s*\{[\s\S]*\}\s*$/u.test(input.assistantText)) return 'asText';
 	if (input.cardHelp) return 'requested';
-	if (helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
+	if (markAsText || helpRequest.test(input.learnerText) || revealCue.test(input.assistantText)
 		|| (input.learnerText.startsWith(questionnaireAnswerPrefix) && input.learnerText.endsWith(': Try once more'))) return 'unmarked';
 	return undefined;
 }

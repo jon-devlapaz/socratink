@@ -18,7 +18,8 @@ import { hintCardSource, inputKind, type InputData, type ProductMessage, type Sn
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
 const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
-const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
+// After a mark-only correction the call ends the turn; after asText the marked content still follows.
+const revealBodies: readonly string[] = [markRevealRetryBodies.requested, markRevealRetryBodies.unmarked];
 
 export function productRegistry(readState: () => Promise<Snapshot>) {
 	const registry = createRegistry();

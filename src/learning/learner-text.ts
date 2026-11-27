@@ -3,21 +3,25 @@
  * reasoning in <think> tags (#117), tool names and reveal notes (#116, #136),
  * a literal "(no text)" (#131), prose answering a correction that asked
  * for no text (first live eval), and a present_question call written as JSON
- * text (#164), and a question asked beside the card that already asks it
- * (#163). check:structure keeps these rules here. */
+ * text (#164), a question asked beside the card that already asks it
+ * (#163), and a reply that opens on any tool input written as JSON text
+ * (eval runs 45948005835, 45984402183). check:structure keeps these rules here. */
 
 import { presentQuestionJson } from '../questionnaire.ts';
 import { markRevealRetryBodies, revealCue } from './mark-reveal.ts';
 import { presentQuestionRetryBodies } from './present-question.ts';
 
-const noTextCorrections: readonly string[] = [...Object.values(markRevealRetryBodies), presentQuestionRetryBodies.asText];
+const noTextCorrections: readonly string[] = [markRevealRetryBodies.requested, markRevealRetryBodies.unmarked, presentQuestionRetryBodies.asText];
 const leadingMarkers = /^(?:«[A-Z][A-Z0-9_]*»\s*)+/u;
 const partialLeadingMarker = /^«(?:[A-Z][A-Z0-9_]*)?$/u;
 const internalToolName = /\b(?:mark_reveal|present_question)\b/u;
 const revealNote = /\b(?:no reveal|no answer (?:shown|given|revealed)|answer (?:withheld|not shown|not revealed)|(?:not|without) (?:showing|revealing|giving) (?:you )?the answer|withholding the answer)\b/iu;
 // Text still arriving holds back a trailing "{" that may yet open a
 // present_question input.
-const partialToolCallJson = /\{\s*(?:"(?:p(?:r(?:o(?:m(?:p(?:t)?)?)?)?)?|c(?:h(?:o(?:i(?:c(?:e(?:s)?)?)?)?)?)?)?(?:"\s*)?)?$/u;
+const partialToolCallJson = /\{\s*(?:"(?:p(?:r(?:o(?:m(?:p(?:t)?)?)?)?)?|c(?:h(?:o(?:i(?:c(?:e(?:s)?)?)?)?)?)?|r(?:e(?:a(?:s(?:o(?:n(?:i(?:n(?:g)?)?)?)?)?)?)?)?)?(?:"\s*)?)?$/u;
+// The tutor's prose never opens on a JSON object, so one there is a tool input
+// written as text, whatever its keys: {"target":...} or a broken {"note":...}.
+const leadingJsonObject = /^\s*\{\s*(?:"|$)/u;
 const thinkOpen = '<think>';
 const thinkClose = '</think>';
 const partialThinkOpen = /<(?:t(?:h(?:i(?:n(?:k)?)?)?)?)?$/u;
@@ -135,6 +139,10 @@ export function asksForNoText(correction: string): boolean {
 
 function withoutToolCallJson(text: string): string {
 	let visible = text;
+	while (leadingJsonObject.test(visible)) {
+		const end = objectEnd(visible, visible.indexOf('{'));
+		visible = end < 0 ? '' : visible.slice(end).trim();
+	}
 	for (let match = presentQuestionJson.exec(visible); match; match = presentQuestionJson.exec(visible)) {
 		const end = objectEnd(visible, match.index);
 		visible = (visible.slice(0, match.index) + (end < 0 ? '' : visible.slice(end))).trim();

@@ -7,7 +7,9 @@
 //
 // Replies stream word by word. A message containing CARDJSON gets a
 // present_question call written as JSON text (#164); the app's correction for
-// it gets the real call. A message containing ASKTWICE gets text that ends on
+// it gets the real call. A message containing MARKJSON gets only a
+// mark_reveal input written as JSON text; the correction for it gets the real
+// call, then the hint. A message containing ASKTWICE gets text that ends on
 // a question and then a real card asking it again, in one message (#163).
 // Control it over HTTP on the same port:
 //   POST /control/hold     the next replies pause after their first words
@@ -30,6 +32,8 @@ const card = { prompt: 'After checking the middle element, which half do you sea
 	choices: ['The left half only', 'The whole list again'], reasoning: true };
 const askTwice = 'Each check halves the list. Which half do you search after checking the middle?';
 const cardJson = `Each check halves the list.\n\n${JSON.stringify(card)}`;
+const mark = { kind: 'hint', target: 'Why ice floats on water' };
+const markHint = 'Compare how tightly the molecules pack in ice and in liquid water.\n\nWhat happens to the spacing when water freezes?';
 
 let calls = 0;
 let holding = false;
@@ -64,16 +68,20 @@ const server = createServer(async (request, response) => {
 	calls += 1;
 	const learner = lastUserText(body);
 	const twice = /\bASKTWICE\b/.test(learner);
-	const text = /\bLONG\b/.test(learner) ? long : /\bCARDJSON\b/.test(learner) ? cardJson
+	const markCorrection = learner.startsWith('Your reply wrote the mark_reveal input as JSON text');
+	const marked = markCorrection && body.messages?.at(-1)?.role === 'tool';
+	const text = marked ? markHint : /\bMARKJSON\b/.test(learner) ? JSON.stringify(mark)
+		: /\bLONG\b/.test(learner) ? long : /\bCARDJSON\b/.test(learner) ? cardJson
 		: twice ? askTwice : replies[(calls - 1) % replies.length];
 	const id = `scripted_${calls}`;
 	response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache',
 		'x-routed-via': encodeURIComponent('scripted/verify-model') });
 	const chunk = (delta, finish = null) => response.write(`data: ${JSON.stringify({ id, object: 'chat.completion.chunk',
 		created: 0, model: body.model, choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
-	if (learner.startsWith('Your reply wrote the question card as JSON text')) {
-		chunk({ role: 'assistant', tool_calls: [{ index: 0, id: `${id}_card`, type: 'function',
-			function: { name: 'present_question', arguments: JSON.stringify(card) } }] });
+	if (learner.startsWith('Your reply wrote the question card as JSON text') || (markCorrection && !marked)) {
+		const [name, args] = markCorrection ? ['mark_reveal', mark] : ['present_question', card];
+		chunk({ role: 'assistant', tool_calls: [{ index: 0, id: `${id}_call`, type: 'function',
+			function: { name, arguments: JSON.stringify(args) } }] });
 		chunk({}, 'tool_calls');
 		response.end('data: [DONE]\n\n');
 		return;

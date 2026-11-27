@@ -68,7 +68,7 @@ export type PresentQuestionInput = v.InferOutput<typeof PresentQuestionInputSche
 
 /** Where a present_question input written out as JSON text, not called,
  * begins: an object opening on one of its keys (#164). */
-export const presentQuestionJson = /\{\s*"(?:prompt|choices)"\s*:/u;
+export const presentQuestionJson = /\{\s*"(?:prompt|choices|reasoning)"\s*:/u;
 
 export const presentQuestionExample = {
 	prompt: 'Which recovery action should the client take first?',

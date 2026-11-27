@@ -27,6 +27,8 @@ const internalNotePatterns = [
 	/\((?:full[ _]answer|worked[ _]example|reveal)\b[^)]{0,40}\)/i,
 	/\[(?:internal|note|reveal|hint)[^\]]*\]/i,
 	/\{\s*"(?:prompt|choices)"\s*:/, // a present_question call written as text (#164)
+	/\{\s*"(?:kind|target|requested)"\s*:/, // a mark_reveal call written as text
+	/^\s*\{\s*"[^"\n]*"\s*:/, // a reply that opens on any JSON object, such as {"note":...}
 ];
 
 function textOf(message: WireMessage | undefined): string {

@@ -51,6 +51,13 @@ describe('markRevealRetryReason', () => {
 	for (const text of ["Here's a hint: compare with the middle.", 'The answer is the left half.']) {
 		it(`the tutor says “${text}”`, () => assert.equal(reason('Binary search halves the range.', text), 'unmarked'));
 	}
+	// Eval run 45984402183: after See it, the reply was only the mark_reveal input as text.
+	it('a reply that is only the mark_reveal input as text', () =>
+		assert.equal(reason(answered, '{"target":"Why ice floats on water"}'), 'asText'));
+	it('the mark_reveal input as text beside the reveal it marks', () =>
+		assert.equal(reason(answered, '{"kind":"full_answer","target":"Ice"}  Ice is less dense than water.'), 'unmarked'));
+	it('JSON in a lesson that is not a mark_reveal input', () =>
+		assert.equal(reason('Teach me JSON.', 'In JSON, `{"name": "Ada"}` is an object. What is its key?'), undefined));
 	it('an ordinary card answer', () => assert.equal(reason(answered), undefined));
 	it('an ordinary exchange', () => assert.equal(reason('Binary search halves the range.'), undefined));
 	it('a mark already recorded', () => assert.equal(reason(asked('hint'), 'Hint text', { revealed: true, cardHelp: 'hint' }), undefined));
