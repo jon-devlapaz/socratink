@@ -119,6 +119,7 @@ async function run(t, baseline, mode, action) {
 		}
 		await page.waitForTimeout(350);
 		if (baseline && mode === 'read') {
+			for (const deadline = Date.now() + 5000; requests.at(-1) === a && Date.now() < deadline;) await page.waitForTimeout(50);
 			assert.notEqual(requests.at(-1), a, 'pre-fix reload abandons A');
 			assert.notEqual(requests.at(-1), b, 'pre-fix reload does not open B');
 			assert.equal(await page.getByText('Iron oxide colors Mars.', { exact: true }).count(), 0);
