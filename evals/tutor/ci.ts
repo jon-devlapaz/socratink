@@ -39,7 +39,6 @@ type Counts = { pass: number; fail: number; skip: number };
 type ResultFile = {
 	model?: string;
 	summary?: Record<string, Counts>;
-	results?: { turns?: { reply?: { metadata?: { rewrites?: unknown } } | null }[] }[];
 };
 export type LabelledResult = { label: string; file: ResultFile };
 
@@ -50,8 +49,6 @@ export function markdownSummary(input: readonly LabelledResult[]): string {
 	const entries = input.map(({ label, file }) => ({ label: label.replaceAll('|', '\\|') || 'ref', file }));
 	const checks = [...new Set(entries.flatMap(({ file }) => Object.keys(file.summary ?? {})))];
 	const replies = (file: ResultFile) => file.summary?.['turn-completed']?.pass ?? 0;
-	const rewrites = (file: ResultFile) => (file.results ?? []).flatMap((result) => result.turns ?? [])
-		.filter((turn) => typeof turn.reply?.metadata?.rewrites === 'number').length;
 	const lines = [
 		'## Tutor eval',
 		'',
@@ -59,7 +56,6 @@ export function markdownSummary(input: readonly LabelledResult[]): string {
 		`|---|${entries.map(() => '---').join('|')}|`,
 		`| Model | ${entries.map(({ file }) => file.model ?? '–').join(' | ')} |`,
 		`| Replies checked | ${entries.map(({ file }) => replies(file)).join(' | ')} |`,
-		`| Replies rewritten to one question | ${entries.map(({ file }) => rewrites(file)).join(' | ')} |`,
 		'',
 		`| Check (pass / fail) | ${entries.map(({ label }) => label).join(' | ')} |`,
 		`|---|${entries.map(() => '---').join('|')}|`,

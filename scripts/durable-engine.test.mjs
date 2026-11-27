@@ -17,8 +17,6 @@ import { readSnapshot } from '../src/server/durable/projection.ts';
 import { steeringMessages } from '../src/config/chat-message.ts';
 import { executeLearningTool } from '../src/learning/tools.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
-import { oneQuestionRetryBody } from '../src/learning/one-question.ts';
-import { presentQuestionRetryBodies } from '../src/learning/present-question.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData } from '../src/questionnaire.ts';
 
 async function fixture(run, failures = 0) {
@@ -284,68 +282,6 @@ test('a card written as JSON text is retried as a real card and never shows as t
 		assert.equal(reply.data?.questionnaire?.[0]?.items?.[0]?.prompt, 'After checking the middle element, what happens next?');
 		assert.equal(learnerVisibleText(reply.text), 'Each check halves the list.');
 		assert.equal(responses.length, 2);
-	} finally { await engine.close(); }
-}));
-
-test('a reply that asks two questions is rewritten once, and only the rewrite shows (#163)', async () => fixture(async ({ requests, responses, options }) => {
-	const engine = await openEngine(options);
-	try {
-		await engine.submit('learner:two-questions', 'Why is the sky blue?');
-		await until(async () => responses.length, (count) => count === 1);
-		finish(responses[0], 'Good question. What color is sunlight? And what happens to it in air?');
-		await until(async () => responses.length, (count) => count === 2);
-		assert.equal(requests[1].at(-1).content, oneQuestionRetryBody);
-		const between = await engine.snapshot('learner:two-questions');
-		assert.equal(between.messages[1].text, '', 'the rejected reply stops showing once the rewrite is asked for');
-		finish(responses[1], 'Good question. What color is sunlight before it reaches the air?');
-		const settled = await until(() => engine.snapshot('learner:two-questions'), (value) => value.submissions[0]?.outcome === 'completed');
-		const reply = settled.messages.find((message) => message.role === 'assistant');
-		assert.equal(learnerVisibleText(reply.text), 'Good question. What color is sunlight before it reaches the air?');
-		assert.equal(reply.metadata.rewrites, 1);
-		assert.equal(reply.metadata.socratink.routedModel, 'synthetic-route', 'the route survives the rewrite');
-		assert.equal(responses.length, 2);
-	} finally { await engine.close(); }
-}));
-
-test('a rewrite is asked for once; a second miss settles as written (#163)', async () => fixture(async ({ responses, options }) => {
-	const engine = await openEngine(options);
-	try {
-		await engine.submit('learner:still-two', 'Explain density.');
-		await until(async () => responses.length, (count) => count === 1);
-		finish(responses[0], 'What floats? What sinks?');
-		await until(async () => responses.length, (count) => count === 2);
-		finish(responses[1], 'What floats in water? And what sinks?');
-		const settled = await until(() => engine.snapshot('learner:still-two'), (value) => value.submissions[0]?.outcome === 'completed');
-		assert.equal(learnerVisibleText(settled.messages[1].text), 'What floats in water? And what sinks?');
-		assert.equal(responses.length, 2);
-	} finally { await engine.close(); }
-}));
-
-test('a rewrite that lists choices in text still gets one card retry (#163)', async () => fixture(async ({ requests, responses, options }) => {
-	const engine = await openEngine(options);
-	try {
-		await engine.submit('learner:rewrite-quiz', 'Why is the sky blue?');
-		await until(async () => responses.length, (count) => count === 1);
-		finish(responses[0], 'What color is sunlight? And what happens to it in air?');
-		await until(async () => responses.length, (count) => count === 2);
-		finish(responses[1], 'Where does the blue come from?\n\n**A.** Air molecules scatter it\n**B.** The ocean reflects it\n\nWhich one is right, and why?');
-		await until(async () => responses.length, (count) => count === 3);
-		assert.equal(requests[2].at(-1).content, presentQuestionRetryBodies.unboxed);
-		finish(responses[2], 'Where does the blue come from?');
-		await until(() => engine.snapshot('learner:rewrite-quiz'), (value) => value.submissions[0]?.outcome === 'completed');
-		assert.equal(responses.length, 3, 'no further retry after the card retry');
-	} finally { await engine.close(); }
-}));
-
-test('a reply that ends on its one question is not rewritten (#163)', async () => fixture(async ({ responses, options }) => {
-	const engine = await openEngine(options);
-	try {
-		await engine.submit('learner:one-question', 'Explain density.');
-		await until(async () => responses.length, (count) => count === 1);
-		finish(responses[0], 'Density compares mass with volume. Which is denser, ice or water? Why or why not?');
-		const settled = await until(() => engine.snapshot('learner:one-question'), (value) => value.submissions[0]?.outcome === 'completed');
-		assert.equal(settled.messages[1].metadata?.rewrites, undefined);
-		assert.equal(responses.length, 1);
 	} finally { await engine.close(); }
 }));
 

@@ -23,7 +23,7 @@ export type ProductTool = {
 };
 export type ProductMessage = {
 	role: 'user' | 'assistant'; submissionId: string; text: string; reasoning?: string;
-	data?: Record<string, unknown[]>; tools?: ProductTool[]; metadata?: { socratink?: ModelRouteRecord; cardHelp?: CardHelpAction; rewrites?: number };
+	data?: Record<string, unknown[]>; tools?: ProductTool[]; metadata?: { socratink?: ModelRouteRecord; cardHelp?: CardHelpAction };
 };
 type Submission = { id: string; text: string; outcome?: Outcome; error?: string; tryOnceMore?: true; cardHelp?: CardHelp; hintCardFrom?: string };
 export type Snapshot = { revision: number; messages: ProductMessage[]; submissions: Submission[] };

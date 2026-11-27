@@ -8,7 +8,6 @@ import type { Message } from '@earendil-works/pi-ai';
 import { steeringMessages } from '../../config/chat-message.ts';
 import { systemPrompt } from '../../learning/chat-policy.ts';
 import { presentQuestionRetryBodies, presentQuestionRetryReason } from '../../learning/present-question.ts';
-import { needsOneQuestionRewrite, oneQuestionRetryBody } from '../../learning/one-question.ts';
 import { isHelpThenQuestion } from '../../learning/learner-text.ts';
 import { asksForAnswer, cardHelpReveal, markRevealRetryBodies, markRevealRetryReason } from '../../learning/mark-reveal.ts';
 import { parseRevealDefinition, revealToolName } from '../../reveal.ts';
@@ -18,7 +17,7 @@ import { createCardHelpContext } from './card-help-context.ts';
 import { hintCardSource, inputKind, type InputData, type ProductMessage, type Snapshot } from './contract.ts';
 import { isTryOnceMoreQuestion, tryOnceMoreCorrection } from './reveal-consent.ts';
 
-const retryBodies: readonly string[] = [...Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies }), oneQuestionRetryBody];
+const retryBodies: readonly string[] = Object.values({ ...presentQuestionRetryBodies, ...markRevealRetryBodies });
 const revealBodies: readonly string[] = Object.values(markRevealRetryBodies);
 
 export function productRegistry(readState: () => Promise<Snapshot>) {
@@ -118,24 +117,19 @@ export function productRegistry(readState: () => Promise<Snapshot>) {
 						return valid || triedCorrection(entries) ? undefined : { continue: tryOnceMoreCorrection };
 					}
 					const messages = entries.flatMap((entry) => entry.model ?? []);
-					const tried = corrections(entries);
-					const alreadyRetried = tried.length > 0;
+					const alreadyRetried = corrections(entries).length > 0;
 					const question = presentQuestionRetryReason({
 						toolCalls: messages.flatMap((message) => message.role === 'toolResult'
 							? [{ tool: message.toolName, isError: message.isError }] : []),
 						assistantText: messageText(answer),
-						// A one-question rewrite can turn into a text quiz; it still gets one card retry.
-						alreadyRetried: tried.some((body) => body !== oneQuestionRetryBody),
+						alreadyRetried,
 					});
 					if (question) return { continue: presentQuestionRetryBodies[question] };
 					const reveal = markRevealRetryReason({
 						revealed: revealed(entries), learnerText: learnerText(entries), assistantText: messageText(answer), alreadyRetried,
 						cardHelp: inputData(entries[0])?.cardHelp?.kind,
 					});
-					if (reveal) return { continue: markRevealRetryBodies[reveal] };
-					// One question, then stop (#163). The rewrite replaces this reply for the learner.
-					return needsOneQuestionRewrite({ assistantText: messageText(answer), alreadyRetried })
-						? { continue: oneQuestionRetryBody } : undefined;
+					return reveal ? { continue: markRevealRetryBodies[reveal] } : undefined;
 				},
 			}),
 		],
