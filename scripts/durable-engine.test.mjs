@@ -415,6 +415,30 @@ test('a completed Hint stays labelled if the tutor returns without marking it (#
 	assert.deepEqual(reply.data.reveal, [{ kind: 'hint', target: original.items[0].prompt }]);
 }, helpCard));
 
+test('a hint after I don\'t know keeps the original card answerable', () => withPaymentCard(async ({
+	id, engine, reader, original, sourceId, requests, nextResponse, settled,
+}) => {
+	const client = cardClient(engine, id);
+	const item = original.items[0];
+	const help = formatQuestionnaireAnswers(original, [{ name: item.name, values: [], help: 'unknown' }]);
+	assert.equal((await client.send(help, { kind: 'unknown', sourceId })).status, 202);
+	finish(await nextResponse(), paymentClue);
+	finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
+	const reply = (await settled()).messages.at(-1);
+	assert.equal(reply.text, paymentClue);
+	assert.deepEqual(reply.data.reveal, [{ kind: 'hint' }]);
+	const restored = (await cardClient(reader, id).history()).messages.at(-1).parts
+		.find((part) => part.type === 'data-questionnaire')?.data;
+	assert.deepEqual(restored, original);
+
+	const answer = formatQuestionnaireAnswers(restored, [{ name: item.name, values: [item.choices[0].value],
+		freeform: 'One purchase.' }]);
+	assert.equal((await client.send(answer)).status, 202);
+	finish(await nextResponse(), 'What happens with a second purchase?');
+	assert.equal((await settled()).submissions.at(-1).outcome, 'completed');
+	assert.equal(requests.at(-1).findLast((message) => message.role === 'user').content, answer);
+}));
+
 test('a reported Hint inside a typed sentence does not record a help request', () => withPaymentCard(async ({
 	engine, id, original, nextResponse, settled,
 }) => {

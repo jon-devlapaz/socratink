@@ -8,7 +8,7 @@ import { guestTurnLimit, guestTurnsHeader } from '../src/server/guest-turns.ts';
 
 // Browser proof uses only the fake provider and synthetic session from smoke.
 export async function verifyRevealBrowser({ origin, session, savedConversationId, initialMessage, assistanceText,
-	baselineChoice, baselineReason, comparisonChoice, comparisonReason, revisedChoice, revisedReason }) {
+	baselineChoice, baselineReason, baselineHint, comparisonChoice, comparisonReason, revisedChoice, revisedReason }) {
 	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 	const browser = await chromium.launch({
 		executablePath: process.env.CHROME_PATH || undefined,
@@ -105,7 +105,21 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.getByRole('textbox', { name: 'Message Socratink', exact: true }).fill(initialMessage);
 		await page.getByRole('button', { name: 'Send message', exact: true }).click();
 		guestTurns += 1;
+		const card = page.getByRole('form', { name: 'Questions', exact: true });
+		const choices = card.locator('label').filter({ has: page.getByRole('radio') });
+		await expect(choices).toHaveCount(4);
+		const originalChoices = await choices.allTextContents();
+		await card.getByRole('button', { name: "I don't know", exact: true }).click();
+		guestTurns += 1;
+		const hint = page.locator('#active-turn .turn.assistant .reveal-copy');
+		await expect(hint).toContainText(baselineHint);
+		await expect(hint.locator('.reveal-mark')).toHaveText('Hint from Socratink');
+		await expect(choices).toHaveText(originalChoices);
+		await page.reload();
+		await expect(choices).toHaveText(originalChoices);
+		await page.screenshot({ path: `${out}/unknown-hint-card.png` });
 		await answer(baselineChoice, baselineReason);
+		artifacts.push({ kind: 'answer-after-hint', originalChoicesRestored: true });
 		await answer(comparisonChoice, comparisonReason);
 		const consent = page.locator('#active-turn .questionnaire');
 		const consentLine = 'I can show a full answer.';

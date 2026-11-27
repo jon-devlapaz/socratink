@@ -2,6 +2,7 @@ import { steeringMessages } from '../../config/chat-message.ts';
 import { cardHintText, learnerVisibleText } from '../../learning/learner-text.ts';
 import { displayedChoices } from '../../learning/tools.ts';
 import { formatQuestionnaireAnswers, questionnaireFromReplyData, sameQuestion, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireItem } from '../../questionnaire.ts';
+import { revealFromReply } from '../../reveal.ts';
 import { hintCardSource, type CardHelp, type ProductMessage, type Snapshot } from './contract.ts';
 
 export class InvalidCardActionError extends Error {
@@ -30,15 +31,19 @@ export function resolveCardHelp(snapshot: Snapshot, text: string, { kind, source
 /** Keep the card without its temporary empty-clue notice for a later click. */
 export function projectCardHints(snapshot: Snapshot, showEmptyHintNotice: boolean): ReadonlyMap<string, QuestionnaireDefinition> {
 	const hintCards = new Map<string, QuestionnaireDefinition>();
-	if (!snapshot.submissions.some((submission) => hintCardSource(submission))) return hintCards;
+	if (!snapshot.submissions.some((submission) => hintCardSource(submission) || submission.cardHelp?.kind === 'unknown')) return hintCards;
 	const replies = new Map(snapshot.messages.filter((message) => message.role === 'assistant')
 		.map((message) => [message.submissionId, message]));
 	for (const click of snapshot.submissions) {
-		const sourceId = hintCardSource(click);
+		const reply = replies.get(click.id);
+		if (!reply) continue;
+		const originalId = click.cardHelp?.kind === 'unknown' && click.outcome === 'completed'
+			&& reply.text && revealFromReply(reply.data)?.kind === 'hint' && !questionnaireFromReplyData(reply.data)
+			? click.cardHelp.sourceId : undefined;
+		const sourceId = hintCardSource(click) ?? originalId;
 		if (!sourceId) continue;
 		const source = hintCards.get(sourceId) ?? questionnaireFromReplyData(replies.get(sourceId)?.data);
-		const reply = replies.get(click.id);
-		if (!source || !reply) continue;
+		if (!source) continue;
 		const card = applyCardHint(reply, source, click.outcome === 'completed', showEmptyHintNotice);
 		if (card) hintCards.set(click.id, card);
 	}
