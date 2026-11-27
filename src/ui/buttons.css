@@ -110,6 +110,15 @@
 	height: 44px;
 }
 
+/* Send carries the landing page's primary accent into the conversation. */
+.composer-send button[type='submit'] {
+	--btn-primary-fill: var(--accent);
+	--btn-primary-edge: color-mix(in srgb, var(--accent) 82%, #100f0f);
+	--btn-primary-hover: color-mix(in srgb, var(--accent) 92%, white);
+	--btn-primary-sheen: none;
+	--btn-primary-inset: none;
+}
+
 /* Primary: the forward action. */
 .questionnaire-actions .questionnaire-button-primary,
 .questionnaire-choices > button:last-child,

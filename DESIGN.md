@@ -71,10 +71,10 @@ submission contract or add an extra confirmation step for a visual change.
 
 Buttons use shadcn/ui. `buttons.css` keeps their paper and ink finish. Every button is a pill with a hairline edge. A primary button is ink
 with a soft top sheen and an inset highlight; use one per place, for the
-forward action (send, submit, "Try once more", send feedback). A secondary
+forward action (submit, "Try once more", send feedback). A secondary
 button is a paper pill. A ghost button has no fill until hover, for quiet
 tools such as Skip, Hint, steering, Cancel, and the microphone. Icon buttons
-are circles. There are no solid teal blocks.
+are circles. The 44px Send button uses the landing page’s verdigris fill and a paper-colored arrow.
 The composer has a neutral paper fill and a hairline edge, with no invitation
 glow. Sign-in uses the same folio rules, not a dark
 floating card. Shadows must identify a meaningful state, not decoration.
@@ -83,6 +83,7 @@ floating card. Shadows must identify a meaningful state, not decoration.
 
 Recorded by Codex on 2026-11-21 during the Gridlines pass.
 
+- The chat header shares the landing page’s 72rem column, 1rem phone gutter, and 2rem gutter from 640px. The wordmark opens the app menu.
 - Current-turn text, composer text, and dictation status use a common inset
   of 1.25rem. The composer border counts toward this inset.
 - Supplied help uses the same text edge for its label, first line, and wrapped

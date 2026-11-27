@@ -62,8 +62,8 @@
 	--spring-pop: linear(0, 0.071, 0.237, 0.44, 0.64, 0.811, 0.941, 1.03, 1.081, 1.101, 1.101, 1.087, 1.068, 1.046, 1.027, 1.012, 1.001, 0.994, 0.99, 0.989, 0.99, 0.992, 0.994, 0.996, 0.998, 1);
 	--drawer-ms: 300ms;
 	--dock-closed: 7.25rem;
-	--brand-top: max(clamp(0.5rem, 1.8vw, 1.5rem), env(safe-area-inset-top));
-	--stage-top: calc(var(--brand-top) + max(44px, 2.25rem) + 0.6rem);
+	--header-row-height: 3.5rem;
+	--stage-top: calc(env(safe-area-inset-top, 0px) + var(--header-row-height) + 0.6rem);
 	--grab-bar-width: 36px;
 	--grab-bar-height: 3px;
 	--peek-bar-top: 0.55rem;

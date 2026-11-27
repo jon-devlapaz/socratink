@@ -76,20 +76,22 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 				<span className="sr-only">Open menu</span>
 			</Button>
 			<div className="app-canvas">
-				<Button
-					{...menuButton}
-					ref={brand}
-					variant="ghost"
-					className="brand-lockup"
-					id="menu-trigger"
-					onClick={(event) => openMenu(event.currentTarget)}
-				>
-					<span className="brand-mark" aria-hidden="true" />
-					<span className="brand-name-viewport" aria-hidden="true">
-						<img className="brand-name" src={wordmark} alt="" />
-					</span>
-					<span className="sr-only">Open menu</span>
-				</Button>
+				<header className="app-header">
+					<div className="app-header-row">
+						<Button
+							{...menuButton}
+							ref={brand}
+							variant="ghost"
+							className="brand-lockup"
+							id="menu-trigger"
+							onClick={(event) => openMenu(event.currentTarget)}
+						>
+							<span className="brand-mark" aria-hidden="true" />
+							<img className="brand-name" src={wordmark} alt="" />
+							<span className="sr-only">Open menu</span>
+						</Button>
+					</div>
+				</header>
 				<ConversationLayout {...content} />
 			</div>
 			<MenuSheet
