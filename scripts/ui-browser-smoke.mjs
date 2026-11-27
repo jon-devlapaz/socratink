@@ -228,7 +228,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			if (await page.locator('#dictation-toggle:focus').count()) await page.keyboard.press('Tab');
 			await assertNoFocusDecoration(send, send, sendBefore);
 
-			await page.locator('#peek-handle').press('Enter');
+			await page.locator('#menu-trigger').press('Enter');
 			const startOver = page.locator('#start-over');
 			const icon = startOver.locator(':scope > svg');
 			const iconBefore = await readFocusPaint(icon);
@@ -343,21 +343,28 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await drag('touchMove', 90);
 		await drag('touchEnd');
 		await page.waitForFunction(() => document.activeElement.id === 'type-size-toggle');
-		assert.equal(await page.locator('#peek-handle').getAttribute('aria-expanded'), 'true');
+		assert.equal(await page.locator('#menu-trigger').getAttribute('aria-expanded'), 'true');
 	});
 
-	await check('menu-returns-focus-to-its-opener', async (page) => {
-		await page.goto(origin);
-		await page.locator('#message:enabled').waitFor();
-		for (const selector of ['#menu-trigger', '#peek-handle']) {
-			const trigger = page.locator(selector);
-			await trigger.focus();
-			await page.keyboard.press('Enter');
-			await page.getByRole('dialog', { name: 'Menu' }).waitFor();
-			await page.keyboard.press('Escape');
-			await page.waitForFunction(selector => document.activeElement?.matches(selector), selector);
-		}
-	});
+	for (const width of [390, 1280]) {
+		await check(`single-menu-opener-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto(origin);
+			await page.locator('#message:enabled').waitFor();
+			const trigger = page.getByRole('button', { name: 'Open menu', exact: true });
+			await expect(trigger).toHaveCount(1);
+			for (const activation of ['pointer', 'Enter', 'Space']) {
+				if (activation === 'pointer') await trigger.click();
+				else await trigger.press(activation);
+				const menu = page.getByRole('dialog', { name: 'Menu', exact: true });
+				await expect(menu).toBeVisible();
+				await expect(menu.locator(':focus')).toHaveCount(1);
+				await page.keyboard.press('Escape');
+				await expect(menu).toBeHidden();
+				await expect(trigger).toBeFocused();
+			}
+		});
+	}
 
 	await check('unavailable-dictation-stays-hidden', async (page) => {
 		await page.addInitScript(() => {
@@ -406,7 +413,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		]);
 		await ready(draftTab);
 		await draftTab.locator('#message').fill('A sentence in another tab');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		assert.equal(await page.locator('#start-over-dialog[data-state=open] p').innerText(),
 			'Unsent work in your other open tabs will be deleted. This conversation will close in your open tabs. Saved conversations are in History.');
@@ -417,7 +424,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 
 		await input.fill('A draft for the old conversation');
 		const initialId = await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		const confirm = page.locator('#start-over-dialog[data-state=open]');
 		assert.equal(await confirm.locator('h2').innerText(), 'Start a new conversation?');
@@ -427,14 +434,14 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.getByRole('button', { name: 'Keep this conversation' }).waitFor({ state: 'hidden' });
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
 		assert.equal(await input.inputValue(), 'A draft for the old conversation');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		await page.getByRole('button', { name: 'Keep this conversation' }).click();
 		assert.equal(await page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey), initialId);
 		await page.reload();
 		await ready(page);
 		assert.equal(await input.inputValue(), 'A draft for the old conversation');
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'Start over' }).click();
 		await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 		await ready(page);
@@ -457,27 +464,27 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			const ready = () => page.locator('#message[placeholder]:enabled').waitFor();
 			const storedId = () => page.evaluate((key) => localStorage.getItem(key), appConfig.chatConversationStorageKey);
 			const openHistory = async () => {
-				await page.locator('#peek-handle').click();
+				await page.locator('#menu-trigger').click();
 				await page.getByRole('button', { name: 'History' }).click();
 				await page.locator('#history-dialog[data-state=open]').waitFor();
 				// History loads from the server each time it opens.
 				await page.getByText('Loading…', { exact: true }).waitFor({ state: 'hidden' });
 			};
 			await ready();
-			await page.locator('#peek-handle').click();
+			await page.locator('#menu-trigger').click();
 			await page.getByRole('button', { name: 'History' }).waitFor();
 			await page.screenshot({ path: `${out}/history-menu-${colorScheme}-${width}.png` });
 			await page.keyboard.press('Escape');
 			await openHistory();
 			await page.getByText('Your conversations appear here after you send a message.').waitFor();
 			await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
-			await page.waitForFunction(() => /^(peek-handle|menu-trigger)$/.test(document.activeElement.id));
+			await page.waitForFunction(() => document.activeElement.id === 'menu-trigger');
 
 			await send(page, 'Why is the sky blue?');
 			// The fixture's history read repeats the last reply in every conversation.
 			await page.locator('#active-turn').getByText('Fresh reply', { exact: true }).waitFor();
 			const firstId = await storedId();
-			await page.locator('#peek-handle').click();
+			await page.locator('#menu-trigger').click();
 			await page.getByRole('button', { name: 'Start over' }).click();
 			await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Start new conversation' }).click()]);
 			await ready();
@@ -513,7 +520,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 
 	const historyRows = (page) => page.locator('#history-list button');
 	async function openHistory(page) {
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await page.getByRole('button', { name: 'History' }).click();
 		await page.locator('#history-dialog[data-state=open]').waitFor();
 	}
@@ -550,13 +557,13 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await page.goto(origin);
 		await send(page, 'Hold this reply');
 		await page.locator('.turn.pending').waitFor();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		assert.equal(await page.locator('#history-trigger').isDisabled(), true);
 		assert.equal(await page.locator('#start-over').isDisabled(), true);
 		await page.keyboard.press('Escape');
 		await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 		await page.getByText('You stopped this reply.', { exact: true }).waitFor();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		assert.equal(await page.locator('#history-trigger').isEnabled(), true);
 	});
 
@@ -675,7 +682,7 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		await recheck.waitFor();
 		await expect(recheck).toBeFocused();
 		await expect(page.locator('#message')).toBeDisabled();
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await expect(page.locator('#start-over')).toBeEnabled();
 		await page.keyboard.press('Escape');
 		await recheck.click();

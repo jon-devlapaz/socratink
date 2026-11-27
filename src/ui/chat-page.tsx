@@ -31,7 +31,6 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	const [layer, setLayer] = useState<'menu' | DialogPage>();
 	const [startOverDisabled, setStartOverDisabled] = useState(true);
 	const [startOverDescription, setStartOverDescription] = useState('');
-	const opener = useRef<HTMLButtonElement | null>(null);
 	const brand = useRef<HTMLButtonElement>(null);
 	const skipMenuFocus = useRef(false);
 	useEffect(() => {
@@ -47,9 +46,8 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 			mounted?.dispose();
 		};
 	}, [startChat]);
-	const openMenu = (button: HTMLButtonElement) => {
+	const openMenu = () => {
 		if (!session) return;
-		opener.current = button;
 		skipMenuFocus.current = false;
 		setLayer('menu');
 	};
@@ -75,16 +73,12 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 					Skip to main content
 				</a>
 			</Button>
-			<Button
-				{...menuButton}
-				{...peekGesture}
-				variant="ghost"
+			<div
+				{...(session ? peekGesture : {})}
 				className="peek-handle"
 				id="peek-handle"
-				aria-label="Open menu"
-			>
-				<span className="sr-only">Open menu</span>
-			</Button>
+				aria-hidden="true"
+			/>
 			<div className="app-canvas">
 				<header className="app-header">
 					<div className="app-header-row">
@@ -94,7 +88,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 							variant="ghost"
 							className="brand-lockup"
 							id="menu-trigger"
-							onClick={(event) => openMenu(event.currentTarget)}
+							onClick={openMenu}
 						>
 							<span className="brand-mark" aria-hidden="true" />
 							<img className="brand-name" src={wordmark} alt="" />
@@ -109,7 +103,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 				pullDistance={pullDistance}
 				onClose={() => setLayer(undefined)}
 				onCloseFocus={() => {
-					if (!skipMenuFocus.current) opener.current?.focus();
+					if (!skipMenuFocus.current) restoreFocus();
 				}}
 				registered={session?.user.kind === 'registered'}
 				startOverDisabled={startOverDisabled}

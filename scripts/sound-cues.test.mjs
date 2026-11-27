@@ -121,14 +121,14 @@ async function setup(t, { saved = false, restored = false, unsettled = false } =
 		return route.fulfill({ json: snapshot });
 	});
 	await page.goto(origin);
-	await page.locator(unsettled ? '#peek-handle:enabled' : '#message:enabled').waitFor();
+	await page.locator(unsettled ? '#menu-trigger:enabled' : '#message:enabled').waitFor();
 	if (unsettled) {
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		release();
 	}
 	const toggle = page.locator('#sound-toggle');
 	async function enable() {
-		await page.locator('#peek-handle').click();
+		await page.locator('#menu-trigger').click();
 		await toggle.click();
 		assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
 		await page.keyboard.press('Escape');
@@ -152,7 +152,7 @@ async function setup(t, { saved = false, restored = false, unsettled = false } =
 
 test('Sound defaults off and the plain menu toggle saves its state', async t => {
 	const ui = await setup(t);
-	await ui.page.locator('#peek-handle').click();
+	await ui.page.locator('#menu-trigger').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'false');
 	assert.equal(await ui.starts(), 0);
 	assert.equal(await ui.page.evaluate(() => window.audio.contexts), 0);
@@ -160,12 +160,12 @@ test('Sound defaults off and the plain menu toggle saves its state', async t => 
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'true');
 	await ui.page.reload();
 	await ui.page.waitForFunction(() => document.querySelector('#message')?.disabled === false);
-	await ui.page.locator('#peek-handle').click();
+	await ui.page.locator('#menu-trigger').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'true');
 	assert.equal(await ui.starts(), 0);
 	await ui.toggle.click();
 	await ui.page.reload();
-	await ui.page.locator('#peek-handle').click();
+	await ui.page.locator('#menu-trigger').click();
 	assert.equal(await ui.toggle.getAttribute('aria-pressed'), 'false');
 });
 
@@ -218,7 +218,7 @@ test('Sound off stays silent, including when turned off during a reply', async t
 	assert.equal(await ui.starts(), 0);
 	await ui.enable();
 	await ui.send(undefined, { paused: true });
-	await ui.page.locator('#peek-handle').click();
+	await ui.page.locator('#menu-trigger').click();
 	await ui.toggle.click();
 	ui.release();
 	await ui.settled();

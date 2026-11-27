@@ -15,13 +15,13 @@ type Gesture = {
 
 export function useSheetGesture(
 	direction: 'open' | 'close',
-	activate: (button: HTMLButtonElement) => void,
+	activate: () => void,
 	onPull?: (distance: number) => void,
 ) {
 	const gesture = useRef<Gesture | null>(null);
 	const suppressClick = useRef(false);
 
-	const stop = (event: PointerEvent<HTMLButtonElement>, canceled = false) => {
+	const stop = (event: PointerEvent<HTMLElement>, canceled = false) => {
 		const drag = gesture.current;
 		gesture.current = null;
 		if (!drag) return;
@@ -33,11 +33,11 @@ export function useSheetGesture(
 		const sign = direction === 'open' ? 1 : -1;
 		const threshold = panel ? panel.offsetHeight / 4 : 48;
 		if ((drag.lastY - drag.startY) * sign > threshold || drag.velocity * sign > 0.4) {
-			activate(event.currentTarget);
+			activate();
 		}
 	};
 	return {
-		onPointerDown(event: PointerEvent<HTMLButtonElement>) {
+		onPointerDown(event: PointerEvent<HTMLElement>) {
 			suppressClick.current = false;
 			if (event.button !== 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 			if (onPull) event.preventDefault();
@@ -50,7 +50,7 @@ export function useSheetGesture(
 			};
 			event.currentTarget.setPointerCapture(event.pointerId);
 		},
-		onPointerMove(event: PointerEvent<HTMLButtonElement>) {
+		onPointerMove(event: PointerEvent<HTMLElement>) {
 			const drag = gesture.current;
 			if (!drag) return;
 			const now = performance.now();
@@ -64,10 +64,10 @@ export function useSheetGesture(
 			const panel = event.currentTarget.closest<HTMLElement>('.menu-panel');
 			if (panel) panel.style.transform = `translateY(${Math.min(distance, distance * 0.15)}px)`;
 		},
-		onPointerUp: (event: PointerEvent<HTMLButtonElement>) => stop(event),
-		onPointerCancel: (event: PointerEvent<HTMLButtonElement>) => stop(event, true),
-		onClick(event: React.MouseEvent<HTMLButtonElement>) {
-			if (!suppressClick.current || event.detail === 0) activate(event.currentTarget);
+		onPointerUp: (event: PointerEvent<HTMLElement>) => stop(event),
+		onPointerCancel: (event: PointerEvent<HTMLElement>) => stop(event, true),
+		onClick(event: React.MouseEvent<HTMLElement>) {
+			if (!suppressClick.current || event.detail === 0) activate();
 			suppressClick.current = false;
 		},
 	};
@@ -199,7 +199,7 @@ function MenuActions({
 							<path className="sound-mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5" />
 						</svg>
 					</span>
-					<span id="sound-label">{soundOn ? 'Sound on' : 'Sound off'}</span>
+					<span id="sound-label">{soundOn ? 'Sound: on' : 'Sound: off'}</span>
 				</Button>
 
 				<Button

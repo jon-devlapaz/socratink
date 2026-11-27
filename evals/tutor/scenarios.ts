@@ -5,7 +5,7 @@
 // model before the fix. Name the rule it tests in src/learning/behaviour-rules.ts.
 import type { WireMessage } from '../../src/config/chat-wire.ts';
 import { formatQuestionnaireAnswers, type CardHelpAction, type QuestionnaireDefinition, type QuestionnaireHelp } from '../../src/questionnaire.ts';
-import { cardOf, expectHintLeavesReasoning, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
+import { cardOf, expectHintLeavesReasoning, expectNoChoicePosition, expectMarkedHelp, expectRequestedReveal, expectRevealedAnswerMarked, expectTryOnceMore, skipped, type CheckResult } from './checks.ts';
 
 export type Turn = { learner: string; outcome: string; error?: string; reply: WireMessage | undefined; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
 type NextMessage = { text: string; cardHelp?: CardHelpAction; step?: string; autoConsent?: boolean; tryOnceMore?: boolean };
@@ -50,6 +50,15 @@ function scripted(steps: readonly Step[]): Scenario['next'] {
 
 const stepReply = (turns: readonly Turn[], say: string) => turns.findLast((turn) => turn.step === say)?.reply;
 
+// Statements that answer "Which one was right?" on the ice card: name the right choice
+// or its position, or state the idea it holds.
+const iceGiveaways = [
+	/\b(?:correct|right|best) (?:one|choice|answer|option) (?:is|was)\b/i,
+	/\b(?:option|choice|answer) (?:[A-H]|[1-8]) (?:is|was) (?:the )?(?:right|correct)\b/i,
+	/^\s*(?:it (?:is|was) |that'?s )?the (?:top|bottom|last|first|second|third|fourth) (?:one|choice|option)\.?\s*$/i,
+	/\bless dense\b/i,
+];
+
 export const scenarios: readonly Scenario[] = [
 	{
 		name: 'no-choice-position',
@@ -64,8 +73,8 @@ export const scenarios: readonly Scenario[] = [
 			const reply = stepReply(turns, 'Which one was right? Was it the top one?');
 			// A consent card in reply is the reveal policy at work, not a position claim.
 			if (cardOf(reply)?.kind === 'reveal-consent') return [skipped('no-choice-position', 'the tutor offered a consent card instead of naming a choice')];
-			return [card?.kind === 'question' && reply ? expectNoChoicePosition(reply, card, 'Ice is less dense than liquid water')
-				: skipped('no-choice-position', 'script did not answer a question card and reach the position request')];
+			if (card?.kind !== 'question' || !reply) return [skipped('no-choice-position', 'script did not answer a question card and reach the position request')];
+			return [expectNoChoicePosition(reply, card, 'Ice is less dense than liquid water'), { ...expectRevealedAnswerMarked(reply, iceGiveaways), turn: turns.findLastIndex((turn) => turn.reply === reply) }];
 		},
 	},
 	{
