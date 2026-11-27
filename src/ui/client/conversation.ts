@@ -105,21 +105,33 @@ export function openChatConversation(userId: string, aliases: readonly string[] 
 	return { id: conversationId, placeSaved: stored.available && saved, ...client };
 }
 
-export function startNewChatConversation(userId: string) {
-	switchChatConversation(namespacedConversationId(userId, randomId()));
+export const conversationSwitchGuidance = 'Browser storage could not save the switch. Your conversation and unsent work are still here. You can keep chatting, or allow site storage in your browser and try again.';
+
+export function startNewChatConversation(userId: string, onReady: () => void) {
+	return switchChatConversation(namespacedConversationId(userId, randomId()), onReady);
 }
 
-/** Opens a conversation here and in this learner's other tabs. */
-export function switchChatConversation(conversationId: string) {
-	localStorage.setItem(appConfig.chatConversationStorageKey, conversationId);
-	localStorage.setItem(appConfig.chatConversationResetKey, conversationId);
+function saveConversationSelection(conversationId: string): boolean {
+	if (!readBrowserStorage(appConfig.chatConversationStorageKey).available) return false;
+	if (!writeBrowserStorage(appConfig.chatConversationStorageKey, conversationId)) return false;
+	return readBrowserStorage(appConfig.chatConversationStorageKey).value === conversationId;
+}
+
+export function switchChatConversation(conversationId: string, onReady: () => void) {
+	if (!saveConversationSelection(conversationId)) return false;
+	writeBrowserStorage(appConfig.chatConversationResetKey, conversationId);
+	onReady();
 	location.reload();
+	return true;
 }
 
-export function watchChatConversationReset(onReset: () => void): () => void {
+export function watchChatConversationReset(onReset: () => void, onFailure: () => void): () => void {
 	const listener = (event: StorageEvent) => {
 		if (event.key !== appConfig.chatConversationResetKey || !event.newValue) return;
-		localStorage.setItem(appConfig.chatConversationStorageKey, event.newValue);
+		if (!saveConversationSelection(event.newValue)) {
+			onFailure();
+			return;
+		}
 		onReset();
 	};
 	window.addEventListener('storage', listener);

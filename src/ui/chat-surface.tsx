@@ -6,6 +6,7 @@ import './chat-gate.css';
 import { loadAuthProviders, type AuthProviders } from './session.ts';
 import {
 	ChatRequestCoordinator,
+	conversationSwitchGuidance,
 	chatRequestControls,
 	isGuestTurnLimitError,
 	type ChatRequestState,
@@ -275,7 +276,7 @@ export function mountChatSurface(options: Readonly<{
 		cardDraft.clear();
 		draft.clear();
 		location.reload();
-	});
+	}, () => { storageNotice.textContent = conversationSwitchGuidance; });
 	// Another tab's turn settled: an idle tab shows it. A busy tab keeps its own state.
 	let settledElsewhere = false;
 	watchChatTurnSettled(conversation.id, async () => {
@@ -470,15 +471,15 @@ export function mountChatSurface(options: Readonly<{
 			return affected.length ? affected.join(' ') : undefined;
 		},
 		startOver() {
-			unsentWork.clearStale();
-			dictation.cancel();
-			cardDraft.clear();
-			draft.clear();
-			startNewChatConversation(options.userId);
+			return startNewChatConversation(options.userId, () => {
+				unsentWork.clearStale();
+				dictation.cancel();
+				cardDraft.clear();
+				draft.clear();
+			});
 		},
 		switchConversation(id: string) {
-			dictation.cancel();
-			switchChatConversation(id);
+			return switchChatConversation(id, () => dictation.cancel());
 		},
 		sound,
 	};
