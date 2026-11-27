@@ -129,7 +129,9 @@ fits within 20 lines and adds no dependency. Otherwise redesign or skip it.
 and consent styling. `reveal-mark.css` owns supplied-help attribution.
 `login.css` owns sign-in appearance. `history.css` owns the History page:
 rows and hairlines on paper, with the open conversation marked by a verdigris
-rule and the words "Open now" in full ink. It leaves by "Back to conversation". Other UI styles use the shared tokens.
+rule and the words "Open now" in full ink. It leaves by "Back to conversation", or "Close" when there is no current
+conversation. Empty History offers "Start a conversation" to close History and
+focus the existing composer without changing the conversation or draft. Other UI styles use the shared tokens.
 The three pages render to HTML at build time. React hydrates chat and sign-in.
 The 404 links work with JavaScript disabled. Shared shadcn/ui controls live in
 `src/ui/components/ui/`, with Magic UI in `src/ui/components/magicui/`.

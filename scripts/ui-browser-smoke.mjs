@@ -477,8 +477,24 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			await page.keyboard.press('Escape');
 			await openHistory();
 			await page.getByText('Your conversations appear here after you send a message.').waitFor();
-			await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
+			await page.getByRole('heading', { name: 'No conversations yet', exact: true }).waitFor();
+			assert.equal(await page.locator('#history-dialog button[data-variant="default"]').count(), 1);
+			assert.equal(await page.locator('#history-start').evaluate((button) => {
+				const style = getComputedStyle(button);
+				return style.borderRadius === '999px' && button.getBoundingClientRect().height >= 44;
+			}), true);
+			assert.equal(await page.locator('#history-guest').count(), 0);
+			await page.screenshot({ path: `${out}/history-empty-${colorScheme}-${width}.png` });
+			await page.getByRole('button', { name: 'Close', exact: true }).click();
 			await page.waitForFunction(() => document.activeElement.id === 'menu-trigger');
+
+			const emptyId = await storedId();
+			await page.locator('#message').fill('What is 2 + 2?');
+			await openHistory();
+			await page.getByRole('button', { name: 'Start a conversation', exact: true }).click();
+			await page.waitForFunction(() => document.activeElement.id === 'message');
+			assert.equal(await storedId(), emptyId);
+			assert.equal(await page.locator('#message').inputValue(), 'What is 2 + 2?');
 
 			await send(page, 'Why is the sky blue?');
 			// The fixture's history read repeats the last reply in every conversation.
@@ -517,6 +533,18 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 			assert.equal(await page.locator('#message').inputValue(), 'Unsent thought about tides');
 		});
 	}
+
+	await check('history-empty-guest', async (page, fixture) => {
+		fixture.userKind = 'guest';
+		await page.setViewportSize({ width: 390, height: 900 });
+		await page.goto(origin);
+		await page.locator('#message:enabled').waitFor();
+		await openHistory(page);
+		await page.getByRole('heading', { name: 'No conversations yet', exact: true }).waitFor();
+		assert.equal(await page.locator('#history-guest').innerText(), 'Sign in to keep your History across devices.');
+		assert.equal(await page.locator('#history-guest a').getAttribute('href'), '/login.html');
+		await assertAccessible(page, 'Empty guest History');
+	});
 
 	const historyRows = (page) => page.locator('#history-list button');
 	async function openHistory(page) {
@@ -814,7 +842,7 @@ function createServices(origin, session) {
 		async handle(route, url) {
 			const json = (body, status = 200, headers = {}) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers });
 			if (url.pathname === appConfig.sessionPath) {
-				return json({ userId: session.userId, aliases: [], kind: 'registered' });
+				return json({ userId: session.userId, aliases: [], kind: fixture.userKind ?? 'registered' });
 			}
 			if (url.pathname === `${appConfig.sessionPath}/logout`) {
 				return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Signed out</p>' });

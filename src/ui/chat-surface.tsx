@@ -452,6 +452,12 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
+		hasConversation() {
+			return turns.length > 0 || requestState.kind !== 'idle';
+		},
+		focusComposer() {
+			input.focus();
+		},
 		dispose: unsentWork.dispose,
 		startOverDescription() {
 			const affected: string[] = [];
