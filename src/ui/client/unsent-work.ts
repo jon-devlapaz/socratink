@@ -28,8 +28,10 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 		if (event.persisted) sync();
 		else remove();
 	}
-	function otherWork() {
-		let present = false;
+	// A flag past expiry may be a crashed tab or a frozen one that still holds a draft,
+	// so it reads as unknown, never as empty. Only a confirmed Start over removes it.
+	function otherWork(removeExpired: boolean): 'present' | 'empty' | 'unknown' {
+		let result: 'present' | 'empty' | 'unknown' = 'empty';
 		for (const other of Object.keys(localStorage)) {
 			if (other === key || !other.startsWith(prefix)) continue;
 			let flag;
@@ -38,14 +40,18 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 			} catch {
 				flag = null;
 			}
-			if (typeof flag?.hasWork !== 'boolean' || typeof flag?.updatedAt !== 'number'
-				|| !Number.isFinite(flag.updatedAt) || Date.now() - flag.updatedAt > 120_000) {
+			if (typeof flag?.hasWork !== 'boolean' || typeof flag?.updatedAt !== 'number' || !Number.isFinite(flag.updatedAt)) {
 				localStorage.removeItem(other);
 				continue;
 			}
-			if (flag.hasWork) present = true;
+			if (Date.now() - flag.updatedAt > 120_000) {
+				if (removeExpired || !flag.hasWork) localStorage.removeItem(other);
+				else if (result === 'empty') result = 'unknown';
+				continue;
+			}
+			if (flag.hasWork) result = 'present';
 		}
-		return present;
+		return result;
 	}
 	document.addEventListener('input', changed);
 	document.addEventListener('change', changed);
@@ -60,14 +66,14 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 			sync();
 			if (!available) return 'unknown';
 			try {
-				return otherWork() ? 'present' : 'empty';
+				return otherWork(false);
 			} catch {
 				return 'unknown';
 			}
 		},
 		clearStale() {
 			try {
-				otherWork();
+				otherWork(true);
 			} catch {
 				available = false;
 			}

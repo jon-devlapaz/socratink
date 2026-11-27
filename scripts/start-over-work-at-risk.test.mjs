@@ -139,17 +139,31 @@ test('confirmed Start over resets both tabs and clears their work flags', async 
 	assert.equal(await page.locator('#start-over-dialog').count(), 0);
 });
 
-test('stale crashed-tab flags do not warn on an empty session and are removed', async (t) => {
+test('malformed and expired empty flags do not warn on an empty session and are removed', async (t) => {
 	const ui = await startOverBrowser(t);
 	const page = await ui.open();
 	await page.evaluate(() => {
 		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:crashed', '1');
-		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:expired', JSON.stringify({ hasWork: true, updatedAt: Date.now() - 300_000 }));
+		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:expired', JSON.stringify({ hasWork: false, updatedAt: Date.now() - 300_000 }));
 	});
 	await requestStartOver(page);
 	assert.equal(await page.locator('#start-over-dialog').count(), 0);
 	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-start-over-risk:crashed')), null);
 	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-start-over-risk:expired')), null);
+});
+
+test('an expired flag with work, as from a frozen tab, still warns and is removed only on confirm', async (t) => {
+	const ui = await startOverBrowser(t);
+	const page = await ui.open();
+	const frozen = 'socratink-unsent-work:guest-start-over-risk:frozen';
+	await page.evaluate((frozen) => localStorage.setItem(frozen, JSON.stringify({ hasWork: true, updatedAt: Date.now() - 300_000 })), frozen);
+	await requestStartOver(page);
+	await page.locator('#start-over-dialog').waitFor();
+	assert.match(await page.locator('#start-over-dialog').innerText(), /Unsent work in other open tabs could be deleted/);
+	assert.notEqual(await page.evaluate((frozen) => localStorage.getItem(frozen), frozen), null);
+	await page.locator('#start-over-confirm').click();
+	await page.waitForFunction(() => document.querySelector('#message')?.disabled === false);
+	assert.equal(await page.evaluate((frozen) => localStorage.getItem(frozen), frozen), null);
 });
 
 test('confirmed Start over removes expired flags without touching another learner', async (t) => {
