@@ -58,10 +58,14 @@ async function startNetwork(target) {
 	};
 }
 
-export async function connect({ run, viewport = { width: 1440, height: 1080 } } = {}) {
-	const state = readState(run);
-	const network = await startNetwork(state.origin);
-	const origin = network.origin;
+export async function connect({ run, production = false, viewport = { width: 1440, height: 1080 } } = {}) {
+	const runId = production ? `production-${Date.now()}` : undefined;
+	const state = production ? {
+		runId, origin: 'https://app.socratink.ai', provider: 'gateway',
+		evidenceDir: join('.cache', 'verify-socratink', 'evidence', runId),
+	} : readState(run);
+	const network = production ? undefined : await startNetwork(state.origin);
+	const origin = network?.origin ?? state.origin;
 	const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 	const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, headless: true });
 	const model = state.modelOrigin ? {
@@ -86,9 +90,9 @@ export async function connect({ run, viewport = { width: 1440, height: 1080 } } 
 				page.on('request', (request) => {
 					if (new URL(request.url()).pathname.endsWith('/events')) page.streams.push(Date.now());
 				});
-				await page.goto(origin);
-				await page.locator('#message[placeholder]:enabled').waitFor();
 				tabs.push(page);
+				await page.goto(origin);
+				if (!production) await page.locator('#message[placeholder]:enabled').waitFor();
 				return page;
 			},
 		};
@@ -103,7 +107,7 @@ export async function connect({ run, viewport = { width: 1440, height: 1080 } } 
 			mkdirSync(join(evidenceDir, feature), { recursive: true });
 			return join(evidenceDir, feature, file);
 		},
-		async close() { await browser.close(); await network.close(); },
+		async close() { await browser.close(); await network?.close(); },
 	};
 }
 
@@ -113,12 +117,21 @@ export async function send(page, text) {
 	await page.getByRole('button', { name: 'Send message', exact: true }).click();
 }
 
-/** Wait until the active turn has settled into a finished tutor reply; returns its text. */
-export async function waitForReply(page, { timeout = 60_000 } = {}) {
-	const settled = page.locator('#active-turn .assistant').last();
-	await page.waitForFunction(() => !document.querySelector('#active-turn .turn.pending')
-		&& document.querySelector('#active-turn .assistant'), null, { timeout });
-	return settled.innerText();
+/** Wait for a settled tutor reply. Pass the submitted learner text to match its reply. */
+export async function waitForReply(page, { after, timeout = 60_000 } = {}) {
+	const settled = await page.waitForFunction((submitted) => {
+		const turns = [...document.querySelectorAll('#active-turn .turn')];
+		const reply = turns.at(-1);
+		const learner = turns.at(-2);
+		if (!reply?.matches('.assistant') || turns.some(turn => turn.matches('.pending'))) return;
+		if (submitted && !(learner?.matches('.you') && learner.innerText.includes(submitted))) return;
+		return reply.innerText;
+	}, after, { timeout });
+	try {
+		return await settled.jsonValue();
+	} finally {
+		await settled.dispose();
+	}
 }
 
 /** Pixels between the bottom of the last visible turn and the top of the composer. */
@@ -165,6 +178,7 @@ export function view(page) {
 export async function journey(feature, body, options) {
 	const session = await connect(options);
 	const result = { feature, run: session.state.runId, provider: session.state.provider, builtFrom: session.state.commit,
+		...(options?.production && { origin: session.origin }),
 		startedAt: new Date().toISOString(), observed: {}, screenshots: [] };
 	const record = (key, value) => { result.observed[key] = value; };
 	const shot = async (page, name) => {

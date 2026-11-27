@@ -1,6 +1,6 @@
 ---
 name: verify-socratink
-description: Drive the real Socratink app as a learner in a real browser (send, streamed reply, two tabs, dropped streams) and save screenshot proof. Use before merging a change to the chat UI, transcript layout, reply streaming, reconnects or multi-tab behaviour, or when asked to prove such a change works in the app, not just in tests.
+description: Drive the Socratink app as a learner in a browser and save screenshot proof. Use to verify the chat UI, transcript, reply streaming, reconnects, multi-tab behavior, or a clean guest session after a production deployment.
 ---
 
 # Verify Socratink as a learner
@@ -67,6 +67,10 @@ await close();
 ```
 
 `learner.mjs` also exports `journey(feature, body)`, which saves `result.json` and failure screenshots for you; the journeys show how to use it. The browser reaches the app through a loopback proxy in the driver process, so `network.drop()` / `restore()` cut the whole connection, `dropStreams()` / `restoreStreams()` cut only `GET .../events`, and `closeStreamsAfter(ms)` closes every reply stream shortly after it opens. Requests to other origins (analytics) are blocked. `learner.newTab()` records each tab's page errors in `tab.errors` and each reply-stream request time in `tab.streams`. `newLearner()` gives a second, separate learner.
+
+## Check a production guest session
+
+When the user requests a production guest check, confirm the intended commit has a successful production deployment. Run the [production guest journey](features/production-guest.md) directly. It creates a fresh guest browser context on `app.socratink.ai` and sends up to three turns to the live tutor. It saves screenshots and `result.json` under `.cache/verify-socratink/evidence/`. It closes its browser when done.
 
 ## Evidence
 
