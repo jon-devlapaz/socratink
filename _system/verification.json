@@ -1,5 +1,6 @@
 {
   "require_tink": false,
+  "seed_timeout_seconds": 600,
   "checks": [
     {"argv": ["pnpm", "check"], "timeout_seconds": 600}
   ]
