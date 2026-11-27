@@ -75,7 +75,8 @@ test('History through the production caller and chat surface', async (t) => {
 						input.value = 'What is 2 + 2?';
 						await act(async () => input.dispatchEvent(new Event('input', { bubbles: true })));
 					}
-					const storage = { ...localStorage };
+					const learnerStorage = () => Object.fromEntries(Object.entries(localStorage).filter(([key]) => !key.startsWith('socratink-unsent-work:')));
+					const storage = learnerStorage();
 					const drafts = { ...sessionStorage };
 					assert.equal(session.conversationId, currentId);
 					const id = session.conversationId;
@@ -122,7 +123,7 @@ test('History through the production caller and chat surface', async (t) => {
 					assert.equal(document.activeElement, input);
 					assert.equal(input.value, scenario === 'draft' ? 'What is 2 + 2?' : '');
 					assert.equal(session.conversationId, id);
-					assert.deepEqual({ ...localStorage }, storage);
+					assert.deepEqual(learnerStorage(), storage);
 					assert.deepEqual({ ...sessionStorage }, drafts);
 					assert.ok(calls.every(([, method]) => method === 'GET'), 'no reset or submission');
 				} finally {

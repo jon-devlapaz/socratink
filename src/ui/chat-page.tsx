@@ -30,17 +30,25 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	const [pullDistance, setPullDistance] = useState(0);
 	const [layer, setLayer] = useState<'menu' | DialogPage>();
 	const [startOverDisabled, setStartOverDisabled] = useState(true);
-	const [startOverHasDraft, setStartOverHasDraft] = useState(false);
-	const opener = useRef<HTMLButtonElement | null>(null);
+	const [startOverDescription, setStartOverDescription] = useState('');
 	const brand = useRef<HTMLButtonElement>(null);
 	const skipMenuFocus = useRef(false);
 	const focusHistoryComposer = useRef(false);
 	useEffect(() => {
-		if (startChat) void startChat(setStartOverDisabled, setContent).then(setSession);
+		let active = true;
+		let mounted: ChatSession | undefined;
+		if (startChat) void startChat(setStartOverDisabled, setContent).then((next) => {
+			if (!active) return next?.dispose();
+			mounted = next;
+			setSession(next);
+		});
+		return () => {
+			active = false;
+			mounted?.dispose();
+		};
 	}, [startChat]);
-	const openMenu = (button: HTMLButtonElement) => {
+	const openMenu = () => {
 		if (!session) return;
-		opener.current = button;
 		skipMenuFocus.current = false;
 		setLayer('menu');
 	};
@@ -66,16 +74,12 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 					Skip to main content
 				</a>
 			</Button>
-			<Button
-				{...menuButton}
-				{...peekGesture}
-				variant="ghost"
+			<div
+				{...(session ? peekGesture : {})}
 				className="peek-handle"
 				id="peek-handle"
-				aria-label="Open menu"
-			>
-				<span className="sr-only">Open menu</span>
-			</Button>
+				aria-hidden="true"
+			/>
 			<div className="app-canvas">
 				<header className="app-header">
 					<div className="app-header-row">
@@ -85,7 +89,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 							variant="ghost"
 							className="brand-lockup"
 							id="menu-trigger"
-							onClick={(event) => openMenu(event.currentTarget)}
+							onClick={openMenu}
 						>
 							<span className="brand-mark" aria-hidden="true" />
 							<img className="brand-name" src={wordmark} alt="" />
@@ -100,12 +104,14 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 				pullDistance={pullDistance}
 				onClose={() => setLayer(undefined)}
 				onCloseFocus={() => {
-					if (!skipMenuFocus.current) opener.current?.focus();
+					if (!skipMenuFocus.current) restoreFocus();
 				}}
 				registered={session?.user.kind === 'registered'}
 				startOverDisabled={startOverDisabled}
 				onStartOver={() => {
-					setStartOverHasDraft(session?.hasUnsentWork() ?? false);
+					const description = session?.startOverDescription();
+					if (!description) return;
+					setStartOverDescription(description);
 					openDialog('start-over');
 				}}
 				sound={session?.sound}
@@ -147,9 +153,7 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 					<div className="start-over-content">
 						<DialogTitle>Start a new conversation?</DialogTitle>
 						<DialogDescription>
-							{startOverHasDraft
-								? 'What you haven’t sent will be deleted, here and in your other open tabs. '
-								: 'Anything unsent in your other open tabs will be deleted. '}
+							{startOverDescription}{' '}
 							Saved conversations are in History.
 						</DialogDescription>
 						<div className="start-over-actions">
