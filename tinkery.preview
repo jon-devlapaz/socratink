@@ -1,0 +1,1 @@
+{"command":"pnpm build:ui && node --env-file-if-exists=src/ui/.env.local src/server.ts","url":"http://127.0.0.1:3000"}
