@@ -6,6 +6,7 @@ import wordmark from './brand-wordmark.png';
 
 export function LoginPage() {
 	const [providers, setProviders] = useState<AuthProviders>();
+	const [providerPointer, setProviderPointer] = useState(false);
 	const [error, setError] = useState<string>();
 	useEffect(() => {
 		void loadAuthProviders().then(setProviders);
@@ -45,7 +46,13 @@ export function LoginPage() {
 								{error}
 							</p>
 						)}
-						<div className="login-oauth">
+						<div
+							className="login-oauth"
+							data-pointer={providerPointer || undefined}
+							onPointerDown={() => setProviderPointer(true)}
+							onKeyDown={() => setProviderPointer(false)}
+							onKeyUp={() => setProviderPointer(false)}
+						>
 							{providers?.google && (
 								<Button
 									type="button"

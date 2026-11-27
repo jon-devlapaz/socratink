@@ -26,7 +26,7 @@
 		"test:database-config": "node --test scripts/database-config.test.mjs",
 		"test:session": "node --test scripts/session.test.mjs",
 		"test:session-client": "node --test scripts/session-client.test.mjs",
-		"test:sign-in": "node --test scripts/sign-in-return.test.mjs",
+		"test:sign-in": "node --test scripts/sign-in-return.test.mjs scripts/login-provider-focus.test.mjs",
 		"test:auth-db": "node --test scripts/auth-db.test.mjs",
 		"test:conversation-index": "node --test scripts/conversation-index.test.mjs",
 		"test:guest-turns": "node --test scripts/guest-turns.test.mjs",
