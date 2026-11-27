@@ -88,6 +88,21 @@ body.login-page {
 	gap: 1.25rem;
 }
 
+.login-reason {
+	margin: 0;
+	color: var(--muted);
+	line-height: 1.6;
+}
+
+.login-guest {
+	align-self: flex-start;
+	padding-inline: 0;
+	color: var(--muted);
+	white-space: normal;
+	height: auto;
+	min-height: 44px;
+}
+
 .login-error {
 	margin: 0;
 	font-size: 0.875rem;
@@ -101,10 +116,13 @@ body.login-page {
 	gap: 0.65rem;
 }
 
-.login-oauth-btn {
+.login-oauth .login-oauth-btn {
 	display: inline-flex;
-	flex: 1 1 8rem;
+	flex: 1 1 10rem;
 	min-width: 0;
+	height: auto;
+	min-height: 44px;
+	white-space: normal;
 	align-items: center;
 	justify-content: center;
 	gap: 0.65rem;

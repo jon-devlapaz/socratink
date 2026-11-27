@@ -37,7 +37,7 @@ export async function verifySignInBrowser({ browser, app, fixture }) {
 			await page.locator('#menu-trigger').click();
 		}
 		await page.getByRole('link', { name: 'Sign in', exact: true }).click();
-		const google = page.getByRole('button', { name: 'Google', exact: true });
+		const google = page.getByRole('button', { name: 'Continue with Google', exact: true });
 		await expect(google).toBeVisible();
 		await assertAccessible(page, 'Sign in');
 		await google.click();

@@ -44,7 +44,7 @@ test('production build ships branded recovery and existing static entries', asyn
 	assert.match(notFound, /<title>Page not found · Socratink<\/title>/);
 	assert.match(notFound, /<h1[^>]*>Page not found<\/h1>/);
 	assert.match(notFound, /href="\/"[^>]*>Home<\/a>/);
-	assert.match(notFound, /href="\/login"[^>]*>Log in<\/a>/);
+	assert.match(notFound, /href="\/login"[^>]*>Sign in<\/a>/);
 	assert.doesNotMatch(notFound, /<script[^>]*\b(?:src|type)=/, 'recovery does not require JavaScript');
 	const index = await readFile('dist/client/index.html', 'utf8');
 	const boot = /<script>\s*\(function \(\) \{[\s\S]*?<\/script>/;
