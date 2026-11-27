@@ -78,7 +78,8 @@ export function replyChecks(message: WireMessage): CheckResult[] {
 	const leaks = internalNotePatterns.flatMap((pattern) => learnerFacing.match(pattern)?.[0] ?? []);
 	const questions = questionsIn(text);
 	const asked = [...questions, ...(item ? [`card: ${item.prompt}`] : [])];
-	const afterLast = questions.length && !item ? prose(text).slice(prose(text).lastIndexOf('?') + 1).trim() : '';
+	// Closing marks of a bold, italic or quoted question are part of it, not text after it.
+	const afterLast = questions.length && !item ? prose(text).slice(prose(text).lastIndexOf('?') + 1).replace(/^[\s*_"'”’)]+/u, '').trim() : '';
 	const cue = revealCue.exec(text)?.[0];
 	return [
 		result('no-internal-notes', leaks.length === 0, `matched: ${leaks.join(' | ')}`),
@@ -133,6 +134,16 @@ export function expectNoChoicePosition(
 	}
 	return result('no-choice-position', text.trim().length > 0 && problems.length === 0,
 		problems.join('; ') || (text.trim() ? 'references match displayed order where checked' : 'reply has no answer text'));
+}
+
+/** A reply that says which choice was right, or states the right idea, hands over the
+ * answer, so it must record a reveal. `giveaways` match statements that do that. */
+export function expectRevealedAnswerMarked(message: WireMessage | undefined, giveaways: readonly RegExp[]): CheckResult {
+	const text = prose(textOf(message)).replace(/[*_`]/g, '');
+	const statements = text.split(/(?<=[.!?]["”’')]?)\s+|\n+|\s[—–]\s/).filter((sentence) => sentence.trim() && !/\?\s*["”']?$/.test(sentence.trim()));
+	const given = statements.filter((sentence) => giveaways.some((pattern) => pattern.test(sentence)));
+	return result('reveal-marked', given.length === 0 || revealsOf(message).length > 0 || isConsent(message),
+		`answer given with no recorded reveal: ${given.join(' | ').slice(0, 160)}`);
 }
 
 export function expectMarkedHelp(message: WireMessage | undefined, check: 'dont-know-marked' | 'hint-marked'): CheckResult {

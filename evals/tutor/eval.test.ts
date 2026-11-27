@@ -38,6 +38,29 @@ test('two questions fail; a skill map fence and a quoted question do not count',
 	assert.deepEqual(questionsIn(map), ['Which force pulls the apple down?']);
 });
 
+test('a bold or quoted question ends on its closing marks; real text after it still fails', () => {
+	assert.deepEqual(failing(reply('Start in the middle.\n\n**Where does binary search look first, and why that spot?**')), []);
+	assert.deepEqual(failing(reply('Try this: *"Which half can you drop?"*')), []);
+	assert.deepEqual(failing(reply('**What do you predict happens?**\n\nTake your best guess.')), ['ends-on-question']);
+});
+
+test('naming the right ice choice without a recorded reveal fails (eval run 45769953592)', () => {
+	const scenario = scenarios.find((s) => s.name === 'no-choice-position')!;
+	const card: WirePart = { type: 'data-questionnaire', data: { kind: 'question', submitLabel: 'Submit', items: [{ name: 'item', prompt: 'Why does ice float?',
+		required: true, multiple: false, choices: [{ value: 'a', label: 'Ice is less dense than liquid water' }, { value: 'b', label: 'Ice is denser than liquid water' }] }] } };
+	const say = 'Which one was right? Was it the top one?';
+	const status = (text: string, parts: WirePart[] = []) => scenario.expect([{ learner: '', outcome: 'completed', reply: reply('', [card]) },
+		{ learner: say, step: say, outcome: 'completed', reply: reply(text, parts) }]).find((c) => c.check === 'reveal-marked')?.status;
+	for (const text of ['No — the correct choice was **"Ice is less dense than liquid water."** What does density measure?',
+		'Yes — the top one.\n\n**Solid ice is less dense because its molecules lock into an open lattice.**', 'Option A was right.']) {
+		assert.equal(status(text), 'fail', text);
+		assert.equal(status(text, [{ type: 'data-reveal', data: { kind: 'full_answer', requested: true } }]), 'pass', text);
+	}
+	for (const text of ['What do you think: is ice denser or less dense than water?', 'Compare the mass of a cube of ice with the same cube of water.']) {
+		assert.equal(status(text), 'pass', text);
+	}
+});
+
 test('a short tag such as "Why or why not?" is part of the question before it', () => {
 	assert.deepEqual(failing(reply('Would any place still have seasons? Why or why not?')), []);
 	assert.deepEqual(failing(reply('Why or why not? What is a vector?')), ['one-question']);
@@ -160,12 +183,13 @@ function goodTutor({ learner, afterTool, corrected, displayed }: Request): Step 
 	if (corrected) return { text: '' };
 	if (afterTool && has(/idempotency key/) && has(/hint/i)) return { text: paymentHint };
 	if (has(/Quiz me with one question card/)) return { tool: 'present_question', args: paymentCard };
+	if (afterTool && has(/Which one was right/i)) return { text: 'How does density affect floating?' };
 	if (afterTool) return { text: has(/hint/i) ? 'Think about where the middle of the list is. Which half could hold the item?'
 		: `${answer} If Earth had no tilt, what would happen to the seasons?` };
 	if (has(/Which one was right/i)) {
 		const letter = displayed?.match(/([A-H])\. Ice is less dense than liquid water/)?.[1];
 		assert.ok(letter, 'the model must receive the displayed order in the tool result');
-		return { text: `Option ${letter} was right. How does density affect floating?` };
+		return { text: `Option ${letter} was right.`, tool: 'mark_reveal', args: { kind: 'full_answer', requested: true } };
 	}
 	if (has(/question card about why ice floats/i)) return { tool: 'present_question', args: {
 		prompt: 'Why does ice float on water?', choices: ['Ice is less dense than liquid water', 'Ice is denser than liquid water'], reasoning: true } };
@@ -232,7 +256,7 @@ test('a policy-following tutor passes every scenario', async () => {
 test('a tutor with the known bugs fails every behaviour rule and the displayed choice check', async () => {
 	const results = await withProvider(badTutor, (resolveModel) => runEval({ scenarios, resolveModel, turnTimeoutMs: 20_000 }));
 	const expected: Record<string, CheckName[]> = {
-		'no-choice-position': ['no-choice-position'],
+		'no-choice-position': ['no-choice-position', 'reveal-marked'],
 		'first-turn-diagnostic': ['one-question'],
 		'just-tell-me-first-message': ['just-tell-me'],
 		'just-tell-me-later': ['just-tell-me', 'one-question'],
