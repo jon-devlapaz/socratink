@@ -46,6 +46,11 @@ describe('looksLikeUnboxedChoices', () => {
 		['fenced skill map before a question', 'Here is the map:\n\n```text\nTopic: SQL joins\n- inner joins  [##..]  1/5\n- outer joins  [#...]  0/5\n```\n\nWhich join have you used most?', false],
 		['fenced commands before a question', 'Which commands work anytime?\n\n```text\n- show progress\n- harder\n```\n\nWhat would you predict?', false],
 		['lettered choices inside a closing code block', 'Pick one:\n```text\nA. Recheck\nB. Resend\n```', false],
+		// The text quiz from the 2026-11-26 production-model eval: bold letters, then a closing question.
+		['bold lettered choices, then a closing question', 'Where do you think that blue light is coming from?\n\n**A.** Sunlight bouncing off air molecules  \n**B.** The atmosphere re-emitting light  \n**C.** The atmosphere glowing on its own  \n**D.** Light reflected up from the oceans  \n\nWhich one do you think is right, and why?', true],
+		['lettered choices, then a closing question', 'Pick one:\nA. Recheck\nB. Resend\n\nWhich would you try first?', true],
+		['bold lettered choices', 'Pick one:\n**A)** Recheck\n**B)** Resend', true],
+		['lettered points, then a closing statement', 'Two cases:\nA. Recheck\nB. Resend\n\nBoth keep the request safe.', false],
 	]) {
 		it(name, () => assert.equal(looksLikeUnboxedChoices(text), expected));
 	}

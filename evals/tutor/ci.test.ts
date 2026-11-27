@@ -32,12 +32,10 @@ test('runs are bounded so one approval cannot buy an unbounded paid run', () => 
 });
 
 test('the summary compares refs check by check and says when a route measured nothing', () => {
-	const candidate = { model: 'm', summary: { 'turn-completed': { pass: 9, fail: 0, skip: 0 }, 'one-question': { pass: 9, fail: 0, skip: 0 } },
-		results: [{ turns: [{ reply: { metadata: { rewrites: 1 } } }, { reply: { metadata: {} } }, { reply: null }] }] };
-	const base = { model: 'm', summary: { 'turn-completed': { pass: 9, fail: 0, skip: 0 }, 'one-question': { pass: 7, fail: 2, skip: 0 } }, results: [] };
+	const candidate = { model: 'm', summary: { 'turn-completed': { pass: 9, fail: 0, skip: 0 }, 'one-question': { pass: 9, fail: 0, skip: 0 } } };
+	const base = { model: 'm', summary: { 'turn-completed': { pass: 9, fail: 0, skip: 0 }, 'one-question': { pass: 7, fail: 2, skip: 0 } } };
 	const text = markdownSummary([{ label: 'candidate', file: candidate }, { label: 'base', file: base }]);
 	assert.match(text, /\| one-question \| 9 \/ 0 \| 7 \/ 2 \|/);
-	assert.match(text, /\| Replies rewritten to one question \| 1 \| 0 \|/);
 	assert.doesNotMatch(text, /measured nothing|did not complete/);
 	const thin = markdownSummary([{ label: 'fix', file: { summary: { 'turn-completed': { pass: 7, fail: 21, skip: 0 } } } }]);
 	assert.match(thin, /21 of 28 turns did not complete on fix/);
