@@ -93,7 +93,30 @@ async function reachable(page, selector, container) {
 	assert.ok(result, `vertical reachability: ${selector}`);
 }
 
+async function wholeWords(page, selector) {
+	const split = await page.locator(selector).evaluate(element => {
+		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+		const broken = [];
+		while (walker.nextNode()) {
+			const node = walker.currentNode;
+			for (const match of node.textContent.matchAll(/\S+/g)) {
+				const range = document.createRange();
+				range.setStart(node, match.index);
+				range.setEnd(node, match.index + match[0].length);
+				const lines = new Set([...range.getClientRects()].map(rect => Math.round(rect.top)));
+				if (lines.size > 1) broken.push(match[0]);
+			}
+		}
+		return broken;
+	});
+	assert.deepEqual(split, [], `no split words: ${selector}`);
+}
+
 async function dialogGeometry(page, warning) {
+	for (const selector of ['#start-over-dialog h2', '.start-over-actions button:first-child', '#start-over-confirm']) {
+		await wholeWords(page, selector);
+		await contained(page, selector, '#start-over-dialog');
+	}
 	assert.equal(await page.locator('#start-over-dialog p').innerText(), warning);
 	assert.equal(await page.locator('.start-over-actions button').nth(0).innerText(), 'Keep this conversation');
 	assert.equal(await page.locator('#start-over-confirm').innerText(), 'Start new conversation');
