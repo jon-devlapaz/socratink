@@ -76,14 +76,17 @@ test('closing a draft tab removes its work flag', async (t) => {
 });
 
 for (const history of ['empty', 'card']) {
-	test(`${history} work is stored only as a boolean flag, never as text or answers`, async (t) => {
+	test(`${history} work is stored only as a boolean flag and timestamp, never as text or answers`, async (t) => {
 		const ui = await startOverBrowser(t, { history });
 		const page = await ui.open();
 		if (history === 'card') await page.getByLabel('Your reason', { exact: true }).fill('Private synthetic reasoning.');
 		else await page.locator('#message').fill('Private synthetic composer.');
 		const flags = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('socratink-unsent-work:')));
 		assert.equal(flags.length, 1);
-		assert.equal(flags[0][1], '1');
+		const flag = JSON.parse(flags[0][1]);
+		assert.deepEqual(Object.keys(flag).sort(), ['hasWork', 'updatedAt']);
+		assert.equal(flag.hasWork, true);
+		assert.equal(typeof flag.updatedAt, 'number');
 		assert.ok(!JSON.stringify(flags).includes('Private synthetic'));
 	});
 }
@@ -131,7 +134,63 @@ test('confirmed Start over resets both tabs and clears their work flags', async 
 	assert.equal(await ui.id(page), await ui.id(other));
 	const flags = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('socratink-unsent-work:')));
 	assert.equal(flags.length, 2);
-	assert.ok(flags.every(([, value]) => value === '0'));
+	assert.ok(flags.every(([, value]) => JSON.parse(value).hasWork === false));
 	await requestStartOver(page);
 	assert.equal(await page.locator('#start-over-dialog').count(), 0);
+});
+
+test('stale crashed-tab flags do not warn on an empty session and are removed', async (t) => {
+	const ui = await startOverBrowser(t);
+	const page = await ui.open();
+	await page.evaluate(() => {
+		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:crashed', '1');
+		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:expired', JSON.stringify({ hasWork: true, updatedAt: Date.now() - 300_000 }));
+	});
+	await requestStartOver(page);
+	assert.equal(await page.locator('#start-over-dialog').count(), 0);
+	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-start-over-risk:crashed')), null);
+	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-start-over-risk:expired')), null);
+});
+
+test('confirmed Start over removes expired flags without touching another learner', async (t) => {
+	const ui = await startOverBrowser(t);
+	const page = await ui.open();
+	await page.locator('#message').fill('A synthetic draft.');
+	await requestStartOver(page);
+	await page.evaluate(() => {
+		localStorage.setItem('socratink-unsent-work:guest-start-over-risk:crashed', '1');
+		localStorage.setItem('socratink-unsent-work:guest-someone-else:crashed', '1');
+	});
+	await page.locator('#start-over-confirm').click();
+	await page.waitForFunction(() => document.querySelector('#message')?.disabled === false && document.querySelector('#message')?.value === '');
+	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-start-over-risk:crashed')), null);
+	assert.equal(await page.evaluate(() => localStorage.getItem('socratink-unsent-work:guest-someone-else:crashed')), '1');
+});
+
+test('idle live flags refresh past expiry and disposal removes listeners and heartbeat', async (t) => {
+	const ui = await startOverBrowser(t);
+	const page = await ui.open();
+	await page.clock.install();
+	await page.evaluate(async () => {
+		const { mountUnsentWork } = await import(new URL('/client/unsent-work.ts', location.href).href);
+		window.syntheticWork = mountUnsentWork('guest-lifecycle-test', () => true);
+	});
+	const flags = () => page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('socratink-unsent-work:guest-lifecycle-test:')));
+	const initial = await flags();
+	assert.equal(initial.length, 1);
+	await page.clock.runFor(180_000);
+	const refreshed = await flags();
+	assert.equal(JSON.parse(refreshed[0][1]).hasWork, true);
+	assert.ok(JSON.parse(refreshed[0][1]).updatedAt - JSON.parse(initial[0][1]).updatedAt > 120_000);
+	assert.ok(await page.evaluate(() => Date.now()) - JSON.parse(refreshed[0][1]).updatedAt <= 15_000);
+	await page.evaluate(async () => {
+		document.dispatchEvent(new Event('input'));
+		window.syntheticWork.dispose();
+		for (const type of ['input', 'change', 'click']) document.dispatchEvent(new Event(type));
+		window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+		window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+		await Promise.resolve();
+	});
+	await page.clock.runFor(180_000);
+	assert.deepEqual(await flags(), []);
 });

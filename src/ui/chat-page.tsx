@@ -35,7 +35,17 @@ export function ChatPage({ startChat }: ChatPageProps = {}) {
 	const brand = useRef<HTMLButtonElement>(null);
 	const skipMenuFocus = useRef(false);
 	useEffect(() => {
-		if (startChat) void startChat(setStartOverDisabled, setContent).then(setSession);
+		let active = true;
+		let mounted: ChatSession | undefined;
+		if (startChat) void startChat(setStartOverDisabled, setContent).then((next) => {
+			if (!active) return next?.dispose();
+			mounted = next;
+			setSession(next);
+		});
+		return () => {
+			active = false;
+			mounted?.dispose();
+		};
 	}, [startChat]);
 	const openMenu = (button: HTMLButtonElement) => {
 		if (!session) return;

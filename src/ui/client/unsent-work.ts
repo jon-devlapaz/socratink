@@ -4,9 +4,11 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 	const prefix = `socratink-unsent-work:${userId}:`;
 	const key = prefix + randomId();
 	let available = true;
+	let disposed = false;
 	function sync() {
+		if (disposed) return;
 		try {
-			localStorage.setItem(key, hasWork() ? '1' : '0');
+			localStorage.setItem(key, JSON.stringify({ hasWork: hasWork(), updatedAt: Date.now() }));
 			available = true;
 		} catch {
 			available = false;
@@ -15,18 +17,42 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 	function changed() {
 		queueMicrotask(sync);
 	}
-	document.addEventListener('input', changed);
-	document.addEventListener('change', changed);
-	document.addEventListener('click', changed);
-	window.addEventListener('pageshow', sync);
-	window.addEventListener('pagehide', (event) => {
-		if (event.persisted) return sync();
+	function remove() {
 		try {
 			localStorage.removeItem(key);
 		} catch {
 			available = false;
 		}
-	});
+	}
+	function hide(event: PageTransitionEvent) {
+		if (event.persisted) sync();
+		else remove();
+	}
+	function otherWork() {
+		let present = false;
+		for (const other of Object.keys(localStorage)) {
+			if (other === key || !other.startsWith(prefix)) continue;
+			let flag;
+			try {
+				flag = JSON.parse(localStorage.getItem(other) ?? 'null');
+			} catch {
+				flag = null;
+			}
+			if (typeof flag?.hasWork !== 'boolean' || typeof flag?.updatedAt !== 'number'
+				|| !Number.isFinite(flag.updatedAt) || Date.now() - flag.updatedAt > 120_000) {
+				localStorage.removeItem(other);
+				continue;
+			}
+			if (flag.hasWork) present = true;
+		}
+		return present;
+	}
+	document.addEventListener('input', changed);
+	document.addEventListener('change', changed);
+	document.addEventListener('click', changed);
+	window.addEventListener('pageshow', sync);
+	window.addEventListener('pagehide', hide);
+	const heartbeat = window.setInterval(sync, 15_000);
 	sync();
 	return {
 		sync,
@@ -34,14 +60,27 @@ export function mountUnsentWork(userId: string, hasWork: () => boolean) {
 			sync();
 			if (!available) return 'unknown';
 			try {
-				for (let index = 0; index < localStorage.length; index++) {
-					const other = localStorage.key(index);
-					if (other && other !== key && other.startsWith(prefix) && localStorage.getItem(other) === '1') return 'present';
-				}
-				return 'empty';
+				return otherWork() ? 'present' : 'empty';
 			} catch {
 				return 'unknown';
 			}
+		},
+		clearStale() {
+			try {
+				otherWork();
+			} catch {
+				available = false;
+			}
+		},
+		dispose() {
+			disposed = true;
+			window.clearInterval(heartbeat);
+			document.removeEventListener('input', changed);
+			document.removeEventListener('change', changed);
+			document.removeEventListener('click', changed);
+			window.removeEventListener('pageshow', sync);
+			window.removeEventListener('pagehide', hide);
+			remove();
 		},
 	};
 }

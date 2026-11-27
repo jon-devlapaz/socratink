@@ -452,6 +452,7 @@ export function mountChatSurface(options: Readonly<{
 	void restoreConversation();
 	return {
 		conversationId: conversation.id,
+		dispose: unsentWork.dispose,
 		startOverDescription() {
 			const affected: string[] = [];
 			if (input.value.trim()) affected.push('Your unsent text in this tab will be deleted.');
@@ -463,6 +464,7 @@ export function mountChatSurface(options: Readonly<{
 			return affected.length ? affected.join(' ') : undefined;
 		},
 		startOver() {
+			unsentWork.clearStale();
 			dictation.cancel();
 			cardDraft.clear();
 			draft.clear();
