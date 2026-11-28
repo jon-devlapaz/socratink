@@ -34,9 +34,16 @@ export function projectCardHints(snapshot: Snapshot, showEmptyHintNotice: boolea
 	if (!snapshot.submissions.some((submission) => hintCardSource(submission) || submission.cardHelp?.kind === 'unknown')) return hintCards;
 	const replies = new Map(snapshot.messages.filter((message) => message.role === 'assistant')
 		.map((message) => [message.submissionId, message]));
-	for (const click of snapshot.submissions) {
+	for (const [index, click] of snapshot.submissions.entries()) {
 		const reply = replies.get(click.id);
 		if (!reply) continue;
+		const askedId = click.tryOnceMore && click.outcome === 'completed' ? cardBeforeConsent(snapshot, index) : undefined;
+		if (askedId) {
+			// Try once more after I don't know brings back the card the learner was answering (#268).
+			const asked = hintCards.get(askedId) ?? questionnaireFromReplyData(replies.get(askedId)?.data);
+			if (asked) { (reply.data ??= {}).questionnaire = [asked]; hintCards.set(click.id, asked); }
+			continue;
+		}
 		const originalId = click.cardHelp?.kind === 'unknown' && click.outcome === 'completed'
 			&& reply.text && revealFromReply(reply.data)?.kind === 'hint' && !questionnaireFromReplyData(reply.data)
 			? click.cardHelp.sourceId : undefined;
@@ -65,6 +72,21 @@ function applyCardHint(reply: ProductMessage, source: QuestionnaireDefinition, c
 		{ ...item, description: 'You can try Hint again for a clue or answer the question.' },
 	] } : card];
 	return card;
+}
+
+/** Try once more answers the full-answer card that I don't know brought up. Earlier tries were rejected. */
+function cardBeforeConsent(snapshot: Snapshot, index: number): string | undefined {
+	for (let prior = index - 1; prior >= 0; prior--) {
+		const submission = snapshot.submissions[prior]!;
+		if (submission.tryOnceMore) continue;
+		return submission.cardHelp?.kind === 'unknown' && submission.outcome === 'completed' ? submission.cardHelp.sourceId : undefined;
+	}
+}
+
+/** The restored card stands in for the tutor's question, which stays in the tutor's context. */
+export function withoutRestoredQuestion(snapshot: Snapshot, hintCards: ReadonlyMap<string, QuestionnaireDefinition>) {
+	const restored = new Set(snapshot.submissions.filter((s) => s.tryOnceMore && hintCards.has(s.id)).map((s) => s.id));
+	for (const message of snapshot.messages) if (message.role === 'assistant' && restored.has(message.submissionId)) message.text = '';
 }
 
 function cardBeforeUnaided(snapshot: Snapshot): string | undefined {

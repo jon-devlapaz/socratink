@@ -182,8 +182,17 @@ test('I don\'t know keeps the draft only when the same card comes back', () => {
 	assert.equal(keepsQuestionDraft(unknown), true);
 	const restored = reply('restored', { ...questionnaire, items: [{ ...questionnaire.items[0], description: 'Try Hint again.' }] });
 	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, restored]), { current: 'original', earlier: new Set() });
-	const consent = reply('consent', { ...questionnaire, kind: 'reveal-consent' });
-	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, consent]), { current: 'consent', earlier: new Set() });
+	const consentCard = { ...questionnaire, kind: 'reveal-consent' };
+	const consent = reply('consent', consentCard);
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, consent]), { current: 'original', earlier: new Set() });
+	// Try once more brings the card back with its draft; See it leaves the card behind (#268).
+	const tryAgain = displayedLearnerTurn('Questionnaire answers:\n- I can show a full answer.: Try once more', consentCard);
+	assert.equal(keepsQuestionDraft(tryAgain, consentCard), true);
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, consent, tryAgain, reply('again')]),
+		{ current: 'original', earlier: new Set() });
+	const answer = displayedAssistantTurn({ text: 'The full answer.', submissionId: 'answer' });
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, consent, tryAgain, answer]),
+		{ current: undefined, earlier: new Set() });
 	const other = reply('other', { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Which one is lighter?' }] });
 	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, other]), { current: 'other', earlier: new Set() });
 });

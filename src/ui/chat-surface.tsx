@@ -331,7 +331,7 @@ export function mountChatSurface(options: Readonly<{
 		const result = requests.start(text, {
 			cardHelp,
 			onAdmitted() {
-				if (!keepsQuestionDraft(learnerTurn)) cardDraft.discard(questionsWithDrafts(before).current);
+				if (!keepsQuestionDraft(learnerTurn, before.at(-1)?.questionnaire)) cardDraft.discard(questionsWithDrafts(before).current);
 				if (submittedDraft === undefined || input.value !== submittedDraft) return;
 				input.value = '';
 				draft.clear();

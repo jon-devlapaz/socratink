@@ -9,7 +9,7 @@ import { asksForNoText, splitReasoning, withoutQuestionBesideCard } from '../../
 import { cardHelpReveal } from '../../learning/mark-reveal.ts';
 import { revealToolName } from '../../reveal.ts';
 import { withRevealConsent } from './reveal-consent.ts';
-import { projectCardHints } from './card-hint.ts';
+import { projectCardHints, withoutRestoredQuestion } from './card-hint.ts';
 import type { CommittedStorage } from './storage.ts';
 
 export async function readSnapshot(storage: CommittedStorage, { showEmptyHintNotice = true } = {}): Promise<Snapshot> {
@@ -49,6 +49,7 @@ export async function readSnapshot(storage: CommittedStorage, { showEmptyHintNot
 		if (message.role === 'assistant' && message.data?.questionnaire?.length) message.text = withoutQuestionBesideCard(message.text);
 	}
 	const projected = withRevealConsent(snapshot, consentRequired);
+	withoutRestoredQuestion(projected, hintCards);
 	projected.messages = projected.messages.filter((message) => message.role === 'user'
 		|| message.text || message.reasoning || message.tools?.length || Object.keys(message.data ?? {}).length);
 	return projected;
