@@ -6,10 +6,12 @@
    via `POST /api/session` and starts chatting immediately (guest-first)
 2. Guest users get the allowance set by `guestTurnLimit` in
    `src/config/guest-turns.ts`, tracked via a signed `socratink-guest-turns` cookie
-3. When a send exceeds the allowance, its text returns to the locked composer
+3. When a send exceeds the allowance, typed text returns to the locked composer
    and an inline auth gate card appears
    with sign-in buttons for the configured providers (`/api/auth/providers`);
-   with no provider configured the generic failed-request turn shows instead
+   with no provider configured the generic failed-request turn shows instead.
+   A card or steering answer stays out of the composer; the gate card says it
+   wasn't sent, and the card is still there after sign-in
 4. Clicking a sign-in button navigates to `/api/auth/:provider/login`, which
    initiates PKCE OAuth with the provider
 5. On successful callback, the server resolves the account (new signup or
