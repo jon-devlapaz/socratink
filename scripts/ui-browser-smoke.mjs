@@ -122,6 +122,15 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await starters.isVisible(), false);
 	});
 
+	for (const width of [375, 1280]) {
+		await check(`intro-starter-tapped-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 667 });
+			await page.goto(origin);
+			await page.locator('#message:enabled').waitFor();
+			await page.getByRole('button', { name: 'I want to understand…', exact: true }).click();
+		});
+	}
+
 	await check('intro-drafts-375', async (page, fixture) => {
 		await page.setViewportSize({ width: 375, height: 667 });
 		await page.goto(origin);

@@ -82,6 +82,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
 				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
 				await reply.waitFor();
+				if (kind === 'required' && width !== 390) await page.screenshot({ path: `${out}/answered-${width}.png` });
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'Second'}, ${reasoning}`;
 				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
