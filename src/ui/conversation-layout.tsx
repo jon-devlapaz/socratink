@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Bookmark, ChevronDown } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 
 import type { TranscriptContent } from './chat-surface.tsx';
 import { Intro, IntroStarters, withStarter } from './intro.tsx';
@@ -51,7 +51,7 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 						</ol>
 						<div id="active-turn">{active}</div>
 					</div>
-					{questionActive && <ChevronDown className="question-overflow-cue" aria-hidden="true" />}
+					{questionActive && <div className="question-overflow-cue" aria-hidden="true" />}
 					<Button
 						size="sm"
 						variant="outline"

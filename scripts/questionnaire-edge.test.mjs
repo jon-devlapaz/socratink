@@ -115,10 +115,11 @@ async function assertVisibleCue(cue, frame) {
 	await expect(cue, 'visible overflow cue').toBeVisible();
 	const paint = await cue.evaluate(node => {
 		const style = getComputedStyle(node);
-		return { stroke: style.stroke, opacity: style.opacity, box: node.getBoundingClientRect().toJSON() };
+		return { background: style.backgroundColor, opacity: style.opacity, box: node.getBoundingClientRect().toJSON() };
 	});
 	assert.ok(contains(frame.viewport, paint.box), 'cue is in the viewport');
-	assert.ok(paint.stroke !== 'none' && Number(paint.opacity) > 0, 'cue has visible ink');
+	assert.ok(!/^(?:transparent|rgba\(0, 0, 0, 0\))$/.test(paint.background) && Number(paint.opacity) > 0, 'cue has visible ink');
+	assert.ok(paint.box.height <= 2 && paint.box.width >= frame.scroll.width / 2, 'cue is a hairline across the question');
 	for (const action of frame.actions) assert.ok(!overlaps(paint.box, action.text), `cue does not cover ${action.name}`);
 }
 
