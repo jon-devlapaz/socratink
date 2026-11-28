@@ -35,7 +35,14 @@ export async function composerHarness(engine) {
 					window.composerPointers.push({ focused: document.activeElement?.id, trusted: event.isTrusted });
 				});
 				window.SpeechRecognition = speech ? class extends EventTarget {
-					start() { window.composerActions.starts++; this.dispatchEvent(new Event('start')); }
+					start() {
+						window.composerActions.starts++;
+						window.finishSpeech = transcript => {
+							const result = Object.assign([{ transcript }], { isFinal: true });
+							this.dispatchEvent(Object.assign(new Event('result'), { resultIndex: 0, results: [result] }));
+						};
+						this.dispatchEvent(new Event('start'));
+					}
 					stop() { window.composerActions.stops++; this.dispatchEvent(new Event('end')); }
 					abort() { this.dispatchEvent(new Event('end')); }
 				} : undefined;
