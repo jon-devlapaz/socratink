@@ -51,6 +51,7 @@ export function ConversationLayout({ history, active, questionActive }: Transcri
 						</ol>
 						<div id="active-turn">{active}</div>
 					</div>
+					{questionActive && <div className="question-overflow-cue" aria-hidden="true" />}
 					<Button
 						size="sm"
 						variant="outline"

@@ -287,6 +287,21 @@ body:not(.questionnaire-active) .active-scroll.is-fading-top.is-fading-bottom {
 	padding-top: 1.05rem;
 }
 
+.question-overflow-cue {
+	display: none;
+	position: absolute;
+	inset-inline: 0;
+	inset-block-end: 0;
+	height: 1px;
+	z-index: 2;
+	background: var(--muted);
+	pointer-events: none;
+}
+
+.active-scroll.is-fading-bottom + .question-overflow-cue:has(+ .jump-latest[hidden]) {
+	display: block;
+}
+
 .jump-latest {
 	position: absolute;
 	bottom: 0.65rem;
