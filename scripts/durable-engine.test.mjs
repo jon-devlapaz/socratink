@@ -183,10 +183,11 @@ test('an execution slice leaves accepted work pending, releases ownership, and a
 
 for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ? 'transient failure recovers' : 'exhausted retries settle once'}`, async () => fixture(async ({ responses, options }) => {
 	const reports = [];
+	const details = [];
 	const turns = [];
 	const background = [];
-	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work), report: (category) => reports.push(category),
-		logTurn: (turn) => turns.push(turn) });
+	const engine = await openEngine({ ...options, keepAlive: (work) => background.push(work),
+		report: (category, detail) => { reports.push(category); details.push(detail); }, logTurn: (turn) => turns.push(turn) });
 	try {
 		await engine.submit('learner:failure', 'Synthetic private learner text.');
 		if (failures === 1) {
@@ -203,6 +204,9 @@ for (const failures of [1, 3]) test(`native retry monitoring: ${failures === 1 ?
 		assert.deepEqual(reports, failures === 1 ? ['submission_recovery']
 			: ['submission_recovery', 'submission_recovery', 'submission_failed']);
 		if (failures === 3) assert.equal(completed.submissions[0].error, 'Your message is saved. Try again.');
+		for (const detail of details) assert.equal(detail.conversationId, 'learner:failure', 'each failure names its conversation for hashing');
+		if (failures === 3) assert.deepEqual(details.at(-1), { conversationId: 'learner:failure', submissionId: turns[0].submissionId,
+			model: 'synthetic', providerStatus: 500 }, 'a failed submission reports the submission, model and provider status its turn logs');
 		assert.deepEqual(turns.map((turn) => turn.status), [failures === 1 ? 'completed' : 'failed']);
 		assert.equal(turns[0].model, failures === 1 ? 'synthetic-route' : 'synthetic', 'a turn without a routed reply logs the configured model');
 		assert.equal(turns[0].providerStatus, failures === 1 ? undefined : 500, 'a failed turn records the provider HTTP status');
@@ -739,6 +743,29 @@ test('a reveal after the learner asks for the answer is recorded as requested, e
 		assert.deepEqual(reply.data?.reveal, [{ kind: 'full_answer', requested: true }]);
 	} finally { await engine.close(); }
 }));
+
+test('a failure log line names hashed session, submission, model and provider status, never the conversation id', async () => {
+	const { logTurn, reportFailure } = await import('../src/server/logging.ts');
+	const errors = [], lines = [];
+	const { error, log } = console;
+	console.error = (line) => errors.push(line);
+	console.log = (line) => lines.push(line);
+	try {
+		reportFailure('submission_failed', { conversationId: 'guest-user:nonce', submissionId: '5', model: 'synthetic/model', providerStatus: 429 });
+		reportFailure('submission_recovery', { conversationId: 'guest-user:nonce' });
+		reportFailure('request_failed');
+		reportFailure('probe_failed', { providerStatus: null });
+		logTurn({ conversationId: 'guest-user:nonce', submissionId: '5', latencyMs: 90, status: 'failed', providerStatus: 429 });
+	} finally { console.error = error; console.log = log; }
+	const [failed, recovery, request, probe] = errors.map((line) => JSON.parse(line));
+	const turn = JSON.parse(lines[0]);
+	assert.deepEqual(failed, { event: 'socratink_failure', category: 'submission_failed', session: turn.session,
+		submission: '5', model: 'synthetic/model', providerStatus: 429 }, 'a failure line joins its turn line by session and submission');
+	assert.deepEqual(recovery, { event: 'socratink_failure', category: 'submission_recovery', session: turn.session });
+	assert.deepEqual(request, { event: 'socratink_failure', category: 'request_failed' });
+	assert.deepEqual(probe, { event: 'socratink_failure', category: 'probe_failed', providerStatus: null });
+	assert.equal(errors.join('').includes('guest-user'), false);
+});
 
 test('a turn log line names route, hashed session, model, latency and status, never the conversation id', async () => {
 	const { logTurn } = await import('../src/server/logging.ts');

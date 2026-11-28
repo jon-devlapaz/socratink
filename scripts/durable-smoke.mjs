@@ -112,8 +112,12 @@ try {
 	assert.deepEqual(fixture.errors, []);
 	const failureRecords = apps.logs.join('').split('\n').filter((line) => line.includes('socratink_failure'))
 		.map((line) => JSON.parse(line.slice(line.indexOf('{'))));
-	assert.deepEqual(failureRecords, [{ event: 'socratink_failure', category: 'submission_recovery' }],
-		'the induced process death produces one payload-free recovery signal; ordinary success and cancellation produce none');
+	assert.deepEqual(failureRecords.map((record) => record.category), ['submission_recovery'],
+		'the induced process death produces one recovery signal; ordinary success and cancellation produce none');
+	for (const { event, category, session, ...rest } of failureRecords) {
+		assert.match(session, /^[0-9a-f]{12}$/, 'a recovery signal names only a hashed session');
+		assert.deepEqual(Object.keys(rest).filter((key) => key !== 'submission'), [], 'a recovery signal carries no other payload');
+	}
 	report.failureRecords = failureRecords;
 	report.ok = true;
 } catch (error) {

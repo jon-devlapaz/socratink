@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { Harness, LiveDoc, ROOT_CONVERSATION_ID, type Conversation, type Cursor, type SubmissionId } from '@earendil-works/pi-durable';
-import { inputKind, type Engine, type EngineOptions, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
+import { inputKind, type Engine, type EngineOptions, type FailureDetail, type InputData, type ModelSelection, type Snapshot, type TurnRecord } from './contract.ts';
 import { resolveCardHelp } from './card-hint.ts';
 import { productRegistry } from './extension.ts';
 import { feedbackExtension } from './feedback-extension.ts';
@@ -22,8 +22,8 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 	const opening = new Map<string, Promise<Owner | undefined>>();
 	const retryAfter = new Map<string, ReturnType<typeof setTimeout>>();
 	let closed = false;
-	function report(category: 'submission_failed' | 'submission_recovery') {
-		bestEffort(() => options.report?.(category));
+	function report(category: 'submission_failed' | 'submission_recovery', detail: FailureDetail) {
+		bestEffort(() => options.report?.(category, detail));
 	}
 	async function snapshot(id: string): Promise<Snapshot> {
 		const reader = await manager.read(id);
@@ -49,7 +49,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 			const storage = await manager.acquire(id);
 			if (!storage) return undefined;
 			try {
-				const owner = await openOwner(id, storage, options, () => report('submission_recovery'));
+				const owner = await openOwner(id, storage, options, () => report('submission_recovery', { conversationId: id }));
 				active.set(id, owner);
 				return owner;
 			} catch (error) { await storage.close(context); throw error; }
@@ -62,9 +62,14 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		let cancellation: Promise<void> | undefined;
 		let cancelled = false;
 		let failed = false;
-		const reportFailed = () => { if (!failed && !owner.interrupted) { failed = true; report('submission_failed'); } };
 		const started = Date.now();
 		let ended: Pick<TurnRecord, 'status' | 'model' | 'providerStatus'> = { status: 'unsettled' };
+		const reportFailed = () => {
+			if (failed || owner.interrupted) return;
+			failed = true;
+			report('submission_failed', { conversationId: id, submissionId: String(submissionId),
+				model: ended.model ?? owner.modelId(), providerStatus: ended.providerStatus });
+		};
 		const checkCancellation = () => {
 			if (cancellation || cancelled || owner.interrupted) return;
 			cancellation = (async () => {
@@ -87,12 +92,12 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 					const reply = turn.messages.findLast((m) => m.role === 'assistant' && m.submissionId === submission?.id);
 					ended = { status: submission?.outcome ?? 'unsettled', model: reply?.metadata?.socratink?.routedModel ?? owner.modelId() };
 					if (submission?.outcome === 'failed') {
-						reportFailed();
 						const recent = await owner.storage.scanEntries({ conversationId: ROOT_CONVERSATION_ID, order: 'descending' }, 20, undefined, context);
 						const reply = recent.items.flatMap((entry) => [...(entry.model ?? [])].reverse())
 							.find((message) => message.role === 'assistant' && message.stopReason === 'error');
 						const status = reply?.role === 'assistant' ? providerHttpStatus(reply.errorMessage) : undefined;
 						if (status) ended.providerStatus = status;
+						reportFailed();
 					}
 				}
 			} catch { ended = { status: 'error' }; reportFailed(); }
@@ -117,7 +122,7 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 		try {
 			const pending = (await readSnapshot(owner.storage)).submissions.find((entry) => !entry.outcome);
 			if (!pending) { await owner.stop(); active.delete(id); return; }
-			report('submission_recovery');
+			report('submission_recovery', { conversationId: id, submissionId: pending.id });
 			run(id, owner, Number(pending.id) as SubmissionId);
 		} catch (error) { await owner.stop(); active.delete(id); throw error; }
 	}
@@ -129,7 +134,8 @@ export async function openEngine(options: EngineOptions): Promise<Engine> {
 				const state = await readSnapshot(owner.storage);
 				const pending = state.submissions.find((entry) => !entry.outcome);
 				if (pending) {
-					report('submission_recovery'); run(id, owner, Number(pending.id) as SubmissionId);
+					report('submission_recovery', { conversationId: id, submissionId: pending.id });
+					run(id, owner, Number(pending.id) as SubmissionId);
 					throw new DurableBusyError();
 				}
 				const requestId = randomUUID();

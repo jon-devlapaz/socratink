@@ -32,11 +32,13 @@ export type TurnRecord = {
 	status: Outcome | 'interrupted' | 'error' | 'unsettled';
 	providerStatus?: number;
 };
+/** What a failure log may name: never learner text or the raw conversation id. */
+export type FailureDetail = { conversationId: string; submissionId?: string; model?: string; providerStatus?: number };
 export type EngineOptions = {
 	target: DatabaseTarget;
 	resolveModel: (conversationId: string, selection?: ModelSelection) => Promise<ModelConfig>;
 	keepAlive?: (promise: Promise<void>) => void;
-	report?: (category: 'submission_failed' | 'submission_recovery') => void;
+	report?: (category: 'submission_failed' | 'submission_recovery', detail: FailureDetail) => void;
 	logTurn?: (turn: TurnRecord) => void;
 	executionMs?: number;
 };

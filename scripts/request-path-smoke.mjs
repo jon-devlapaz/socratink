@@ -231,7 +231,9 @@ try {
 	for (const line of failureLines) {
 		const record = JSON.parse(line);
 		assert.ok(['submission_failed', 'submission_recovery'].includes(record.category));
-		assert.deepEqual(record, { event: 'socratink_failure', category: record.category });
+		assert.deepEqual(Object.keys(record).filter((key) => !['event', 'category', 'session', 'submission', 'model', 'providerStatus'].includes(key)), [],
+			'a failure record names only its hashed session, submission, model and provider status');
+		assert.match(record.session, /^[0-9a-f]{12}$/);
 	}
 	for (const privateValue of [privatePrompt, ...Object.values(syntheticKeys), failureSession.userId,
 		alice.userId, bob.userId, failureSession.cookie]) {
