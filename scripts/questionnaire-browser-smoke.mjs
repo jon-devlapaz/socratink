@@ -388,7 +388,7 @@ async function verifySteeringDraft(browser, origin, session) {
 				await form.getByRole('radio', { name: /First/ }).click();
 				await form.getByLabel('Your reason').fill('My revision.');
 				await form.getByRole('button', { name: 'Continue', exact: true }).click();
-				await expect.poll(() => page.locator('#active-turn .you p').innerText()).toBe('Your choice: First\nYour reason: My revision.');
+				await expect.poll(() => page.locator('#active-turn .you p:not(.turn-action)').innerText()).toBe('Your choice: First\nYour reason: My revision.');
 				assert.deepEqual(sent.at(-1), { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: First, My revision.' });
 			}
 		} finally {
