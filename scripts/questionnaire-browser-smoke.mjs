@@ -10,6 +10,7 @@ import { assertAccessible } from './browser-accessibility.mjs';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
+// the learner turn joins the choice and the reasoning into one sentence (#241);
 // a card offers no way to ask for help instead of guessing; the learner turn
 // shows the protocol header or the question instead of the learner's answer;
 // Tab or Shift+Tab reaches the composer that the card hides (#120).
@@ -82,6 +83,7 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
 				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
 				await reply.waitFor();
+				if (kind === 'required' && width !== 390) await page.screenshot({ path: `${out}/answered-${width}.png` });
 				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
 					: `${kind === 'multiple' ? 'First, Second' : 'Second'}, ${reasoning}`;
 				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
@@ -94,7 +96,10 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					await reply.waitFor();
 					assert.equal(await action.innerText(), help[kind].label);
 				} else {
-					assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+					// #241: the YOU line shows the choice and the reasoning as two labelled parts.
+					const shown = kind === 'skip' ? answer
+						: `${kind === 'multiple' ? 'Your choices: First, Second' : 'Your choice: Second'}\nYour reason: ${reasoning}`;
+					assert.equal(await page.locator('#active-turn .you p').innerText(), shown);
 				}
 				if (kind === 'hint') {
 					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
@@ -383,7 +388,7 @@ async function verifySteeringDraft(browser, origin, session) {
 				await form.getByRole('radio', { name: /First/ }).click();
 				await form.getByLabel('Your reason').fill('My revision.');
 				await form.getByRole('button', { name: 'Continue', exact: true }).click();
-				await page.getByText('First, My revision.', { exact: true }).waitFor();
+				await expect.poll(() => page.locator('#active-turn .you p').last().innerText()).toBe('Your choice: First\nYour reason: My revision.');
 				assert.deepEqual(sent.at(-1), { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: First, My revision.' });
 			}
 		} finally {

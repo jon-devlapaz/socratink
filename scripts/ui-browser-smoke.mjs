@@ -97,24 +97,24 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		page.on('request', (request) => {
 			if (new URL(request.url()).pathname.startsWith('/api/')) requests.push(request.method() + ' ' + request.url());
 		});
+		// #248: a starter ends with one space, swaps the opener already there,
+		// and leaves every starter on Home.
 		for (let index = 0; index < 3; index++) {
 			const button = choices.nth(index);
-			const label = await button.innerText();
+			const label = (await button.innerText()).replace(/…$/, '').trimEnd();
 			if (index === 0) await button.press('Enter');
 			else await button.click();
 			const value = await input.inputValue();
-			assert.equal(value, label.replace(/…$/, '').trimEnd() + ' ');
+			assert.equal(value, index < 2 ? `${label} ` : `${label} why ice floats.`);
 			assert.deepEqual(await input.evaluate((node) =>
 				[node === document.activeElement, node.selectionStart, node.selectionEnd]), [true, value.length, value.length]);
-			await starters.waitFor({ state: 'hidden' });
-			if (index < 2) {
-				await input.fill('');
-				await starters.waitFor();
-			}
+			await expect(starters).toBeVisible();
+			await expect(choices).toHaveCount(3);
+			if (index === 1) await page.keyboard.type('why ice floats.');
 		}
-		await page.keyboard.type('why ice floats.');
 		assert.deepEqual(requests, []);
 		const question = await input.inputValue();
+		assert.equal(question, 'I’m teaching why ice floats.');
 		await page.getByRole('button', { name: 'Send message', exact: true }).click();
 		await page.getByText('Fresh reply', { exact: true }).waitFor();
 		assert.deepEqual(fixture.sent, [question]);
@@ -122,6 +122,20 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		assert.equal(await starters.isVisible(), false);
 	});
 
+	for (const width of [375, 1280]) {
+		await check(`intro-starter-tapped-${width}`, async (page) => {
+			await page.setViewportSize({ width, height: 667 });
+			await page.goto(origin);
+			await page.locator('#message:enabled').waitFor();
+			await page.getByRole('button', { name: 'I want to understand…', exact: true }).click();
+			assert.equal(await page.locator('#message').inputValue(), 'I want to understand ');
+			await expect(page.getByRole('list', { name: 'Ways to start' }).getByRole('button')).toHaveCount(3);
+			await expect(page.getByRole('list', { name: 'Ways to start' })).toBeVisible();
+		});
+	}
+
+	// #248: the starters stay on Home through the learner's own draft, a reload,
+	// dictation, a blank submit, and the menu, until a lesson starts.
 	await check('intro-drafts-375', async (page, fixture) => {
 		await page.setViewportSize({ width: 375, height: 667 });
 		await page.goto(origin);
@@ -129,23 +143,30 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 		const starters = page.getByRole('list', { name: 'Ways to start' });
 		await starters.waitFor();
 		await input.pressSequentially('My own question');
-		await starters.waitFor({ state: 'hidden' });
+		await expect(starters).toBeVisible();
 		await page.reload();
 		await input.waitFor();
 		assert.equal(await input.inputValue(), 'My own question');
-		assert.equal(await starters.isVisible(), false);
-		await input.fill('');
-		await starters.waitFor();
+		await expect(starters).toBeVisible();
 
 		// Dictation writes the transcript and emits input without a keyboard event.
 		await input.evaluate((node) => {
 			node.value = 'Spoken question';
 			node.dispatchEvent(new Event('input', { bubbles: true }));
 		});
-		await starters.waitFor({ state: 'hidden' });
 		assert.equal(await input.inputValue(), 'Spoken question');
-		await input.fill('');
-		await starters.waitFor();
+		await expect(starters).toBeVisible();
+
+		await input.fill('   ');
+		await page.getByRole('button', { name: 'Send message', exact: true }).click();
+		await expect(starters).toBeVisible();
+		await page.getByRole('button', { name: 'I’m stuck on…', exact: true }).click();
+		assert.equal(await input.inputValue(), 'I’m stuck on ');
+
+		await page.locator('#menu-trigger').click();
+		await page.keyboard.press('Escape');
+		await expect(starters).toBeVisible();
+		await expect(starters.getByRole('button')).toHaveCount(3);
 		assert.deepEqual(fixture.sent, []);
 	});
 
