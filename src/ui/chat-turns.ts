@@ -112,13 +112,15 @@ function answerLines(text: string, answered?: QuestionnaireDefinition): CardAnsw
 }
 
 /** The sent answer joins the chosen labels and the learner's reasoning with ", ".
- * Show the choice and the reasoning as two labelled lines (#241). */
+ * Show the choice and the reasoning as two labelled lines (#241). A
+ * single-choice card has at most one label, so its reasoning may start with
+ * another label and stays as typed (#259). */
 function shownAnswer(answer: string, item?: QuestionnaireItem): string {
 	if (!item?.input) return answer;
 	const labels = item.choices.map((choice) => choice.label);
 	const chosen: string[] = [];
 	let reasoning = answer;
-	for (;;) {
+	while (item.multiple || !chosen.length) {
 		const label = labels
 			.filter((candidate) => !chosen.includes(candidate) && reasoning.startsWith(`${candidate}, `))
 			.sort((left, right) => right.length - left.length)[0];

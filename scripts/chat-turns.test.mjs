@@ -221,6 +221,31 @@ test('a card answer shows the choice and the reasoning as two labelled parts', (
 		`Your choices: ${distance.label}, ${tilt.label}\nYour reasoning: ${reasoning}`);
 });
 
+// Failure case (#259): on a single-choice card, reasoning that starts with
+// another choice's label and ", " shows as a second choice, and those words
+// drop out of the reasoning line.
+test('a single-choice answer shows one choice and the reasoning as typed', () => {
+	const card = questionnaireFromPresentQuestion({
+		prompt: 'What happens to the block in water?',
+		choices: ['It floats on the surface of the water', 'It sinks to the bottom of the tank'],
+		reasoning: true,
+	});
+	const [floats, sinks] = card.items[0].choices;
+	const reasoning = `${sinks.label}, that's what I'd expect for most solids.\nBut this one is wood.`;
+	const text = formatQuestionnaireAnswers(card, [{ name: 'item', values: [floats.value], freeform: reasoning }]);
+	const shown = `Your choice: ${floats.label}\nYour reasoning: ${reasoning}`;
+	assert.equal(displayedLearnerTurn(text, card).shownText, shown);
+	const saved = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{ role: 'assistant', parts: [{ type: 'data-questionnaire', data: card }] },
+			{ role: 'user', parts: [{ type: 'text', text }] },
+		],
+	});
+	assert.equal(saved.at(-1).shownText, shown, 'a reload shows the same single choice');
+	assert.equal(saved.at(-1).text, text, 'the sent text is unchanged');
+});
+
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {
 	const user = (id, text) => ({
 		id,
