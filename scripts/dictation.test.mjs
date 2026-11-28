@@ -355,6 +355,24 @@ test('trusted typing, paste, and composition edits preserve their value and inva
 	}
 });
 
+test('a starter change takes precedence over a late dictation result', () => {
+	const harness = setup();
+	const initial = 'I want to understand ';
+	const edited = 'I’m stuck on ';
+	const { controller, recognition } = startSession(harness, initial, initial.length);
+	try {
+		recognition.emit('start');
+		harness.input.value = edited;
+		harness.input.dispatchEvent(new Event('input', { bubbles: true }));
+		recognition.result([{ text: 'late speech', final: true }]);
+		assert.equal(harness.input.value, edited);
+		assert.equal(recognition.abortCalls, 1);
+	} finally {
+		controller.destroy();
+		harness.restore();
+	}
+});
+
 test('stopForReview blocks active submission until recognition ends', () => {
 	const harness = setup();
 	try {
