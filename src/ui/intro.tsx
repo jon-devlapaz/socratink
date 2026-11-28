@@ -2,6 +2,15 @@ import { Button } from '@/components/ui/button';
 
 const starters = ['I want to understand', 'I’m stuck on', 'I’m teaching'];
 
+/** The draft opened with `starter`: it replaces an opener the draft already has,
+ * or comes before the learner's own words, and ends with one space (#248). */
+export function withStarter(draft: string, starter: string): string {
+	const words = draft.trimStart();
+	const opener = starters.find((candidate) => words === candidate || words.startsWith(`${candidate} `));
+	const rest = opener === undefined ? words : words.slice(opener.length).trimStart();
+	return `${starter} ${rest}`;
+}
+
 export function Intro() {
 	return (
 		<section className="intro" aria-labelledby="intro-title">

@@ -10,6 +10,7 @@ import {
 	type CardHelpAction,
 	type QuestionnaireDefinition,
 	type QuestionnaireHelp,
+	type QuestionnaireItem,
 } from '../questionnaire.ts';
 import { steeringPrefix } from '../config/chat-message.ts';
 import { formatSteeringMessage, steeringSaidText } from './steering.ts';
@@ -64,12 +65,12 @@ export function displayedAssistantTurn(input: {
 export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefinition, cardHelp?: CardHelpAction): DisplayedTurn {
 	if (cardHelp) return { role: 'You', text, cardHelp, shownText: cardHelpText[cardHelp.kind] };
 	if (text.startsWith(questionnaireAnswerPrefix)) {
-		const lines = answered && answersByPrompt(text, answered) || answerLines(text, answered);
+		const answers = answered && answersByPrompt(text, answered) || answerLines(text, answered);
 		return {
 			role: 'You',
 			text,
 			learnerKind: 'questionnaire-reply',
-			shownText: lines.join('\n'),
+			shownText: answers.map(({ answer, item }) => shownAnswer(answer, item)).join('\n'),
 		};
 	}
 	if (text.startsWith(steeringPrefix)) {
@@ -83,10 +84,12 @@ export function displayedLearnerTurn(text: string, answered?: QuestionnaireDefin
 	return { role: 'You', text };
 }
 
+type CardAnswer = { answer: string; item?: QuestionnaireItem };
+
 /** Each card answer, read against the card's full prompts so a prompt with line breaks stays whole. */
-function answersByPrompt(text: string, answered: QuestionnaireDefinition): string[] | undefined {
+function answersByPrompt(text: string, answered: QuestionnaireDefinition): CardAnswer[] | undefined {
 	let rest = text.slice(questionnaireAnswerPrefix.length);
-	const answers: string[] = [];
+	const answers: CardAnswer[] = [];
 	for (const [index, item] of answered.items.entries()) {
 		const head = `\n- ${item.prompt}: `;
 		if (!rest.startsWith(head)) return undefined;
@@ -94,18 +97,37 @@ function answersByPrompt(text: string, answered: QuestionnaireDefinition): strin
 		const next = answered.items[index + 1];
 		const end = next ? rest.indexOf(`\n- ${next.prompt}: `) : rest.length;
 		if (end < 0) return undefined;
-		answers.push(rest.slice(0, end));
+		answers.push({ answer: rest.slice(0, end), item });
 		rest = rest.slice(end);
 	}
 	return rest ? undefined : answers;
 }
 
-function answerLines(text: string, answered?: QuestionnaireDefinition): string[] {
+function answerLines(text: string, answered?: QuestionnaireDefinition): CardAnswer[] {
 	return text.slice(questionnaireAnswerPrefix.length).trim().split('\n').map((line) => {
 		const answer = line.replace(/^- /, '');
-		const prompt = answered?.items.find((item) => answer.startsWith(`${item.prompt}: `))?.prompt;
-		return prompt === undefined ? answer : answer.slice(prompt.length + 2);
+		const item = answered?.items.find((candidate) => answer.startsWith(`${candidate.prompt}: `));
+		return item === undefined ? { answer } : { answer: answer.slice(item.prompt.length + 2), item };
 	});
+}
+
+/** The sent answer joins the chosen labels and the learner's reasoning with ", ".
+ * Show the choice and the reasoning as two labelled lines (#241). */
+function shownAnswer(answer: string, item?: QuestionnaireItem): string {
+	if (!item?.input) return answer;
+	const labels = item.choices.map((choice) => choice.label);
+	const chosen: string[] = [];
+	let reasoning = answer;
+	for (;;) {
+		const label = labels
+			.filter((candidate) => !chosen.includes(candidate) && reasoning.startsWith(`${candidate}, `))
+			.sort((left, right) => right.length - left.length)[0];
+		if (label === undefined) break;
+		chosen.push(label);
+		reasoning = reasoning.slice(label.length + 2);
+	}
+	if (!chosen.length || labels.includes(reasoning) && !chosen.includes(reasoning)) return answer;
+	return `${chosen.length > 1 ? 'Your choices' : 'Your choice'}: ${chosen.join(', ')}\n${item.input.label}: ${reasoning}`;
 }
 
 export function displayLabel(role: ChatMessageRole): string {

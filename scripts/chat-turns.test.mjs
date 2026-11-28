@@ -11,7 +11,7 @@ import {
 } from '../src/ui/chat-turns.ts';
 import { learnerVisibleText } from '../src/learning/learner-text.ts';
 import { formatSteeringMessage } from '../src/ui/steering.ts';
-import { formatQuestionnaireAnswers } from '../src/questionnaire.ts';
+import { formatQuestionnaireAnswers, questionnaireFromPresentQuestion } from '../src/questionnaire.ts';
 
 const questionnaire = {
 	kind: 'question',
@@ -183,6 +183,42 @@ test('history pairs a card answer with the card it answers', () => {
 		],
 	});
 	assert.equal(turns.at(-1).shownText, 'Asked for a hint.');
+});
+
+// Failure case (#241): the YOU line joins the chosen answer and the reasoning
+// with ", " into one run-on sentence; or the fix drops either part from the
+// saved turn the tutor receives.
+test('a card answer shows the choice and the reasoning as two labelled parts', () => {
+	const card = questionnaireFromPresentQuestion({
+		prompt: 'Why do seasons change?',
+		choices: ['Earth\'s rotational axis is tilted relative to its orbital plane, changing sunlight angle and day length', 'Earth moves closer to the Sun'],
+		reasoning: true,
+	});
+	const [tilt, distance] = card.items[0].choices;
+	const reasoning = 'The tilt changes the angle of sunlight and day length through the year, so seasons change.';
+	const text = formatQuestionnaireAnswers(card, [{ name: 'item', values: [tilt.value], freeform: reasoning }]);
+	assert.equal(text, `Questionnaire answers:\n- Why do seasons change?: ${tilt.label}, ${reasoning}`, 'the tutor still receives both parts');
+	const shown = `Your choice: ${tilt.label}\nYour reasoning: ${reasoning}`;
+	assert.deepEqual(displayedLearnerTurn(text, card), { role: 'You', text, learnerKind: 'questionnaire-reply', shownText: shown });
+	const saved = visibleTurnsFromHistory({
+		settlements: [],
+		messages: [
+			{ role: 'assistant', parts: [{ type: 'data-questionnaire', data: card }] },
+			{ role: 'user', parts: [{ type: 'text', text }] },
+		],
+	});
+	assert.equal(saved.at(-1).shownText, shown, 'a reload shows the same two parts');
+	assert.equal(saved.at(-1).text, text);
+	const choiceOnly = formatQuestionnaireAnswers(card, [{ name: 'item', values: [distance.value] }]);
+	assert.equal(displayedLearnerTurn(choiceOnly, card).shownText, distance.label);
+	const reasoningOnly = formatQuestionnaireAnswers(card, [{ name: 'item', values: [], freeform: reasoning }]);
+	assert.equal(displayedLearnerTurn(reasoningOnly, card).shownText, reasoning);
+	const multiple = { ...card, items: [{ ...card.items[0], multiple: true }] };
+	const both = formatQuestionnaireAnswers(multiple, [{ name: 'item', values: [distance.value, tilt.value] }]);
+	assert.equal(displayedLearnerTurn(both, multiple).shownText, `${distance.label}, ${tilt.label}`);
+	const bothWithReason = formatQuestionnaireAnswers(multiple, [{ name: 'item', values: [distance.value, tilt.value], freeform: reasoning }]);
+	assert.equal(displayedLearnerTurn(bothWithReason, multiple).shownText,
+		`Your choices: ${distance.label}, ${tilt.label}\nYour reasoning: ${reasoning}`);
 });
 
 test('dedupes only an adjacent failed or aborted learner retry with the same text', () => {
