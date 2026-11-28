@@ -82,8 +82,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 				else await form.getByRole('button', { name: 'Continue', exact: true }).click();
 				const reply = page.getByText(kind === 'hint' ? hintClue : 'Recorded reply', { exact: true });
 				await reply.waitFor();
-				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.'
-					: `${kind === 'multiple' ? 'First, Second' : 'Second'}, ${reasoning}`;
+				const choice = kind === 'multiple' ? 'First, Second' : 'Second';
+				const answer = kind in help ? help[kind].answer : kind === 'skip' ? 'Skipped.' : `${choice}, ${reasoning}`;
 				const expected = { kind: 'user', body: `Questionnaire answers:\n- Saved question?: ${answer}` };
 				if (kind in help) {
 					expected.cardHelp = { kind, sourceId: 'original-card' };
@@ -94,7 +94,8 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					await reply.waitFor();
 					assert.equal(await action.innerText(), help[kind].label);
 				} else {
-					assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+					assert.deepEqual(await page.locator('#active-turn .you > p').allInnerTexts(),
+						kind === 'skip' ? [answer] : [`Choice: ${choice}`, `Reasoning: ${reasoning}`]);
 				}
 				if (kind === 'hint') {
 					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
@@ -383,7 +384,7 @@ async function verifySteeringDraft(browser, origin, session) {
 				await form.getByRole('radio', { name: /First/ }).click();
 				await form.getByLabel('Your reason').fill('My revision.');
 				await form.getByRole('button', { name: 'Continue', exact: true }).click();
-				await page.getByText('First, My revision.', { exact: true }).waitFor();
+				await expect(page.locator('#active-turn .you > p')).toHaveText(['Choice: First', 'Reasoning: My revision.']);
 				assert.deepEqual(sent.at(-1), { kind: 'user', body: 'Questionnaire answers:\n- Saved question?: First, My revision.' });
 			}
 		} finally {

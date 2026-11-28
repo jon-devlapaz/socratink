@@ -5,9 +5,11 @@ import { assistantTurnHasVisibleContent } from './assistant-text.ts';
 import { learnerVisibleText } from '../learning/learner-text.ts';
 import {
 	questionnaireAnswerPrefix,
+	questionnaireChoiceLabels,
 	questionnaireFromParts,
 	sameQuestion,
 	type CardHelpAction,
+	type QuestionnaireAnswer,
 	type QuestionnaireDefinition,
 	type QuestionnaireHelp,
 } from '../questionnaire.ts';
@@ -17,6 +19,7 @@ import { toolsFromParts, visibleCardTools, type DisplayedToolCall } from './tool
 
 export type ChatMessageRole = 'You' | 'Assistant' | 'Error';
 type LearnerTurnKind = 'chat' | 'questionnaire-reply' | 'steering';
+export type SubmittedAnswerParts = { choice: string; reasoning: string };
 
 const cardHelpText: Record<QuestionnaireHelp, string> = {
 	hint: 'You asked for a hint',
@@ -31,11 +34,21 @@ export type DisplayedTurn = {
 	cardHelp?: CardHelpAction;
 	/** What a learner turn shows when its sent text is a message for the tutor. */
 	shownText?: string;
+	answerParts?: SubmittedAnswerParts;
 	questionnaire?: QuestionnaireDefinition;
 	submissionId?: string;
 	modelRoute?: string;
 	tools?: DisplayedToolCall[];
 };
+
+export function submittedAnswerParts(
+	definition: QuestionnaireDefinition,
+	answer: QuestionnaireAnswer | undefined,
+): SubmittedAnswerParts | undefined {
+	const item = definition.items[0];
+	if (!item || answer?.name !== item.name || answer.help || answer.skipped || !answer.values.length || !answer.freeform) return;
+	return { choice: questionnaireChoiceLabels(item, answer.values).join(', '), reasoning: answer.freeform };
+}
 
 export function displayedAssistantTurn(input: {
 	text: string;

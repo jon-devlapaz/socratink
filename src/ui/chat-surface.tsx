@@ -29,8 +29,10 @@ import {
 	displayedLearnerTurn,
 	groupEarlierSteps,
 	splitCurrentTurns,
+	submittedAnswerParts,
 	visibleTurnsFromHistory,
 	type DisplayedTurn,
+	type SubmittedAnswerParts,
 } from './chat-turns.ts';
 import { modelRouteLabel } from '../config/model-route.ts';
 import {
@@ -57,7 +59,7 @@ import {
 type PaintKind = 'restore' | 'new-turn' | 'hold';
 type SendSource =
 	| { kind: 'composer' | 'steering' }
-	| { kind: 'card'; cardHelp?: CardHelpAction }
+	| { kind: 'card'; cardHelp?: CardHelpAction; answerParts?: SubmittedAnswerParts }
 	| { kind: 'retry'; attempt: Extract<ChatRequestState, { kind: 'terminal' }> };
 
 export type TranscriptContent = { history: ReactNode; active: ReactNode; questionActive: boolean };
@@ -230,7 +232,9 @@ export function mountChatSurface(options: Readonly<{
 						if (!item.questionnaire) return;
 						const kind = answers[0]?.help;
 						const cardHelp = kind && item.submissionId ? { kind, sourceId: item.submissionId } : undefined;
-						void sendMessage(formatQuestionnaireAnswers(item.questionnaire, answers), { kind: 'card', cardHelp });
+						void sendMessage(formatQuestionnaireAnswers(item.questionnaire, answers), {
+							kind: 'card', cardHelp, answerParts: submittedAnswerParts(item.questionnaire, answers[0]),
+						});
 					}}
 					onSteer={(kind) => void sendMessage(formatSteeringMessage(kind), { kind: 'steering' })}
 				/>;
@@ -315,9 +319,12 @@ export function mountChatSurface(options: Readonly<{
 		const previous = turns.at(-1);
 		const replacesAttempt = retryOf && previous?.role === 'You' && previous.text === retryOf.text;
 		const before = replacesAttempt ? turns.slice(0, -1) : turns;
-		const cardHelp = source.kind === 'card' ? source.cardHelp
-			: replacesAttempt && previous.text === text ? previous.cardHelp : undefined;
-		const learnerTurn = displayedLearnerTurn(text, before.at(-1)?.questionnaire, cardHelp);
+		const card = source.kind === 'card' ? source : undefined;
+		const learnerTurn = replacesAttempt && previous.text === text ? previous : {
+			...displayedLearnerTurn(text, before.at(-1)?.questionnaire, card?.cardHelp),
+			...(card?.answerParts && { answerParts: card.answerParts }),
+		};
+		const { cardHelp } = learnerTurn;
 		liveReply = createLiveReply(text, cardHelp?.kind);
 		const result = requests.start(text, {
 			cardHelp,

@@ -4,7 +4,7 @@ import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text';
 import type { QuestionnaireAnswer } from '../questionnaire.ts';
 import { compactMarkdownText } from './chat-markdown-parse.ts';
 import { Markdown } from './chat-markdown.tsx';
-import { displayLabel, type DisplayedTurn } from './chat-turns.ts';
+import { displayLabel, type DisplayedTurn, type SubmittedAnswerParts } from './chat-turns.ts';
 import type { LiveReplyView } from './live-reply.ts';
 import type { AnswerFields, QuestionDraft } from './client/chat-draft.ts';
 import { Questionnaire } from './questionnaire.tsx';
@@ -35,10 +35,10 @@ export function HistoryStep({ step, index, previousReply, drafts }: HistoryStepP
 				const showQuestion = question && !(turnIndex === 1 && question === hintedQuestion);
 				const showBody = body && (reveal || body !== question);
 				const draft = item.submissionId ? drafts?.get(item.submissionId) : undefined;
-				if (!showBody && !showQuestion && !draft) return null;
+				if (!item.answerParts && !showBody && !showQuestion && !draft) return null;
 				return <div key={turnIndex} className={`history-turn ${item.role.toLowerCase()}${item.cardHelp ? ' turn-action' : ''}`}>
 					{!reveal && <span className="sr-only">{displayLabel(item.role)}</span>}
-					{showBody && <p className={reveal ? 'reveal-copy' : undefined}>
+					{item.answerParts ? <CardAnswer {...item.answerParts} /> : showBody && <p className={reveal ? 'reveal-copy' : undefined}>
 						{reveal && <RevealMark reveal={reveal} />}{body}
 					</p>}
 					{showQuestion && <p className="history-question">{question}</p>}
@@ -59,6 +59,13 @@ function historyBodyText(item: DisplayedTurn): string {
 	const compact = compactMarkdownText(item.shownText ?? item.text);
 	if (compact || item.questionnaire) return compact;
 	return item.tools?.map(call => call.name).join(', ') ?? '';
+}
+
+function CardAnswer({ choice, reasoning }: SubmittedAnswerParts) {
+	return <>
+		<p><strong>Choice:</strong> {choice}</p>
+		<p><strong>Reasoning:</strong> {reasoning}</p>
+	</>;
 }
 
 type ActiveTurnProps = {
@@ -90,7 +97,8 @@ export function ActiveTurn({ item, announce, stagger, interactive, steering, que
 		</div>}
 		{role === 'Assistant'
 			? <Markdown text={text.trim() || !asked ? text : asked} reveal={reveal} />
-			: <p hidden={!shown} className={item.cardHelp ? 'turn-action' : undefined}>{shown}</p>}
+			: item.answerParts ? <CardAnswer {...item.answerParts} />
+				: <p hidden={!shown} className={item.cardHelp ? 'turn-action' : undefined}>{shown}</p>}
 		{item.tools && <ToolList calls={item.tools} />}
 		{activeCard ? <Questionnaire key={item.submissionId} definition={activeCard} draft={questionDraft}
 			canAskForHelp={Boolean(item.submissionId)} onSubmit={onQuestionnaireSubmit} moreOptions={actions} /> : actions}

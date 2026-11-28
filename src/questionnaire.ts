@@ -188,6 +188,10 @@ export function isQuestionnaireTool(name: string): boolean {
 	return name === questionnaireToolName;
 }
 
+export function questionnaireChoiceLabels(item: QuestionnaireItem, values: readonly string[]): string[] {
+	return values.map((value) => item.choices.find((choice) => choice.value === value)?.label ?? value);
+}
+
 export function formatQuestionnaireAnswers(
 	definition: QuestionnaireDefinition,
 	answers: QuestionnaireAnswer[],
@@ -197,9 +201,7 @@ export function formatQuestionnaireAnswers(
 		const answer = byName.get(item.name);
 		if (answer?.help) return `- ${item.prompt}: ${questionnaireHelpText[answer.help]}`;
 		if (!answer || answer.skipped) return `- ${item.prompt}: Skipped.`;
-		const labels = answer.values.map(
-			(value) => item.choices.find((choice) => choice.value === value)?.label ?? value,
-		);
+		const labels = questionnaireChoiceLabels(item, answer.values);
 		if (answer.freeform) labels.push(answer.freeform);
 		return `- ${item.prompt}: ${labels.join(', ')}`;
 	});
