@@ -348,8 +348,8 @@ export function mountDictation(options: Readonly<{
 		else if (state === 'idle' || state === 'error') start();
 	}
 
-	function onInput(event: Event) {
-		if (programmaticInput || !event.isTrusted || !session) return;
+	function onInput() {
+		if (programmaticInput || !session) return;
 		cancelSession(session, 'Dictation stopped.');
 	}
 

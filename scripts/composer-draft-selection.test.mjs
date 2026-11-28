@@ -28,3 +28,20 @@ for (const [name, engine] of Object.entries(engines)) {
 		});
 	}
 }
+
+test('a late dictation result preserves the selected starter and the learner’s words', async t => {
+	const harness = await composerHarness(engines.webkit);
+	t.after(() => harness.close());
+	const { page, submissions } = await harness.page(t, phones[1]);
+	const input = page.locator('#message');
+	await input.fill('My own question');
+	await page.getByRole('button', { name: 'I want to understand…', exact: true }).tap();
+	await expect(input).toHaveValue('I want to understand My own question');
+	await page.getByRole('button', { name: 'Start dictation' }).tap();
+	await expect(page.locator('#dictation-toggle')).toHaveAttribute('data-state', 'listening');
+	await page.getByRole('button', { name: 'I’m stuck on…', exact: true }).tap();
+	await expect(input).toHaveValue('I’m stuck on My own question');
+	await page.evaluate(() => window.finishSpeech('late speech'));
+	await expect(input).toHaveValue('I’m stuck on My own question');
+	assert.equal(submissions.length, 0);
+});
