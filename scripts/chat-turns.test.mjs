@@ -6,6 +6,7 @@ import {
 	displayedLearnerTurn,
 	groupEarlierSteps,
 	questionsWithDrafts,
+	keepsQuestionDraft,
 	splitCurrentTurns,
 	visibleTurnsFromHistory,
 } from '../src/ui/chat-turns.ts';
@@ -172,6 +173,19 @@ test('only explicit Hint and Try on my own keep a draft attached to the same que
 	}
 	assert.deepEqual(questionsWithDrafts([previous, unaided, textReply]), { current: undefined, earlier: new Set(['original']) });
 	assert.deepEqual(questionsWithDrafts([previous, smaller, textReply]), { current: undefined, earlier: new Set() });
+});
+
+// #268: I don't know dropped the unsent pick and reasoning even when the same card came back.
+test('I don\'t know keeps the draft only when the same card comes back', () => {
+	const reply = (submissionId, question = questionnaire) => displayedAssistantTurn({ text: '', submissionId, questionnaire: question });
+	const unknown = displayedLearnerTurn('Help', questionnaire, { kind: 'unknown', sourceId: 'original' });
+	assert.equal(keepsQuestionDraft(unknown), true);
+	const restored = reply('restored', { ...questionnaire, items: [{ ...questionnaire.items[0], description: 'Try Hint again.' }] });
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, restored]), { current: 'original', earlier: new Set() });
+	const consent = reply('consent', { ...questionnaire, kind: 'reveal-consent' });
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, consent]), { current: 'consent', earlier: new Set() });
+	const other = reply('other', { ...questionnaire, items: [{ ...questionnaire.items[0], prompt: 'Which one is lighter?' }] });
+	assert.deepEqual(questionsWithDrafts([reply('original'), unknown, other]), { current: 'other', earlier: new Set() });
 });
 
 test('history pairs a card answer with the card it answers', () => {

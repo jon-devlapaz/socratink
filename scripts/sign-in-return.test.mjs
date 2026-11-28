@@ -9,6 +9,7 @@ let origin;
 const reason = 'Sign in to keep your conversations across devices.';
 const guestLabel = 'Keep going as a guest';
 const savedText = 'Why does 2 + 2 equal 4?';
+const unsentText = 'Is it because two pairs make four?';
 
 before(async () => {
 	server = await createServer({
@@ -86,6 +87,7 @@ for (const width of [390, 1280]) {
 		assert.equal(id, state.conversationId);
 		const cookies = await context.cookies();
 		assert.equal(cookies.find(cookie => cookie.name === 'socratink-session')?.value, 'synthetic-guest');
+		await page.locator('#message').fill(unsentText);
 		await page.locator('#menu-trigger').click();
 		await page.getByRole('link', { name: 'Sign in', exact: true }).click();
 		await expect(page).toHaveURL(`${origin}/login.html`);
@@ -100,11 +102,30 @@ for (const width of [390, 1280]) {
 		await expect(page).toHaveURL(`${origin}/`);
 		await expect(page.locator('#message')).toBeEnabled();
 		await expect(page.getByText(savedText, { exact: true })).toBeVisible();
+		await expect(page.locator('#message')).toHaveValue(unsentText);
 		assert.equal(await page.evaluate(() => localStorage.getItem('socratink-chat-conversation-id')), id);
 		assert.deepEqual(state.reads, [id, id]);
 		assert.deepEqual(await context.cookies(), cookies);
 	});
 }
+
+test('a completed sign-in returns the unsent message once', async t => {
+	const { page } = await fixture(t);
+	await page.route(`${origin}/api/auth/google/login`, route => route.fulfill({ status: 302, headers: { location: '/' } }));
+	await page.goto(origin);
+	await expect(page.locator('#message')).toBeEnabled();
+	await page.locator('#message').fill(unsentText);
+	await page.locator('#menu-trigger').click();
+	await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+	await page.getByRole('button', { name: 'Continue with Google', exact: true }).click();
+	await expect(page).toHaveURL(`${origin}/`);
+	await expect(page.locator('#message')).toBeEnabled();
+	await expect(page.locator('#message')).toHaveValue(unsentText);
+	// A later visit that is not a return from sign-in keeps the existing new-page rule.
+	await page.goto(origin);
+	await expect(page.locator('#message')).toBeEnabled();
+	await expect(page.locator('#message')).toHaveValue('');
+});
 
 test('sign-in controls fit phone and desktop with enlarged text in both themes', async t => {
 	for (const width of [390, 1280]) {
