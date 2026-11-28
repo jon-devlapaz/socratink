@@ -4,11 +4,13 @@ import { guestTurnLimit } from '../config/guest-turns.ts';
 import type { AuthProviders } from './session.ts';
 import { keepDraftsForSignIn } from './client/chat-draft.ts';
 
-export function AuthGateCard({ providers }: { providers: AuthProviders }) {
+export function AuthGateCard({ providers, answerNotSent = false }: { providers: AuthProviders; answerNotSent?: boolean }) {
 	return (
 		<Card className="chat-gate-card gap-0 rounded-none border-x-0 shadow-none" role="status" aria-live="polite">
 			<p className="chat-gate-message">
-				You’ve had {guestTurnLimit} turns. Sign in to save your conversation and keep learning.
+				{answerNotSent
+					? `You’ve had ${guestTurnLimit} turns, so your last answer wasn’t sent. Sign in to save your conversation and try it again.`
+					: `You’ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`}
 			</p>
 			<div className="chat-gate-actions">
 				{providers.google && <Button asChild variant="outline" className="chat-gate-btn chat-gate-google">

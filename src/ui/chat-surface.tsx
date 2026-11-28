@@ -125,6 +125,9 @@ export function mountChatSurface(options: Readonly<{
 	let status: ReactNode = null;
 	let questionActive = false;
 	let paintVersion = 0;
+	// A card or steering send is wire text the learner never typed, so it never
+	// goes back in the composer (#269). A retry keeps its first send's source.
+	let lastSendTyped = false;
 
 	function renderTranscript() {
 		const pending = requestState.kind === 'waiting' || requestState.kind === 'canceling';
@@ -158,7 +161,7 @@ export function mountChatSurface(options: Readonly<{
 	) {
 		if (isGuestTurnLimitError(state)) {
 			const providers = await gateProviders();
-			if (providers.google || providers.github) return <AuthGateCard providers={providers} />;
+			if (providers.google || providers.github) return <AuthGateCard providers={providers} answerNotSent={!lastSendTyped} />;
 		}
 		return <RequestStateTurn state={state} onAction={() => {
 			if (state.kind === 'recovery') {
@@ -315,6 +318,7 @@ export function mountChatSurface(options: Readonly<{
 	async function sendMessage(text: string, source: SendSource) {
 		const retryOf = source.kind === 'retry' ? source.attempt : undefined;
 		if (!retryOf && chatRequestControls(requests.state).composerLocked) return;
+		if (!retryOf) lastSendTyped = source.kind === 'composer';
 		liveTools.length = 0;
 		quietToolIds.clear();
 		liveTextShown = false;
@@ -390,7 +394,7 @@ export function mountChatSurface(options: Readonly<{
 			return;
 		}
 		if (state.kind === 'terminal' && isGuestTurnLimitError(state)) {
-			if (!input.value) input.value = state.text;
+			if (lastSendTyped && !input.value) input.value = state.text;
 			const last = turns.at(-1);
 			if (last?.role === 'You' && last.text === state.text) turns = turns.slice(0, -1);
 		}
