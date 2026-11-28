@@ -10,6 +10,7 @@ import { assertAccessible } from './browser-accessibility.mjs';
 
 // Failures: restored legacy fields disappear; validation or keyboard input
 // breaks; skip leaks an earlier selection; submitted text loses reasoning;
+// the learner turn joins the choice and the reasoning into one sentence (#241);
 // a card offers no way to ask for help instead of guessing; the learner turn
 // shows the protocol header or the question instead of the learner's answer;
 // Tab or Shift+Tab reaches the composer that the card hides (#120).
@@ -95,7 +96,10 @@ export async function verifyQuestionnaireBrowser({ browser, origin, session, out
 					await reply.waitFor();
 					assert.equal(await action.innerText(), help[kind].label);
 				} else {
-					assert.equal(await page.locator('#active-turn .you p').innerText(), answer);
+					// #241: the YOU line shows the choice and the reasoning as two labelled parts.
+					const shown = kind === 'skip' ? answer
+						: `${kind === 'multiple' ? 'Your choices: First, Second' : 'Your choice: Second'}\nYour reason: ${reasoning}`;
+					assert.equal(await page.locator('#active-turn .you p').innerText(), shown);
 				}
 				if (kind === 'hint') {
 					assert.equal(await page.locator('#active-turn .reveal-mark').innerText(), 'Hint from Socratink');
