@@ -48,7 +48,7 @@
 		"test:tool-card": "node --test scripts/tool-card.test.mjs",
 		"test:thinking": "node --test scripts/thinking.test.mjs",
 		"test:chat-markdown": "node --import tsx --test scripts/chat-markdown.test.mjs",
-		"test:composer": "node --test --test-concurrency=1 scripts/composer-tap-focus.test.mjs scripts/composer-draft-selection.test.mjs",
+		"test:composer": "node --test --test-concurrency=1 scripts/composer-tap-focus.test.mjs scripts/composer-draft-selection.test.mjs scripts/composer-long-draft.test.mjs",
 		"test:dictation": "node --test scripts/dictation.test.mjs",
 		"test:client-id": "node --test scripts/client-id.test.mjs",
 		"test:static-routing": "node --test scripts/static-routing.test.mjs scripts/health.test.mjs",

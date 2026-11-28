@@ -296,6 +296,15 @@ export function mountChatSurface(options: Readonly<{
 		document.documentElement.style.setProperty('--storage-notice-height', `${noticeHeight}px`);
 	}).observe(composerShell);
 
+	// The field's last lines fade under the send controls. While the caret is at
+	// the end, keep the line being typed above the fade (#194).
+	function keepEndInView() {
+		const end = input.value.length;
+		if (input.selectionStart === end && input.selectionEnd === end) input.scrollTop = input.scrollHeight;
+	}
+	input.addEventListener('input', keepEndInView);
+	input.addEventListener('keyup', keepEndInView);
+
 	input.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
 			event.preventDefault();
