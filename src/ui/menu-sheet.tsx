@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import type { mountSoundCues } from './sound-cues.ts';
 import { cycleTypeSize, initTypeSize } from './type-size.ts';
 import { initAppearance, toggleAppearance } from './theme.ts';
+import { keepDraftsForSignIn } from './client/chat-draft.ts';
 
 type Gesture = {
 	startY: number;
@@ -228,7 +229,8 @@ function MenuActions({
 					History
 				</Button>
 				<Button asChild variant="ghost">
-					<a id="auth-link" href={registered ? '/api/session/logout' : '/login.html'}>
+					<a id="auth-link" href={registered ? '/api/session/logout' : '/login.html'}
+						onClick={registered ? undefined : keepDraftsForSignIn}>
 						<svg viewBox="0 0 24 24" aria-hidden="true">
 							<path d="M10 7V5.5A1.5 1.5 0 0 1 11.5 4h7A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 10 18.5V17M4 12h10M7.5 8.5 4 12l3.5 3.5" />
 						</svg>

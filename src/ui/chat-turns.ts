@@ -215,8 +215,9 @@ function visibleText(message: WireSnapshot['messages'][number]): string {
 		.join('\n\n');
 }
 
+/** Hint and I don't know send no answer, so the unsent one waits for the card to come back. */
 export function keepsQuestionDraft(turn: DisplayedTurn) {
-	return turn.cardHelp?.kind === 'hint' || turn.learnerKind === 'steering' && turn.text === formatSteeringMessage('try-unaided');
+	return Boolean(turn.cardHelp) || turn.learnerKind === 'steering' && turn.text === formatSteeringMessage('try-unaided');
 }
 
 /** Only an explicit pacing change can leave an unsent draft beside an earlier question. */
@@ -229,7 +230,11 @@ export function questionsWithDrafts(turns: readonly DisplayedTurn[]) {
 		const previous = turns[index - 2];
 		if (original?.questionnaire && original.submissionId && previous?.submissionId && action && keepsQuestionDraft(action)) {
 			if (action.cardHelp) {
-				if (reply.questionnaire && reply.submissionId && action.cardHelp.sourceId === previous.submissionId) continue;
+				// I don't know can get a different card back, such as the full-answer choice (#268).
+				const returned = reply.questionnaire && (action.cardHelp.kind === 'hint'
+					|| (reply.questionnaire.kind === original.questionnaire.kind
+						&& reply.questionnaire.items[0]?.prompt === original.questionnaire.items[0]?.prompt));
+				if (returned && reply.submissionId && action.cardHelp.sourceId === previous.submissionId) continue;
 			} else {
 				if (reply.submissionId && sameQuestion(original.questionnaire, reply.questionnaire)) continue;
 				earlier.add(original.submissionId);
