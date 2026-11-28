@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { guestTurnLimit } from '../config/guest-turns.ts';
 import type { AuthProviders } from './session.ts';
+import { keepDraftsForSignIn } from './client/chat-draft.ts';
 
 export function AuthGateCard({ providers }: { providers: AuthProviders }) {
 	return (
@@ -11,10 +12,10 @@ export function AuthGateCard({ providers }: { providers: AuthProviders }) {
 			</p>
 			<div className="chat-gate-actions">
 				{providers.google && <Button asChild variant="outline" className="chat-gate-btn chat-gate-google">
-					<a href="/api/auth/google/login">Continue with Google</a>
+					<a href="/api/auth/google/login" onClick={keepDraftsForSignIn}>Continue with Google</a>
 				</Button>}
 				{providers.github && <Button asChild variant="outline" className="chat-gate-btn chat-gate-github">
-					<a href="/api/auth/github/login">Continue with GitHub</a>
+					<a href="/api/auth/github/login" onClick={keepDraftsForSignIn}>Continue with GitHub</a>
 				</Button>}
 			</div>
 		</Card>

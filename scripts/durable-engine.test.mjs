@@ -443,6 +443,38 @@ test('a hint after I don\'t know keeps the original card answerable', () => with
 	assert.equal(requests.at(-1).findLast((message) => message.role === 'user').content, answer);
 }));
 
+test('Try once more after I don\'t know brings back the original card (#268)', () => withPaymentCard(async ({
+	id, engine, reader, original, sourceId, askForHint, nextResponse, settled,
+}) => {
+	const client = cardClient(engine, id);
+	const item = original.items[0];
+	const help = formatQuestionnaireAnswers(original, [{ name: item.name, values: [], help: 'unknown' }]);
+	assert.equal((await client.send(help, { kind: 'unknown', sourceId })).status, 202);
+	finishTool(await nextResponse(), 'mark_reveal', { kind: 'full_answer', target: item.prompt });
+	finish(await nextResponse(), 'Retrying the same payment reuses the key.');
+	const consent = questionnaireFromReplyData((await settled()).messages.at(-1).data);
+	assert.equal(consent.kind, 'reveal-consent');
+
+	const tryAgain = formatQuestionnaireAnswers(consent, [{ name: consent.items[0].name, values: ['try-once-more'] }]);
+	assert.equal((await client.send(tryAgain)).status, 202);
+	finish(await nextResponse(), 'What would the customer expect from a retry?');
+	const restored = await settled();
+	const tried = restored.submissions.at(-1);
+	assert.equal(tried.outcome, 'completed');
+	const reply = restored.messages.at(-1);
+	assert.equal(reply.text, '', 'the card stands in for the tutor\'s question');
+	assert.deepEqual(questionnaireFromReplyData(reply.data), original);
+	const parts = (await cardClient(reader, id).history()).messages.at(-1).parts;
+	assert.deepEqual(parts.filter((part) => part.type === 'text' && part.text), []);
+	assert.deepEqual(parts.find((part) => part.type === 'data-questionnaire')?.data, original);
+
+	await askForHint(original, tried.id);
+	finish(await nextResponse(), paymentClue);
+	finishTool(await nextResponse(), 'mark_reveal', { kind: 'hint' });
+	const hinted = (await settled()).messages.at(-1);
+	assert.equal(questionnaireFromReplyData(hinted.data).items[0].prompt, item.prompt);
+}, helpCard));
+
 test('a reported Hint inside a typed sentence does not record a help request', () => withPaymentCard(async ({
 	engine, id, original, nextResponse, settled,
 }) => {

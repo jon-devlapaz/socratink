@@ -1,5 +1,30 @@
 import * as v from 'valibot';
 
+const signInReturnKey = 'socratink-sign-in-return';
+
+/** Leaving for sign-in keeps this tab's unsent work for the return to the chat (#270). */
+export function keepDraftsForSignIn() {
+	try {
+		sessionStorage.setItem(signInReturnKey, '1');
+	} catch {
+	}
+}
+
+let returnedToDrafts: boolean | undefined;
+// A reload, or the return from sign-in, is the same tab coming back. Read once per page.
+function returnsToDrafts() {
+	if (returnedToDrafts !== undefined) return returnedToDrafts;
+	const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+	let signInReturn = false;
+	try {
+		signInReturn = sessionStorage.getItem(signInReturnKey) === '1';
+		sessionStorage.removeItem(signInReturnKey);
+	} catch {
+	}
+	returnedToDrafts = navigation?.type === 'reload' || signInReturn;
+	return returnedToDrafts;
+}
+
 function openTabDraft(key: string, copiedKeyPrefix?: string) {
 	function save(text: string) {
 		try {
@@ -10,8 +35,7 @@ function openTabDraft(key: string, copiedKeyPrefix?: string) {
 	}
 
 	let restored: string | undefined;
-	const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-	if (navigation?.type === 'reload') {
+	if (returnsToDrafts()) {
 		try {
 			restored = sessionStorage.getItem(key) ?? '';
 		} catch {

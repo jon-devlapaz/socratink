@@ -215,8 +215,10 @@ function visibleText(message: WireSnapshot['messages'][number]): string {
 		.join('\n\n');
 }
 
-export function keepsQuestionDraft(turn: DisplayedTurn) {
-	return turn.cardHelp?.kind === 'hint' || turn.learnerKind === 'steering' && turn.text === formatSteeringMessage('try-unaided');
+/** Hint, I don't know and the full-answer choice send no answer, so the unsent one waits for the card to come back. */
+export function keepsQuestionDraft(turn: DisplayedTurn, answered?: QuestionnaireDefinition) {
+	return Boolean(turn.cardHelp) || answered?.kind === 'reveal-consent'
+		|| turn.learnerKind === 'steering' && turn.text === formatSteeringMessage('try-unaided');
 }
 
 /** Only an explicit pacing change can leave an unsent draft beside an earlier question. */
@@ -227,9 +229,19 @@ export function questionsWithDrafts(turns: readonly DisplayedTurn[]) {
 		if (reply.role !== 'Assistant') continue;
 		const action = turns[index - 1];
 		const previous = turns[index - 2];
-		if (original?.questionnaire && original.submissionId && previous?.submissionId && action && keepsQuestionDraft(action)) {
+		const consent = previous?.questionnaire?.kind === 'reveal-consent';
+		if (original?.questionnaire && original.submissionId && previous?.submissionId && action
+			&& (keepsQuestionDraft(action) || consent)) {
 			if (action.cardHelp) {
-				if (reply.questionnaire && reply.submissionId && action.cardHelp.sourceId === previous.submissionId) continue;
+				// I don't know can get a different card back, such as the full-answer choice (#268).
+				const returned = reply.questionnaire && (action.cardHelp.kind === 'hint'
+					|| reply.questionnaire.kind === 'reveal-consent'
+					|| (reply.questionnaire.kind === original.questionnaire.kind
+						&& reply.questionnaire.items[0]?.prompt === original.questionnaire.items[0]?.prompt));
+				if (returned && reply.submissionId && action.cardHelp.sourceId === previous.submissionId) continue;
+			} else if (consent) {
+				// Try once more brings the card back, still holding the learner's unsent answer.
+				if (reply.submissionId && sameQuestion(original.questionnaire, reply.questionnaire)) continue;
 			} else {
 				if (reply.submissionId && sameQuestion(original.questionnaire, reply.questionnaire)) continue;
 				earlier.add(original.submissionId);
