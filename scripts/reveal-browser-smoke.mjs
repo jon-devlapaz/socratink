@@ -3,6 +3,7 @@ import { expect } from 'playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { assertHelpLayout } from './reveal-browser-layout.mjs';
 import { assertAccessible } from './browser-accessibility.mjs';
+import { appConfig } from '../src/config/app.config.ts';
 import { namespacedConversationId } from '../src/config/session.ts';
 import { guestTurnLimit, guestTurnsHeader } from '../src/server/guest-turns.ts';
 
@@ -25,11 +26,12 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 	await context.addCookies([{
 		name: session.cookie.slice(0, equals), value: session.cookie.slice(equals + 1), url: origin,
 	}]);
+	const conversationId = namespacedConversationId(session.userId, 'reveal-browser');
 	await context.addInitScript((id) => {
 		if (!localStorage.getItem('socratink-chat-conversation-id')) {
 			localStorage.setItem('socratink-chat-conversation-id', id);
 		}
-	}, namespacedConversationId(session.userId, 'reveal-browser'));
+	}, conversationId);
 	const page = await context.newPage();
 	const artifacts = [];
 	let guestTurns = 0;
@@ -102,28 +104,48 @@ export async function verifyRevealBrowser({ origin, session, savedConversationId
 		await page.keyboard.press('Escape');
 		await assertAccessible(page, 'Empty conversation, light theme');
 		artifacts.push({ kind: 'preferences', restoredBeforeAppModule: true, themeAndTextSizeSurviveReload: true });
+		const chatUrl = `${origin}${appConfig.chatAgentPath}/${encodeURIComponent(conversationId)}`;
+		const isChatPost = request => request.url() === chatUrl && request.method() === 'POST';
+		const posts = [];
+		const recordPost = request => { if (isChatPost(request)) posts.push(request); };
+		page.on('request', recordPost);
 		await page.getByRole('textbox', { name: 'Message Socratink', exact: true }).fill(initialMessage);
+		const admitted = page.waitForResponse(response => isChatPost(response.request()));
 		await page.getByRole('button', { name: 'Send message', exact: true }).click();
+		const { submissionId } = await (await admitted).json();
+		assert.ok(submissionId, 'the original card turn is admitted');
 		guestTurns += 1;
 		const card = page.getByRole('form', { name: 'Questions', exact: true });
 		const choices = card.locator('label').filter({ has: page.getByRole('radio') });
 		await expect(choices).toHaveCount(4);
 		const originalChoices = await choices.allTextContents();
+		const prompt = card.locator('legend');
+		const originalPrompt = await prompt.innerText();
+		assert.equal(posts.length, 1, 'the original question starts with one chat POST');
 		await card.getByRole('button', { name: "I don't know", exact: true }).click();
 		guestTurns += 1;
 		const hint = page.locator('#active-turn .turn.assistant .reveal-copy');
 		await expect(hint).toContainText(baselineHint);
 		await expect(hint.locator('.reveal-mark')).toHaveText('Hint from Socratink');
 		await expect(choices).toHaveText(originalChoices);
+		await expect(prompt).toHaveText(originalPrompt);
+		assert.equal(posts.length, 2, 'one help click sends one chat POST');
+		assert.deepEqual(posts[1].postDataJSON().cardHelp, { kind: 'unknown', sourceId: submissionId });
 		await page.reload();
 		await expect(choices).toHaveText(originalChoices);
+		await expect(prompt).toHaveText(originalPrompt);
 		await page.screenshot({ path: `${out}/unknown-hint-card.png` });
+		assert.equal(posts.length, 2, 'reload does not send another chat POST');
 		await answer(baselineChoice, baselineReason);
-		artifacts.push({ kind: 'answer-after-hint', originalChoicesRestored: true });
+		await expect(card.getByText(comparisonChoice, { exact: true })).toBeVisible();
+		assert.equal(posts.length, 3, 'one answer to the restored card sends one chat POST');
 		await answer(comparisonChoice, comparisonReason);
 		const consent = page.locator('#active-turn .questionnaire');
 		const consentLine = 'I can show a full answer.';
 		await consent.getByText(consentLine, { exact: true }).waitFor();
+		assert.equal(posts.length, 4, 'one answer to the comparison card sends one chat POST');
+		page.off('request', recordPost);
+		artifacts.push({ kind: 'answer-after-hint', originalChoicesRestored: true, helpPosts: 1, reloadPosts: 0, answerPosts: 1 });
 		assert.equal((await page.locator('#active-turn').innerText()).includes(assistanceText), false);
 		await page.reload();
 		await consent.getByText(consentLine, { exact: true }).waitFor();
