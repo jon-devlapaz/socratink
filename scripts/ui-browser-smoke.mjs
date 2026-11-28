@@ -299,11 +299,14 @@ export async function verifyUiBrowser({ browser, origin, session, out }) {
 					: source === 'steering' ? formatSteeringMessage('smaller-step')
 						: 'Questionnaire answers:\n- Which step?: Asked for a hint.';
 				assert.deepEqual(fixture.sent, [expected]);
-				await expect(page.locator('#message')).toHaveValue(expected);
+				// Only the learner's own typed text goes back in the composer. A card or
+				// steering answer is internal wire text, so the gate says it was not sent (#269).
+				await expect(page.locator('#message')).toHaveValue(source === 'composer' ? expected : '');
 				await expect(page.locator('#message')).toBeDisabled();
 				await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
-				assert.equal(await page.locator('.chat-gate-message').innerText(),
-					`You’ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`);
+				assert.equal(await page.locator('.chat-gate-message').innerText(), source === 'composer'
+					? `You’ve had ${guestTurnLimit} turns. Sign in to save your conversation and keep learning.`
+					: `You’ve had ${guestTurnLimit} turns, so your last answer wasn’t sent. Sign in to save your conversation and try it again.`);
 				await expect(page.locator('.chat-gate-card a')).toHaveCount(2);
 				if (width === 390 && source === 'question') await assertAccessible(page, 'Guest sign-in prompt');
 				await expect(page.locator('#active-turn .you, #messages .you')).toHaveCount(0);
