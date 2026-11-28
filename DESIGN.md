@@ -52,10 +52,12 @@ it fits on one line at 375px and on desktop. Let it wrap when the learner
 enlarges the text or the column gets narrower.
 
 Place the three starter buttons below the composer in reading and keyboard
-order. A starter fills the empty composer and focuses it. The learner edits
-the text and sends it. Hide starters whenever the composer contains a draft,
-including a draft restored on reload. Let the empty screen scroll and the
-button labels wrap when text is large or the keyboard leaves little space.
+order. A starter opens the draft with its words and one space, and focuses
+the composer. It replaces a starter the draft already opens with, or goes
+before the learner's own words. The learner edits the text and sends it. Keep
+the starters on Home until the first message, whatever the draft contains.
+Let the empty screen scroll and the button labels wrap when text is large or
+the keyboard leaves little space.
 
 The active conversation rests directly on paper. Earlier steps meet it at a
 hairline, with the existing bookmark control. Do not add rounded message

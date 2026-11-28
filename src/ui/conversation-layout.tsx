@@ -7,15 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bookmark } from 'lucide-react';
 
 import type { TranscriptContent } from './chat-surface.tsx';
-import { Intro, IntroStarters } from './intro.tsx';
+import { Intro, IntroStarters, withStarter } from './intro.tsx';
 
 export function ConversationLayout({ history, active, questionActive }: TranscriptContent) {
 	const message = useRef<HTMLTextAreaElement>(null);
 
 	function startDraft(starter: string) {
 		const input = message.current;
-		if (!input || input.disabled || input.value !== '') return;
-		input.setRangeText(starter + ' ', 0, 0, 'end');
+		if (!input || input.disabled) return;
+		input.setRangeText(withStarter(input.value, starter), 0, input.value.length, 'end');
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		input.focus();
 	}

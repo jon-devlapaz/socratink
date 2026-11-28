@@ -51,7 +51,8 @@
 	line-height: 1.55;
 }
 
-.conversation-empty .composer-shell:has(#message:placeholder-shown) .intro-starters {
+/* The starters stay on Home until a lesson starts, whatever the draft holds (#248). */
+.conversation-empty .intro-starters {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
