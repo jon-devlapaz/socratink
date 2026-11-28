@@ -52,7 +52,7 @@ export default {
 		if (oidcToken) process.env.VERCEL_OIDC_TOKEN = oidcToken;
 		const result = await probeOnce();
 		if (!result.ok) {
-			reportFailure('probe_failed', result.status ?? null);
+			reportFailure('probe_failed', { providerStatus: result.status ?? null });
 			return new Response(null, { status: result.status === undefined ? 503 : 502 });
 		}
 		console.log(JSON.stringify({ event: 'socratink_probe', status: 'ok', latencyMs: result.latencyMs }));

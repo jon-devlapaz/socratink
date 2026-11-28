@@ -15,9 +15,8 @@ describe('checkRuntimeLogs', () => {
 		['clean', output(), output(), {}],
 		['HTTP202 retains runtime errors with context', output([row([log(), log(privateText, { level: 'fatal' }), log('Context', { level: 'info' }), log('Context', { level: 'warning' })])]), output(), { runtimeErrors: 2 }],
 		['HTTP5xx without runtime logs', output(), output([row(undefined, { statusCode: 503, logs: undefined })]), { http5xx: 1 }],
-		['known pg warning', output([row([log(warning)])]), output(), { ignoredPgSslWarnings: 1 }],
-		['fatal never suppressed', output([row([log(warning, { level: 'fatal' })])]), output(), { runtimeErrors: 1 }],
-		['other warning not suppressed', output([row([log('(node:7) Warning: another warning')])]), output(), { runtimeErrors: 1 }],
+		['the pg SSL warning is a runtime error', output([row([log(warning)])]), output(), { runtimeErrors: 1 }],
+		['other warning is a runtime error', output([row([log('(node:7) Warning: another warning')])]), output(), { runtimeErrors: 1 }],
 		['malformed JSON', privateText, output(), { readFailures: 1 }],
 		['API error body', { error: privateText }, output(), { incompleteReads: 1 }],
 		['truncated message', output([row([log(privateText, { messageTruncated: true })])]), output(), { incompleteReads: 1 }],
@@ -58,7 +57,7 @@ describe('checkRuntimeLogs', () => {
 				return { data: source === 'runtime' ? runtime : requests, status };
 			});
 			const result = await runSilentMonitor(t, () => checkRuntimeLogs({ env, request: api.request, now: () => now }));
-			const expected = { runtimeErrors: 0, http5xx: 0, ignoredPgSslWarnings: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0, ...counts };
+			const expected = { runtimeErrors: 0, http5xx: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0, ...counts };
 			const failed = expected.runtimeErrors || expected.http5xx || expected.readFailures || expected.incompleteReads || expected.invalidTarget;
 			assert.deepEqual(result, { counts: expected, exitCode: failed ? 1 : 0 });
 			assert.equal(api.calls.length, counts.invalidTarget || !env.VERCEL_TOKEN ? 0 : 2);
@@ -81,7 +80,7 @@ describe('checkRuntimeLogs', () => {
 });
 
 describe('runtime-monitor command', () => {
-	const counts = { runtimeErrors: 0, http5xx: 0, ignoredPgSslWarnings: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0 };
+	const counts = { runtimeErrors: 0, http5xx: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0 };
 	it('a clean response', () => {
 		checkMonitorCommand('scripts/runtime-monitor.mjs', {
 			env: { VERCEL_TOKEN: 'synthetic-token' }, counts, exitCode: 0,

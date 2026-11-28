@@ -1,8 +1,7 @@
 const project = 'prj_RRYb5o7zx5CaHbmCAYzzDY8bb33Q', team = 'team_bOdbOHK6yluaErCcwM1iZaUD';
-const pgWarning = /^\(node:\d+\) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'\./;
 
 export async function checkRuntimeLogs({ env = process.env, request = fetch, now = Date.now } = {}) {
-	const counts = { runtimeErrors: 0, http5xx: 0, ignoredPgSslWarnings: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0 };
+	const counts = { runtimeErrors: 0, http5xx: 0, readFailures: 0, incompleteReads: 0, invalidTarget: 0 };
 	const preview = env.MONITOR_PREVIEW_DEPLOYMENT;
 	if (preview && !/^dpl_[A-Za-z0-9]+$/.test(preview)) counts.invalidTarget = 1;
 	const end = now(), start = end - 2_700_000;
@@ -46,8 +45,7 @@ export async function checkRuntimeLogs({ env = process.env, request = fetch, now
 						|| (log.messageTruncated !== undefined && typeof log.messageTruncated !== 'boolean')) throw new Error();
 					if (log.messageTruncated === true) { incomplete = true; continue; }
 					if (source !== 'runtime' || !['error', 'fatal'].includes(log.level)) continue;
-					if (log.level === 'error' && pgWarning.test(log.message)) counts.ignoredPgSslWarnings++;
-					else counts.runtimeErrors++;
+					counts.runtimeErrors++;
 				}
 				if (source === 'requests') {
 					if (!Number.isInteger(row.statusCode) || row.statusCode < 500 || row.statusCode > 599) throw new Error();
